@@ -17,7 +17,7 @@
 #include "ui/miscmenu.h"
 #include "ui/filesel.h"
 #include "ui/tapectrl.h"
-// TODO - #include "ui/bbcontrl.h"
+#include "ui/bbcontrl.h"
 #include "ui/swlist.h"
 #include "ui/viewgfx.h"
 #include "ui/barcode.h"
@@ -611,7 +611,7 @@ void ui_emu_menubar::tape_control(cassette_image_device *image)
 
 void ui_emu_menubar::bitbanger_control(bitbanger_device *image)
 {
-	//start_menu(global_alloc_clear<ui_menu_bitbanger_control>(ui(), container(), image));
+	start_menu(global_alloc_clear<ui_menu_bitbanger_control>(ui(), container(), image));
 }
 
 
