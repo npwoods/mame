@@ -180,21 +180,34 @@ void ui_menu_file_manager::handle()
 			if (selected_device != nullptr)
 			{
 				m_curr_selected = TRUE;
-				floppy_image_device *floppy_device = dynamic_cast<floppy_image_device *>(selected_device);
-				if (floppy_device != nullptr)
-				{
-					ui_menu::stack_push(global_alloc_clear<ui_menu_control_floppy_image>(ui(), container, floppy_device));
-				} 
-				else
-				{
-					ui_menu::stack_push(global_alloc_clear<ui_menu_control_device_image>(ui(), container, selected_device));
-				}
+				ui_menu::stack_push(create_device_menu(ui(), container, selected_device));
+
 				// reset the existing menu
 				reset(UI_MENU_RESET_REMEMBER_POSITION);
 			}
 		}
 	}
 }
+
+
+//-------------------------------------------------
+//  create_device_menu - pulled out so this can be
+//  shared with the menubar code
+//-------------------------------------------------
+
+ui_menu *ui_menu_file_manager::create_device_menu(mame_ui_manager &ui, render_container *container, device_image_interface *device)
+{
+	floppy_image_device *floppy_device = dynamic_cast<floppy_image_device *>(device);
+	if (floppy_device != nullptr)
+	{
+		return global_alloc_clear<ui_menu_control_floppy_image>(ui, container, floppy_device);
+	}
+	else
+	{
+		return global_alloc_clear<ui_menu_control_device_image>(ui, container, device);
+	}
+}
+
 
 // force file manager menu
 void ui_menu_file_manager::force_file_manager(mame_ui_manager &mui, render_container *container, const char *warnings)

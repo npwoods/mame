@@ -29,6 +29,8 @@ public:
 
 	void fill_image_line(device_image_interface *img, std::string &instance, std::string &filename);
 
+	static ui_menu *create_device_menu(mame_ui_manager &ui, render_container *container, device_image_interface *device);
+
 private:
 	std::string m_warnings;
 	bool m_curr_selected;

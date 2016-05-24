@@ -17,6 +17,8 @@
 #include "language.h"
 #include "ui/ui.h"
 
+class mame_ui_manager;
+
 
 /***************************************************************************
     CONSTANTS

@@ -21,6 +21,7 @@
 #include "ui/uimain.h"
 
 class ui_menu_item;
+class ui_menubar;
 
 /***************************************************************************
     CONSTANTS
@@ -62,6 +63,14 @@ class ui_menu_item;
 
 /* cancel return value for a UI handler */
 #define UI_HANDLER_CANCEL       ((UINT32)~0)
+
+/* load vs save */
+enum
+{
+	LOADSAVE_NONE,
+	LOADSAVE_LOAD,
+	LOADSAVE_SAVE
+};
 
 /* justification options for ui_draw_text_full */
 enum
@@ -109,6 +118,7 @@ public:
 	running_machine &machine() const { return m_machine; }
 	bool single_step() const { return m_single_step; }
 	ui_options &options() { return m_ui_options; }
+	bool menubar_visible(); //TODO - { return m_menubar && m_menubar->is_visible(); }
 
 	// setters
 	void set_single_step(bool single_step) { m_single_step = single_step; }
@@ -173,6 +183,10 @@ public:
 	virtual void image_display(const device_type &type, device_image_interface *image) override;
 	
 	virtual void menu_reset() override;
+
+	// UI handlers
+	static UINT32 handler_load_save(mame_ui_manager &mui, render_container *container, UINT32 state);
+
 private:
 	// instance variables
 	render_font *           m_font;
@@ -201,11 +215,16 @@ private:
 	std::string &warnings_string(std::string &buffer);
 
 	// UI handlers
+	ui_menubar *			m_menubar;
+
+	// UI handlers
 	static UINT32 handler_messagebox(mame_ui_manager &mui, render_container *container, UINT32 state);
 	static UINT32 handler_messagebox_anykey(mame_ui_manager &mui, render_container *container, UINT32 state);
 	static UINT32 handler_ingame(mame_ui_manager &mui, render_container *container, UINT32 state);
-	static UINT32 handler_load_save(mame_ui_manager &mui, render_container *container, UINT32 state);
 	static UINT32 handler_confirm_quit(mame_ui_manager &mui, render_container *container, UINT32 state);
+
+	// Method UI handlers
+	UINT32 handler_ingame_method(render_container *container, UINT32 state);
 
 	// private methods
 	void exit();

@@ -140,4 +140,9 @@ private:
 	int *       m_result;
 };
 
+// helper
+void extra_text_render(render_container *container, float top, float bottom,
+	float origx1, float origy1, float origx2, float origy2,
+	const char *header, const char *footer);
+
 #endif /* __UI_FILESEL_H__ */

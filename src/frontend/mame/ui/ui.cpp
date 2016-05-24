@@ -22,6 +22,7 @@
 #include "uiinput.h"
 #include "ui/ui.h"
 #include "ui/menu.h"
+#include "ui/emenubar.h"
 #include "ui/mainmenu.h"
 #include "ui/filemngr.h"
 #include "ui/sliders.h"
@@ -33,13 +34,6 @@
 /***************************************************************************
     CONSTANTS
 ***************************************************************************/
-
-enum
-{
-	LOADSAVE_NONE,
-	LOADSAVE_LOAD,
-	LOADSAVE_SAVE
-};
 
 #define MAX_SAVED_STATE_JOYSTICK   4
 
@@ -260,7 +254,8 @@ mame_ui_manager::mame_ui_manager(running_machine &machine)
 		m_popup_text_end(0),
 		m_mouse_arrow_texture(nullptr),
 		m_mouse_show(false),
-		m_load_save_hold(false)
+		m_load_save_hold(false),
+		m_menubar(nullptr)
 {
 }
 
@@ -1496,231 +1491,37 @@ void mame_ui_manager::image_display(const device_type &type, device_image_interf
 
 UINT32 mame_ui_manager::handler_ingame(mame_ui_manager &mui, render_container *container, UINT32 state)
 {
-	bool is_paused = mui.machine().paused();
-
-	// first draw the FPS counter
-	if (mui.show_fps_counter())
-	{
-		mui.draw_text_full(container, mui.machine().video().speed_text().c_str(), 0.0f, 0.0f, 1.0f,
-					JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
-	}
-
-	// Show the duration of current part (intro or gameplay or extra)
-	if (mui.show_timecode_counter()) {
-		std::string tempstring;
-		mui.draw_text_full(container, mui.machine().video().timecode_text(tempstring).c_str(), 0.0f, 0.0f, 1.0f,
-			JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t(0xf0,0xf0,0x10,0x10), rgb_t::black, nullptr, nullptr);
-	}
-	// Show the total time elapsed for the video preview (all parts intro, gameplay, extras)
-	if (mui.show_timecode_total()) {
-		std::string tempstring;
-		mui.draw_text_full(container, mui.machine().video().timecode_total_text(tempstring).c_str(), 0.0f, 0.0f, 1.0f,
-			JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t(0xf0,0x10,0xf0,0x10), rgb_t::black, nullptr, nullptr);
-	}
-
-
-	// draw the profiler if visible
-	if (mui.show_profiler())
-	{
-		const char *text = g_profiler.text(mui.machine());
-		mui.draw_text_full(container, text, 0.0f, 0.0f, 1.0f, JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
-	}
-
-	// if we're single-stepping, pause now
-	if (mui.single_step())
-	{
-		mui.machine().pause();
-		mui.set_single_step(false);
-	}
-
-	// determine if we should disable the rest of the UI
-	bool has_keyboard = mui.machine().ioport().has_keyboard();
-	bool ui_disabled = (has_keyboard && !mui.machine().ui_active());
-
-	// is ScrLk UI toggling applicable here?
-	if (has_keyboard)
-	{
-		// are we toggling the UI with ScrLk?
-		if (mui.machine().ui_input().pressed(IPT_UI_TOGGLE_UI))
-		{
-			// toggle the UI
-			mui.machine().set_ui_active(!mui.machine().ui_active());
-
-			// display a popup indicating the new status
-			if (mui.machine().ui_active())
-			{
-				mui.popup_time(2, "%s\n%s\n%s\n%s\n%s\n%s\n",
-					_("Keyboard Emulation Status"),
-					"-------------------------",
-					_("Mode: PARTIAL Emulation"),
-					_("UI:   Enabled"),
-					"-------------------------",
-					_("**Use ScrLock to toggle**"));
-			}
-			else
-			{
-				mui.popup_time(2, "%s\n%s\n%s\n%s\n%s\n%s\n",
-					_("Keyboard Emulation Status"),
-					"-------------------------",
-					_("Mode: FULL Emulation"),
-					_("UI:   Disabled"),
-					"-------------------------",
-					_("**Use ScrLock to toggle**"));
-			}
-		}
-	}
-
-	// is the natural keyboard enabled?
-	if (mui.use_natural_keyboard() && (mui.machine().phase() == MACHINE_PHASE_RUNNING))
-		mui.process_natural_keyboard();
-
-	if (!ui_disabled)
-	{
-		// paste command
-		if (mui.machine().ui_input().pressed(IPT_UI_PASTE))
-			mui.paste();
-	}
-
-	mui.image_handler_ingame();
-
-	// handle a save input timecode request
-	if (mui.machine().ui_input().pressed(IPT_UI_TIMECODE))
-		mui.machine().video().save_input_timecode();
-
-	if (ui_disabled) return ui_disabled;
-
-	if (mui.machine().ui_input().pressed(IPT_UI_CANCEL))
-	{
-		mui.request_quit();
-		return 0;
-	}
-
-	// turn on menus if requested
-	if (mui.machine().ui_input().pressed(IPT_UI_CONFIGURE))
-		return mui.set_handler(ui_menu::ui_handler, 0);
-
-	// if the on-screen display isn't up and the user has toggled it, turn it on
-	if ((mui.machine().debug_flags & DEBUG_FLAG_ENABLED) == 0 && mui.machine().ui_input().pressed(IPT_UI_ON_SCREEN_DISPLAY))
-		return mui.set_handler(ui_menu_sliders::ui_handler, 1);
-
-	// handle a reset request
-	if (mui.machine().ui_input().pressed(IPT_UI_RESET_MACHINE))
-		mui.machine().schedule_hard_reset();
-	if (mui.machine().ui_input().pressed(IPT_UI_SOFT_RESET))
-		mui.machine().schedule_soft_reset();
-
-	// handle a request to display graphics/palette
-	if (mui.machine().ui_input().pressed(IPT_UI_SHOW_GFX))
-	{
-		if (!is_paused)
-			mui.machine().pause();
-		return mui.set_handler(ui_gfx_ui_handler, is_paused);
-	}
-
-	// handle a tape control key
-	if (mui.machine().ui_input().pressed(IPT_UI_TAPE_START))
-	{
-		for (cassette_image_device &cass : cassette_device_iterator(mui.machine().root_device()))
-		{
-			cass.change_state(CASSETTE_PLAY, CASSETTE_MASK_UISTATE);
-			return 0;
-		}
-	}
-	if (mui.machine().ui_input().pressed(IPT_UI_TAPE_STOP))
-	{
-		for (cassette_image_device &cass : cassette_device_iterator(mui.machine().root_device()))
-		{
-			cass.change_state(CASSETTE_STOPPED, CASSETTE_MASK_UISTATE);
-			return 0;
-		}
-	}
-
-	// handle a save state request
-	if (mui.machine().ui_input().pressed(IPT_UI_SAVE_STATE))
-	{
-		mui.machine().pause();
-		mui.m_load_save_hold = true;
-		return mui.set_handler(handler_load_save, LOADSAVE_SAVE);
-	}
-
-	// handle a load state request
-	if (mui.machine().ui_input().pressed(IPT_UI_LOAD_STATE))
-	{
-		mui.machine().pause();
-		mui.m_load_save_hold = true;
-		return mui.set_handler(handler_load_save, LOADSAVE_LOAD);
-	}
-
-	// handle a save snapshot request
-	if (mui.machine().ui_input().pressed(IPT_UI_SNAPSHOT))
-		mui.machine().video().save_active_screen_snapshots();
-
-	// toggle pause
-	if (mui.machine().ui_input().pressed(IPT_UI_PAUSE))
-		mui.machine().toggle_pause();
-
-	// pause single step
-	if (mui.machine().ui_input().pressed(IPT_UI_PAUSE_SINGLE))
-	{
-		mui.set_single_step(true);
-		mui.machine().resume();
-	}
-
-	// handle a toggle cheats request
-	if (mui.machine().ui_input().pressed(IPT_UI_TOGGLE_CHEAT))
-		mame_machine_manager::instance()->cheat().set_enable(!mame_machine_manager::instance()->cheat().enabled());
-
-	// toggle movie recording
-	if (mui.machine().ui_input().pressed(IPT_UI_RECORD_MOVIE))
-		mui.machine().video().toggle_record_movie();
-
-	// toggle profiler display
-	if (mui.machine().ui_input().pressed(IPT_UI_SHOW_PROFILER))
-		mui.set_show_profiler(!mui.show_profiler());
-
-	// toggle FPS display
-	if (mui.machine().ui_input().pressed(IPT_UI_SHOW_FPS))
-		mui.set_show_fps(!mui.show_fps());
-
-	// increment frameskip?
-	if (mui.machine().ui_input().pressed(IPT_UI_FRAMESKIP_INC))
-		mui.increase_frameskip();
-
-	// decrement frameskip?
-	if (mui.machine().ui_input().pressed(IPT_UI_FRAMESKIP_DEC))
-		mui.decrease_frameskip();
-
-	// toggle throttle?
-	if (mui.machine().ui_input().pressed(IPT_UI_THROTTLE))
-		mui.machine().video().toggle_throttle();
-
-	// toggle autofire
-	if (mui.machine().ui_input().pressed(IPT_UI_TOGGLE_AUTOFIRE))
-	{
-		if (!mui.machine().options().cheat())
-		{
-			mui.machine().popmessage(_("Autofire can't be enabled"));
-		}
-		else
-		{
-			bool autofire_toggle = mui.machine().ioport().get_autofire_toggle();
-			mui.machine().ioport().set_autofire_toggle(!autofire_toggle);
-			mui.machine().popmessage("Autofire %s", autofire_toggle ? _("Enabled") : _("Disabled"));
-		}
-	}
-
-	// check for fast forward
-	if (mui.machine().ioport().type_pressed(IPT_UI_FAST_FORWARD))
-	{
-		mui.machine().video().set_fastforward(true);
-		mui.show_fps_temp(0.5);
-	}
-	else
-		mui.machine().video().set_fastforward(false);
-
-	return 0;
+	return mui.handler_ingame_method(container, state);
 }
 
+//-------------------------------------------------
+//  handler_ingame_method - in-game handler takes 
+//  care of the standard keypresses
+//-------------------------------------------------
+
+UINT32 mame_ui_manager::handler_ingame_method(render_container *container, UINT32 state)
+{
+	// no menubar? create it
+	if (m_menubar == NULL)
+		m_menubar = auto_alloc(machine(), ui_emu_menubar(*this));
+
+	// handle!
+	m_menubar->handle(container);
+
+	// did we change out the handler?
+	if (m_handler_callback != handler_ingame)
+	{
+		// if so, flush the menubar...
+		auto_free(machine(), m_menubar);
+		m_menubar = NULL;
+
+		// ...and then check to see if this is just a "refresh"
+		if (m_handler_callback == NULL)
+			m_handler_callback = handler_ingame;
+	}
+
+	return m_handler_param;
+}
 
 //-------------------------------------------------
 //  handler_load_save - leads the user through
