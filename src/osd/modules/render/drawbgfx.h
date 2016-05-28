@@ -15,6 +15,7 @@
 #include "bgfx/chain.h"
 #include "bgfx/chainmanager.h"
 #include "sliderdirtynotifier.h"
+#include "../frontend/mame/ui/menuitem.h"
 
 class texture_manager;
 class target_manager;
@@ -42,7 +43,7 @@ public:
 	virtual int draw(const int update) override;
 
 	virtual void add_audio_to_recording(const INT16 *buffer, int samples_this_frame) override;
-	virtual std::vector<ui_menu_item> get_slider_list() override;
+	virtual std::vector<ui::menu_item> get_slider_list() override;
 	virtual void set_sliders_dirty() override;
 
 #ifdef OSD_SDL

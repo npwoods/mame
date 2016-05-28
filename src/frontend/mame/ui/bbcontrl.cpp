@@ -15,6 +15,7 @@
 #include "ui/menu.h"
 #include "ui/bbcontrl.h"
 
+namespace ui {
 
 /***************************************************************************
     TYPE DEFINITIONS
@@ -35,7 +36,7 @@
 //-------------------------------------------------
 
 ui_menu_bitbanger_control::ui_menu_bitbanger_control(mame_ui_manager &mui, render_container *container, bitbanger_device *device)
-	: ui_menu_device_control<bitbanger_device>(mui, container, device)
+	: menu_device_control<bitbanger_device>(mui, container, device)
 {
 }
 
@@ -62,30 +63,30 @@ void ui_menu_bitbanger_control::populate()
 		int index = current_index();
 
 		if( index == (count()-1) )
-			flags |= MENU_FLAG_LEFT_ARROW;
+			flags |= FLAG_LEFT_ARROW;
 		else
-			flags |= MENU_FLAG_RIGHT_ARROW;
+			flags |= FLAG_RIGHT_ARROW;
 	}
 
 	if ((current_device() != NULL) && (current_device()->exists()))
 	{
 		if (current_device()->inc_mode(TRUE))
-			mode_flags |= MENU_FLAG_RIGHT_ARROW;
+			mode_flags |= FLAG_RIGHT_ARROW;
 
 		if (current_device()->dec_mode(TRUE))
-			mode_flags |= MENU_FLAG_LEFT_ARROW;
+			mode_flags |= FLAG_LEFT_ARROW;
 
 		if (current_device()->inc_baud(TRUE))
-			baud_flags |= MENU_FLAG_RIGHT_ARROW;
+			baud_flags |= FLAG_RIGHT_ARROW;
 
 		if (current_device()->dec_baud(TRUE))
-			baud_flags |= MENU_FLAG_LEFT_ARROW;
+			baud_flags |= FLAG_LEFT_ARROW;
 
 		if (current_device()->inc_tune(TRUE))
-			tune_flags |= MENU_FLAG_RIGHT_ARROW;
+			tune_flags |= FLAG_RIGHT_ARROW;
 
 		if (current_device()->dec_tune(TRUE))
-			tune_flags |= MENU_FLAG_LEFT_ARROW;
+			tune_flags |= FLAG_LEFT_ARROW;
 
 		// name of bitbanger file
 		item_append(current_device()->device().name(), current_device()->filename(), flags, BITBANGERCMD_SELECT);
@@ -109,12 +110,13 @@ void ui_menu_bitbanger_control::populate()
 void ui_menu_bitbanger_control::handle()
 {
 	// rebuild the menu
-	reset(UI_MENU_RESET_REMEMBER_POSITION);
+	reset(reset_options::REMEMBER_POSITION);
 	populate();
 
 	// process the menu
-	const ui_menu_event *event = process(UI_MENU_PROCESS_LR_REPEAT);
-	if (event != NULL)
+	const event *event = process(PROCESS_LR_REPEAT);
+
+	if (event)
 	{
 		switch(event->iptkey)
 		{
@@ -142,3 +144,5 @@ void ui_menu_bitbanger_control::handle()
 		}
 	}
 }
+
+} // namespace ui

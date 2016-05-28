@@ -18,12 +18,14 @@
 #include "imagedev/cassette.h"
 #include "imagedev/bitbngr.h"
 
-class ui_menu;
+namespace ui {
+
+class menu;
 
 class ui_emu_menubar : public ui_menubar
 {
 public:
-	ui_emu_menubar(mame_ui_manager &mui);
+	ui_emu_menubar(::mame_ui_manager &mui);
 
 	virtual void handle(render_container *container) override;
 
@@ -56,12 +58,13 @@ private:
 	void load(device_image_interface *image);
 	bool has_images();
 	void set_throttle_rate(float throttle_rate);
-	void start_menu(ui_menu *menu);
+	void start_menu(menu *menu);
 
 	// template methods
 	template<class _Menu>
 	void start_menu();
 };
 
+} // namespace ui
 
 #endif // __UI_EMENUBAR_H__

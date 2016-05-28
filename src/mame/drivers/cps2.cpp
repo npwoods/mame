@@ -3903,6 +3903,34 @@ ROM_END
 
 ROM_START( hsf2j )
 	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
+	ROM_LOAD16_WORD_SWAP( "hs2j.03c", 0x000000, 0x80000, CRC(6efe661f) SHA1(5e8df6183cc04ae0f3002f85ffedaa09b4397cd9) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.04b", 0x080000, 0x80000, CRC(93f2500a) SHA1(d340e8afd0a05066e19d795fdea31b4d1e00ad97) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.05",  0x100000, 0x80000, CRC(dde34a35) SHA1(f5be2d2916db6e86e0886d61d55bddf138273ebc) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.06",  0x180000, 0x80000, CRC(f4e56dda) SHA1(c6490707c2a416ab88612c2d73abbe5853d8cb92) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.07",  0x200000, 0x80000, CRC(ee4420fc) SHA1(06cf76660b0c794d2460c52d9fe8334fff51e9de) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.08",  0x280000, 0x80000, CRC(c9441533) SHA1(bf178fac1f060fcce3ff9118333c8517dadc9429) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.09",  0x300000, 0x80000, CRC(3fc638a8) SHA1(2a42877b26c8abc437da46225701f0bba6e40058) )
+	ROM_LOAD16_WORD_SWAP( "hs2j.10",  0x380000, 0x80000, CRC(20d0f9e4) SHA1(80a5eeef9472e327b0d4ee26434bad109a9434ea) )
+
+	ROM_REGION( 0x2000000, "gfx", 0 )
+	ROMX_LOAD( "hs2.13m",   0x0000000, 0x800000, CRC(a6ecab17) SHA1(6749a4c8dc81f4b10f910c31c82cf6674e2a44eb) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "hs2.15m",   0x0000002, 0x800000, CRC(10a0ae4d) SHA1(701b4900fbc8bef20efa1a706891c8df4bf14641) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "hs2.17m",   0x0000004, 0x800000, CRC(adfa7726) SHA1(8d36ec125a8c91abfe5213893d794f8bc11c8acd) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "hs2.19m",   0x0000006, 0x800000, CRC(bb3ae322) SHA1(ecd289d7a0fe365fdd7c5527cb17796002beb553) , ROM_GROUPWORD | ROM_SKIP(6) )
+
+	ROM_REGION( QSOUND_SIZE, "audiocpu", 0 ) /* 64k for the audio CPU (+banks) */
+	ROM_LOAD( "hs2.01",   0x00000, 0x08000, CRC(c1a13786) SHA1(c7392c7efb15ea4042e75bd9007e974293d8935d) )
+	ROM_CONTINUE(         0x10000, 0x18000 )
+	ROM_LOAD( "hs2.02",   0x28000, 0x20000, CRC(2d8794aa) SHA1(c634affdc2568020cce6af97b4fa79925d9943f3) )
+
+	ROM_REGION( 0x800000, "qsound", 0 ) /* QSound samples */
+	ROM_LOAD16_WORD_SWAP( "hs2.11m",   0x000000, 0x800000, CRC(0e15c359) SHA1(176108b0d76d821a849324680aba0cd04b5016c1) )
+
+	HSF2_JAPAN_KEY
+ROM_END
+
+ROM_START( hsf2j1 )
+	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
 	ROM_LOAD16_WORD_SWAP( "hs2j.03",  0x000000, 0x80000, CRC(00738f73) SHA1(99947a621f21a88dc4c425d9bfbc30b3c5f76ecd) )
 	ROM_LOAD16_WORD_SWAP( "hs2j.04",  0x080000, 0x80000, CRC(40072c4a) SHA1(85b95bd3c907b4276a31777e092b8c40d3763257) )
 	ROM_LOAD16_WORD_SWAP( "hs2.05",   0x100000, 0x80000, CRC(dde34a35) SHA1(f5be2d2916db6e86e0886d61d55bddf138273ebc) )
@@ -7842,6 +7870,41 @@ ROM_END
 
 ROM_START( ssf2tbj )
 	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
+	ROM_LOAD16_WORD_SWAP( "ssftj.03b", 0x000000, 0x80000, CRC(e78a3433) SHA1(c5a1f209e467f8f5a791b2d2f184e71650c8c9df) )
+	ROM_LOAD16_WORD_SWAP( "ssftj.04t", 0x080000, 0x80000, CRC(b4dc1906) SHA1(b29497c8562d004c6f0393eb61ba80978f4b3aff) )
+	ROM_LOAD16_WORD_SWAP( "ssftj.05",  0x100000, 0x80000, CRC(a7e35fbc) SHA1(c59737f4dbd9ccde30b0a1e2f151a78f162ceafc) )
+	ROM_LOAD16_WORD_SWAP( "ssfj.06tb", 0x180000, 0x80000, CRC(0737c30d) SHA1(8ecc492f9e638d4a2c1a9c473c0746936eb5553a) )
+	ROM_LOAD16_WORD_SWAP( "ssfj.07t",  0x200000, 0x80000, CRC(1f239515) SHA1(e5e314e7fe8d1448cc452e515415adf8aa62056d) )
+
+	ROM_REGION( 0xc00000, "gfx", 0 )
+	ROMX_LOAD( "ssf.13m",   0x000000, 0x200000, CRC(cf94d275) SHA1(bf2a6d98a656d1cb5734da7836686242d3211137) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.15m",   0x000002, 0x200000, CRC(5eb703af) SHA1(4b302dbb66e8a5c2ad92798699391e981bada427) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.17m",   0x000004, 0x200000, CRC(ffa60e0f) SHA1(b21b1c749a8241440879bf8e7cb33968ccef97e5) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.19m",   0x000006, 0x200000, CRC(34e825c5) SHA1(4d320fc96d1ef0b9928a8ce801734245a4c097a5) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.14m",   0x800000, 0x100000, CRC(b7cc32e7) SHA1(0f4d26af338dab5dce5b7b34d32ad0c573434ace) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.16m",   0x800002, 0x100000, CRC(8376ad18) SHA1(f4456833fb396e6501f4174c0fe5fd63ea40a188) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.18m",   0x800004, 0x100000, CRC(f5b1b336) SHA1(4b060501e56b9d61294748da5387cdae5280ec4d) , ROM_GROUPWORD | ROM_SKIP(6) )
+	ROMX_LOAD( "ssf.20m",   0x800006, 0x100000, CRC(459d5c6b) SHA1(32b11ba7a12004aff810d719bff7508204c7b7c0) , ROM_GROUPWORD | ROM_SKIP(6) )
+
+	ROM_REGION( QSOUND_SIZE, "audiocpu", 0 ) /* 64k for the audio CPU (+banks) */
+	ROM_LOAD( "ssf.01",   0x00000, 0x08000, CRC(eb247e8c) SHA1(24296c18d9b1136d69712bf1c9d9d15463041e83) )
+	ROM_CONTINUE(         0x10000, 0x18000 )
+
+	ROM_REGION( 0x400000, "qsound", 0 ) /* QSound samples */
+	ROM_LOAD( "ssf.q01",  0x000000, 0x080000, CRC(a6f9da5c) SHA1(6d19f83a01bd25b838d5c2871f7964529d926c98) )
+	ROM_LOAD( "ssf.q02",  0x080000, 0x080000, CRC(8c66ae26) SHA1(32a82aee6ed4480e5a990f9af161734c7c0a1403) )
+	ROM_LOAD( "ssf.q03",  0x100000, 0x080000, CRC(695cc2ca) SHA1(c2675f0233608b76de528d2a6ef19846d1348060) )
+	ROM_LOAD( "ssf.q04",  0x180000, 0x080000, CRC(9d9ebe32) SHA1(9b26329370041374f1a90b479a172d2bc2801c4d) )
+	ROM_LOAD( "ssf.q05",  0x200000, 0x080000, CRC(4770e7b7) SHA1(0e764f0befb9227b0b36508d8ca8ec9be31bcb05) )
+	ROM_LOAD( "ssf.q06",  0x280000, 0x080000, CRC(4e79c951) SHA1(1144781d7dc57ef8a6458d982f5c91548ff59e27) )
+	ROM_LOAD( "ssf.q07",  0x300000, 0x080000, CRC(cdd14313) SHA1(ebe767a9d4b51dba4282fa0a36a546a88620dd59) )
+	ROM_LOAD( "ssf.q08",  0x380000, 0x080000, CRC(6f5a088c) SHA1(6c0b4690479647a99d76335f174be8455b4ff118) )
+
+	SSF2TB_JAPAN_KEY
+ROM_END
+
+ROM_START( ssf2tbj1 )
+	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
 	ROM_LOAD16_WORD_SWAP( "ssfj.03t", 0x000000, 0x80000, CRC(980d4450) SHA1(1a7a7000dc11473d06e2bb552c7a506eb0019235) )
 	ROM_LOAD16_WORD_SWAP( "ssfj.04t", 0x080000, 0x80000, CRC(b4dc1906) SHA1(b29497c8562d004c6f0393eb61ba80978f4b3aff) )
 	ROM_LOAD16_WORD_SWAP( "ssfj.05t", 0x100000, 0x80000, CRC(a7e35fbc) SHA1(c59737f4dbd9ccde30b0a1e2f151a78f162ceafc) )
@@ -9479,7 +9542,8 @@ GAME( 1993, ssf2jr2,    ssf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   
 GAME( 1993, ssf2h,      ssf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Super Street Fighter II: The New Challengers (Hispanic 930911)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ssf2tb,     ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (World 931119)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
 GAME( 1993, ssf2tbr1,   ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (World 930911)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
-GAME( 1993, ssf2tbj,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 930911)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
+GAME( 1993, ssf2tbj,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 931005)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
+GAME( 1993, ssf2tbj1,   ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 930911)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
 GAME( 1993, ssf2tbh,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Hispanic 931005)", MACHINE_SUPPORTS_SAVE )  // works, but not in tournament mode
 GAME( 1993, ecofghtr,   0,        cps2, ecofghtr, cps_state, ecofghtr,  ROT0,   "Capcom", "Eco Fighters (World 931203)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ecofghtru,  ecofghtr, cps2, ecofghtr, cps_state, ecofghtr,  ROT0,   "Capcom", "Eco Fighters (USA 940215)", MACHINE_SUPPORTS_SAVE )
@@ -9697,7 +9761,8 @@ GAME( 1998, sfz3ar1,    sfa3,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   
 GAME( 1999, jyangoku,   0,        cps2, cps2_1p2b, cps_state, cps2,     ROT0,   "Capcom", "Jyangokushi: Haoh no Saihai (Japan 990527)", MACHINE_SUPPORTS_SAVE )
 GAME( 2004, hsf2,       0,        cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Hyper Street Fighter II: The Anniversary Edition (USA 040202)", MACHINE_SUPPORTS_SAVE )
 GAME( 2004, hsf2a,      hsf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Hyper Street Fighter II: The Anniversary Edition (Asia 040202)", MACHINE_SUPPORTS_SAVE )
-GAME( 2004, hsf2j,      hsf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Hyper Street Fighter II: The Anniversary Edition (Japan 031222)", MACHINE_SUPPORTS_SAVE )
+GAME( 2004, hsf2j,      hsf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Hyper Street Fighter II: The Anniversary Edition (Japan 040202)", MACHINE_SUPPORTS_SAVE )
+GAME( 2004, hsf2j1,     hsf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Hyper Street Fighter II: The Anniversary Edition (Japan 031222)", MACHINE_SUPPORTS_SAVE )
 
 /* Games released on CPS-2 hardware by Takumi */
 

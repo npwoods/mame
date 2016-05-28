@@ -19,8 +19,9 @@
 #include "render.h"
 #include "ui/ui.h"
 
-class mame_ui_manager;
+class ::mame_ui_manager;
 
+namespace ui {
 
 //**************************************************************************
 //  MENU BAR
@@ -29,7 +30,7 @@ class mame_ui_manager;
 class ui_menubar
 {
 public:
-	ui_menubar(mame_ui_manager &mui);
+	ui_menubar(::mame_ui_manager &mui);
 	virtual ~ui_menubar();
 
 	// menu item
@@ -259,5 +260,6 @@ private:
 	rgb_t adjust_color(rgb_t color);
 };
 
+} // namespace ui
 
 #endif /* __UI_MENUBAR_H__ */

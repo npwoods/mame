@@ -812,6 +812,9 @@ end
 			buildoptions {
 				"-Wno-switch",
 			}
+			buildoptions_cpp {
+				"-Wno-unknown-pragmas",
+			}
 		end
 	end
 

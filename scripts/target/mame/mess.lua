@@ -2057,6 +2057,7 @@ createMESSProjects(_target, _subtarget, "motorola")
 files {
 	MAME_DIR .. "src/mame/drivers/m6805evs.cpp",
 	MAME_DIR .. "src/mame/drivers/mekd2.cpp",
+	MAME_DIR .. "src/mame/drivers/mvme147.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "multitch")
@@ -2677,6 +2678,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/tek405x.cpp",
 	MAME_DIR .. "src/mame/includes/tek405x.h",
 	MAME_DIR .. "src/mame/drivers/tek410x.cpp",
+	MAME_DIR .. "src/mame/drivers/tek440x.cpp",
 	MAME_DIR .. "src/mame/drivers/tekxp33x.cpp",
 }
 
@@ -2893,6 +2895,7 @@ files {
 createMESSProjects(_target, _subtarget, "usp")
 files {
 	MAME_DIR .. "src/mame/drivers/patinho_feio.cpp",
+	MAME_DIR .. "src/mame/includes/patinho_feio.h",
 }
 
 createMESSProjects(_target, _subtarget, "veb")
@@ -3033,6 +3036,7 @@ files {
 
 createMESSProjects(_target, _subtarget, "skeleton")
 files {
+	MAME_DIR .. "src/mame/drivers/alesis_qs.cpp",
 	MAME_DIR .. "src/mame/drivers/alphasma.cpp",
 	MAME_DIR .. "src/mame/drivers/ampro.cpp",
 	MAME_DIR .. "src/mame/drivers/amust.cpp",

@@ -19,12 +19,16 @@
 #include "imagedev/bitbngr.h"
 #include "ui/devctrl.h"
 
-class ui_menu_bitbanger_control : public ui_menu_device_control<bitbanger_device> {
+namespace ui {
+
+class ui_menu_bitbanger_control : public menu_device_control<bitbanger_device> {
 public:
 	ui_menu_bitbanger_control(mame_ui_manager &mui, render_container *container, bitbanger_device *bitbanger);
 	virtual ~ui_menu_bitbanger_control();
 	virtual void populate();
 	virtual void handle();
 };
+
+} // namespace ui
 
 #endif // __UI_BBCONTRL_H__

@@ -17,6 +17,8 @@
 #include "rendfont.h"
 
 
+namespace ui {
+
 //**************************************************************************
 //  CONSTANTS
 //**************************************************************************
@@ -668,7 +670,7 @@ void ui_menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1
 
 	// highlight?
 	if (bgcolor != UI_TEXT_BG_COLOR)
-		ui_menu::highlight(container(), x0, y0, x1, y1, adjust_color(bgcolor));
+		ui::menu::highlight(container(), x0, y0, x1, y1, adjust_color(bgcolor));
 
 	// do we have to draw additional decorations?
 	if (decorations)
@@ -682,7 +684,7 @@ void ui_menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1
 		if (mi->child())
 		{
 			float lr_arrow_width = 0.4f * (y1 - y0) * machine().render().ui_aspect();
-			ui_menu::draw_arrow(
+			ui::menu::draw_arrow(
 				container(),
 				x1 - lr_arrow_width,
 				y0 + (0.1f * (y1 - y0)),
@@ -1108,3 +1110,5 @@ bool tabbed_text_iterator::next()
 	}
 	return m_current != NULL;
 }
+
+} // namespace ui

@@ -1638,7 +1638,6 @@ foxred
 frogwld
 gwnn
 gldgong
-gldgong2
 gldincas
 hlntry
 hlsunmon
@@ -1657,7 +1656,6 @@ mysteyec
 opsesam
 parilius
 pelpetus
-pelpetu2
 pennyar
 penpayus
 pompus2
@@ -1666,7 +1664,6 @@ sealdeal
 shorthng
 silkrdus
 stardrfu
-stardrf2
 statsymb
 sunmon2
 sunqndol
@@ -2310,16 +2307,6 @@ steeplec                        // (c) 1975 Atari
 stuntcyc                        // (c) 1976 Atari
 tank                            // (c) 1974 Atari / Kee
 tankii                          // (c) 1975 Atari / Kee
-
-@source:ataxx.cpp
-asylum                          // (c) 1991 Leland
-ataxx                           // (c) 1990 Leland
-ataxxa                          // (c) 1990 Leland
-ataxxe                          // (c) 1990 Leland
-ataxxj                          // (c) 1990 Leland
-brutforc                        // (c) 1991 Leland
-indyheat                        // (c) 1991 Leland
-wsf                             // (c) 1990 Leland
 
 @source:atetris.cpp
 atetris                         // 136066           (c) 1988
@@ -9595,7 +9582,7 @@ commandou                       // 5/1985 (c) 1985 + Data East license (US)
 commandou2                      // 5/1985 (c) 1985 + Data East license (US)
 sinvasn                         // Europe original?
 sinvasnb                        // bootleg
-mercenario			// bootleg
+mercenario          // bootleg
 
 @source:compgolf.cpp
 compgolf                        // (c) 1985 Data East Corporation (Japan)
@@ -9981,7 +9968,8 @@ gmahou                          // 21/01/2000 (c) 2000 Eighting/Raizing (Japan)
 hsf2                            // 02/02/2004 (c) 2003, 2004 (USA)
 hsf2a                           // 02/02/2004 (c) 2003, 2004 (Asia)
 hsf2d                           //
-hsf2j                           // 22/12/2003 (c) 2003, 2004 (Japan)
+hsf2j                           // 02/02/2004 (c) 2003, 2004 (Japan)
+hsf2j1                          // 22/12/2003 (c) 2003, 2004 (Japan)
 jyangoku                        // 27/05/1999 (c) 1999 (Japan)
 megaman2                        // 08/07/1996 (c) 1996 (USA)
 megaman2a                       // 08/07/1996 (c) 1996 (Asia)
@@ -10126,7 +10114,8 @@ ssf2tad                         //
 ssf2tb                          // 19/11/1993 (c) 1993 (World)
 ssf2tbd                         //
 ssf2tbh                         // 05/10/1993 (c) 1993 (Hispanic)
-ssf2tbj                         // 11/09/1993 (c) 1993 (Japan)
+ssf2tbj                         // 05/10/1993 (c) 1993 (Japan)
+ssf2tbj1                        // 11/09/1993 (c) 1993 (Japan)
 ssf2tbr1                        // 11/09/1993 (c) 1993 (World)
 ssf2th                          // 23/02/1994 (c) 1994 (Hispanic)
 ssf2tu                          // 23/03/1994 (c) 1994 (USA)
@@ -12692,7 +12681,7 @@ tazmania                        // (c) 1982 Stern
 tdpgal                          // 1983 Design Labs / Thomas Automatics
 tenspot                         // (c) 1982 Thomas Automatics
 theend                          // (c) 1980 Konami
-theendb                         // (c) 1980 Bootleg
+takeoff                         // (c) 1980 Sidam (bootleg)
 theends                         // (c) 1980 Stern
 thepitm                         // bootleg
 timefgtr                        // (c) Taito (Brazil) - rewrite of Time Pilot
@@ -14155,6 +14144,7 @@ crzrally                        // (c) 1985
 crzrallya                       // (c) 1985
 crzrallyg                       // (c) 1985
 holeland                        // (c) 1984
+holeland2                       // (c) 1984
 
 @source:homedata.cpp
 battlcry                        // (c) 1991 Home Data
@@ -14424,6 +14414,8 @@ speeddrv                        // (c) 2004
 @source:igspoker.cpp
 chleague                        // (c) 199? IGS
 chleagul                        // (c) 199? IGS
+chleagxa                        // (c) 1998 IGS
+chleagxb                        // (c) 1998 IGS
 citalcup                        // (c) SGS (bootleg of IGS v220it)
 cpoker                          // (c) 1993? IGS
 cpokerpk                        // (c) SGS (bootleg blue board)
@@ -16340,6 +16332,7 @@ mgcrystlo                       // (c) 1991 Kaneko (World)
 oedfight                        // (c) 1994 Kaneko
 packbang                        // (c) 1994 Kaneko (prototype)
 shogwarr                        // (c) 1992 Kaneko
+shogwarrk                       // (c) 1992 Kaneko
 shogwarru                       // (c) 1992 Kaneko
 wingforc                        // (c) 1993 Atlus (Japan, prototype)
 
@@ -16844,6 +16837,14 @@ teamqb2                         // (c) 1988 Leland
 upyoural                        // (c) 1987 Cinematronics
 viper                           // (c) 1988 Leland
 wseries                         // (c) 1985 Cinematronics
+asylum                          // (c) 1991 Leland
+ataxx                           // (c) 1990 Leland
+ataxxa                          // (c) 1990 Leland
+ataxxe                          // (c) 1990 Leland
+ataxxj                          // (c) 1990 Leland
+brutforc                        // (c) 1991 Leland
+indyheat                        // (c) 1991 Leland
+wsf                             // (c) 1990 Leland
 
 @source:lemmings.cpp
 lemmings                        // prototype (c) 1991 Data East USA (US)
@@ -16912,6 +16913,7 @@ spotty                          // (c) 2001 Prince Co.
 abclimax                        //
 ghostsev                        //
 hotd4                           //
+hotd4a                          //
 hotdex                          //
 hummerxt                        //
 initiad4                        //
@@ -19646,6 +19648,7 @@ dodgectya                       // (c) 1986 Merit
 dodgectyb                       // (c) 1986 Merit
 dodgectyc                       // (c) 1986 Merit
 dtrvwz5                         // (c) 1987 Merit
+iowapp                          // (c) 1990 Merit
 misdraw                         // (c) 1986 Merit / Big Apple Games
 mroundup                        // (c) 1984 Merit
 phrcraze                        // (c) 1986 Merit
@@ -27333,6 +27336,9 @@ mustache                        // (c) 1987 March
 @source:mvme350.cpp
 mvme350                         //
 
+@source:mvme147.cpp
+mvme147                         // (c) 1989 Motorola
+
 @source:mw18w.cpp
 18w                             // 653 (c) 1979 Midway
 18w2                            // 653 (c) 1979 Midway
@@ -27899,8 +27905,8 @@ confmiss                        // 2000.10.11 Confidential Mission         // Fi
 crackndj                        // 2000.10 Crackin' DJ
 crakndj2                        // 2001.06 Crackin' DJ Part 2
 crzytaxi                        // 1999.02 Crazy Taxi
-csmash                          // 2000.?? Cosmic Smash
-csmasho                         // 2000.?? Cosmic Smash (original)
+csmash                          // 2000.?? Cosmic Smash (Rev A)
+csmasho                         // 2000.?? Cosmic Smash
 cspike                          // 2000.10 Gun Spike / Cannon Spike
 cvs2gd                          // 2001.07.05 Capcom Vs. SNK 2 Millionaire Fighting 2001 (Rev A)
 cvsgd                           // 2001.05 Capcom Vs. SNK Millennium Fight 2000 Pro
@@ -27946,8 +27952,8 @@ gwing2                          // 2000.?? Giga Wing 2
 hmgeo                           // 2001.06 Heavy Metal Geomatrix (Rev B)
 hod2bios                        // 1998.11 The House of the Dead 2 (BIOS)
 hopper                          // 2002.?? SWP Hopper Board
-hotd2                           // 1998.11 The House of the Dead 2
-hotd2o                          // 1998.11 The House of the Dead 2 (original)
+hotd2                           // 1998.11 The House of the Dead 2 (USA)
+hotd2o                          // 1998.11 The House of the Dead 2
 hotd2p                          // 1998.11 The House of the Dead 2 (prototype)
 ikaruga                         // 2001.12 Ikaruga
 illvelo                         // 2008.06 Illvelo (Illmatic Envelope)
@@ -27978,7 +27984,7 @@ kurucham                        // 2006.03 Kurukuru Chameleon
 lupinsho                        // 2001.12 Lupin the Third: the Shooting
 luptype                         // 2002.04 Lupin The Third - The Typing (Rev A)
 mamonoro                        // 2008.07 Mamoru-kun wa Norowarete Shimatta!
-manicpnc                        // 2007.07 Manic Panic Ghosts!
+manicpnc                        // 2007.07 Manic Panic Ghosts! (USA)
 marstv                          // 1999.12 Mars TV
 maxspeed                        // 2002.12 Maximum Speed
 mazan                           // 2002.07 Mazan: Flash of the Blade (US, MAZ3 Ver.A)
@@ -27997,7 +28003,7 @@ mtkob2                          // 2003.02 MushiKing The King Of Beetle
 mushi2eo                        // 2005.?? Mushiking The King Of Beetles II ENG (Ver. 1.001)
 mushi2k5                        // 2005.?? MushiKing The King Of Beetle 2K5 1st
 mushik2e                        // 2005.?? Mushiking The King Of Beetles II ENG (Ver. 2.001)
-mvsc2                           // 2000.03 Marvel Vs. Capcom 2 New Age of Heroes (Rev A)
+mvsc2                           // 2000.03 Marvel Vs. Capcom 2 New Age of Heroes (Export, Rev A)
 naomi                           // 1998.?? Naomi BIOS
 naomi2                          // 2001.?? Naomi 2 BIOS
 naomigd                         // 2001.?? Naomi GD-ROM Bios
@@ -28098,8 +28104,8 @@ vf4tuned                        // 2004.12 Virtua Fighter 4 Final Tuned (Rev F)
 vf4tuneda                       // 2004.09 Virtua Fighter 4 Final Tuned (Rev A)
 vf4tunedd                       // 2004.10 Virtua Fighter 4 Final Tuned (Rev D)
 vfurlong                        // 2005.03 Net Select Keiba Victory Furlong
-virnba                          // 2000.02 Virtua NBA
-virnbao                         // 2000.02 Virtua NBA (original)
+virnba                          // 2000.02 Virtua NBA (USA)
+virnbao                         // 2000.02 Virtua NBA
 virnbap                         // 2000.02 Virtua NBA (prototype)
 vonot                           // 2000.06 Virtual-on Oratorio Tangram M.S.B.S. Ver.5.66 2000 Edition
 vs2_2k                          // 1999.08 Virtua Striker 2 version 2000 (Rev C)
@@ -28121,7 +28127,7 @@ wldkicksa                       // 2000.03 World Kicks (Asia, WK2 Ver.A)
 wldkicksj                       // 2000.03 World Kicks PCB (Japan, WKC1 Ver.A)
 wldrider                        // 2001.05 Wild Riders
 wrungp                          // 2001.08 Wave Runner GP
-wrungpo                         // 2001.?? Wave Runner GP (original, Rev A)
+wrungpo                         // 2001.?? Wave Runner GP (USA, Rev A)
 wsbbgd                          // 2001.06 Super Major League / World Series Baseball
 wwfroyal                        // 2000.11 WWF Royal Rumble
 xtrmhnt2                        // 2006.09 Extreme Hunting 2 Tournament Edition
@@ -28341,6 +28347,7 @@ bstarsh                         // 0002 (c) 1990 SNK
 burningf                        // 0018 (c) 1991 SNK
 burningfh                       // 0018 (c) 1991 SNK
 burningfp                       // 0018 (c) 1991 SNK (prototype)
+crswd2bl                        // 0054 bootleg made from CD version
 crsword                         // 0037 (c) 1991 Alpha Denshi Co.
 ct2k3sa                         // bootleg of kof2001
 ct2k3sp                         // bootleg of kof2001
@@ -28360,6 +28367,7 @@ fbfrenzy                        // 0034 (c) 1992 SNK
 fightfev                        // 0060 (c) 1994 Viccom
 fightfeva                       // 0060 (c) 1994 Viccom
 flipshot                        // 0247 (c) 1998 Visco
+froman2b                        // 098 hack - this is not a genuine MVS cart, its a bootleg made from the CD version
 fswords                         // 0187 Korean hack of samsho3
 galaxyfg                        // 0078 (c) 1995 Sunsoft
 ganryu                          // 0252 (c) 1999 Visco
@@ -28434,6 +28442,7 @@ lans2004                        // bootleg of shocktr2
 lastblad                        // 0234 (c) 1997 SNK
 lastbladh                       // 0234 (c) 1997 SNK
 lastbld2                        // 0243 (c) 1998 SNK
+lasthope
 lastsold                        // 0196 Censored Korean release of lastblad
 lbowling                        // 0019 (c) 1990 SNK
 legendos                        // 0029 (c) 1991 SNK
@@ -28504,6 +28513,7 @@ ridhero                         // 0006 (c) 1990 SNK
 ridheroh                        // 0006 (c) 1990 SNK
 roboarmy                        // 0032 (c) 1991 SNK
 rotd                            // 0264 (c) 2002 Evoga
+rotdh                           // 0264 (c) 2002 Evoga
 s1945p                          // 0254 (c) 1999 Psikyo
 samsh5sp                        // 0272 (c) 2004 Playmore
 samsh5sph                       // 0272 (c) 2004 Playmore
@@ -28567,9 +28577,7 @@ whp                             // 0090 (c) 1995 ADK / SNK
 wjammers                        // 0065 (c) 1994 Data East Corporation
 zedblade                        // 0076 (c) 1994 NMK
 zintrckb                        // 0211 hack - this is not a genuine MVS proto, its a bootleg made from the CD version
-crswd2bl                        // 0054 bootleg made from CD version
 zupapa                          // 0070 Zupapa - released in 2001, 1994 prototype probably exists
-lasthope
 
 @source:neopcb.cpp
 kf2k3pcb                        // 0271 (c) 2003 Playmore - JAMMA PCB
@@ -34847,6 +34855,9 @@ tek4052a                        //
 @source:tek410x.cpp
 tek4107a                        //
 tek4109a                        //
+
+@source:tek440x.cpp
+tek4404                         // (c) 1984 Tektronix
 
 @source:tekxp33x.cpp
 tekxp330                        //
