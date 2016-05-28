@@ -164,6 +164,10 @@ void ui_menubar::handle(render_container *current_container)
 		x += width + spacing * 4;
 	}
 
+	// is the natural keyboard enabled?
+	if (ui().use_natural_keyboard() && (ui().machine().phase() == MACHINE_PHASE_RUNNING))
+		 ui().process_natural_keyboard();
+
 	// loop while we have interesting events
 	while(!event_loop())
 	{
