@@ -13,8 +13,8 @@
 
 #pragma once
 
-#ifndef __UI_MENUBAR_H__
-#define __UI_MENUBAR_H__
+#ifndef MAME_FRONTEND_UI_MENUBAR
+#define MAME_FRONTEND_UI_MENUBAR
 
 #include "render.h"
 #include "ui/ui.h"
@@ -27,17 +27,17 @@ namespace ui {
 //  MENU BAR
 //**************************************************************************
 
-class ui_menubar
+class menubar
 {
 public:
-	ui_menubar(::mame_ui_manager &mui);
-	virtual ~ui_menubar();
+	menubar(::mame_ui_manager &mui);
+	virtual ~menubar();
 
 	// menu item
 	class menu_item
 	{
 	public:
-		menu_item(ui_menubar &menubar, const char *text = NULL, menu_item *parent = NULL, bool is_invokable = false, int shortcut = 0);
+		menu_item(menubar &menubar, const char *text = NULL, menu_item *parent = NULL, bool is_invokable = false, int shortcut = 0);
 		virtual ~menu_item();
 
 		// methods
@@ -115,7 +115,7 @@ public:
 
 	private:
 		// private variables
-		ui_menubar &	m_menubar;
+		menubar &	m_menubar;
 		std::string		m_text;
 		int				m_shortcut;
 		std::string		m_shortcut_text;
@@ -165,7 +165,7 @@ private:
 	class invokable_menu_item : public menu_item
 	{
 	public:
-		invokable_menu_item(ui_menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(), _Target &obj, int shortcut)
+		invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(), _Target &obj, int shortcut)
 			: menu_item(menubar, name, parent, true, shortcut), m_callback(callback), m_obj(obj)
 		{
 		}
@@ -181,7 +181,7 @@ private:
 	class arg_invokable_menu_item : public menu_item
 	{
 	public:
-		arg_invokable_menu_item(ui_menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut)
+		arg_invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut)
 			: menu_item(menubar, name, parent, true, shortcut), m_callback(callback), m_obj(obj), m_arg(arg)
 		{
 		}
@@ -198,7 +198,7 @@ private:
 	class arg2_invokable_menu_item : public menu_item
 	{
 	public:
-		arg2_invokable_menu_item(ui_menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut)
+		arg2_invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut)
 			: menu_item(menubar, name, parent, true, shortcut), m_callback(callback), m_obj(obj), m_arg1(arg1), m_arg2(arg2)
 		{
 		}
@@ -262,4 +262,4 @@ private:
 
 } // namespace ui
 
-#endif /* __UI_MENUBAR_H__ */
+#endif /* MAME_FRONTEND_UI_MENUBAR */

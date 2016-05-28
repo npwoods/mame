@@ -1503,7 +1503,7 @@ UINT32 mame_ui_manager::handler_ingame_method(render_container *container, UINT3
 {
 	// no menubar? create it
 	if (m_menubar == NULL)
-		m_menubar = auto_alloc(machine(), ui::ui_emu_menubar(*this));
+		m_menubar = auto_alloc(machine(), ui::emu_menubar(*this));
 
 	// handle!
 	m_menubar->handle(container);

@@ -50,16 +50,16 @@ namespace ui {
 //  MENUBAR IMPLEMENTATION
 //**************************************************************************
 
-std::string ui_emu_menubar::s_softlist_result;
-device_image_interface *ui_emu_menubar::s_softlist_image;
+std::string emu_menubar::s_softlist_result;
+device_image_interface *emu_menubar::s_softlist_image;
 
 
 //-------------------------------------------------
 //  ctor
 //-------------------------------------------------
 
-ui_emu_menubar::ui_emu_menubar(mame_ui_manager &mui)
-	: ui_menubar(mui)
+emu_menubar::emu_menubar(mame_ui_manager &mui)
+	: menubar(mui)
 {
 }
 
@@ -68,7 +68,7 @@ ui_emu_menubar::ui_emu_menubar(mame_ui_manager &mui)
 //  handle
 //-------------------------------------------------
 
-void ui_emu_menubar::handle(render_container *container)
+void emu_menubar::handle(render_container *container)
 {
 	// check to see if we have a softlist selection
 	if (s_softlist_result.length() > 0)
@@ -82,7 +82,7 @@ void ui_emu_menubar::handle(render_container *container)
 	}
 
 	// call inherited method
-	ui_menubar::handle(container);
+	menubar::handle(container);
 }
 
 
@@ -90,7 +90,7 @@ void ui_emu_menubar::handle(render_container *container)
 //  start_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::start_menu(menu *m)
+void emu_menubar::start_menu(menu *m)
 {
 	ui().set_handler(menu::ui_handler, 0);
 	menu::stack_push(std::unique_ptr<menu>(m));
@@ -102,7 +102,7 @@ void ui_emu_menubar::start_menu(menu *m)
 //-------------------------------------------------
 
 template<class _Menu>
-void ui_emu_menubar::start_menu()
+void emu_menubar::start_menu()
 {
 	start_menu(global_alloc_clear<_Menu>(ui(), container()));
 }
@@ -112,7 +112,7 @@ void ui_emu_menubar::start_menu()
 //  menubar_draw_ui_elements
 //-------------------------------------------------
 
-void ui_emu_menubar::menubar_draw_ui_elements()
+void emu_menubar::menubar_draw_ui_elements()
 {
 	// first draw the FPS counter 
 	if (ui().show_fps_counter())
@@ -145,7 +145,7 @@ void ui_emu_menubar::menubar_draw_ui_elements()
 //  menubar_build_menus
 //-------------------------------------------------
 
-void ui_emu_menubar::menubar_build_menus()
+void emu_menubar::menubar_build_menus()
 {
 	// build normal menus
 	build_file_menu();
@@ -164,14 +164,14 @@ void ui_emu_menubar::menubar_build_menus()
 //  build_file_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::build_file_menu()
+void emu_menubar::build_file_menu()
 {
 	std::string menu_text;
 	menu_item &file_menu = root_menu().append(_("File"));
 
 	// show gfx
 	if (ui_gfx_is_relevant(machine()))
-		file_menu.append<ui_emu_menubar, ui_callback, UINT32>(_("Show Graphics/Palette..."), &ui_emu_menubar::set_ui_handler, *this, ui_gfx_ui_handler, (UINT32)machine().paused(), IPT_UI_SHOW_GFX);
+		file_menu.append<emu_menubar, ui_callback, UINT32>(_("Show Graphics/Palette..."), &emu_menubar::set_ui_handler, *this, ui_gfx_ui_handler, (UINT32)machine().paused(), IPT_UI_SHOW_GFX);
 
 	// save screen snapshot
 	file_menu.append(_("Save Screen Snapshot(s)"), &video_manager::save_active_screen_snapshots, machine().video(), IPT_UI_SNAPSHOT);
@@ -181,10 +181,10 @@ void ui_emu_menubar::build_file_menu()
 	record_movie_menu.set_checked(machine().video().is_recording());
 
 	// save state
-	file_menu.append(_("Save State..."), &ui_emu_menubar::set_ui_handler, *this, mame_ui_manager::handler_load_save, (UINT32) LOADSAVE_SAVE, IPT_UI_SAVE_STATE);
+	file_menu.append(_("Save State..."), &emu_menubar::set_ui_handler, *this, mame_ui_manager::handler_load_save, (UINT32) LOADSAVE_SAVE, IPT_UI_SAVE_STATE);
 
 	// load state
-	file_menu.append(_("Load State..."), &ui_emu_menubar::set_ui_handler, *this, mame_ui_manager::handler_load_save, (UINT32) LOADSAVE_LOAD, IPT_UI_LOAD_STATE);
+	file_menu.append(_("Load State..."), &emu_menubar::set_ui_handler, *this, mame_ui_manager::handler_load_save, (UINT32) LOADSAVE_LOAD, IPT_UI_LOAD_STATE);
 
 	// separator
 	file_menu.append_separator();
@@ -209,7 +209,7 @@ void ui_emu_menubar::build_file_menu()
 	file_menu.append_separator();
 
 	// select new game
-	file_menu.append(_("Select New Machine..."), &ui_emu_menubar::select_new_game, *this);
+	file_menu.append(_("Select New Machine..."), &emu_menubar::select_new_game, *this);
 
 	// exit
 	file_menu.append(_("Exit"), &mame_ui_manager::request_quit, ui(), IPT_UI_CANCEL);
@@ -220,7 +220,7 @@ void ui_emu_menubar::build_file_menu()
 //  build_images_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::build_images_menu()
+void emu_menubar::build_images_menu()
 {
 	// add the root "Images" menu
 	menu_item &images_menu = root_menu().append(_("Images"));
@@ -246,7 +246,7 @@ void ui_emu_menubar::build_images_menu()
 		}
 
 		// load
-		menu.append(_("Load..."), &ui_emu_menubar::load, *this, &image);
+		menu.append(_("Load..."), &emu_menubar::load, *this, &image);
 
 		// unload
 		menu_item &unload_menu = menu.append(_("Unload"), &device_image_interface::unload, image);
@@ -256,7 +256,7 @@ void ui_emu_menubar::build_images_menu()
 		cassette_image_device *cassette = dynamic_cast<cassette_image_device *>(&image);
 		if (cassette != NULL)
 		{
-			menu_item &control_menu = menu.append(_("Tape Control..."), &ui_emu_menubar::tape_control, *this, cassette);
+			menu_item &control_menu = menu.append(_("Tape Control..."), &emu_menubar::tape_control, *this, cassette);
 			control_menu.set_enabled(is_loaded);
 		}
 
@@ -264,7 +264,7 @@ void ui_emu_menubar::build_images_menu()
 		bitbanger_device *bitbanger = dynamic_cast<bitbanger_device *>(&image);
 		if (bitbanger != NULL)
 		{
-			menu_item &control_menu = menu.append(_("Bitbanger Control..."), &ui_emu_menubar::bitbanger_control, *this, bitbanger);
+			menu_item &control_menu = menu.append(_("Bitbanger Control..."), &emu_menubar::bitbanger_control, *this, bitbanger);
 			control_menu.set_enabled(is_loaded);
 		}
 	}
@@ -275,7 +275,7 @@ void ui_emu_menubar::build_images_menu()
 //  build_software_list_menus
 //-------------------------------------------------
 
-bool ui_emu_menubar::build_software_list_menus(menu_item &menu, device_image_interface *image)
+bool emu_menubar::build_software_list_menus(menu_item &menu, device_image_interface *image)
 {
 	int item_count = 0;
 	menu_item *last_menu_item = NULL;
@@ -291,7 +291,7 @@ bool ui_emu_menubar::build_software_list_menus(menu_item &menu, device_image_int
 			if ((swlist.list_type() == types[typenum]) && is_softlist_relevant(&swlist, image->image_interface(), description))
 			{
 				// we've found a softlist; append the menu item
-				last_menu_item = &menu.append(description.c_str(), &ui_emu_menubar::select_from_software_list, *this, image, &swlist);
+				last_menu_item = &menu.append(description.c_str(), &emu_menubar::select_from_software_list, *this, image, &swlist);
 				item_count++;
 			}
 		}
@@ -309,7 +309,7 @@ bool ui_emu_menubar::build_software_list_menus(menu_item &menu, device_image_int
 //  build_options_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::build_options_menu()
+void emu_menubar::build_options_menu()
 {
 	std::string menu_text;
 	menu_item &options_menu = root_menu().append(_("Options"));
@@ -329,7 +329,7 @@ void ui_emu_menubar::build_options_menu()
 			item = menu_text.c_str();
 		}
 
-		menu_item &menu = throttle_menu.append(item, &ui_emu_menubar::set_throttle_rate, *this, throttle_rates[i]);
+		menu_item &menu = throttle_menu.append(item, &emu_menubar::set_throttle_rate, *this, throttle_rates[i]);
 		menu.set_checked(current_throttle_rate == throttle_rates[i]);
 	}
 
@@ -392,17 +392,17 @@ void ui_emu_menubar::build_options_menu()
 	// slot devices
 	slot_interface_iterator slotiter(machine().root_device());
 	if (slotiter.first() != NULL)
-		options_menu.append<ui_emu_menubar>(_("Slot Devices..."), &ui_emu_menubar::start_menu<menu_slot_devices>, *this);
+		options_menu.append<emu_menubar>(_("Slot Devices..."), &emu_menubar::start_menu<menu_slot_devices>, *this);
 
 	// barcode reader
 	barcode_reader_device_iterator bcriter(machine().root_device());
 	if (bcriter.first() != NULL)
-		options_menu.append<ui_emu_menubar>(_("Barcode Reader..."), &ui_emu_menubar::barcode_reader_control, *this);
+		options_menu.append<emu_menubar>(_("Barcode Reader..."), &emu_menubar::barcode_reader_control, *this);
 		
 	// network devices
 	network_interface_iterator netiter(machine().root_device());
 	if (netiter.first() != NULL)
-		options_menu.append<ui_emu_menubar>(_("Network Devices..."), &ui_emu_menubar::start_menu<menu_network_devices>, *this);
+		options_menu.append<emu_menubar>(_("Network Devices..."), &emu_menubar::start_menu<menu_network_devices>, *this);
 
 	// keyboard
 	if (machine().ioport().has_keyboard() && machine().ioport().natkeyboard().can_post())
@@ -414,14 +414,14 @@ void ui_emu_menubar::build_options_menu()
 
 	// crosshair options
 	if (machine().crosshair().get_usage())
-		options_menu.append<ui_emu_menubar>(_("Crosshair Options..."), &ui_emu_menubar::start_menu<menu_crosshair>, *this);
+		options_menu.append<emu_menubar>(_("Crosshair Options..."), &emu_menubar::start_menu<menu_crosshair>, *this);
 
 	// cheat
 	if (machine().options().cheat() && mame_machine_manager::instance()->cheat().entries().count() > 0)
 	{
 		options_menu.append_separator();
 		options_menu.append(_("Cheats enabled"), &cheat_manager::set_enable, &cheat_manager::enabled, mame_machine_manager::instance()->cheat(), IPT_UI_TOGGLE_CHEAT);
-		options_menu.append<ui_emu_menubar>(_("Cheat..."), &ui_emu_menubar::start_menu<menu_cheat>, *this);
+		options_menu.append<emu_menubar>(_("Cheat..."), &emu_menubar::start_menu<menu_cheat>, *this);
 	}
 }
 
@@ -430,7 +430,7 @@ void ui_emu_menubar::build_options_menu()
 //  build_video_target_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::build_video_target_menu(menu_item &target_menu, render_target &target)
+void emu_menubar::build_video_target_menu(menu_item &target_menu, render_target &target)
 {
 	std::string tempstring;
 	const char *view_name;
@@ -482,38 +482,38 @@ void ui_emu_menubar::build_video_target_menu(menu_item &target_menu, render_targ
 //  build_settings_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::build_settings_menu()
+void emu_menubar::build_settings_menu()
 {
 	std::string menu_text;
 	menu_item &settings_menu = root_menu().append(_("Settings"));
 
 	// general input
 	// TODO - BREAK THIS APART?
-	settings_menu.append<ui_emu_menubar>(_("General Input..."), &ui_emu_menubar::start_menu<menu_input_groups>, *this);
+	settings_menu.append<emu_menubar>(_("General Input..."), &emu_menubar::start_menu<menu_input_groups>, *this);
 
 	// game input
-	settings_menu.append<ui_emu_menubar>(_("Machine Input"), &ui_emu_menubar::start_menu<menu_input_specific>, *this);
+	settings_menu.append<emu_menubar>(_("Machine Input"), &emu_menubar::start_menu<menu_input_specific>, *this);
 
 	// analog controls
 	if (machine().ioport().has_analog())
-		settings_menu.append<ui_emu_menubar>(_("Analog Controls..."), &ui_emu_menubar::start_menu<menu_analog>, *this);
+		settings_menu.append<emu_menubar>(_("Analog Controls..."), &emu_menubar::start_menu<menu_analog>, *this);
 
 	// dip switches
 	if (machine().ioport().has_dips())
-		settings_menu.append<ui_emu_menubar>(_("Dip Switches..."), &ui_emu_menubar::start_menu<menu_settings_dip_switches>, *this);
+		settings_menu.append<emu_menubar>(_("Dip Switches..."), &emu_menubar::start_menu<menu_settings_dip_switches>, *this);
 
 	// driver configuration
 	if (machine().ioport().has_configs())
 	{
-		settings_menu.append<ui_emu_menubar>(_("Machine Configuration..."), &ui_emu_menubar::start_menu<menu_settings_driver_config>, *this);
+		settings_menu.append<emu_menubar>(_("Machine Configuration..."), &emu_menubar::start_menu<menu_settings_driver_config>, *this);
 	}
 
 	// bios selection
 	if (machine().ioport().has_bioses())
-		settings_menu.append<ui_emu_menubar>(_("Bios Selection..."), &ui_emu_menubar::start_menu<menu_bios_selection>, *this);
+		settings_menu.append<emu_menubar>(_("Bios Selection..."), &emu_menubar::start_menu<menu_bios_selection>, *this);
 
 	// sliders
-	settings_menu.append<ui_emu_menubar>(_("Sliders..."), &ui_emu_menubar::start_menu<menu_sliders>, *this, IPT_UI_ON_SCREEN_DISPLAY);
+	settings_menu.append<emu_menubar>(_("Sliders..."), &emu_menubar::start_menu<menu_sliders>, *this, IPT_UI_ON_SCREEN_DISPLAY);
 }
 
 
@@ -521,21 +521,21 @@ void ui_emu_menubar::build_settings_menu()
 //  build_help_menu
 //-------------------------------------------------
 
-void ui_emu_menubar::build_help_menu()
+void emu_menubar::build_help_menu()
 {
 	std::string menu_text;
 	menu_item &help_menu = root_menu().append(_("Help"));
 
 	// bookkeeping info
-	help_menu.append<ui_emu_menubar>(_("Bookkeeping info..."), &ui_emu_menubar::start_menu<menu_bookkeeping>, *this);
+	help_menu.append<emu_menubar>(_("Bookkeeping info..."), &emu_menubar::start_menu<menu_bookkeeping>, *this);
 
 	// game info
-	help_menu.append<ui_emu_menubar>(_("Machine Information..."), &ui_emu_menubar::start_menu<menu_game_info>, *this);
+	help_menu.append<emu_menubar>(_("Machine Information..."), &emu_menubar::start_menu<menu_game_info>, *this);
 
 	// image information
 	image_interface_iterator imgiter(machine().root_device());
 	if (imgiter.first() != NULL)
-		help_menu.append<ui_emu_menubar>(_("Image Information..."), &ui_emu_menubar::start_menu<menu_image_info>, *this);
+		help_menu.append<emu_menubar>(_("Image Information..."), &emu_menubar::start_menu<menu_image_info>, *this);
 }
 
 
@@ -543,7 +543,7 @@ void ui_emu_menubar::build_help_menu()
 //  is_softlist_relevant
 //-------------------------------------------------
 
-bool ui_emu_menubar::is_softlist_relevant(software_list_device *swlist, const char *interface, std::string &list_description)
+bool emu_menubar::is_softlist_relevant(software_list_device *swlist, const char *interface, std::string &list_description)
 {
 	bool result = false;
 
@@ -566,7 +566,7 @@ bool ui_emu_menubar::is_softlist_relevant(software_list_device *swlist, const ch
 //  set_ui_handler
 //-------------------------------------------------
 
-void ui_emu_menubar::set_ui_handler(ui_callback callback, UINT32 param)
+void emu_menubar::set_ui_handler(ui_callback callback, UINT32 param)
 {
 	// first pause
 	machine().pause();
@@ -580,7 +580,7 @@ void ui_emu_menubar::set_ui_handler(ui_callback callback, UINT32 param)
 //  select_new_game
 //-------------------------------------------------
 
-void ui_emu_menubar::select_new_game()
+void emu_menubar::select_new_game()
 {
 	start_menu(global_alloc_clear<menu_select_game>(ui(), container(), machine().system().name));
 }
@@ -590,7 +590,7 @@ void ui_emu_menubar::select_new_game()
 //  select_from_software_list
 //-------------------------------------------------
 
-void ui_emu_menubar::select_from_software_list(device_image_interface *image, software_list_device *swlist)
+void emu_menubar::select_from_software_list(device_image_interface *image, software_list_device *swlist)
 {
 	s_softlist_image = image;
 	start_menu(global_alloc_clear<menu_software_list>(ui(), container(), swlist, image->image_interface(), s_softlist_result));
@@ -601,7 +601,7 @@ void ui_emu_menubar::select_from_software_list(device_image_interface *image, so
 //  tape_control
 //-------------------------------------------------
 
-void ui_emu_menubar::tape_control(cassette_image_device *image)
+void emu_menubar::tape_control(cassette_image_device *image)
 {
 	start_menu(global_alloc_clear<menu_tape_control>(ui(), container(), image));
 }
@@ -611,7 +611,7 @@ void ui_emu_menubar::tape_control(cassette_image_device *image)
 //  bitbanger_control
 //-------------------------------------------------
 
-void ui_emu_menubar::bitbanger_control(bitbanger_device *image)
+void emu_menubar::bitbanger_control(bitbanger_device *image)
 {
 	start_menu(global_alloc_clear<ui_menu_bitbanger_control>(ui(), container(), image));
 }
@@ -621,7 +621,7 @@ void ui_emu_menubar::bitbanger_control(bitbanger_device *image)
 //  barcode_reader_control
 //-------------------------------------------------
 
-void ui_emu_menubar::barcode_reader_control()
+void emu_menubar::barcode_reader_control()
 {
 	start_menu(global_alloc_clear<menu_barcode_reader>(ui(), container(), nullptr));
 }
@@ -631,7 +631,7 @@ void ui_emu_menubar::barcode_reader_control()
 //  load
 //-------------------------------------------------
 
-void ui_emu_menubar::load(device_image_interface *image)
+void emu_menubar::load(device_image_interface *image)
 {
 	start_menu(menu_file_manager::create_device_menu(ui(), container(), image));
 }
@@ -641,7 +641,7 @@ void ui_emu_menubar::load(device_image_interface *image)
 //  has_images
 //-------------------------------------------------
 
-bool ui_emu_menubar::has_images()
+bool emu_menubar::has_images()
 {
 	image_interface_iterator iter(machine().root_device());
 	return iter.first() != NULL;
@@ -652,7 +652,7 @@ bool ui_emu_menubar::has_images()
 //  set_throttle_rate
 //-------------------------------------------------
 
-void ui_emu_menubar::set_throttle_rate(float throttle_rate)
+void emu_menubar::set_throttle_rate(float throttle_rate)
 {
 	machine().video().set_throttled(throttle_rate != 0.0);
 	if (throttle_rate != 0.0)

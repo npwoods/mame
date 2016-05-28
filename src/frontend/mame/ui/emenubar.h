@@ -11,8 +11,8 @@
 
 #pragma once
 
-#ifndef __UI_EMENUBAR_H__
-#define __UI_EMENUBAR_H__
+#ifndef MAME_FRONTEND_UI_EMENUBAR
+#define MAME_FRONTEND_UI_EMENUBAR
 
 #include "ui/menubar.h"
 #include "imagedev/cassette.h"
@@ -22,10 +22,10 @@ namespace ui {
 
 class menu;
 
-class ui_emu_menubar : public ui_menubar
+class emu_menubar : public menubar
 {
 public:
-	ui_emu_menubar(::mame_ui_manager &mui);
+	emu_menubar(::mame_ui_manager &mui);
 
 	virtual void handle(render_container *container) override;
 
@@ -67,4 +67,4 @@ private:
 
 } // namespace ui
 
-#endif // __UI_EMENUBAR_H__
+#endif // MAME_FRONTEND_UI_EMENUBAR

@@ -57,7 +57,7 @@ private:
 //  ctor
 //-------------------------------------------------
 
-ui_menubar::ui_menubar(mame_ui_manager &mui)
+menubar::menubar(mame_ui_manager &mui)
 	: m_ui(mui), m_menus(*this)
 {
 	m_container = NULL;
@@ -78,7 +78,7 @@ ui_menubar::ui_menubar(mame_ui_manager &mui)
 //  dtor
 //-------------------------------------------------
 
-ui_menubar::~ui_menubar()
+menubar::~menubar()
 {
 }
 
@@ -87,7 +87,7 @@ ui_menubar::~ui_menubar()
 //	reset
 //-------------------------------------------------
 
-void ui_menubar::reset()
+void menubar::reset()
 {
 }
 
@@ -96,7 +96,7 @@ void ui_menubar::reset()
 //  input_pressed_safe
 //-------------------------------------------------
 
-bool ui_menubar::input_pressed_safe(int key)
+bool menubar::input_pressed_safe(int key)
 {
 	// TODO - NEED TO IMPLEMENT
 	//return (key != IPT_INVALID) && ui().input_pressed(key);
@@ -108,7 +108,7 @@ bool ui_menubar::input_pressed_safe(int key)
 //  handle
 //-------------------------------------------------
 
-void ui_menubar::handle(render_container *current_container)
+void menubar::handle(render_container *current_container)
 {
 	m_container = current_container;
 
@@ -181,7 +181,7 @@ void ui_menubar::handle(render_container *current_container)
 //  event_loop
 //-------------------------------------------------
 
-bool ui_menubar::event_loop()
+bool menubar::event_loop()
 {
 	bool done = false;
 
@@ -267,7 +267,7 @@ bool ui_menubar::event_loop()
 //  poll_navigation_keys
 //-------------------------------------------------
 
-bool ui_menubar::poll_navigation_keys()
+bool menubar::poll_navigation_keys()
 {
 	int code_previous_menu = IPT_INVALID;
 	int code_next_menu = IPT_INVALID;
@@ -343,7 +343,7 @@ bool ui_menubar::poll_navigation_keys()
 //  poll_shortcut_keys
 //-------------------------------------------------
 
-bool ui_menubar::poll_shortcut_keys(bool swallow)
+bool menubar::poll_shortcut_keys(bool swallow)
 {
 	// loop through all shortcut items
 	for (menu_item *item = m_shortcuted_menu_items; item != NULL; item = item->next_with_shortcut())
@@ -366,7 +366,7 @@ bool ui_menubar::poll_shortcut_keys(bool swallow)
 //  toggle_selection
 //-------------------------------------------------
 
-void ui_menubar::toggle_selection()
+void menubar::toggle_selection()
 {
 	m_selected_item = m_selected_item != NULL
 		? NULL
@@ -378,7 +378,7 @@ void ui_menubar::toggle_selection()
 //  invoke
 //-------------------------------------------------
 
-void ui_menubar::invoke(menu_item *menu)
+void menubar::invoke(menu_item *menu)
 {
 	// first, we're ending the menu; pop us off first
 	ui().set_handler(NULL, 0);
@@ -392,7 +392,7 @@ void ui_menubar::invoke(menu_item *menu)
 //  walk_selection_previous
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_previous()
+bool menubar::walk_selection_previous()
 {
 	if (m_selected_item)
 	{
@@ -416,7 +416,7 @@ bool ui_menubar::walk_selection_previous()
 //  walk_selection_next
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_next()
+bool menubar::walk_selection_next()
 {
 	if (m_selected_item)
 	{
@@ -440,7 +440,7 @@ bool ui_menubar::walk_selection_next()
 //  walk_selection_child
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_child()
+bool menubar::walk_selection_child()
 {
 	bool result = false;
 	if (m_selected_item && m_selected_item->child())
@@ -456,7 +456,7 @@ bool ui_menubar::walk_selection_child()
 //  walk_selection_parent
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_parent()
+bool menubar::walk_selection_parent()
 {
 	bool result = false;
 	if (m_selected_item && m_selected_item->parent() && m_selected_item->parent() != &m_menus)
@@ -472,7 +472,7 @@ bool ui_menubar::walk_selection_parent()
 //  walk_selection_escape
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_escape()
+bool menubar::walk_selection_escape()
 {
 	bool result = walk_selection_parent();
 
@@ -490,7 +490,7 @@ bool ui_menubar::walk_selection_escape()
 //  walk_selection_previous_sub_menu
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_previous_sub_menu()
+bool menubar::walk_selection_previous_sub_menu()
 {
 	while(walk_selection_parent())
 		;
@@ -505,7 +505,7 @@ bool ui_menubar::walk_selection_previous_sub_menu()
 //  walk_selection_next_sub_menu
 //-------------------------------------------------
 
-bool ui_menubar::walk_selection_next_sub_menu()
+bool menubar::walk_selection_next_sub_menu()
 {
 	while(walk_selection_parent())
 		;
@@ -520,7 +520,7 @@ bool ui_menubar::walk_selection_next_sub_menu()
 //  draw_child_menu
 //-------------------------------------------------
 
-void ui_menubar::draw_child_menu(menu_item *menu, float x, float y)
+void menubar::draw_child_menu(menu_item *menu, float x, float y)
 {
 	float text_height = ui().get_line_height();
 	float separator_height = text_height * SEPARATOR_HEIGHT;
@@ -625,7 +625,7 @@ void ui_menubar::draw_child_menu(menu_item *menu, float x, float y)
 //  is_child_menu_visible
 //-------------------------------------------------
 
-bool ui_menubar::is_child_menu_visible(menu_item *menu) const
+bool menubar::is_child_menu_visible(menu_item *menu) const
 {
 	menu_item *current_menu = m_active_item ? m_active_item : m_selected_item;
 	return current_menu && current_menu->is_child_of(menu);
@@ -636,7 +636,7 @@ bool ui_menubar::is_child_menu_visible(menu_item *menu) const
 //  draw_menu_item_text
 //-------------------------------------------------
 
-void ui_menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, float y1, bool decorations, const float *column_widths)
+void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, float y1, bool decorations, const float *column_widths)
 {
 	// set our area
 	mi->set_area(x0, y0, x1, y1);
@@ -722,7 +722,7 @@ void ui_menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1
 //  find_mouse
 //-------------------------------------------------
 
-bool ui_menubar::find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button)
+bool menubar::find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button)
 {
 	bool result = false;
 	mouse_x = -1;
@@ -744,7 +744,7 @@ bool ui_menubar::find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button)
 //  get_menubar_visibility
 //-------------------------------------------------
 
-ui_menubar::menubar_visibility_t ui_menubar::get_menubar_visibility()
+menubar::menubar_visibility_t menubar::get_menubar_visibility()
 {
 	menubar_visibility_t result;
 
@@ -771,7 +771,7 @@ ui_menubar::menubar_visibility_t ui_menubar::get_menubar_visibility()
 //  adjust_color
 //-------------------------------------------------
 
-rgb_t ui_menubar::adjust_color(rgb_t color)
+rgb_t menubar::adjust_color(rgb_t color)
 {
 	switch(m_menubar_visibility)
 	{
@@ -804,7 +804,7 @@ rgb_t ui_menubar::adjust_color(rgb_t color)
 //  menu_item::ctor
 //-------------------------------------------------
 
-ui_menubar::menu_item::menu_item(ui_menubar &menubar, const char *text, ui_menubar::menu_item *parent, bool is_invokable, int shortcut)
+menubar::menu_item::menu_item(menubar &menubar, const char *text, menubar::menu_item *parent, bool is_invokable, int shortcut)
 	: m_menubar(menubar)
 {
 	if (text != NULL)
@@ -828,7 +828,7 @@ ui_menubar::menu_item::menu_item(ui_menubar &menubar, const char *text, ui_menub
 //  menu_item::dtor
 //-------------------------------------------------
 
-ui_menubar::menu_item::~menu_item()
+menubar::menu_item::~menu_item()
 {
 	menu_item *mi = m_first_child;
 	while (mi)
@@ -844,7 +844,7 @@ ui_menubar::menu_item::~menu_item()
 //  menu_item::set_area
 //-------------------------------------------------
 
-void ui_menubar::menu_item::set_area(float x0, float y0, float x1, float y1)
+void menubar::menu_item::set_area(float x0, float y0, float x1, float y1)
 {
 	m_x0 = x0;
 	m_y0 = y0;
@@ -857,7 +857,7 @@ void ui_menubar::menu_item::set_area(float x0, float y0, float x1, float y1)
 //  menu_item::clear_area_recursive
 //-------------------------------------------------
 
-void ui_menubar::menu_item::clear_area_recursive()
+void menubar::menu_item::clear_area_recursive()
 {
 	clear_area();
 	if (m_first_child)
@@ -871,7 +871,7 @@ void ui_menubar::menu_item::clear_area_recursive()
 //  menu_item::initialize
 //-------------------------------------------------
 
-void ui_menubar::menu_item::initialize(ui_menubar::menu_item &child)
+void menubar::menu_item::initialize(menubar::menu_item &child)
 {
 	// link this back to the previous item
 	child.m_previous = m_last_child;
@@ -898,7 +898,7 @@ void ui_menubar::menu_item::initialize(ui_menubar::menu_item &child)
 //  menu_item::append
 //-------------------------------------------------
 
-ui_menubar::menu_item &ui_menubar::menu_item::append(const char *text)
+menubar::menu_item &menubar::menu_item::append(const char *text)
 {
 	menu_item *child = new menu_item(m_menubar, text, this);
 	initialize(*child);
@@ -910,7 +910,7 @@ ui_menubar::menu_item &ui_menubar::menu_item::append(const char *text)
 //  menu_item::append_separator
 //-------------------------------------------------
 
-void ui_menubar::menu_item::append_separator()
+void menubar::menu_item::append_separator()
 {
 	menu_item &separator = append("-");
 	separator.set_enabled(false);
@@ -922,7 +922,7 @@ void ui_menubar::menu_item::append_separator()
 //  menu_item::find_point
 //-------------------------------------------------
 
-ui_menubar::menu_item *ui_menubar::menu_item::find_point(float x, float y)
+menubar::menu_item *menubar::menu_item::find_point(float x, float y)
 {
 	menu_item *result = NULL;
 
@@ -941,7 +941,7 @@ ui_menubar::menu_item *ui_menubar::menu_item::find_point(float x, float y)
 //  menu_item::find_child
 //-------------------------------------------------
 
-ui_menubar::menu_item &ui_menubar::menu_item::find_child(const char *target)
+menubar::menu_item &menubar::menu_item::find_child(const char *target)
 {
 	menu_item *item = find_child_internal(target);
 	assert(item != NULL);
@@ -953,7 +953,7 @@ ui_menubar::menu_item &ui_menubar::menu_item::find_child(const char *target)
 //  menu_item::find_child_internal
 //-------------------------------------------------
 
-ui_menubar::menu_item *ui_menubar::menu_item::find_child_internal(const char *target)
+menubar::menu_item *menubar::menu_item::find_child_internal(const char *target)
 {
 	if (!strcmp(target, text().c_str()))
 		return this;
@@ -972,7 +972,7 @@ ui_menubar::menu_item *ui_menubar::menu_item::find_child_internal(const char *ta
 //  menu_item::shortcut_text
 //-------------------------------------------------
 
-const char *ui_menubar::menu_item::shortcut_text()
+const char *menubar::menu_item::shortcut_text()
 {	
 	// do we have to calculate this stuff?
 	if (m_shortcut_text_width < 0)
@@ -1009,7 +1009,7 @@ const char *ui_menubar::menu_item::shortcut_text()
 //  menu_item::shortcut_text_width
 //-------------------------------------------------
 
-float ui_menubar::menu_item::shortcut_text_width()
+float menubar::menu_item::shortcut_text_width()
 {
 	// force a calculation, if we didn't have one
 	shortcut_text();
@@ -1023,7 +1023,7 @@ float ui_menubar::menu_item::shortcut_text_width()
 //  menu_item::sensible_seq_name
 //-------------------------------------------------
 
-void ui_menubar::menu_item::sensible_seq_name(std::string &text, const input_seq &seq)
+void menubar::menu_item::sensible_seq_name(std::string &text, const input_seq &seq)
 {
 	// special case; we don't want 'None'
 	if (seq[0] == input_seq::end_code)
@@ -1037,7 +1037,7 @@ void ui_menubar::menu_item::sensible_seq_name(std::string &text, const input_seq
 //  menu_item::is_child_of
 //-------------------------------------------------
 
-bool ui_menubar::menu_item::is_child_of(ui_menubar::menu_item *that) const
+bool menubar::menu_item::is_child_of(menubar::menu_item *that) const
 {
 	for(menu_item *mi = m_parent; mi != NULL; mi = mi->m_parent)
 	{
@@ -1052,7 +1052,7 @@ bool ui_menubar::menu_item::is_child_of(ui_menubar::menu_item *that) const
 //  menu_item::invoke
 //-------------------------------------------------
 
-void ui_menubar::menu_item::invoke()
+void menubar::menu_item::invoke()
 {
 	// do nothing
 }

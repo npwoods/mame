@@ -25,7 +25,7 @@
 namespace ui {
 
 class menu_item;
-class ui_menubar;
+class menubar;
 
 } // namespace ui
 
@@ -221,7 +221,7 @@ private:
 	std::string &warnings_string(std::string &buffer);
 
 	// UI handlers
-	ui::ui_menubar *		m_menubar;
+	ui::menubar *		m_menubar;
 
 	// UI handlers
 	static UINT32 handler_messagebox(mame_ui_manager &mui, render_container *container, UINT32 state);
