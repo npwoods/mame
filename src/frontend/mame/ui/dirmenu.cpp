@@ -314,7 +314,7 @@ void ui_menu_add_change_folder::handle()
 			const ui_menu_item &pitem = item[index];
 
 			// go up to the parent path
-			if (!strcmp(pitem.text, ".."))
+			if (!strcmp(pitem.text.c_str(), ".."))
 			{
 				size_t first_sep = m_current_path.find_first_of(PATH_SEPARATOR[0]);
 				size_t last_sep = m_current_path.find_last_of(PATH_SEPARATOR[0]);
@@ -324,7 +324,7 @@ void ui_menu_add_change_folder::handle()
 			else
 			{
 				// if isn't a drive, appends the directory
-				if (strcmp(pitem.subtext, "[DRIVE]") != 0)
+				if (strcmp(pitem.subtext.c_str(), "[DRIVE]") != 0)
 				{
 					if (m_current_path[m_current_path.length() - 1] == PATH_SEPARATOR[0])
 						m_current_path.append(pitem.text);
@@ -410,7 +410,7 @@ void ui_menu_add_change_folder::handle()
 						int match = 0;
 						for (int i = 0; i < ARRAY_LENGTH(m_search); i++)
 						{
-							if (core_strnicmp(item[entry].text, m_search, i) == 0)
+							if (core_strnicmp(item[entry].text.c_str(), m_search, i) == 0)
 								match = i;
 						}
 
@@ -429,7 +429,7 @@ void ui_menu_add_change_folder::handle()
 						int match = 0;
 						for (int i = 0; i < ARRAY_LENGTH(m_search); i++)
 						{
-							if (core_strnicmp(item[entry].text, m_search, i) == 0)
+							if (core_strnicmp(item[entry].text.c_str(), m_search, i) == 0)
 								match = i;
 						}
 

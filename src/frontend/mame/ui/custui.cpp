@@ -1036,7 +1036,7 @@ void ui_menu_palette_sel::handle()
 	{
 		if (m_event->iptkey == IPT_UI_SELECT)
 		{
-			m_original = rgb_t((UINT32)strtoul(item[selected].subtext, nullptr, 16));
+			m_original = rgb_t((UINT32)strtoul(item[selected].subtext.c_str(), nullptr, 16));
 			ui_menu::menu_stack->parent->reset(UI_MENU_RESET_SELECT_FIRST);
 			ui_menu::stack_pop(machine());
 		}

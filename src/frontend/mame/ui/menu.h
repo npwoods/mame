@@ -103,6 +103,7 @@ public:
 
 	// append a new item to the end of the menu
 	void item_append(const char *text, const char *subtext, UINT32 flags, void *ref, ui_menu_item_type type = ui_menu_item_type::UNKNOWN);
+	void item_append(const std::string &text, const std::string &subtext, UINT32 flags, void *ref, ui_menu_item_type type = ui_menu_item_type::UNKNOWN);
 	void item_append(ui_menu_item item);
 	void item_append(ui_menu_item_type type);
 
@@ -114,9 +115,6 @@ public:
 
 	// allocate temporary memory from the menu's memory pool
 	void *m_pool_alloc(size_t size);
-
-	// make a temporary string copy in the menu's memory pool
-	const char *pool_strdup(const char *string);
 
 	// retrieves the index of the currently selected menu item
 	void *get_selection();

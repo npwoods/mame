@@ -101,7 +101,7 @@ bitmap_argb32 *ui_menu::sw_toolbar_bitmap[UI_TOOLBAR_BUTTONS];
 
 inline bool ui_menu_item::is_selectable() const
 {
-	return ((flags & (MENU_FLAG_MULTILINE | MENU_FLAG_DISABLE)) == 0 && strcmp(text, MENU_SEPARATOR_ITEM) != 0);
+	return ((flags & (MENU_FLAG_MULTILINE | MENU_FLAG_DISABLE)) == 0 && strcmp(text.c_str(), MENU_SEPARATOR_ITEM) != 0);
 }
 
 
@@ -318,6 +318,22 @@ void ui_menu::item_append(ui_menu_item_type type)
 
 void ui_menu::item_append(const char *text, const char *subtext, UINT32 flags, void *ref, ui_menu_item_type type)
 {
+	// need distinct overload because we might get nullptr
+	item_append(
+		std::string(text ? text : ""),
+		std::string(subtext ? subtext : ""),
+		flags,
+		ref,
+		type);
+}
+
+//-------------------------------------------------
+//  item_append - append a new item to the
+//  end of the menu
+//-------------------------------------------------
+
+void ui_menu::item_append(const std::string &text, const std::string &subtext, UINT32 flags, void *ref, ui_menu_item_type type)
+{
 	// only allow multiline as the first item
 	if ((flags & MENU_FLAG_MULTILINE) != 0)
 		assert(item.size() == 1);
@@ -328,8 +344,8 @@ void ui_menu::item_append(const char *text, const char *subtext, UINT32 flags, v
 
 	// allocate a new item and populate it
 	ui_menu_item pitem;
-	pitem.text = (text != nullptr) ? pool_strdup(text) : nullptr;
-	pitem.subtext = (subtext != nullptr) ? pool_strdup(subtext) : nullptr;
+	pitem.text = text;
+	pitem.subtext = subtext;
 	pitem.flags = flags;
 	pitem.ref = ref;
 	pitem.type = type;
@@ -440,17 +456,6 @@ void *ui_menu::m_pool_alloc(size_t size)
 
 
 //-------------------------------------------------
-//  pool_strdup - make a temporary string
-//  copy in the menu's memory pool
-//-------------------------------------------------
-
-const char *ui_menu::pool_strdup(const char *string)
-{
-	return strcpy((char *)m_pool_alloc(strlen(string) + 1), string);
-}
-
-
-//-------------------------------------------------
 //  get_selection - retrieves the index
 //  of the currently selected menu item
 //-------------------------------------------------
@@ -521,11 +526,11 @@ void ui_menu::draw(UINT32 flags, float origx0, float origy0)
 		float total_width;
 
 		// compute width of left hand side
-		total_width = gutter_width + ui().get_string_width(pitem.text) + gutter_width;
+		total_width = gutter_width + ui().get_string_width(pitem.text.c_str()) + gutter_width;
 
 		// add in width of right hand side
-		if (pitem.subtext)
-			total_width += 2.0f * gutter_width + ui().get_string_width(pitem.subtext);
+		if (!pitem.subtext.empty())
+			total_width += 2.0f * gutter_width + ui().get_string_width(pitem.subtext.c_str());
 
 		// track the maximum
 		if (total_width > visible_width)
@@ -648,7 +653,7 @@ void ui_menu::draw(UINT32 flags, float origx0, float origy0)
 			float line_y = visible_top + (float)linenum * line_height;
 			itemnum = top_line + linenum;
 			const ui_menu_item &pitem = item[itemnum];
-			const char *itemtext = pitem.text;
+			const char *itemtext = pitem.text.c_str();
 			rgb_t fgcolor = UI_TEXT_COLOR;
 			rgb_t bgcolor = UI_TEXT_BG_COLOR;
 			rgb_t fgcolor2 = UI_SUBITEM_COLOR;
@@ -715,7 +720,7 @@ void ui_menu::draw(UINT32 flags, float origx0, float origy0)
 				container->add_line(visible_left, line_y + 0.5f * line_height, visible_left + visible_width, line_y + 0.5f * line_height, UI_LINE_WIDTH, UI_BORDER_COLOR, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
 
 			// if we don't have a subitem, just draw the string centered
-			else if (pitem.subtext == nullptr)
+			else if (pitem.subtext.empty())
 			{
 				if (pitem.flags & MENU_FLAG_UI_HEADING)
 				{
@@ -731,7 +736,7 @@ void ui_menu::draw(UINT32 flags, float origx0, float origy0)
 			else
 			{
 				int subitem_invert = pitem.flags & MENU_FLAG_INVERT;
-				const char *subitem_text = pitem.subtext;
+				const char *subitem_text = pitem.subtext.c_str();
 				float item_width, subitem_width;
 
 				// draw the left-side text
@@ -799,7 +804,7 @@ void ui_menu::draw(UINT32 flags, float origx0, float origy0)
 		float target_x, target_y;
 
 		// compute the multi-line target width/height
-		ui().draw_text_full(container, pitem.subtext, 0, 0, visible_width * 0.75f,
+		ui().draw_text_full(container, pitem.subtext.c_str(), 0, 0, visible_width * 0.75f,
 										JUSTIFY_RIGHT, WRAP_WORD, DRAW_NONE, rgb_t::white, rgb_t::black, &target_width, &target_height);
 
 		// determine the target location
@@ -814,7 +819,7 @@ void ui_menu::draw(UINT32 flags, float origx0, float origy0)
 			target_x + target_width + UI_BOX_LR_BORDER,
 			target_y + target_height + UI_BOX_TB_BORDER,
 			subitem_invert ? UI_SELECTED_BG_COLOR : UI_BACKGROUND_COLOR);
-		ui().draw_text_full(container, pitem.subtext, target_x, target_y, target_width,
+		ui().draw_text_full(container, pitem.subtext.c_str(), target_x, target_y, target_width,
 					JUSTIFY_RIGHT, WRAP_WORD, DRAW_NORMAL, UI_SELECTED_COLOR, UI_SELECTED_BG_COLOR, nullptr, nullptr);
 	}
 
@@ -834,8 +839,8 @@ void ui_menu::custom_render(void *selectedref, float top, float bottom, float x,
 
 void ui_menu::draw_text_box()
 {
-	const char *text = item[0].text;
-	const char *backtext = item[1].text;
+	const char *text = item[0].text.c_str();
+	const char *backtext = item[1].text.c_str();
 	float line_height = ui().get_line_height();
 	float lr_arrow_width = 0.4f * line_height * machine().render().ui_aspect();
 	float gutter_width = lr_arrow_width;
@@ -1546,7 +1551,7 @@ void ui_menu::draw_select_game(UINT32 flags)
 		float line_y = visible_top + (float)linenum * line_height;
 		int itemnum = top_line + linenum;
 		const ui_menu_item &pitem = item[itemnum];
-		const char *itemtext = pitem.text;
+		const char *itemtext = pitem.text.c_str();
 		rgb_t fgcolor = UI_TEXT_COLOR;
 		rgb_t bgcolor = UI_TEXT_BG_COLOR;
 		rgb_t fgcolor3 = UI_CLONE_COLOR;
@@ -1606,7 +1611,7 @@ void ui_menu::draw_select_game(UINT32 flags)
 			container->add_line(visible_left, line_y + 0.5f * line_height, visible_left + visible_width, line_y + 0.5f * line_height,
 				UI_LINE_WIDTH, UI_TEXT_COLOR, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
 		// draw the item centered
-		else if (pitem.subtext == nullptr)
+		else if (pitem.subtext.empty())
 		{
 			int item_invert = pitem.flags & MENU_FLAG_INVERT;
 			float space = 0.0f;
@@ -1630,11 +1635,11 @@ void ui_menu::draw_select_game(UINT32 flags)
 		else
 		{
 			int item_invert = pitem.flags & MENU_FLAG_INVERT;
-			const char *subitem_text = pitem.subtext;
+			const char *subitem_text = pitem.subtext.c_str();
 			float item_width, subitem_width;
 
 			// compute right space for subitem
-			ui().draw_text_full(container, subitem_text, effective_left, line_y, ui().get_string_width(pitem.subtext),
+			ui().draw_text_full(container, subitem_text, effective_left, line_y, ui().get_string_width(pitem.subtext.c_str()),
 				JUSTIFY_RIGHT, WRAP_NEVER, DRAW_NONE, item_invert ? fgcolor3 : fgcolor, bgcolor, &subitem_width, nullptr);
 			subitem_width += gutter_width;
 
@@ -1651,7 +1656,7 @@ void ui_menu::draw_select_game(UINT32 flags)
 	for (size_t count = visible_items; count < item.size(); count++)
 	{
 		const ui_menu_item &pitem = item[count];
-		const char *itemtext = pitem.text;
+		const char *itemtext = pitem.text.c_str();
 		float line_x0 = x1 + 0.5f * UI_LINE_WIDTH;
 		float line_y0 = line;
 		float line_x1 = x2 - 0.5f * UI_LINE_WIDTH;
@@ -2638,11 +2643,11 @@ void ui_menu::draw_palette_menu()
 		const ui_menu_item &pitem = item[itemnum];
 
 		// compute width of left hand side
-		float total_width = gutter_width + ui().get_string_width(pitem.text) + gutter_width;
+		float total_width = gutter_width + ui().get_string_width(pitem.text.c_str()) + gutter_width;
 
 		// add in width of right hand side
-		if (pitem.subtext)
-			total_width += 2.0f * gutter_width + ui().get_string_width(pitem.subtext);
+		if (!pitem.subtext.empty())
+			total_width += 2.0f * gutter_width + ui().get_string_width(pitem.subtext.c_str());
 
 		// track the maximum
 		if (total_width > visible_width)
@@ -2713,7 +2718,7 @@ void ui_menu::draw_palette_menu()
 		float line_y = visible_top + (float)linenum * line_height;
 		itemnum = top_line + linenum;
 		const ui_menu_item &pitem = item[itemnum];
-		const char *itemtext = pitem.text;
+		const char *itemtext = pitem.text.c_str();
 		rgb_t fgcolor = UI_TEXT_COLOR;
 		rgb_t bgcolor = UI_TEXT_BG_COLOR;
 		float line_y0 = line_y;
@@ -2774,14 +2779,14 @@ void ui_menu::draw_palette_menu()
 			container->add_line(visible_left, line_y + 0.5f * line_height, visible_left + visible_width, line_y + 0.5f * line_height, UI_LINE_WIDTH, UI_BORDER_COLOR, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
 
 		// if we don't have a subitem, just draw the string centered
-		else if (pitem.subtext == nullptr)
+		else if (pitem.subtext.empty())
 			ui().draw_text_full(container, itemtext, effective_left, line_y, effective_width,
 			JUSTIFY_CENTER, WRAP_TRUNCATE, DRAW_NORMAL, fgcolor, bgcolor, nullptr, nullptr);
 
 		// otherwise, draw the item on the left and the subitem text on the right
 		else
 		{
-			const char *subitem_text = pitem.subtext;
+			const char *subitem_text = pitem.subtext.c_str();
 			rgb_t color = rgb_t((UINT32)strtoul(subitem_text, nullptr, 16));
 
 			// draw the left-side text
@@ -2871,7 +2876,7 @@ void ui_menu::draw_dats_menu()
 		float line_y = visible_top + (float)linenum * line_height;
 		int itemnum = top_line + linenum;
 		const ui_menu_item &pitem = item[itemnum];
-		const char *itemtext = pitem.text;
+		const char *itemtext = pitem.text.c_str();
 		rgb_t fgcolor = UI_TEXT_COLOR;
 		rgb_t bgcolor = UI_TEXT_BG_COLOR;
 		float line_x0 = x1 + 0.5f * UI_LINE_WIDTH;
@@ -2909,7 +2914,7 @@ void ui_menu::draw_dats_menu()
 		}
 
 		// draw dats text
-		else if (pitem.subtext == nullptr)
+		else if (pitem.subtext.empty())
 		{
 			ui().draw_text_full(container, itemtext, effective_left, line_y, effective_width, JUSTIFY_LEFT, WRAP_NEVER,
 				DRAW_NORMAL, fgcolor, bgcolor, nullptr, nullptr);
@@ -2919,7 +2924,7 @@ void ui_menu::draw_dats_menu()
 	for (size_t count = visible_items; count < item.size(); count++)
 	{
 		const ui_menu_item &pitem = item[count];
-		const char *itemtext = pitem.text;
+		const char *itemtext = pitem.text.c_str();
 		float line_x0 = x1 + 0.5f * UI_LINE_WIDTH;
 		float line_y0 = line;
 		float line_x1 = x2 - 0.5f * UI_LINE_WIDTH;
