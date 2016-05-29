@@ -188,9 +188,9 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_CHEAT ";c",                                 "0",         OPTION_BOOLEAN,    "enable cheat subsystem" },
 	{ OPTION_SKIP_GAMEINFO,                              "0",         OPTION_BOOLEAN,    "skip displaying the information screen at startup" },
 	{ OPTION_UI_FONT,                                    "default",   OPTION_STRING,     "specify a font to use" },
-	{ OPTION_UI,                                         "cabinet",   OPTION_STRING,     "type of UI (simple|cabinet)" },
+	{ OPTION_UI,                                         "menus",     OPTION_STRING,     "type of UI (simple|cabinet)" },
 	{ OPTION_RAMSIZE ";ram",                             nullptr,        OPTION_STRING,     "size of RAM (if supported by driver)" },
-	{ OPTION_CONFIRM_QUIT,                               "0",         OPTION_BOOLEAN,    "display confirm quit screen on exit" },
+	{ OPTION_CONFIRM_QUIT,                               "1",         OPTION_BOOLEAN,    "display confirm quit screen on exit" },
 	{ OPTION_UI_MOUSE,                                   "1",         OPTION_BOOLEAN,    "display ui mouse cursor" },
 	{ OPTION_AUTOBOOT_COMMAND ";ab",                     nullptr,        OPTION_STRING,     "command to execute after machine boot" },
 	{ OPTION_AUTOBOOT_DELAY,                             "0",         OPTION_INTEGER,    "timer delay in sec to trigger command execution on autoboot" },
@@ -263,4 +263,12 @@ void emu_options::update_cached_options()
 	m_joystick_contradictory = bool_value(OPTION_JOYSTICK_CONTRADICTORY);
 	m_sleep = bool_value(OPTION_SLEEP);
 	m_refresh_speed = bool_value(OPTION_REFRESHSPEED);
+
+	auto ui_option_string = value(OPTION_UI);
+	if (!strcmp(ui_option_string, "simple"))
+		m_ui = UI_SIMPLE;
+	else if (!strcmp(ui_option_string, "menus"))
+		m_ui = UI_MENUS;
+	else
+		m_ui = UI_CABINET;
 }

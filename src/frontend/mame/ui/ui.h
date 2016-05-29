@@ -227,6 +227,7 @@ private:
 	static UINT32 handler_messagebox(mame_ui_manager &mui, render_container *container, UINT32 state);
 	static UINT32 handler_messagebox_anykey(mame_ui_manager &mui, render_container *container, UINT32 state);
 	static UINT32 handler_ingame(mame_ui_manager &mui, render_container *container, UINT32 state);
+	static UINT32 handler_ingame_old(mame_ui_manager &mui, render_container *container, UINT32 state);
 	static UINT32 handler_confirm_quit(mame_ui_manager &mui, render_container *container, UINT32 state);
 
 	// Method UI handlers
