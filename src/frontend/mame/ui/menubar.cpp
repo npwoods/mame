@@ -93,14 +93,12 @@ void menubar::reset()
 
 
 //-------------------------------------------------
-//  input_pressed_safe
+//  shortcut_key_pressed
 //-------------------------------------------------
 
-bool menubar::input_pressed_safe(int key)
+bool menubar::shortcut_key_pressed(int key)
 {
-	// TODO - NEED TO IMPLEMENT
-	//return (key != IPT_INVALID) && ui().input_pressed(key);
-	return false;
+	return (key != IPT_INVALID) && machine().ui_input().pressed_repeat(key, 0);
 }
 
 
@@ -310,23 +308,23 @@ bool menubar::poll_navigation_keys()
 	}
 
 	bool result = true;
-	if (input_pressed_safe(code_previous_menu))
+	if (shortcut_key_pressed(code_previous_menu))
 		result = walk_selection_previous();
-	else if (input_pressed_safe(code_next_menu))
+	else if (shortcut_key_pressed(code_next_menu))
 		result = walk_selection_next();
-	else if (input_pressed_safe(code_child_menu1) || input_pressed_safe(code_child_menu2))
+	else if (shortcut_key_pressed(code_child_menu1) || shortcut_key_pressed(code_child_menu2))
 		result = walk_selection_child();
-	else if (input_pressed_safe(IPT_UI_CANCEL))
+	else if (shortcut_key_pressed(IPT_UI_CANCEL))
 		result = walk_selection_escape();
-	else if (input_pressed_safe(code_parent_menu))
+	else if (shortcut_key_pressed(code_parent_menu))
 		result = walk_selection_parent();
-	else if (input_pressed_safe(code_previous_sub_menu))
+	else if (shortcut_key_pressed(code_previous_sub_menu))
 		result = walk_selection_previous_sub_menu();
-	else if (input_pressed_safe(code_next_sub_menu))
+	else if (shortcut_key_pressed(code_next_sub_menu))
 		result = walk_selection_next_sub_menu();
-	else if (input_pressed_safe(IPT_UI_CONFIGURE))
+	else if (shortcut_key_pressed(IPT_UI_CONFIGURE))
 		toggle_selection();
-	else if (input_pressed_safe(code_selected))
+	else if (shortcut_key_pressed(code_selected))
 		invoke(m_selected_item);
 	else
 		result = false;	// didn't do anything
@@ -351,7 +349,7 @@ bool menubar::poll_shortcut_keys(bool swallow)
 		assert(item->is_invokable());
 		
 		// did we press this shortcut?
-		if (input_pressed_safe(item->shortcut()) && !swallow)
+		if (shortcut_key_pressed(item->shortcut()) && !swallow)
 		{
 			// this shortcut was pressed and we're not swallowing them; invoke it
 			invoke(item);

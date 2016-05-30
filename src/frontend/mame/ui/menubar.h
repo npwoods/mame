@@ -252,7 +252,7 @@ private:
 	bool event_loop();
 	bool poll_navigation_keys();
 	bool poll_shortcut_keys(bool swallow);
-	bool input_pressed_safe(int key);
+	bool shortcut_key_pressed(int key);
 	void toggle_selection();
 	void invoke(menu_item *menu);
 	bool find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button);
