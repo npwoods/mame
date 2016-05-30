@@ -57,7 +57,10 @@ private:
 	void barcode_reader_control();
 	void load(device_image_interface *image);
 	bool has_images();
+	void show_fps_temp();
 	void set_throttle_rate(float throttle_rate);
+	void set_warp_mode(bool warp_mode);
+	bool warp_mode() const;
 	void start_menu(menu *menu);
 
 	// template methods

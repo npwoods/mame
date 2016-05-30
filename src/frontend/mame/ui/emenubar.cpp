@@ -315,23 +315,16 @@ void emu_menubar::build_options_menu()
 	menu_item &options_menu = root_menu().append(_("Options"));
 
 	// throttle
-	float throttle_rates[] = { 10.0f, 5.0f, 2.0f, 1.0f, 0.5f, 0.2f, 0.1f, 0.0f };
-	float current_throttle_rate = machine().video().throttled()
-		? machine().video().throttle_rate()
-		: 0.0f;
+	static const float throttle_rates[] = { 10.0f, 5.0f, 2.0f, 1.0f, 0.5f, 0.2f, 0.1f };
 	menu_item &throttle_menu = options_menu.append(_("Throttle"));
 	for (int i = 0; i < ARRAY_LENGTH(throttle_rates); i++)
 	{
-		const char *item = _("Unthrottled");
-		if (throttle_rates[i] != 0)
-		{
-			menu_text = string_format("%d%%", (int) (throttle_rates[i] * 100));
-			item = menu_text.c_str();
-		}
-
-		menu_item &menu = throttle_menu.append(item, &emu_menubar::set_throttle_rate, *this, throttle_rates[i]);
-		menu.set_checked(current_throttle_rate == throttle_rates[i]);
+		menu_text = string_format("%d%%", (int) (throttle_rates[i] * 100));
+		menu_item &menu = throttle_menu.append(menu_text.c_str(), &emu_menubar::set_throttle_rate, *this, throttle_rates[i]);
+		menu.set_checked(machine().video().throttle_rate() == throttle_rates[i]);
 	}
+	throttle_menu.append_separator();
+	throttle_menu.append("Warp Mode", &emu_menubar::set_warp_mode, &emu_menubar::warp_mode, *this, IPT_UI_THROTTLE);
 
 	// frame skip
 	menu_item &frameskip_menu = options_menu.append(_("Frame Skip"));
@@ -649,14 +642,47 @@ bool emu_menubar::has_images()
 
 
 //-------------------------------------------------
+//  show_fps_temp
+//-------------------------------------------------
+
+void emu_menubar::show_fps_temp()
+{
+	ui().show_fps_temp(2.0);
+}
+
+
+//-------------------------------------------------
 //  set_throttle_rate
 //-------------------------------------------------
 
 void emu_menubar::set_throttle_rate(float throttle_rate)
 {
-	machine().video().set_throttled(throttle_rate != 0.0);
-	if (throttle_rate != 0.0)
-		machine().video().set_throttle_rate(throttle_rate);
+	show_fps_temp();
+	machine().video().set_throttle_rate(throttle_rate);
 }
+
+
+//-------------------------------------------------
+//  set_warp_mode
+//-------------------------------------------------
+
+void emu_menubar::set_warp_mode(bool warp_mode)
+{
+	// "warp mode" is the opposite of throttle
+	show_fps_temp();
+	machine().video().set_throttled(!warp_mode);
+}
+
+
+//-------------------------------------------------
+//  warp_mode
+//-------------------------------------------------
+
+bool emu_menubar::warp_mode() const
+{
+	// "warp mode" is the opposite of throttle
+	return !machine().video().throttled();
+}
+
 
 } // namespace ui
