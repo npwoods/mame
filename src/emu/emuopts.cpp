@@ -219,6 +219,7 @@ emu_options::emu_options()
 , m_joystick_contradictory(false)
 , m_sleep(true)
 , m_refresh_speed(false)
+, m_ui(UI_CABINET)
 {
 	add_entries(emu_options::s_option_entries);
 }

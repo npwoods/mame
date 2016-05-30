@@ -223,7 +223,7 @@ void menu_game_options::handle()
 
 void menu_game_options::populate()
 {
-	if (machine().options().ui() == emu_options::UI_SIMPLE)
+	if (machine().options().ui() != emu_options::UI_SIMPLE)
 	{
 		// set filter arrow
 		std::string fbuff;
