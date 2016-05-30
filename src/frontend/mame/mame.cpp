@@ -171,7 +171,8 @@ void mame_machine_manager::start_luaengine()
 
 int mame_machine_manager::execute()
 {
-	bool started_empty = false;
+	// do we want to redisplay the main menu after an emulation exits?
+	bool redisplay_main_menu_after_emulation = false;
 
 	bool firstgame = true;
 
@@ -191,8 +192,11 @@ int mame_machine_manager::execute()
 		if (system == nullptr)
 		{
 			system = &GAME_NAME(___empty);
-			if (firstgame)
-				started_empty = true;
+
+			// if we're displaying the main menu on startup (and not using a menu-ed UI)
+			// we should redisplay the main menu after exit
+			if (firstgame && options().ui() != emu_options::UI_MENUS)
+				redisplay_main_menu_after_emulation = true;
 		}
 
 		firstgame = false;
@@ -238,7 +242,7 @@ int mame_machine_manager::execute()
 			if (machine.exit_pending()) mame_options::set_system_name(m_options,"");
 		}
 
-		if (machine.exit_pending() && (!started_empty || is_empty))
+		if (machine.exit_pending() && (!redisplay_main_menu_after_emulation || is_empty))
 			exit_pending = true;
 
 		// machine will go away when we exit scope
