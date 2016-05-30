@@ -26,8 +26,8 @@ const device_type BITBANGER = &device_creator<bitbanger_device>;
 bitbanger_device::bitbanger_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock) :
 	device_t(mconfig, BITBANGER, "Bitbanger", tag, owner, clock, "bitbanger", __FILE__),
 	device_image_interface(mconfig, *this),
-	m_input_func(*this),
-	m_input_callback(*this)
+	m_input_callback(*this),
+	m_input_func(*this)
 {
 	m_output_timer = NULL;
 	m_input_timer = NULL;

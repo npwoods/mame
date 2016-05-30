@@ -25,8 +25,8 @@ class ui_menu_bitbanger_control : public menu_device_control<bitbanger_device> {
 public:
 	ui_menu_bitbanger_control(mame_ui_manager &mui, render_container *container, bitbanger_device *bitbanger);
 	virtual ~ui_menu_bitbanger_control();
-	virtual void populate();
-	virtual void handle();
+	virtual void populate() override;
+	virtual void handle() override;
 };
 
 } // namespace ui

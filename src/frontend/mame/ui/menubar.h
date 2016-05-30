@@ -19,7 +19,7 @@
 #include "render.h"
 #include "ui/ui.h"
 
-class ::mame_ui_manager;
+class mame_ui_manager;
 
 namespace ui {
 
