@@ -90,10 +90,10 @@ void emu_menubar::handle(render_container *container)
 //  start_menu
 //-------------------------------------------------
 
-void emu_menubar::start_menu(menu *m)
+void emu_menubar::start_menu(std::unique_ptr<menu> &&menu)
 {
 	ui().set_handler(menu::ui_handler, 0);
-	menu::stack_push(std::unique_ptr<menu>(m));
+	menu::stack_push(std::move(menu));
 }
 
 
@@ -101,10 +101,11 @@ void emu_menubar::start_menu(menu *m)
 //  start_menu
 //-------------------------------------------------
 
-template<class _Menu>
-void emu_menubar::start_menu()
+template<class T, typename... Params>
+void emu_menubar::start_menu(Params &&... args)
 {
-	start_menu(global_alloc_clear<_Menu>(ui(), container()));
+	std::unique_ptr<menu> ptr(global_alloc_clear<T>(ui(), container(), std::forward<Params>(args)...));
+	start_menu(std::move(ptr));
 }
 
 
@@ -575,7 +576,7 @@ void emu_menubar::set_ui_handler(ui_callback callback, UINT32 param)
 
 void emu_menubar::select_new_game()
 {
-	start_menu(global_alloc_clear<menu_select_game>(ui(), container(), machine().system().name));
+	start_menu<menu_select_game>(machine().system().name);
 }
 
 
@@ -586,7 +587,7 @@ void emu_menubar::select_new_game()
 void emu_menubar::select_from_software_list(device_image_interface *image, software_list_device *swlist)
 {
 	s_softlist_image = image;
-	start_menu(global_alloc_clear<menu_software_list>(ui(), container(), swlist, image->image_interface(), s_softlist_result));
+	start_menu<menu_software_list>(swlist, image->image_interface(), s_softlist_result);
 }
 
 
@@ -596,7 +597,7 @@ void emu_menubar::select_from_software_list(device_image_interface *image, softw
 
 void emu_menubar::tape_control(cassette_image_device *image)
 {
-	start_menu(global_alloc_clear<menu_tape_control>(ui(), container(), image));
+	start_menu<menu_tape_control>(image);
 }
 
 
@@ -606,7 +607,7 @@ void emu_menubar::tape_control(cassette_image_device *image)
 
 void emu_menubar::bitbanger_control(bitbanger_device *image)
 {
-	start_menu(global_alloc_clear<ui_menu_bitbanger_control>(ui(), container(), image));
+	start_menu<ui_menu_bitbanger_control>(image);
 }
 
 
@@ -616,7 +617,7 @@ void emu_menubar::bitbanger_control(bitbanger_device *image)
 
 void emu_menubar::barcode_reader_control()
 {
-	start_menu(global_alloc_clear<menu_barcode_reader>(ui(), container(), nullptr));
+	start_menu<menu_barcode_reader>(nullptr);
 }
 
 

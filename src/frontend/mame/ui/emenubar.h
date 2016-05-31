@@ -61,11 +61,11 @@ private:
 	void set_throttle_rate(float throttle_rate);
 	void set_warp_mode(bool warp_mode);
 	bool warp_mode() const;
-	void start_menu(menu *menu);
+	void start_menu(std::unique_ptr<menu> &&menu);
 
 	// template methods
-	template<class _Menu>
-	void start_menu();
+	template<class T, typename... Params>
+	void start_menu(Params &&... args);
 };
 
 } // namespace ui

@@ -182,7 +182,7 @@ void menu_file_manager::handle()
 			if (selected_device != nullptr)
 			{
 				m_curr_selected = TRUE;
-				menu::stack_push(std::unique_ptr<menu>(create_device_menu(ui(), container, selected_device)));
+				menu::stack_push(create_device_menu(ui(), container, selected_device));
 
 				// reset the existing menu
 				reset(reset_options::REMEMBER_POSITION);
@@ -197,16 +197,16 @@ void menu_file_manager::handle()
 //  shared with the menubar code
 //-------------------------------------------------
 
-menu *menu_file_manager::create_device_menu(mame_ui_manager &ui, render_container *container, device_image_interface *device)
+std::unique_ptr<menu> menu_file_manager::create_device_menu(mame_ui_manager &ui, render_container *container, device_image_interface *device)
 {
 	floppy_image_device *floppy_device = dynamic_cast<floppy_image_device *>(device);
 	if (floppy_device != nullptr)
 	{
-		return global_alloc_clear<menu_control_floppy_image>(ui, container, floppy_device);
+		return std::unique_ptr<menu>(global_alloc_clear<menu_control_floppy_image>(ui, container, floppy_device));
 	}
 	else
 	{
-		return global_alloc_clear<menu_control_device_image>(ui, container, device);
+		return std::unique_ptr<menu>(global_alloc_clear<menu_control_device_image>(ui, container, device));
 	}
 }
 
