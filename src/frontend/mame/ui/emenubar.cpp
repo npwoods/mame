@@ -401,8 +401,8 @@ void emu_menubar::build_options_menu()
 	if (machine().ioport().has_keyboard() && machine().ioport().natkeyboard().can_post())
 	{
 		menu_item &keyboard_menu = options_menu.append(_("Keyboard"));
-		keyboard_menu.append<mame_ui_manager>(_("Emulated"), &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), false);
-		keyboard_menu.append<mame_ui_manager>(_("Natural"),  &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), true);
+		keyboard_menu.append<mame_ui_manager, bool>(_("Emulated"), &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), false);
+		keyboard_menu.append<mame_ui_manager, bool>(_("Natural"),  &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), true);
 	}
 
 	// crosshair options

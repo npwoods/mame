@@ -805,6 +805,9 @@ rgb_t menubar::adjust_color(rgb_t color)
 menubar::menu_item::menu_item(menubar &menubar, const char *text, menubar::menu_item *parent, bool is_invokable, int shortcut)
 	: m_menubar(menubar)
 {
+	// should be the same check in uiinput.cpp
+	assert(shortcut == IPT_INVALID || (shortcut >= IPT_UI_CONFIGURE && shortcut <= IPT_OSD_16));
+
 	if (text != NULL)
 		m_text.assign(text);
 	m_is_invokable = is_invokable;
