@@ -2680,8 +2680,9 @@ void ioport_manager::adjust_ui_seqs_for_keyboard()
 	// shortcuts
 	for (input_type_entry &entry : m_typelist)
 	{
-		// we're only interested in "shortcut" UI keys
-		if (entry.group() == IPG_UI)
+		// we're only interested in "shortcut" UI keys, and we treat some types as special (we never want to
+		// remove the shortcuts for some inputs)
+		if (entry.group() == IPG_UI && input_type_masks_keyboard(entry.type()))
 		{
 			const input_seq &defseq = entry.defseq();
 			for (int codenum = 0; defseq[codenum] != input_seq::end_code; codenum++)
@@ -2723,6 +2724,22 @@ bool ioport_manager::is_modifier_item_id(input_item_id item_id)
 		 || (item_id == ITEM_ID_RALT)
 		 || (item_id == ITEM_ID_LWIN)
 		 || (item_id == ITEM_ID_RWIN);
+}
+
+
+//-------------------------------------------------
+//  input_type_masks_keyboard - is this an input
+//	shortcut that can mask the keyboard under menus?
+//-------------------------------------------------
+
+bool ioport_manager::input_type_masks_keyboard(ioport_type type)
+{
+	return type != IPT_UI_SELECT
+		&& type != IPT_UI_CANCEL
+		&& type != IPT_UI_LEFT
+		&& type != IPT_UI_UP
+		&& type != IPT_UI_RIGHT
+		&& type != IPT_UI_DOWN;
 }
 
 

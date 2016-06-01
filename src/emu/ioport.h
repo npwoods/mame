@@ -1512,6 +1512,7 @@ private:
 	void init_port_types();
 	void adjust_ui_seqs_for_keyboard();
 	static bool is_modifier_item_id(input_item_id item_id);
+	static bool input_type_masks_keyboard(ioport_type type);
 	void init_autoselect_devices(int type1, int type2, int type3, const char *option, const char *ananame);
 
 	void frame_update_callback();
