@@ -22,7 +22,7 @@
 #include "uiinput.h"
 #include "ui/ui.h"
 #include "ui/menu.h"
-#include "ui/emenubar.h"
+#include "ui/mame_menubar.h"
 #include "ui/mainmenu.h"
 #include "ui/filemngr.h"
 #include "ui/sliders.h"
@@ -1713,7 +1713,7 @@ UINT32 mame_ui_manager::handler_ingame_menus(render_container *container)
 {
 	// no menubar? create it
 	if (m_menubar == nullptr)
-		m_menubar = auto_alloc(machine(), ui::emu_menubar(*this));
+		m_menubar = auto_alloc(machine(), ui::mame_menubar(*this));
 
 	// handle!
 	m_menubar->handle(container);

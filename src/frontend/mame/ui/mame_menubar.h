@@ -1,6 +1,6 @@
 /***************************************************************************
 
-    emenubar.h
+    mame_menubar.h
 
     Internal MAME menu bar for the user interface.
 
@@ -22,10 +22,10 @@ namespace ui {
 
 class menu;
 
-class emu_menubar : public menubar
+class mame_menubar : public menubar
 {
 public:
-	emu_menubar(::mame_ui_manager &mui);
+	mame_menubar(::mame_ui_manager &mui);
 
 	virtual void handle(render_container *container) override;
 
