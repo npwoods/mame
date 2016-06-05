@@ -92,7 +92,7 @@ void emu_menubar::handle(render_container *container)
 
 void emu_menubar::start_menu(std::unique_ptr<menu> &&menu)
 {
-	ui().set_handler(menu::ui_handler, 0);
+	ui().set_handler<mame_ui_manager&>(UI_CALLBACK_TYPE_MENU, ui::menu::ui_handler, ui());
 	menu::stack_push(std::move(menu));
 }
 
@@ -172,7 +172,7 @@ void emu_menubar::build_file_menu()
 
 	// show gfx
 	if (ui_gfx_is_relevant(machine()))
-		file_menu.append<emu_menubar, ui_callback, UINT32>(_("Show Graphics/Palette..."), &emu_menubar::set_ui_handler, *this, ui_gfx_ui_handler, (UINT32)machine().paused(), IPT_UI_SHOW_GFX);
+		file_menu.append(_("Show Graphics/Palette..."), &emu_menubar::view_gfx, *this, IPT_UI_SHOW_GFX);
 
 	// save screen snapshot
 	file_menu.append(_("Save Screen Snapshot(s)"), &video_manager::save_active_screen_snapshots, machine().video(), IPT_UI_SNAPSHOT);
@@ -182,10 +182,10 @@ void emu_menubar::build_file_menu()
 	record_movie_menu.set_checked(machine().video().is_recording());
 
 	// save state
-	file_menu.append(_("Save State..."), &emu_menubar::set_ui_handler, *this, mame_ui_manager::handler_load_save, (UINT32) LOADSAVE_SAVE, IPT_UI_SAVE_STATE);
+	file_menu.append(_("Save State..."), &emu_menubar::load_or_save, *this, (UINT32) LOADSAVE_SAVE, IPT_UI_SAVE_STATE);
 
 	// load state
-	file_menu.append(_("Load State..."), &emu_menubar::set_ui_handler, *this, mame_ui_manager::handler_load_save, (UINT32) LOADSAVE_LOAD, IPT_UI_LOAD_STATE);
+	file_menu.append(_("Load State..."), &emu_menubar::load_or_save, *this, (UINT32) LOADSAVE_LOAD, IPT_UI_LOAD_STATE);
 
 	// separator
 	file_menu.append_separator();
@@ -411,7 +411,7 @@ void emu_menubar::build_options_menu()
 		options_menu.append<emu_menubar>(_("Crosshair Options..."), &emu_menubar::start_menu<menu_crosshair>, *this);
 
 	// cheat
-	if (machine().options().cheat() && mame_machine_manager::instance()->cheat().entries().count() > 0)
+	if (machine().options().cheat() && mame_machine_manager::instance()->cheat().entries().size() > 0)
 	{
 		options_menu.append_separator();
 		options_menu.append(_("Cheats enabled"), &cheat_manager::set_enable, &cheat_manager::enabled, mame_machine_manager::instance()->cheat(), IPT_UI_TOGGLE_CHEAT);
@@ -560,13 +560,14 @@ bool emu_menubar::is_softlist_relevant(software_list_device *swlist, const char 
 //  set_ui_handler
 //-------------------------------------------------
 
-void emu_menubar::set_ui_handler(ui_callback callback, UINT32 param)
+template<typename... Params>
+void emu_menubar::set_ui_handler(Params... args)
 {
 	// first pause
 	machine().pause();
 
 	// and transfer control
-	ui().set_handler(callback, param);
+	ui().set_handler(args...);
 }
 
 
@@ -685,5 +686,32 @@ bool emu_menubar::warp_mode() const
 	return !machine().video().throttled();
 }
 
+
+//-------------------------------------------------
+//  view_gfx
+//-------------------------------------------------
+
+void emu_menubar::view_gfx()
+{
+	// first pause
+	machine().pause();
+
+	// and transfer control
+	ui().set_handler<mame_ui_manager&, bool>(UI_CALLBACK_TYPE_GENERAL, ui_gfx_ui_handler, ui(), machine().paused());
+}
+
+
+//-------------------------------------------------
+//  load_or_save
+//-------------------------------------------------
+
+void emu_menubar::load_or_save(UINT32 loadsave)
+{
+	// first pause
+	machine().pause();
+
+	// and transfer control
+	ui().set_handler(UI_CALLBACK_TYPE_GENERAL, &mame_ui_manager::handler_load_save, loadsave);
+}
 
 } // namespace ui

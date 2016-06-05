@@ -379,7 +379,7 @@ void menubar::toggle_selection()
 void menubar::invoke(menu_item *menu)
 {
 	// first, we're ending the menu; pop us off first
-	ui().set_handler(NULL, 0);
+	//ui().set_handler(NULL, 0);
 
 	// and invoke the selection
 	menu->invoke();

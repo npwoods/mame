@@ -49,7 +49,6 @@ private:
 
 	// miscellaneous
 	bool is_softlist_relevant(software_list_device *swlist, const char *interface, std::string &list_description);
-	void set_ui_handler(ui_callback callback, UINT32 param);
 	void select_new_game();
 	void select_from_software_list(device_image_interface *image, software_list_device *swlist);
 	void tape_control(cassette_image_device *image);
@@ -61,11 +60,16 @@ private:
 	void set_throttle_rate(float throttle_rate);
 	void set_warp_mode(bool warp_mode);
 	bool warp_mode() const;
+	void view_gfx();
+	void load_or_save(UINT32 loadsave);
 	void start_menu(std::unique_ptr<menu> &&menu);
 
 	// template methods
 	template<class T, typename... Params>
 	void start_menu(Params &&... args);
+
+	template<typename... Params>
+	void set_ui_handler(Params ...args);
 };
 
 } // namespace ui

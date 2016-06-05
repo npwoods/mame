@@ -301,35 +301,6 @@ void debug_imgui::handle_keys()
 		m_hide = true;
 	}
 
-/*  if(m_machine->input().code_pressed_once(KEYCODE_UP))
-        io.KeysDown[ImGuiKey_UpArrow] = true;
-    if(m_machine->input().code_pressed_once(KEYCODE_DOWN))
-        io.KeysDown[ImGuiKey_DownArrow] = true;
-    if(m_machine->input().code_pressed_once(KEYCODE_LEFT))
-        io.KeysDown[ImGuiKey_LeftArrow] = true;
-    if(m_machine->input().code_pressed_once(KEYCODE_RIGHT))
-        io.KeysDown[ImGuiKey_RightArrow] = true;
-
-    if(m_machine->input().code_pressed(KEYCODE_TAB))
-        io.KeysDown[ImGuiKey_Tab] = true;
-
-    if(m_machine->input().code_pressed_once(KEYCODE_PGUP))
-    {
-        io.KeysDown[ImGuiKey_PageUp] = true;
-    }
-    if(m_machine->input().code_pressed_once(KEYCODE_PGDN))
-    {
-        io.KeysDown[ImGuiKey_PageDown] = true;
-    }
-
-    if(m_machine->input().code_pressed_once(KEYCODE_HOME))
-    {
-        io.KeysDown[ImGuiKey_Home] = true;
-    }
-    if(m_machine->input().code_pressed_once(KEYCODE_END))
-    {
-        io.KeysDown[ImGuiKey_End] = true;
-    }*/
 	if(m_machine->input().code_pressed(KEYCODE_LCONTROL))
 		io.KeyCtrl = true;
 	else
@@ -437,8 +408,14 @@ void debug_imgui::handle_console(running_machine* machine)
 {
 	if(view_main_console->exec_cmd && view_main_console->type == DVT_CONSOLE)
 	{
-		if(strlen(view_main_console->console_input) > 0)
-			debug_console_execute_command(*m_machine, view_main_console->console_input, 1);
+		// if console input is empty, then do a single step
+		if(strlen(view_main_console->console_input) == 0)
+		{
+			debug_cpu_get_visible_cpu(*m_machine)->debug()->single_step();
+			view_main_console->exec_cmd = false;
+			return;
+		}
+		debug_console_execute_command(*m_machine, view_main_console->console_input, 1);
 		// check for commands that start execution (so that input fields can be disabled)
 		if(strcmp(view_main_console->console_input,"g") == 0)
 			m_running = true;
@@ -499,10 +476,18 @@ void debug_imgui::draw_view(debug_area* view_ptr, bool exp_change)
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-	// if the view has changed its expression (disasm, memory), then update scroll bar
+	// if the view has changed its expression (disasm, memory), then update scroll bar and view cursor
 	if(exp_change)
-		ImGui::SetScrollY(view_ptr->view->visible_position().y * fsize.y);
-
+	{
+		if(view_ptr->view->cursor_supported())
+		{
+			view_ptr->view->set_cursor_visible(true);
+			view_ptr->view->set_cursor_position(debug_view_xy(0,view_ptr->view->visible_position().y));
+		}
+		if(view_ptr->type != DVT_MEMORY)  // no scroll bars in memory views
+			ImGui::SetScrollY(view_ptr->view->visible_position().y * fsize.y);
+	}
+	
 	// update view location, while the cursor is at 0,0.
 	view_ptr->ofs_x = ImGui::GetCursorScreenPos().x;
 	view_ptr->ofs_y = ImGui::GetCursorScreenPos().y;
@@ -512,7 +497,8 @@ void debug_imgui::draw_view(debug_area* view_ptr, bool exp_change)
 	drawlist = ImGui::GetWindowDrawList();
 
 	// temporarily set cursor to the last line, this will set the scroll bar range
-	ImGui::SetCursorPosY((totalsize.y) * fsize.y);
+	if(view_ptr->type != DVT_MEMORY)  // no scroll bars in memory views
+		ImGui::SetCursorPosY((totalsize.y) * fsize.y);
 
 	// set the visible area to be displayed
 	vsize.x = view_ptr->view_width / fsize.x;
@@ -520,10 +506,13 @@ void debug_imgui::draw_view(debug_area* view_ptr, bool exp_change)
 	view_ptr->view->set_visible_size(vsize);
 
 	// set the visible position
-	pos.x = 0;
-	pos.y = ImGui::GetScrollY() / fsize.y;
-	view_ptr->view->set_visible_position(pos);
-
+	if(view_ptr->type != DVT_MEMORY)  // since ImGui cannot handle huge memory views, we'll just let the view control the displayed area
+	{
+		pos.x = 0;
+		pos.y = ImGui::GetScrollY() / fsize.y;
+		view_ptr->view->set_visible_position(pos);
+	}
+	
 	viewdata = view_ptr->view->viewdata();
 
 	xy1.x = view_ptr->ofs_x;
@@ -663,7 +652,7 @@ void debug_imgui::draw_disasm(debug_area* view_ptr, bool* opened)
 			ImGui::EndMenuBar();
 		}
 
-		ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
+		ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
 		if(m_running)
 			flags |= ImGuiInputTextFlags_ReadOnly;
 		ImGui::Combo("##cpu",&view_ptr->src_sel,get_view_source,view_ptr->view,view_ptr->view->source_list().count());
@@ -769,7 +758,7 @@ void debug_imgui::draw_memory(debug_area* view_ptr, bool* opened)
 			ImGui::EndMenuBar();
 		}
 
-		ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
+		ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
 		ImGui::PushItemWidth(100.0f);
 		if(m_running)
 			flags |= ImGuiInputTextFlags_ReadOnly;
@@ -932,8 +921,6 @@ void debug_imgui::draw_console()
 		draw_view(view_main_console,false);
 		ImGui::EndChild();
 		ImGui::Separator();
-		//if(ImGui::IsWindowFocused())
-		//  ImGui::SetKeyboardFocusHere();
 		ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
 		if(m_running)
 			flags |= ImGuiInputTextFlags_ReadOnly;
@@ -1033,6 +1020,10 @@ void debug_imgui::init_debugger(running_machine &machine)
 	io.KeyMap[ImGuiKey_End] = ITEM_ID_END;
 	io.KeyMap[ImGuiKey_Escape] = ITEM_ID_ESC;
 	io.KeyMap[ImGuiKey_Enter] = ITEM_ID_ENTER;
+	io.KeyMap[ImGuiKey_LeftArrow] = ITEM_ID_LEFT;
+	io.KeyMap[ImGuiKey_RightArrow] = ITEM_ID_RIGHT;
+	io.KeyMap[ImGuiKey_UpArrow] = ITEM_ID_UP;
+	io.KeyMap[ImGuiKey_DownArrow] = ITEM_ID_DOWN;
 
 	font_name = (downcast<osd_options &>(m_machine->options()).debugger_font());
 	font_size = (downcast<osd_options &>(m_machine->options()).debugger_font_size());
