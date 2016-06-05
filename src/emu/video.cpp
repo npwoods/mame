@@ -277,13 +277,25 @@ std::string video_manager::speed_text()
 	else if (m_fastforward)
 		str << "fast ";
 
-	// if we're auto frameskipping, display that plus the level
-	else if (effective_autoframeskip())
-		util::stream_format(str, "auto%2d/%d", effective_frameskip(), MAX_FRAMESKIP);
-
-	// otherwise, just display the frameskip plus the level
 	else
-		util::stream_format(str, "skip %d/%d", effective_frameskip(), MAX_FRAMESKIP);
+	{
+		// in a menued environment, we display the throttle
+		if (machine().options().ui() == emu_options::UI_MENUS)
+		{
+			if (throttled())
+				util::stream_format(str, "throt %4d%% ", (int)(100 * throttle_rate()));
+			else
+				util::stream_format(str, "throt warp ");
+		}
+
+		// if we're auto frameskipping, display that plus the level
+		if (effective_autoframeskip())
+			util::stream_format(str, "auto%2d/%d", effective_frameskip(), MAX_FRAMESKIP);
+
+		// otherwise, just display the frameskip plus the level
+		else
+			util::stream_format(str, "skip %d/%d", effective_frameskip(), MAX_FRAMESKIP);
+	}
 
 	// append the speed for all cases except paused
 	if (!paused)

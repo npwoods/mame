@@ -53,6 +53,8 @@ namespace ui {
 std::string mame_menubar::s_softlist_result;
 device_image_interface *mame_menubar::s_softlist_image;
 
+static const float throttle_rates[] = { 10.0f, 5.0f, 2.0f, 1.0f, 0.5f, 0.2f, 0.1f };
+
 
 //-------------------------------------------------
 //  ctor
@@ -316,7 +318,6 @@ void mame_menubar::build_options_menu()
 	menu_item &options_menu = root_menu().append(_("Options"));
 
 	// throttle
-	static const float throttle_rates[] = { 10.0f, 5.0f, 2.0f, 1.0f, 0.5f, 0.2f, 0.1f };
 	menu_item &throttle_menu = options_menu.append(_("Throttle"));
 	for (int i = 0; i < ARRAY_LENGTH(throttle_rates); i++)
 	{
@@ -325,6 +326,8 @@ void mame_menubar::build_options_menu()
 		menu.set_checked(machine().video().throttle_rate() == throttle_rates[i]);
 	}
 	throttle_menu.append_separator();
+	throttle_menu.append(_("Increase Speed"), &mame_menubar::increase_speed, *this, IPT_UI_THROTTLE_INC);
+	throttle_menu.append(_("Decrease Speed"), &mame_menubar::decrease_speed, *this, IPT_UI_THROTTLE_DEC);
 	throttle_menu.append("Warp Mode", &mame_menubar::set_warp_mode, &mame_menubar::warp_mode, *this, IPT_UI_THROTTLE);
 
 	// frame skip
@@ -661,6 +664,54 @@ void mame_menubar::set_throttle_rate(float throttle_rate)
 {
 	show_fps_temp();
 	machine().video().set_throttle_rate(throttle_rate);
+}
+
+
+//-------------------------------------------------
+//  increase_speed
+//-------------------------------------------------
+
+void mame_menubar::increase_speed()
+{
+	// can't increase speed when in warp mode
+	if (!warp_mode())
+	{
+		// find the highest throttle rate slower than the current rate
+		int i = 0;
+		while (i < ARRAY_LENGTH(throttle_rates) && throttle_rates[i] > machine().video().throttle_rate())
+			i++;
+
+		// make it go faster
+		if (i == 0)
+			set_warp_mode(true);
+		else
+			set_throttle_rate(throttle_rates[i - 1]);
+	}
+}
+
+
+//-------------------------------------------------
+//  decrease_speed
+//-------------------------------------------------
+
+void mame_menubar::decrease_speed()
+{
+	if (warp_mode())
+	{
+		// special case - in warp mode, turn it off and set to the highest speed
+		set_warp_mode(false);
+		set_throttle_rate(throttle_rates[0]);
+	}
+	else
+	{
+		// find the lowest throttle rate faster than the current rate
+		int i = ARRAY_LENGTH(throttle_rates) - 2;
+		while (i > 0 && throttle_rates[i] < machine().video().throttle_rate())
+			i--;
+
+		// make it go slower
+		set_throttle_rate(throttle_rates[i + 1]);
+	}
 }
 
 

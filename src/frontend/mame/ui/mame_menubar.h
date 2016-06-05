@@ -58,6 +58,8 @@ private:
 	bool has_images();
 	void show_fps_temp();
 	void set_throttle_rate(float throttle_rate);
+	void increase_speed();
+	void decrease_speed();
 	void set_warp_mode(bool warp_mode);
 	bool warp_mode() const;
 	void view_gfx();
