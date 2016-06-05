@@ -77,7 +77,7 @@ void mame_menubar::handle(render_container *container)
 		s_softlist_image->load(s_softlist_result.c_str());
 
 		// clear out state
-		s_softlist_image = NULL;
+		s_softlist_image = nullptr;
 		s_softlist_result.clear();
 	}
 
@@ -120,14 +120,14 @@ void mame_menubar::menubar_draw_ui_elements()
 	{
 		std::string tempstring = machine().video().speed_text();
 		ui().draw_text_full(container(), tempstring.c_str(), 0.0f, 0.0f, 1.0f,
-					JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, NULL, NULL);
+					JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
 	}
 
 	// draw the profiler if visible 
 	if (ui().show_profiler())
 	{
 		const char *text = g_profiler.text(machine());
-		ui().draw_text_full(container(), text, 0.0f, 0.0f, 1.0f, JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, NULL, NULL);
+		ui().draw_text_full(container(), text, 0.0f, 0.0f, 1.0f, JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
 	}
 
 	// check for fast forward 
@@ -229,7 +229,7 @@ void mame_menubar::build_images_menu()
 	// loop through all devices
 	for (device_image_interface &image : image_interface_iterator(machine().root_device()))
 	{
-		bool is_loaded = image.basename() != NULL;
+		bool is_loaded = image.basename() != nullptr;
 
 		std::string buffer = string_format("%s (%s): \t%s",
 			image.device().name(),
@@ -240,7 +240,7 @@ void mame_menubar::build_images_menu()
 		menu_item &menu = images_menu.append(buffer.c_str());
 
 		// software list
-		if (image.image_interface() != NULL)
+		if (image.image_interface() != nullptr)
 		{
 			if (build_software_list_menus(menu, &image))
 				menu.append_separator();
@@ -255,7 +255,7 @@ void mame_menubar::build_images_menu()
 
 		// tape control
 		cassette_image_device *cassette = dynamic_cast<cassette_image_device *>(&image);
-		if (cassette != NULL)
+		if (cassette != nullptr)
 		{
 			menu_item &control_menu = menu.append(_("Tape Control..."), &mame_menubar::tape_control, *this, cassette);
 			control_menu.set_enabled(is_loaded);
@@ -263,7 +263,7 @@ void mame_menubar::build_images_menu()
 
 		// bitbanger control
 		bitbanger_device *bitbanger = dynamic_cast<bitbanger_device *>(&image);
-		if (bitbanger != NULL)
+		if (bitbanger != nullptr)
 		{
 			menu_item &control_menu = menu.append(_("Bitbanger Control..."), &mame_menubar::bitbanger_control, *this, bitbanger);
 			control_menu.set_enabled(is_loaded);
@@ -279,7 +279,7 @@ void mame_menubar::build_images_menu()
 bool mame_menubar::build_software_list_menus(menu_item &menu, device_image_interface *image)
 {
 	int item_count = 0;
-	menu_item *last_menu_item = NULL;
+	menu_item *last_menu_item = nullptr;
 	std::string description;
 	softlist_type types[] = { SOFTWARE_LIST_ORIGINAL_SYSTEM, SOFTWARE_LIST_COMPATIBLE_SYSTEM };
 	software_list_device_iterator softlist_iter(machine().config().root_device());
@@ -299,7 +299,7 @@ bool mame_menubar::build_software_list_menus(menu_item &menu, device_image_inter
 	}
 
 	// if we only had one list, lets use a generic name
-	if (last_menu_item != NULL && (item_count == 1))
+	if (last_menu_item != nullptr && (item_count == 1))
 		last_menu_item->set_text(_("Software list..."));
 
 	return item_count > 0;
@@ -361,12 +361,12 @@ void mame_menubar::build_options_menu()
 	// video
 	// do different things if we actually have multiple render targets
 	menu_item &video_menu = options_menu.append(_("Video"));
-	if (machine().render().target_by_index(1) != NULL)
+	if (machine().render().target_by_index(1) != nullptr)
 	{
 		// multiple targets
 		int targetnum = 0;
 		render_target *target;
-		while((target = machine().render().target_by_index(targetnum)) != NULL)
+		while((target = machine().render().target_by_index(targetnum)) != nullptr)
 		{
 			std::string buffer;
 			buffer = string_format(_("Screen #%d"), targetnum++);
@@ -385,17 +385,17 @@ void mame_menubar::build_options_menu()
 
 	// slot devices
 	slot_interface_iterator slotiter(machine().root_device());
-	if (slotiter.first() != NULL)
+	if (slotiter.first() != nullptr)
 		options_menu.append<mame_menubar>(_("Slot Devices..."), &mame_menubar::start_menu<menu_slot_devices>, *this);
 
 	// barcode reader
 	barcode_reader_device_iterator bcriter(machine().root_device());
-	if (bcriter.first() != NULL)
+	if (bcriter.first() != nullptr)
 		options_menu.append<mame_menubar>(_("Barcode Reader..."), &mame_menubar::barcode_reader_control, *this);
 		
 	// network devices
 	network_interface_iterator netiter(machine().root_device());
-	if (netiter.first() != NULL)
+	if (netiter.first() != nullptr)
 		options_menu.append<mame_menubar>(_("Network Devices..."), &mame_menubar::start_menu<menu_network_devices>, *this);
 
 	// keyboard
@@ -430,7 +430,7 @@ void mame_menubar::build_video_target_menu(menu_item &target_menu, render_target
 	const char *view_name;
 
 	// add the menu items for each view
-	for(int viewnum = 0; (view_name = target.view_name(viewnum)) != NULL; viewnum++)
+	for(int viewnum = 0; (view_name = target.view_name(viewnum)) != nullptr; viewnum++)
 	{
 		// replace spaces with underscores
 		std::string tempstring(view_name);
@@ -528,7 +528,7 @@ void mame_menubar::build_help_menu()
 
 	// image information
 	image_interface_iterator imgiter(machine().root_device());
-	if (imgiter.first() != NULL)
+	if (imgiter.first() != nullptr)
 		help_menu.append<mame_menubar>(_("Image Information..."), &mame_menubar::start_menu<menu_image_info>, *this);
 }
 
@@ -543,7 +543,7 @@ bool mame_menubar::is_softlist_relevant(software_list_device *swlist, const char
 
 	for (software_info &swinfo : swlist->get_info())
 	{
-		software_part *part = swinfo.find_part(NULL, NULL);
+		software_part *part = swinfo.find_part(nullptr, nullptr);
 		if (part->matches_interface(interface))
 		{
 			list_description = string_format(_("%s..."), swlist->description());
@@ -639,7 +639,7 @@ void mame_menubar::load(device_image_interface *image)
 bool mame_menubar::has_images()
 {
 	image_interface_iterator iter(machine().root_device());
-	return iter.first() != NULL;
+	return iter.first() != nullptr;
 }
 
 

@@ -60,10 +60,10 @@ private:
 menubar::menubar(mame_ui_manager &mui)
 	: m_ui(mui), m_menus(*this)
 {
-	m_container = NULL;
-	m_shortcuted_menu_items = NULL;
-	m_selected_item = NULL;
-	m_active_item = NULL;
+	m_container = nullptr;
+	m_shortcuted_menu_items = nullptr;
+	m_selected_item = nullptr;
+	m_active_item = nullptr;
 	m_dragged = false;
 	m_checkmark_width = -1;
 	m_mouse_x = -1;
@@ -137,7 +137,7 @@ void menubar::handle(render_container *current_container)
 	float x = spacing;
 	float y = spacing;
 
-	for(menu_item *mi = m_menus.child(); mi != NULL; mi = mi->next())
+	for(menu_item *mi = m_menus.child(); mi != nullptr; mi = mi->next())
 	{
 		float width = ui().get_string_width(mi->text().c_str());
 
@@ -194,7 +194,7 @@ bool menubar::event_loop()
 		switch (local_menu_event.event_type)
 		{
 			case UI_EVENT_MOUSE_DOWN:
-				if (mi != NULL)
+				if (mi != nullptr)
 				{
 					m_selected_item = mi;
 					m_active_item = mi;
@@ -207,12 +207,12 @@ bool menubar::event_loop()
 				m_last_mouse_move = osd_ticks();
 
 				// moving is only interesting if we have an active menu selection
-				if (m_mouse_button && m_active_item != NULL)
+				if (m_mouse_button && m_active_item != nullptr)
 				{
 					// are we changing the active menu item?
 					if (m_active_item != mi)
 					{
-						if (mi != NULL)
+						if (mi != nullptr)
 							m_active_item = mi->has_children() ? mi->child() : mi;
 						m_dragged = true;
 						done = true;
@@ -228,7 +228,7 @@ bool menubar::event_loop()
 				break;
 
 			case UI_EVENT_MOUSE_UP:
-				m_active_item = NULL;
+				m_active_item = nullptr;
 				if (m_selected_item && m_selected_item == mi)
 				{
 					// looks like we did a mouse up on the current selection; we
@@ -241,7 +241,7 @@ bool menubar::event_loop()
 				}
 				else if (m_dragged)
 				{
-					m_selected_item = NULL;					
+					m_selected_item = nullptr;					
 				}
 				done = true;
 				break;
@@ -280,7 +280,7 @@ bool menubar::poll_navigation_keys()
 		: IPT_INVALID;
 
 	// are we navigating the menu?
-	if (m_selected_item != NULL)
+	if (m_selected_item != nullptr)
 	{
 		// if so, are we in a pull down menu?
 		if (!m_selected_item->is_sub_menu())
@@ -345,7 +345,7 @@ bool menubar::poll_navigation_keys()
 bool menubar::poll_shortcut_keys(bool swallow)
 {
 	// loop through all shortcut items
-	for (menu_item *item = m_shortcuted_menu_items; item != NULL; item = item->next_with_shortcut())
+	for (menu_item *item = m_shortcuted_menu_items; item != nullptr; item = item->next_with_shortcut())
 	{
 		assert(item->is_invokable());
 		
@@ -367,8 +367,8 @@ bool menubar::poll_shortcut_keys(bool swallow)
 
 void menubar::toggle_selection()
 {
-	m_selected_item = m_selected_item != NULL
-		? NULL
+	m_selected_item = m_selected_item != nullptr
+		? nullptr
 		: m_menus.child();
 }
 
@@ -475,9 +475,9 @@ bool menubar::walk_selection_escape()
 {
 	bool result = walk_selection_parent();
 
-	if (!result && m_selected_item != NULL)
+	if (!result && m_selected_item != nullptr)
 	{
-		m_selected_item = NULL;
+		m_selected_item = nullptr;
 		result = true;
 	}
 
@@ -529,7 +529,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 	float max_widths[4] = {0, };
 	float total_height = (spacing * 2);
 	float max_shortcuts_width = 0;
-	for(menu_item *mi = menu->child(); mi != NULL; mi = mi->next())
+	for(menu_item *mi = menu->child(); mi != nullptr; mi = mi->next())
 	{
 		// aggregate the maximum width for each column
 		tabbed_text_iterator iter(mi->text());
@@ -570,7 +570,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 
 	// draw the individual items
 	float my = y;
-	for(menu_item *mi = menu->child(); mi != NULL; mi = mi->next())
+	for(menu_item *mi = menu->child(); mi != nullptr; mi = mi->next())
 	{
 		if (mi->is_separator())
 		{
@@ -603,7 +603,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 
 	// draw child menus
 	my = y;
-	for(menu_item *mi = menu->child(); mi != NULL; mi = mi->next())
+	for(menu_item *mi = menu->child(); mi != nullptr; mi = mi->next())
 	{
 		// child menu open?
 		if (!mi->is_separator() && is_child_menu_visible(mi))
@@ -711,7 +711,7 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 	while(iter.next())
 	{
 		ui().draw_text_full(container(), iter.current(), x0, y0, 1.0f - x0, JUSTIFY_LEFT, WRAP_WORD, DRAW_NORMAL, adjust_color(fgcolor), adjust_color(bgcolor));
-		if (column_widths != NULL)
+		if (column_widths != nullptr)
 			x0 += column_widths[iter.index()];
 	}
 }
@@ -729,7 +729,7 @@ bool menubar::find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button)
 
 	INT32 mouse_target_x, mouse_target_y;
 	render_target *mouse_target = machine().ui_input().find_mouse(&mouse_target_x, &mouse_target_y, &mouse_button);
-	if (mouse_target != NULL)
+	if (mouse_target != nullptr)
 	{
 		if (mouse_target->map_point_container(mouse_target_x, mouse_target_y, *container(), mouse_x, mouse_y))
 			result = true;
@@ -755,7 +755,7 @@ menubar::menubar_visibility_t menubar::get_menubar_visibility()
 		&& ((osd_ticks() - m_last_mouse_move) * 5 / osd_ticks_per_second() < 1);
 
 	// make the choice
-	if ((m_selected_item != NULL) || (m_active_item != NULL))
+	if ((m_selected_item != nullptr) || (m_active_item != nullptr))
 		result = MENUBAR_VISIBILITY_VISIBLE;
 	else if (in_menu_bar || recently_moved)
 		result = MENUBAR_VISIBILITY_TRANSLUCENT;
@@ -809,14 +809,14 @@ menubar::menu_item::menu_item(menubar &menubar, const char *text, menubar::menu_
 	// should be the same check in uiinput.cpp
 	assert(shortcut == IPT_INVALID || (shortcut >= IPT_UI_CONFIGURE && shortcut <= IPT_OSD_16));
 
-	if (text != NULL)
+	if (text != nullptr)
 		m_text.assign(text);
 	m_is_invokable = is_invokable;
 	m_parent = parent;
-	m_first_child = NULL;
-	m_last_child = NULL;
-	m_previous = NULL;
-	m_next = NULL;
+	m_first_child = nullptr;
+	m_last_child = nullptr;
+	m_previous = nullptr;
+	m_next = nullptr;
 	m_is_checked = false;
 	m_is_enabled = true;
 	m_is_separator = false;
@@ -926,7 +926,7 @@ void menubar::menu_item::append_separator()
 
 menubar::menu_item *menubar::menu_item::find_point(float x, float y)
 {
-	menu_item *result = NULL;
+	menu_item *result = nullptr;
 
 	if (m_is_enabled && (x >= m_x0) && (y >= m_y0) && (x <= m_x1) && (y <= m_y1))
 		result = this;
@@ -946,7 +946,7 @@ menubar::menu_item *menubar::menu_item::find_point(float x, float y)
 menubar::menu_item &menubar::menu_item::find_child(const char *target)
 {
 	menu_item *item = find_child_internal(target);
-	assert(item != NULL);
+	assert(item != nullptr);
 	return *item;
 }
 
@@ -960,13 +960,13 @@ menubar::menu_item *menubar::menu_item::find_child_internal(const char *target)
 	if (!strcmp(target, text().c_str()))
 		return this;
 
-	for(menu_item *item = child(); item != NULL; item = item->next())
+	for(menu_item *item = child(); item != nullptr; item = item->next())
 	{
 		menu_item *result = item->find_child_internal(target);
-		if (result != NULL)
+		if (result != nullptr)
 			return result;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -989,7 +989,7 @@ const char *menubar::menu_item::shortcut_text()
 			for (input_type_entry &entry : m_menubar.machine().ioport().types())
 			{
 				// add if we match the group and we have a valid name
-				if (entry.group() == IPG_UI && entry.name() != NULL && entry.name()[0] != 0 && entry.type() == shortcut())
+				if (entry.group() == IPG_UI && entry.name() != nullptr && entry.name()[0] != 0 && entry.type() == shortcut())
 				{
 					const input_seq &seq = m_menubar.machine().ioport().type_seq(entry.type(), entry.player(), SEQ_TYPE_STANDARD);
 					sensible_seq_name(m_shortcut_text, seq);
@@ -1041,7 +1041,7 @@ void menubar::menu_item::sensible_seq_name(std::string &text, const input_seq &s
 
 bool menubar::menu_item::is_child_of(menubar::menu_item *that) const
 {
-	for(menu_item *mi = m_parent; mi != NULL; mi = mi->m_parent)
+	for(menu_item *mi = m_parent; mi != nullptr; mi = mi->m_parent)
 	{
 		if (mi == that)
 			return true;
@@ -1071,7 +1071,7 @@ void menubar::menu_item::invoke()
 tabbed_text_iterator::tabbed_text_iterator(const char *text)
 {
 	m_text = text;
-	m_current = NULL;
+	m_current = nullptr;
 	m_position = 0;
 	m_index = -1;
 }
@@ -1092,7 +1092,7 @@ bool tabbed_text_iterator::next()
 	const char *current_text = &m_text[m_position];
 	const char *tabpos = strchr(current_text, '\t');
 
-	if (tabpos != NULL)
+	if (tabpos != nullptr)
 	{
 		int count = tabpos - current_text;
 		m_buffer.assign(current_text, count);
@@ -1108,9 +1108,9 @@ bool tabbed_text_iterator::next()
 	}
 	else
 	{
-		m_current = NULL;
+		m_current = nullptr;
 	}
-	return m_current != NULL;
+	return m_current != nullptr;
 }
 
 } // namespace ui
