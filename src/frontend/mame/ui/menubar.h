@@ -16,6 +16,8 @@
 #ifndef MAME_FRONTEND_UI_MENUBAR
 #define MAME_FRONTEND_UI_MENUBAR
 
+#include <functional>
+#include <utility>
 #include "render.h"
 #include "ui/ui.h"
 
@@ -53,23 +55,29 @@ public:
 		void sensible_seq_name(std::string &text, const input_seq &seq);
 
 		// template methods; look I tried to use delegate.h but I got humbled...
-		template<class _Target> menu_item &append(const char *text, void (_Target::*callback)(), _Target &obj, int shortcut = 0)
+		template<class _Target> menu_item &append(const char *text, std::function<void()> &&func, int shortcut = 0)
 		{
-			menu_item *child = new invokable_menu_item<_Target>(m_menubar, text, this, callback, obj, shortcut);
+			menu_item *child = new invokable_menu_item<_Target>(m_menubar, text, this, std::forward<std::function<void()>>(func), shortcut);
 			initialize(*child);
 			return *child;
+		}
+		template<class _Target> menu_item &append(const char *text, void (_Target::*callback)(), _Target &obj, int shortcut = 0)
+		{
+			_Target *pobj = &obj;
+			std::function<void()> func = [=] { ((*pobj).*(callback))(); };
+			return append<_Target>(text, std::forward<std::function<void()>>(func), shortcut);
 		}
 		template<class _Target, typename _Arg> menu_item &append(const char *text, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut = 0)
 		{
-			menu_item *child = new arg_invokable_menu_item<_Target, _Arg>(m_menubar, text, this, callback, obj, arg, shortcut);
-			initialize(*child);
-			return *child;
+			_Target *pobj = &obj;
+			std::function<void()> func = [=] { ((*pobj).*(callback))(arg); };
+			return append<_Target>(text, std::forward<std::function<void()>>(func), shortcut);
 		}
 		template<class _Target, typename _Arg1, typename _Arg2> menu_item &append(const char *text, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut = 0)
 		{
-			menu_item *child = new arg2_invokable_menu_item<_Target, _Arg1, _Arg2>(m_menubar, text, this, callback, obj, arg1, arg2, shortcut);
-			initialize(*child);
-			return *child;
+			_Target *pobj = &obj;
+			std::function<void()> func = [=] { ((*pobj).*(callback))(arg1, arg2); };
+			return append<_Target>(text, std::forward<std::function<void()>>(func), shortcut);
 		}
 		template<class _Target> menu_item &append(const char *text, void (_Target::*set_callback)(bool), bool (_Target::*get_callback)() const, _Target &obj, int shortcut = 0)
 		{
@@ -166,51 +174,15 @@ private:
 	class invokable_menu_item : public menu_item
 	{
 	public:
-		invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(), _Target &obj, int shortcut)
-			: menu_item(menubar, name, parent, true, shortcut), m_callback(callback), m_obj(obj)
+		invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, std::function<void()> &&func, int shortcut)
+			: menu_item(menubar, name, parent, true, shortcut), m_func(func)
 		{
 		}
 
-		virtual void invoke() override	{ ((m_obj).*(m_callback))(); }
+		virtual void invoke() override	{ m_func(); }
 
 	private:
-		void (_Target::*m_callback)();
-		_Target &m_obj;
-	};
-
-	template<class _Target, typename _Arg>
-	class arg_invokable_menu_item : public menu_item
-	{
-	public:
-		arg_invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut)
-			: menu_item(menubar, name, parent, true, shortcut), m_callback(callback), m_obj(obj), m_arg(arg)
-		{
-		}
-
-		virtual void invoke() override	{ ((m_obj).*(m_callback))(m_arg); }
-
-	private:
-		void (_Target::*m_callback)(_Arg);
-		_Target &m_obj;
-		_Arg m_arg;
-	};
-
-	template<class _Target, typename _Arg1, typename _Arg2>
-	class arg2_invokable_menu_item : public menu_item
-	{
-	public:
-		arg2_invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut)
-			: menu_item(menubar, name, parent, true, shortcut), m_callback(callback), m_obj(obj), m_arg1(arg1), m_arg2(arg2)
-		{
-		}
-
-		virtual void invoke() override	{ ((m_obj).*(m_callback))(m_arg1, m_arg2); }
-
-	private:
-		void (_Target::*m_callback)(_Arg1, _Arg2);
-		_Target &m_obj;
-		_Arg1 m_arg1;
-		_Arg2 m_arg2;
+		std::function<void()> m_func;
 	};
 
 	// menubar visibility
