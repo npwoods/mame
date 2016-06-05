@@ -1726,7 +1726,7 @@ UINT32 mame_ui_manager::handler_ingame_menus(render_container *container)
 		m_menubar = nullptr;
 	}
 
-	return m_handler_param;
+	return 0;
 }
 
 //-------------------------------------------------
