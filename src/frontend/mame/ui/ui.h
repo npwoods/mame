@@ -166,7 +166,6 @@ typedef UINT32 (*ui_callback)(mame_ui_manager &, render_container *, UINT32);
 enum ui_callback_type
 {
 	UI_CALLBACK_TYPE_GENERAL,
-	UI_CALLBACK_TYPE_INGAME,
 	UI_CALLBACK_TYPE_MODAL,
 	UI_CALLBACK_TYPE_MENU
 };
@@ -311,7 +310,7 @@ private:
 	std::string &warnings_string(std::string &buffer);
 
 	// UI menubar
-	ui::menubar *		m_menubar;
+	ui::menubar				*m_menubar;
 
 	// UI handlers
 	UINT32 handler_messagebox(render_container *container);

@@ -328,7 +328,7 @@ void mame_ui_manager::display_startup_screens(bool first_time)
 	#endif
 
 	// loop over states
-	set_handler(UI_CALLBACK_TYPE_INGAME, &mame_ui_manager::handler_ingame);
+	set_handler(UI_CALLBACK_TYPE_GENERAL, &mame_ui_manager::handler_ingame);
 	for (state = 0; state < maxstate && !machine().scheduled_event_pending() && !ui::menu::stack_has_special_main_menu(); state++)
 	{
 		// default to standard colors
@@ -374,7 +374,7 @@ void mame_ui_manager::display_startup_screens(bool first_time)
 		}
 
 		// clear the handler and force an update
-		set_handler(UI_CALLBACK_TYPE_INGAME, &mame_ui_manager::handler_ingame);
+		set_handler(UI_CALLBACK_TYPE_GENERAL, &mame_ui_manager::handler_ingame);
 		machine().video().frame_update();
 	}
 
@@ -465,7 +465,7 @@ void mame_ui_manager::update_and_render(render_container *container)
 
 	// cancel takes us back to the ingame handler
 	if (m_handler_param == UI_HANDLER_CANCEL)
-		set_handler(UI_CALLBACK_TYPE_INGAME, &mame_ui_manager::handler_ingame);
+		set_handler(UI_CALLBACK_TYPE_GENERAL, &mame_ui_manager::handler_ingame);
 }
 
 
@@ -1712,22 +1712,18 @@ UINT32 mame_ui_manager::handler_ingame_old(render_container *container)
 UINT32 mame_ui_manager::handler_ingame_menus(render_container *container)
 {
 	// no menubar? create it
-	if (m_menubar == NULL)
+	if (m_menubar == nullptr)
 		m_menubar = auto_alloc(machine(), ui::emu_menubar(*this));
 
 	// handle!
 	m_menubar->handle(container);
 
 	// did we change out the handler?
-	if (m_handler_callback_type != UI_CALLBACK_TYPE_INGAME)
+	if (m_menubar->has_been_invoked())
 	{
-		// if so, flush the menubar...
+		// if so, flush the menubar
 		auto_free(machine(), m_menubar);
-		m_menubar = NULL;
-
-		// ...and then check to see if this is just a "refresh"
-		if (m_handler_callback == NULL)
-			set_handler(UI_CALLBACK_TYPE_INGAME, &mame_ui_manager::handler_ingame);
+		m_menubar = nullptr;
 	}
 
 	return m_handler_param;

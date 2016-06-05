@@ -71,6 +71,7 @@ menubar::menubar(mame_ui_manager &mui)
 	m_mouse_button = false;
 	m_last_mouse_move = 0;
 	m_first_time = true;
+	m_has_been_invoked = false;
 }
 
 
@@ -379,7 +380,7 @@ void menubar::toggle_selection()
 void menubar::invoke(menu_item *menu)
 {
 	// first, we're ending the menu; pop us off first
-	//ui().set_handler(NULL, 0);
+	m_has_been_invoked = true;
 
 	// and invoke the selection
 	menu->invoke();

@@ -148,6 +148,7 @@ public:
 	bool is_visible() const { return m_menubar_visibility != MENUBAR_VISIBILITY_INVISIBLE; }
 	bool has_selection() const { return m_selected_item != NULL; }
 	menu_item &root_menu() { return m_menus; }
+	bool has_been_invoked() const { return m_has_been_invoked; }
 
 protected:
 	// implemented by child classes
@@ -235,6 +236,7 @@ private:
 	osd_ticks_t				m_last_mouse_move;
 	menubar_visibility_t	m_menubar_visibility;
 	bool					m_first_time;
+	bool					m_has_been_invoked;
 
 	// selection walking
 	bool walk_selection_previous();
