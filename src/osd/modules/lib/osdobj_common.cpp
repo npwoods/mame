@@ -255,7 +255,7 @@ void osd_common_t::register_options()
 	REGISTER_MODULE(m_mod_man, OUTPUT_NONE);
 	REGISTER_MODULE(m_mod_man, OUTPUT_CONSOLE);
 	REGISTER_MODULE(m_mod_man, OUTPUT_NETWORK);
-	REGISTER_MODULE(m_mod_man, OUTPUT_WIN32);
+	//REGISTER_MODULE(m_mod_man, OUTPUT_WIN32);	// NPW 6-Jun-2016 - Commenting this out?  Mailine fix soon?
 
 
 	// after initialization we know which modules are supported
