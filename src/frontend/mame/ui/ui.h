@@ -184,7 +184,6 @@ public:
 	running_machine &machine() const { return m_machine; }
 	bool single_step() const { return m_single_step; }
 	ui_options &options() { return m_ui_options; }
-	bool menubar_visible(); //TODO - { return m_menubar && m_menubar->is_visible(); }
 
 	// setters
 	void set_single_step(bool single_step) { m_single_step = single_step; }

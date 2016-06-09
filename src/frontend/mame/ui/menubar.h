@@ -153,7 +153,7 @@ public:
 	virtual void handle(render_container *container);
 
 	// getters
-	bool is_visible() const { return m_menubar_visibility != MENUBAR_VISIBILITY_INVISIBLE; }
+	bool has_focus() const { return m_menubar_visibility == MENUBAR_VISIBILITY_VISIBLE; }
 	bool has_selection() const { return m_selected_item != NULL; }
 	menu_item &root_menu() { return m_menus; }
 	bool has_been_invoked() const { return m_has_been_invoked; }

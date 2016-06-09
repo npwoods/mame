@@ -960,7 +960,8 @@ void mame_ui_manager::show_mouse(bool status)
 
 bool mame_ui_manager::is_menu_active(void)
 {
-	return m_handler_callback_type == UI_CALLBACK_TYPE_MENU;
+	return m_handler_callback_type == UI_CALLBACK_TYPE_MENU
+		|| (machine().options().ui() == emu_options::UI_MENUS && m_menubar && m_menubar->has_focus());
 }
 
 
