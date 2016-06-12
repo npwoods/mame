@@ -62,7 +62,7 @@ public:
 	float actual_height() const;
 	int get_wrap_info(std::vector<int> &xstart, std::vector<int> &xend) const;
 	void emit(render_container *container, float x, float y);
-	void add_text(const char *text, rgb_t fgcolor, rgb_t bgcolor, float size = 1.0)
+	void add_text(const char *text, rgb_t fgcolor = rgb_t::white, rgb_t bgcolor = rgb_t(0,0,0,0), float size = 1.0)
 	{
 		// create the style
 		char_style style = { 0, };
