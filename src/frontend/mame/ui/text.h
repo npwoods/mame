@@ -46,6 +46,7 @@ public:
 
 	// ctor/dtor
 	text_layout(render_font &font, float xscale, float yscale, float width, text_justify justify, word_wrapping wrap);
+	text_layout(text_layout &&that);
 	~text_layout();
 
 	// accessors

@@ -85,6 +85,17 @@ text_layout::text_layout(render_font &font, float xscale, float yscale, float wi
 
 
 //-------------------------------------------------
+//  ctor (move)
+//-------------------------------------------------
+
+text_layout::text_layout(text_layout &&that)
+	: m_font(that.m_font), m_xscale(that.m_xscale), m_yscale(that.m_yscale), m_width(that.m_width), m_justify(that.m_justify), m_wrap(that.m_wrap), m_lines(std::move(that.m_lines)),
+	  m_current_line(that.m_current_line), m_last_break(that.m_last_break), m_text_position(that.m_text_position)
+{
+}
+
+
+//-------------------------------------------------
 //  dtor
 //-------------------------------------------------
 

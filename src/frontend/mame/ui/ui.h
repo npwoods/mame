@@ -21,6 +21,7 @@
 #include "ui/uimain.h"
 #include "ui/menuitem.h"
 #include "ui/slider.h"
+#include "ui/text.h"
 
 namespace ui {
 
@@ -304,6 +305,9 @@ private:
 
 	static std::vector<ui::menu_item> slider_list;
 	static slider_state     *slider_current;
+
+	// layout creation
+	ui::text_layout create_layout(render_container *container, float width, ui::text_layout::text_justify justify, ui::text_layout::word_wrapping wrap);
 
 	// text generators
 	std::string &warnings_string(std::string &buffer);

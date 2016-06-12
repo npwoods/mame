@@ -27,7 +27,6 @@
 #include "ui/filemngr.h"
 #include "ui/sliders.h"
 #include "ui/viewgfx.h"
-#include "ui/text.h"
 #include "imagedev/cassette.h"
 #include "image.h"
 
@@ -551,12 +550,8 @@ void mame_ui_manager::draw_text(render_container *container, const char *buf, fl
 
 void mame_ui_manager::draw_text_full(render_container *container, const char *origs, float x, float y, float origwrapwidth, int justify, int wrap, int draw, rgb_t fgcolor, rgb_t bgcolor, float *totalwidth, float *totalheight, float text_size)
 {
-	// determine scale factors
-	float yscale = get_line_height();
-	float xscale = yscale * machine().render().ui_aspect(container);
-
 	// create the layout
-	ui::text_layout layout(*get_font(), xscale, yscale, origwrapwidth, (ui::text_layout::text_justify)justify, (ui::text_layout::word_wrapping)wrap);
+	auto layout = create_layout(container, origwrapwidth, (ui::text_layout::text_justify)justify, (ui::text_layout::word_wrapping)wrap);
 
 	// append text to it
 	layout.add_text(
@@ -2393,14 +2388,25 @@ void mame_ui_manager::set_use_natural_keyboard(bool use_natural_keyboard)
 //  wrap_text
 //-------------------------------------------------
 
-int mame_ui_manager::wrap_text(render_container *container, const char *origs, float x, float y, float origwrapwidth, std::vector<int> &xstart, std::vector<int> &xend, float text_size)
+ui::text_layout mame_ui_manager::create_layout(render_container *container, float width, ui::text_layout::text_justify justify, ui::text_layout::word_wrapping wrap)
 {
 	// determine scale factors
 	float yscale = get_line_height();
 	float xscale = yscale * machine().render().ui_aspect(container);
 
 	// create the layout
-	ui::text_layout layout(*get_font(), xscale, yscale, origwrapwidth, ui::text_layout::LEFT, ui::text_layout::WORD);
+	return ui::text_layout(*get_font(), xscale, yscale, width, justify, wrap);
+}
+
+
+//-------------------------------------------------
+//  wrap_text
+//-------------------------------------------------
+
+int mame_ui_manager::wrap_text(render_container *container, const char *origs, float x, float y, float origwrapwidth, std::vector<int> &xstart, std::vector<int> &xend, float text_size)
+{
+	// create the layout
+	auto layout = create_layout(container, origwrapwidth, ui::text_layout::LEFT, ui::text_layout::WORD);
 
 	// add the text
 	layout.add_text(
