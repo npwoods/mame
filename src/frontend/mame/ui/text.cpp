@@ -123,7 +123,7 @@ void text_layout::add_text(const char *text, const char_style &style)
 			}
 
 			// start a new line
-			start_new_line(line_justify);
+			start_new_line(line_justify, style.size);
 		}
 
 		// get the current character
@@ -143,7 +143,11 @@ void text_layout::add_text(const char *text, const char_style &style)
 		// is this an endline?
 		if (ch == '\n')
 		{
-			// if so, complete the current line
+			// first, start a line if we have not already
+			if (m_current_line == nullptr)
+				start_new_line(LEFT, style.size);
+
+			// and then close up the current line
 			update_maximum_line_width();
 			m_current_line = nullptr;
 		}
@@ -226,10 +230,10 @@ float text_layout::actual_height() const
 //  start_new_line
 //-------------------------------------------------
 
-void text_layout::start_new_line(text_layout::text_justify justify)
+void text_layout::start_new_line(text_layout::text_justify justify, float height)
 {
 	// create a new line
-	std::unique_ptr<line> new_line(global_alloc_clear<line>(*this, justify, actual_height()));
+	std::unique_ptr<line> new_line(global_alloc_clear<line>(*this, justify, actual_height(), height * yscale()));
 
 	// update the current line
 	update_maximum_line_width();
@@ -283,7 +287,7 @@ void text_layout::truncate_wrap()
 	m_current_line->add_character('.', style, source);
 
 	// finally start a new line
-	start_new_line(m_current_line->justify());
+	start_new_line(m_current_line->justify(), style.size);
 }
 
 
@@ -298,7 +302,7 @@ void text_layout::word_wrap()
 	size_t last_break = m_last_break;
 
 	// start a new line with the same justification
-	start_new_line(last_line->justify());
+	start_new_line(last_line->justify(), last_line->character(last_line->character_count() - 1).style.size);
 
 	// find the begining of the word to wrap
 	size_t position = last_break;
@@ -405,8 +409,8 @@ void text_layout::emit(render_container *container, float x, float y)
 //  line::ctor
 //-------------------------------------------------
 
-text_layout::line::line(text_layout &layout, text_justify justify, float yoffset)
-	: m_layout(layout), m_justify(justify), m_yoffset(yoffset), m_width(0.0), m_height(0.0)
+text_layout::line::line(text_layout &layout, text_justify justify, float yoffset, float height)
+	: m_layout(layout), m_justify(justify), m_yoffset(yoffset), m_width(0.0), m_height(height)
 {
 }
 

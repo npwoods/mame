@@ -102,7 +102,7 @@ private:
 	class line
 	{
 	public:
-		line(text_layout &layout, text_justify justify, float yoffset);
+		line(text_layout &layout, text_justify justify, float yoffset, float height);
 
 		// methods
 		void add_character(unicode_char ch, const char_style &style, const source_info &source);
@@ -140,7 +140,7 @@ private:
 
 	// methods
 	void add_text(const char *text, const char_style &style);
-	void start_new_line(text_justify justify);
+	void start_new_line(text_justify justify, float height);
 	float get_char_width(unicode_char ch, float size);
 	void truncate_wrap();
 	void word_wrap();
