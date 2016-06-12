@@ -172,7 +172,7 @@ void text_layout::add_text(const char *text, const char_style &style)
 			m_current_line->add_character(ch, style, source);
 
 			// do we have to wrap?
-			if (wrap() != NEVER && m_current_line->width() >= m_width)
+			if (wrap() != NEVER && m_current_line->width() > m_width)
 			{
 				switch (wrap())
 				{
