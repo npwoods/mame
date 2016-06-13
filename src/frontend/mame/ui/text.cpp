@@ -436,7 +436,7 @@ void text_layout::emit(render_container *container, float x, float y)
 			// handle differently sized text (yet)
 			float char_x = x + line_xoffset + ch.xoffset;
 			float char_y = y + line->yoffset();
-			float char_width = line->height() * xscale() / yscale();
+			float char_width = ch.xwidth;
 			float char_height = line->height();
 
 			// render the background of the character (if present)
@@ -448,7 +448,7 @@ void text_layout::emit(render_container *container, float x, float y)
 				char_x,
 				char_y,
 				char_height,
-				char_width / char_height,
+				xscale() / yscale(),
 				ch.style.fgcolor,
 				font(),
 				ch.character);
