@@ -676,7 +676,7 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 	{
 		// account for the checkbox
 		if (mi->is_checked())
-			ui().draw_text_full(container(), m_checkmark.c_str(), x0, y0, 1.0f - x0, JUSTIFY_LEFT, WRAP_WORD, DRAW_NORMAL, adjust_color(fgcolor), adjust_color(bgcolor));
+			ui().draw_text_full(container(), m_checkmark.c_str(), x0, y0, 1.0f - x0, ui::text_layout::LEFT, ui::text_layout::WORD, mame_ui_manager::NORMAL, adjust_color(fgcolor), adjust_color(bgcolor));
 		x0 += m_checkmark_width;
 
 		// expanders?
@@ -700,9 +700,9 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 			x0,
 			y0,
 			x1 - x0,
-			JUSTIFY_RIGHT,
-			WRAP_WORD,
-			DRAW_NORMAL,
+			ui::text_layout::RIGHT,
+			ui::text_layout::WORD,
+			mame_ui_manager::NORMAL,
 			adjust_color(fgcolor),
 			adjust_color(bgcolor));
 	}
@@ -710,7 +710,7 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 	tabbed_text_iterator iter(mi->text());
 	while(iter.next())
 	{
-		ui().draw_text_full(container(), iter.current(), x0, y0, 1.0f - x0, JUSTIFY_LEFT, WRAP_WORD, DRAW_NORMAL, adjust_color(fgcolor), adjust_color(bgcolor));
+		ui().draw_text_full(container(), iter.current(), x0, y0, 1.0f - x0, ui::text_layout::LEFT, ui::text_layout::WORD, mame_ui_manager::NORMAL, adjust_color(fgcolor), adjust_color(bgcolor));
 		if (column_widths != nullptr)
 			x0 += column_widths[iter.index()];
 	}

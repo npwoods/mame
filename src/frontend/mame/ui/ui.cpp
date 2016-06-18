@@ -396,7 +396,7 @@ void mame_ui_manager::update_and_render(render_container *container)
 
 	// display any popup messages
 	if (osd_ticks() < m_popup_text_end)
-		draw_text_box(container, messagebox_poptext.c_str(), JUSTIFY_CENTER, 0.5f, 0.9f, messagebox_backcolor);
+		draw_text_box(container, messagebox_poptext.c_str(), ui::text_layout::CENTER, 0.5f, 0.9f, messagebox_backcolor);
 	else
 		m_popup_text_end = 0;
 
@@ -538,7 +538,7 @@ void mame_ui_manager::draw_outlined_box(render_container *container, float x0, f
 
 void mame_ui_manager::draw_text(render_container *container, const char *buf, float x, float y)
 {
-	draw_text_full(container, buf, x, y, 1.0f - x, JUSTIFY_LEFT, WRAP_WORD, DRAW_NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, nullptr, nullptr);
+	draw_text_full(container, buf, x, y, 1.0f - x, ui::text_layout::LEFT, ui::text_layout::WORD, mame_ui_manager::NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, nullptr, nullptr);
 }
 
 
@@ -548,20 +548,20 @@ void mame_ui_manager::draw_text(render_container *container, const char *buf, fl
 //  and full size computation
 //-------------------------------------------------
 
-void mame_ui_manager::draw_text_full(render_container *container, const char *origs, float x, float y, float origwrapwidth, int justify, int wrap, int draw, rgb_t fgcolor, rgb_t bgcolor, float *totalwidth, float *totalheight, float text_size)
+void mame_ui_manager::draw_text_full(render_container *container, const char *origs, float x, float y, float origwrapwidth, ui::text_layout::text_justify justify, ui::text_layout::word_wrapping wrap, draw_mode draw, rgb_t fgcolor, rgb_t bgcolor, float *totalwidth, float *totalheight, float text_size)
 {
 	// create the layout
-	auto layout = create_layout(container, origwrapwidth, (ui::text_layout::text_justify)justify, (ui::text_layout::word_wrapping)wrap);
+	auto layout = create_layout(container, origwrapwidth, justify, wrap);
 
 	// append text to it
 	layout.add_text(
 		origs,
 		fgcolor,
-		draw == DRAW_OPAQUE ? bgcolor : rgb_t(0, 0, 0, 0),
+		draw == OPAQUE ? bgcolor : rgb_t(0, 0, 0, 0),
 		text_size);
 
 	// and emit it (if we are asked to do so)
-	if (draw != DRAW_NONE)
+	if (draw != NONE)
 		layout.emit(container, x, y);
 
 	// return width/height
@@ -577,7 +577,7 @@ void mame_ui_manager::draw_text_full(render_container *container, const char *or
 //  message with a box around it
 //-------------------------------------------------
 
-void mame_ui_manager::draw_text_box(render_container *container, const char *text, int justify, float xpos, float ypos, rgb_t backcolor)
+void mame_ui_manager::draw_text_box(render_container *container, const char *text, ui::text_layout::text_justify justify, float xpos, float ypos, rgb_t backcolor)
 {
 	// create a layout
 	ui::text_layout layout = create_layout(container, 1.0f, (ui::text_layout::text_justify) justify);
@@ -623,7 +623,7 @@ void mame_ui_manager::draw_text_box(render_container *container, ui::text_layout
 
 void mame_ui_manager::draw_message_window(render_container *container, const char *text)
 {
-	draw_text_box(container, text, JUSTIFY_LEFT, 0.5f, 0.5f, UI_BACKGROUND_COLOR);
+	draw_text_box(container, text, ui::text_layout::text_justify::LEFT, 0.5f, 0.5f, UI_BACKGROUND_COLOR);
 }
 
 
@@ -997,7 +997,7 @@ std::string &mame_ui_manager::game_info_astring(std::string &str)
 
 UINT32 mame_ui_manager::handler_messagebox(render_container *container)
 {
-	draw_text_box(container, messagebox_text.c_str(), JUSTIFY_LEFT, 0.5f, 0.5f, messagebox_backcolor);
+	draw_text_box(container, messagebox_text.c_str(), ui::text_layout::LEFT, 0.5f, 0.5f, messagebox_backcolor);
 	return 0;
 }
 
@@ -1013,7 +1013,7 @@ UINT32 mame_ui_manager::handler_messagebox_anykey(render_container *container)
 	UINT32 state = 0;
 
 	// draw a standard message window
-	draw_text_box(container, messagebox_text.c_str(), JUSTIFY_LEFT, 0.5f, 0.5f, messagebox_backcolor);
+	draw_text_box(container, messagebox_text.c_str(), ui::text_layout::LEFT, 0.5f, 0.5f, messagebox_backcolor);
 
 	// if the user cancels, exit out completely
 	if (machine().ui_input().pressed(IPT_UI_CANCEL))
@@ -1163,7 +1163,7 @@ void mame_ui_manager::paste()
 void mame_ui_manager::draw_fps_counter(render_container *container)
 {
 	draw_text_full(container, machine().video().speed_text().c_str(), 0.0f, 0.0f, 1.0f,
-		JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
+		ui::text_layout::RIGHT, ui::text_layout::WORD, OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
 }
 
 
@@ -1175,7 +1175,7 @@ void mame_ui_manager::draw_timecode_counter(render_container *container)
 {
 	std::string tempstring;
 	draw_text_full(container, machine().video().timecode_text(tempstring).c_str(), 0.0f, 0.0f, 1.0f,
-		JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t(0xf0, 0xf0, 0x10, 0x10), rgb_t::black, nullptr, nullptr);
+		ui::text_layout::RIGHT, ui::text_layout::WORD, OPAQUE, rgb_t(0xf0, 0xf0, 0x10, 0x10), rgb_t::black, nullptr, nullptr);
 }
 
 
@@ -1187,7 +1187,7 @@ void mame_ui_manager::draw_timecode_total(render_container *container)
 {
 	std::string tempstring;
 	draw_text_full(container, machine().video().timecode_total_text(tempstring).c_str(), 0.0f, 0.0f, 1.0f,
-		JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t(0xf0, 0x10, 0xf0, 0x10), rgb_t::black, nullptr, nullptr);
+		ui::text_layout::LEFT, ui::text_layout::WORD, OPAQUE, rgb_t(0xf0, 0x10, 0xf0, 0x10), rgb_t::black, nullptr, nullptr);
 }
 
 
@@ -1198,7 +1198,7 @@ void mame_ui_manager::draw_timecode_total(render_container *container)
 void mame_ui_manager::draw_profiler(render_container *container)
 {
 	const char *text = g_profiler.text(machine());
-	draw_text_full(container, text, 0.0f, 0.0f, 1.0f, JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
+	draw_text_full(container, text, 0.0f, 0.0f, 1.0f, ui::text_layout::LEFT, ui::text_layout::WORD, OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
 }
 
 
@@ -1644,7 +1644,7 @@ UINT32 mame_ui_manager::handler_confirm_quit(render_container *container)
 			ui_select_text,
 			ui_cancel_text);
 
-	draw_text_box(container, quit_message.c_str(), JUSTIFY_CENTER, 0.5f, 0.5f, UI_RED_COLOR);
+	draw_text_box(container, quit_message.c_str(), ui::text_layout::CENTER, 0.5f, 0.5f, UI_RED_COLOR);
 	machine().pause();
 
 	// if the user press ENTER, quit the game
