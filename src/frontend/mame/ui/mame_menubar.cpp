@@ -119,18 +119,11 @@ void mame_menubar::menubar_draw_ui_elements()
 {
 	// first draw the FPS counter 
 	if (ui().show_fps_counter())
-	{
-		std::string tempstring = machine().video().speed_text();
-		ui().draw_text_full(container(), tempstring.c_str(), 0.0f, 0.0f, 1.0f,
-					JUSTIFY_RIGHT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
-	}
+		ui().draw_fps_counter(container());
 
 	// draw the profiler if visible 
 	if (ui().show_profiler())
-	{
-		const char *text = g_profiler.text(machine());
-		ui().draw_text_full(container(), text, 0.0f, 0.0f, 1.0f, JUSTIFY_LEFT, WRAP_WORD, DRAW_OPAQUE, rgb_t::white, rgb_t::black, nullptr, nullptr);
-	}
+		ui().draw_profiler(container());
 
 	// check for fast forward 
 	if (machine().ioport().type_pressed(IPT_UI_FAST_FORWARD))
