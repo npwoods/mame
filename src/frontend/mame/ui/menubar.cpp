@@ -775,7 +775,7 @@ rgb_t menubar::adjust_color(rgb_t color)
 	switch(m_menubar_visibility)
 	{
 		case MENUBAR_VISIBILITY_INVISIBLE:
-			color = rgb_t(0, 0, 0, 0);
+			color = rgb_t::transparent;
 			break;
 
 		case MENUBAR_VISIBILITY_TRANSLUCENT:
