@@ -580,7 +580,7 @@ void mame_ui_manager::draw_text_full(render_container *container, const char *or
 void mame_ui_manager::draw_text_box(render_container *container, const char *text, ui::text_layout::text_justify justify, float xpos, float ypos, rgb_t backcolor)
 {
 	// create a layout
-	ui::text_layout layout = create_layout(container, 1.0f, (ui::text_layout::text_justify) justify);
+	ui::text_layout layout = create_layout(container, 1.0f, justify);
 
 	// add text to it
 	layout.add_text(text);
@@ -1726,9 +1726,9 @@ std::vector<ui::menu_item> mame_ui_manager::slider_init(running_machine &machine
 
 	// add analog adjusters
 	int slider_index = 0;
-	for (ioport_port &port : machine.ioport().ports())
+	for (auto &port : machine.ioport().ports())
 	{
-		for (ioport_field &field : port.fields())
+		for (ioport_field &field : port.second->fields())
 		{
 			if (field.type() == IPT_ADJUSTER)
 			{
@@ -1832,9 +1832,9 @@ std::vector<ui::menu_item> mame_ui_manager::slider_init(running_machine &machine
 #ifdef MAME_DEBUG
 	slider_index = 0;
 	// add crosshair adjusters
-	for (ioport_port &port : machine.ioport().ports())
+	for (auto &port : machine.ioport().ports())
 	{
-		for (ioport_field &field : port.fields())
+		for (ioport_field &field : port.second->fields())
 		{
 			if (field.crosshair_axis() != CROSSHAIR_AXIS_NONE && field.player() == 0)
 			{
