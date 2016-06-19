@@ -63,7 +63,6 @@ private:
 	void set_warp_mode(bool warp_mode);
 	bool warp_mode() const;
 	void view_gfx();
-	void load_or_save(UINT32 loadsave);
 	void start_menu(std::unique_ptr<menu> &&menu);
 
 	// template methods

@@ -177,10 +177,10 @@ void mame_menubar::build_file_menu()
 	record_movie_menu.set_checked(machine().video().is_recording());
 
 	// save state
-	file_menu.append(_("Save State..."), &mame_menubar::load_or_save, *this, (UINT32) LOADSAVE_SAVE, IPT_UI_SAVE_STATE);
+	file_menu.append(_("Save State..."), &mame_ui_manager::start_save_state, ui(), IPT_UI_SAVE_STATE);
 
 	// load state
-	file_menu.append(_("Load State..."), &mame_menubar::load_or_save, *this, (UINT32) LOADSAVE_LOAD, IPT_UI_LOAD_STATE);
+	file_menu.append(_("Load State..."), &mame_ui_manager::start_load_state, ui(), IPT_UI_LOAD_STATE);
 
 	// separator
 	file_menu.append_separator();
@@ -742,20 +742,6 @@ void mame_menubar::view_gfx()
 
 	// and transfer control
 	ui().set_handler<mame_ui_manager&, bool>(UI_CALLBACK_TYPE_GENERAL, ui_gfx_ui_handler, ui(), machine().paused());
-}
-
-
-//-------------------------------------------------
-//  load_or_save
-//-------------------------------------------------
-
-void mame_menubar::load_or_save(UINT32 loadsave)
-{
-	// first pause
-	machine().pause();
-
-	// and transfer control
-	ui().set_handler(UI_CALLBACK_TYPE_GENERAL, &mame_ui_manager::handler_load_save, loadsave);
 }
 
 } // namespace ui

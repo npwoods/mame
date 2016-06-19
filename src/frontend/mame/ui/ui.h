@@ -71,14 +71,6 @@ class menubar;
 /* cancel return value for a UI handler */
 #define UI_HANDLER_CANCEL       ((UINT32)~0)
 
-/* load vs save */
-enum
-{
-	LOADSAVE_NONE,
-	LOADSAVE_LOAD,
-	LOADSAVE_SAVE
-};
-
 #define SLIDER_DEVICE_SPACING	0x0ff
 #define SLIDER_SCREEN_SPACING	0x0f
 #define SLIDER_INPUT_SPACING	0x0f
@@ -245,6 +237,8 @@ public:
 	void draw_timecode_counter(render_container *container);
 	void draw_timecode_total(render_container *container);
 	void draw_profiler(render_container *container);
+	void start_save_state();
+	void start_load_state();
 
 	// print the game info string into a buffer
 	std::string &game_info_astring(std::string &str);
