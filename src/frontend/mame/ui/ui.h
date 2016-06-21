@@ -259,9 +259,6 @@ public:
 
 	virtual void menu_reset() override;
 
-	// UI handlers
-	UINT32 handler_load_save(render_container *container, UINT32 state);
-
 private:
 	// instance variables
 	render_font *           m_font;
@@ -276,7 +273,6 @@ private:
 	std::unique_ptr<UINT8[]> m_non_char_keys_down;
 	render_texture *        m_mouse_arrow_texture;
 	bool                    m_mouse_show;
-	bool                    m_load_save_hold;
 	ui_options              m_ui_options;
 
 	// static variables
