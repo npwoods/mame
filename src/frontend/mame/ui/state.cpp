@@ -24,8 +24,11 @@ int menu_load_save_state_base::s_last_slot_selected;
 //  ctor
 //-------------------------------------------------
 
-menu_load_save_state_base::menu_load_save_state_base(mame_ui_manager &mui, render_container *container, bool disable_not_found_items)
-	: menu(mui, container), m_disable_not_found_items(disable_not_found_items), m_enabled_mask(0)
+menu_load_save_state_base::menu_load_save_state_base(mame_ui_manager &mui, render_container *container, const char *header, bool disable_not_found_items)
+	: menu(mui, container),
+		m_header(header),
+		m_disable_not_found_items(disable_not_found_items),
+		m_enabled_mask(0)
 {
 }
 
@@ -97,7 +100,7 @@ void menu_load_save_state_base::populate()
 			itemref_from_slot_number(i));
 	}
 
-	// select the last slot
+	// select the most recently used slot
 	if (s_last_slot_selected >= 0
 		&& s_last_slot_selected < SLOT_COUNT
 		&& ((m_enabled_mask & (1 << s_last_slot_selected)) != 0))
@@ -105,6 +108,14 @@ void menu_load_save_state_base::populate()
 		auto itemref = itemref_from_slot_number(s_last_slot_selected);
 		set_selection(itemref);
 	}
+
+	// set up custom render proc
+	customtop = ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
+
+	// pause if appropriate
+	m_was_paused = machine().paused();
+	if (!m_was_paused)
+		machine().pause();
 }
 
 
@@ -151,6 +162,22 @@ void menu_load_save_state_base::slot_selected(int slot)
 
 	// no matter what, pop out
 	menu::stack_pop(machine());
+
+	// resume if appropriate
+	if (!m_was_paused)
+		machine().resume();
+}
+
+
+//-------------------------------------------------
+//  custom_render - perform our special rendering
+//-------------------------------------------------
+
+void menu_load_save_state_base::custom_render(void *selectedref, float top, float bottom, float origx1, float origy1, float origx2, float origy2)
+{
+	extra_text_render(top, bottom, origx1, origy1, origx2, origy2,
+		m_header,
+		nullptr);
 }
 
 
@@ -163,7 +190,7 @@ void menu_load_save_state_base::slot_selected(int slot)
 //-------------------------------------------------
 
 menu_load_state::menu_load_state(mame_ui_manager &mui, render_container *container)
-	: menu_load_save_state_base(mui, container, true)
+	: menu_load_save_state_base(mui, container, _("Load State"), true)
 {
 }
 
@@ -187,7 +214,7 @@ void menu_load_state::process_file(const std::string &file_name)
 //-------------------------------------------------
 
 menu_save_state::menu_save_state(mame_ui_manager &mui, render_container *container)
-	: menu_load_save_state_base(mui, container, false)
+	: menu_load_save_state_base(mui, container, _("Save State"), false)
 {
 }
 
