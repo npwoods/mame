@@ -97,10 +97,6 @@ public:
 	DECLARE_READ16_MEMBER(mem_r);
 	DECLARE_WRITE16_MEMBER(mem_w);
 
-	//UINT16 m_pcg_addr;
-	//UINT8 m_pcg_internal_addr;
-	//UINT8 *m_char_rom;
-
 	DECLARE_DRIVER_INIT(vt240);
 	virtual void machine_reset() override;
 	UPD7220_DISPLAY_PIXELS_MEMBER(hgdc_draw);
@@ -121,8 +117,8 @@ WRITE_LINE_MEMBER(vt240_state::write_keyboard_clock)
 
 WRITE_LINE_MEMBER(vt240_state::i8085_rdy_w)
 {
-	//m_maincpu->set_input_line(T11_IRQ1, state ? ASSERT_LINE : CLEAR_LINE);
-	m_i8085_rdy = !state;
+	m_maincpu->set_input_line(3, state ? CLEAR_LINE : ASSERT_LINE);
+	m_i8085_rdy = state;
 }
 
 READ_LINE_MEMBER(vt240_state::i8085_sid_r)
@@ -179,7 +175,7 @@ WRITE8_MEMBER(vt240_state::i8085_comm_w)
 			break;
 		case 2:
 			m_i8085->set_input_line(INPUT_LINE_RESET, PULSE_LINE);
-			m_t11 = 0;
+			m_t11 = 1;
 			m_i8085->set_input_line(I8085_RST65_LINE, CLEAR_LINE);
 			break;
 	}
@@ -232,7 +228,7 @@ READ8_MEMBER(vt240_state::char_buf_r)
 
 WRITE8_MEMBER(vt240_state::char_buf_w)
 {
-	m_char_buf[m_char_idx++] = ~data;
+	m_char_buf[m_char_idx++] = BITSWAP8(data, 0, 1, 2, 3, 4, 5, 6, 7);
 	m_char_idx &= 0xf;
 }
 
@@ -256,7 +252,7 @@ WRITE8_MEMBER(vt240_state::vram_w)
 {
 	offset = ((offset & 0x30000) >> 1) | (offset & 0x7fff);
 	if(BIT(m_reg1, 2))
-		data = m_video_ram[offset];
+		data = m_video_ram[offset & 0xffff];
 	else if(BIT(m_reg0, 4))
 	{
 		data = m_char_buf[m_char_idx++];
@@ -264,13 +260,13 @@ WRITE8_MEMBER(vt240_state::vram_w)
 		offset = BIT(offset, 16) | (offset & 0xfffe);
 	}
 	if(!BIT(m_reg0, 3))
-		data = (data & ~m_mask) | (m_video_ram[offset] & m_mask);
+		data = (data & ~m_mask) | (m_video_ram[offset & 0xffff] & m_mask);
 	m_video_ram[offset & 0xffff] = data;
 }
 
 WRITE8_MEMBER(vt240_state::mask_w)
 {
-	m_mask = data;
+	m_mask = BITSWAP8(data, 0, 1, 2, 3, 4, 5, 6, 7);
 }
 
 WRITE8_MEMBER(vt240_state::nvr_store_w)
@@ -351,12 +347,14 @@ void vt240_state::machine_reset()
 	m_nvram->recall(ASSERT_LINE);
 	m_nvram->recall(CLEAR_LINE);
 	m_mem_map_sel = 0;
+	m_t11 = 1;
+	m_i8085_rdy = 1;
 }
 
 static const gfx_layout vt240_chars_8x10 =
 {
 	8,10,
-	RGN_FRAC(1,1),
+	0x240,
 	1,
 	{ 0 },
 	{ STEP8(0,1) },
@@ -365,7 +363,7 @@ static const gfx_layout vt240_chars_8x10 =
 };
 
 static GFXDECODE_START( vt240 )
-	GFXDECODE_ENTRY( "charcpu", 0x338*10-2, vt240_chars_8x10, 0, 8 )
+	GFXDECODE_ENTRY( "charcpu", 0x338*10-3, vt240_chars_8x10, 0, 8 )
 GFXDECODE_END
 
 static MACHINE_CONFIG_START( vt240, vt240_state )
@@ -496,24 +494,8 @@ ROM_START( vt240 )
 	ROM_LOAD( "23-087j5.e182.e183.jed", 0x0000, 0x1000, NO_DUMP ) // PAL16L8ACN; "Logic Unit" Character Pattern Related
 ROM_END
 
-/* Driver */
-DRIVER_INIT_MEMBER(vt240_state,vt240)
-{
-	UINT8 *ROM = memregion("charcpu")->base();
-
-	/* patch T11 check */
-	ROM[0x09d] = 0x00;
-	ROM[0x09e] = 0x00;
-	ROM[0x09f] = 0x00;
-
-	/* ROM checksum */
-	ROM[0x15c] = 0x00;
-	ROM[0x15d] = 0x00;
-	ROM[0x15e] = 0x00;
-}
-
 /*    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT          CLASS   INIT    COMPANY                      FULLNAME       FLAGS */
-COMP( 1983, vt240,  0,      0,       vt240,    0, vt240_state,   vt240,  "Digital Equipment Corporation", "VT240", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+COMP( 1983, vt240,  0,      0,       vt240,    0, driver_device,   0,  "Digital Equipment Corporation", "VT240", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
 //COMP( 1983, vt241,  0,      0,       vt220,     vt220, driver_device,   0,  "Digital Equipment Corporation", "VT241", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
 // NOTE: the only difference between VT240 and VT241 is the latter comes with a VR241 Color monitor, while the former comes with a mono display; the ROMs and operation are identical.
-COMP( 1983, mc7105, 0,      0,       mc7105,    0, vt240_state,   vt240,  "Elektronika",                  "MC7105", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+COMP( 1983, mc7105, 0,      0,       mc7105,    0, driver_device,   0,  "Elektronika",                  "MC7105", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

@@ -10,22 +10,20 @@
 #ifndef RAIDEN2COP_H
 #define RAIDEN2COP_H
 
-
-
+#define LOG_Commands 	0
+#define LOG_Phytagoras 	0
+#define LOG_Division  	0
+#define LOG_Move0205    0
+#define LOG_Move0905    0
 
 #define MCFG_RAIDEN2COP_VIDEORAM_OUT_CB(_devcb) \
 	devcb = &raiden2cop_device::set_m_videoramout_cb(*device, DEVCB_##_devcb);
 
-#define MCFG_CPU_IS_68K(value) \
-	raiden2cop_device::set_cpu_is_68k(*device, value);
-
 #define MCFG_RAIDEN2COP_ADD(_tag ) \
-	MCFG_DEVICE_ADD(_tag, RAIDEN2COP, 0) \
-	MCFG_CPU_IS_68K(0)
+	MCFG_DEVICE_ADD(_tag, RAIDEN2COP, 0)
 
 #define MCFG_LEGIONNACOP_ADD(_tag ) \
-	MCFG_DEVICE_ADD(_tag, RAIDEN2COP, 0) \
-	MCFG_CPU_IS_68K(1)
+	MCFG_DEVICE_ADD(_tag, RAIDEN2COP, 0)
 
 
 class raiden2cop_device : public device_t
@@ -249,10 +247,10 @@ private:
 	void execute_b900(int offset, UINT16 data);
 
 	// TODO: remove these
-	void LEGACY_execute_130e(int offset, UINT16 data);
+	//void LEGACY_execute_130e(int offset, UINT16 data);
 	void LEGACY_execute_130e_cupsoc(int offset, UINT16 data);
-	void LEGACY_execute_3b30(int offset, UINT16 data);
-	void LEGACY_execute_42c2(int offset, UINT16 data);
+	//void LEGACY_execute_3b30(int offset, UINT16 data);
+	//void LEGACY_execute_42c2(int offset, UINT16 data);
 	void LEGACY_execute_e30e(int offset, UINT16 data);
 	void LEGACY_execute_6200(int offset, UINT16 data);
 	void LEGACY_execute_dde5(int offset, UINT16 data);

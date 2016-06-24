@@ -576,7 +576,7 @@ std::string running_machine::compose_saveload_filename(const char *filename, con
 		// take into account the statename option
 		const char *stateopt = options().state_name();
 		std::string statename = get_statename(stateopt);
-		result.assign(statename.c_str()).append(PATH_SEPARATOR).append(filename).append(".sta");
+		m_saveload_pending_file = string_format("%s%s%s.sta", statename, PATH_SEPARATOR, filename);
 	}
 	return result;
 }
@@ -745,6 +745,19 @@ void running_machine::add_logerror_callback(logerror_callback callback)
 	assert_always(m_current_phase == MACHINE_PHASE_INIT, "Can only call add_logerror_callback at init time!");
 		m_string_buffer.reserve(1024);
 	m_logerror_list.push_back(std::make_unique<logerror_callback_item>(callback));
+}
+
+
+//-------------------------------------------------
+//  strlog - send an error logging string to the
+//  debugger and any OSD-defined output streams
+//-------------------------------------------------
+
+void running_machine::strlog(const char *str) const
+{
+	// log to all callbacks
+	for (auto &cb : m_logerror_list)
+		cb->m_func(str);
 }
 
 

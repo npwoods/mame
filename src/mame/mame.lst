@@ -13322,6 +13322,7 @@ bsuerter                        // 1991, Unknown
 bsuertes                        // 1991, Unknown
 bsuertet                        // 1991, Unknown
 bsuerteu                        // 1991, Unknown
+bsuertev                        // 1991, Unknown
 caspoker                        // 1987, PM / Beck Elektronik.
 falcnwld                        // 1991, TVG
 falcnwlda                       // (c) 1990, Video Klein
@@ -13465,6 +13466,8 @@ fl7_3121                        // (c) 199? Cyberdyne Systems, Inc.
 fl7_50                          // (c) 199? Cyberdyne Systems, Inc.
 fl7_500                         // (c) 199? Cyberdyne Systems, Inc.
 fl7_2000                        // (c) 199? Cyberdyne Systems, Inc.
+fl7_2k16                        // (c) 199? Cyberdyne Systems, Inc.
+fl7_tw                          // Taiwanese Hardware.
 goldfrui                        // bootleg
 goldstar                        // (c) 198? IGS
 goldstbl                        // (c) 198? IGS
@@ -14194,6 +14197,7 @@ mjkinjas                        // (c) 1991 Home Data
 mjkojink                        // (c) 1989 Home Data
 mjprivat                        // (c) 1991 Matoba
 mjyougo                         // (c) 1989 Home Data
+mjjoship			// (c) 1988 Home Data
 mrokumei                        // (c) 1988 Home Data
 reikaids                        // (c) 1988 Home Data
 vitaminc                        // (c) 1989 Home Data
@@ -19579,6 +19583,7 @@ edf                             // (c) 1991
 edfa                            // (c) 1991
 edfbl                           // (c) 1991
 edfu                            // (c) 1991 (North America)
+edfp                            // (c) 1991 (Japan, Prototype)
 hachoo                          // (c) 1989
 hayaosi1                        // (c) 1993
 iganinju                        // (c) 1988 (Japan)
@@ -33271,12 +33276,18 @@ gamegear                        // Sega GameGear
 sg1000m3                        // Sega SG-1000 Mark III (Japan)
 sms                             // Sega Master System II (NTSC)
 sms1                            // Sega Master System I (NTSC)
+sms1br                          // Tec Toy Master System I (Brazil)
 sms1kr                          // Samsung Gam*Boy I (Korea)
 sms1krfm                        // Samsung Gam*Boy I (Korea) with FM Chip
 sms1pal                         // Sega Master System I (PAL)
+sms1paln                        // Tec Toy Master System I (PAL-N)
+sms2br                          // Tec Toy Master System II (Brazil)
+sms2paln                        // Tec Toy Master System II (PAL-N)
+smsbr                           // Tec Toy Master System III Compact (Brazil)
 smsj                            // Sega Master System (Japan) with FM Chip
 smskr                           // Samsung Gam*Boy II (Korea)
 smspal                          // Sega Master System II (PAL)
+smspaln                         // Tec Toy Master System III Compact (PAL-N)
 smssdisp                        // Sega Master System Store Display Unit
 
 @source:smsmcorp.cpp
@@ -35295,7 +35306,6 @@ thndrx2                         // GX073 (c) 1991 (World)
 thndrx2a                        // GX073 (c) 1991 (Asia)
 thndrx2j                        // GX073 (c) 1991 (Japan)
 tmht                            // GX963 (c) 1989 (UK)
-tmht22pe                        // GX063 (c) 1991 (UK)
 tmht2p                          // GX963 (c) 1989 (UK)
 tmht2pa                         // GX963 (c) 1989 (UK)
 tmhta                           // GX963 (c) 1989 (UK)
@@ -35303,6 +35313,8 @@ tmhtb                           // GX963 (c) 1989 (UK?)
 tmnt                            // GX963 (c) 1989 (World)
 tmnt2                           // GX063 (c) 1991 (US)
 tmnt22pu                        // GX063 (c) 1991 (US)
+tmht22pe                        // GX063 (c) 1991 (UK)
+tmht24pe                        // GX063 (c) 1991 (UK)
 tmnt2a                          // GX063 (c) 1991 (Asia)
 tmnt2pj                         // GX963 (c) 1990 (Japan)
 tmnt2po                         // GX963 (c) 1989 (Oceania)
