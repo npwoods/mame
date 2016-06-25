@@ -822,25 +822,6 @@ void running_machine::call_notifiers(machine_notification which)
 
 
 //-------------------------------------------------
-//  get_save_state_modified_time - get the last
-//	modified time of a save state file
-//-------------------------------------------------
-
-std::time_t running_machine::get_save_state_modified_time(const char *filename)
-{
-	const char *searchpath = osd_is_absolute_path(filename)
-		? nullptr
-		: options().state_directory();
-
-	emu_file file(searchpath, OPEN_FLAG_READ);
-	auto const filerr = file.open(filename);
-	return (filerr == osd_file::error::NONE)
-		? ((util::core_file &) file).get_last_modified_time()
-		: (std::time_t) - 1;
-}
-
-
-//-------------------------------------------------
 //  handle_saveload - attempt to perform a save
 //  or load
 //-------------------------------------------------

@@ -9,6 +9,8 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "machine.h"
+#include "emuopts.h"
 #include "ui/state.h"
 
 
@@ -69,24 +71,26 @@ void menu_load_save_state_base::populate()
 		// compose the filename
 		std::string file_name = machine().compose_saveload_filename(name.c_str());
 
-		// get the last modified time
-		std::time_t last_modified = machine().get_save_state_modified_time(file_name.c_str());
-
-		// is the file present?
-		bool file_present = last_modified != (std::time_t) -1;
+		// stat the resulting file
+		auto entry = stat_searchpath(file_name, machine().options().state_directory());
 
 		// get the time as a local time string
 		char time_string[128];
-		if (file_present)
-			std::strftime(time_string, sizeof(time_string), "%A %c", std::localtime(&last_modified));
+		if (entry != nullptr)
+		{
+			auto last_modified = std::chrono::system_clock::to_time_t(entry->last_modified);
+			std::strftime(time_string, sizeof(time_string), "%#c", std::localtime(&last_modified));
+		}
 		else
+		{
 			snprintf(time_string, ARRAY_LENGTH(time_string), "---");
+		}
 
 		// create the menu text and flags
-		std::string text = string_format("%s: %s", name.c_str(), time_string);
+		std::string text = string_format("%s: %s", name, time_string);
 
 		// is this item enabled?
-		bool enabled = file_present || !m_disable_not_found_items;
+		bool enabled = (entry != nullptr) || !m_disable_not_found_items;
 
 		// if enabled, set the bit field
 		if (enabled)
@@ -178,6 +182,26 @@ void menu_load_save_state_base::custom_render(void *selectedref, float top, floa
 	extra_text_render(top, bottom, origx1, origy1, origx2, origy2,
 		m_header,
 		nullptr);
+}
+
+
+//-------------------------------------------------
+//  stat_searchpath
+//-------------------------------------------------
+
+std::unique_ptr<osd::directory::entry> menu_load_save_state_base::stat_searchpath(std::string const &path, const char *searchpath)
+{
+	path_iterator iter(searchpath);
+	
+	std::string fullpath;
+	std::unique_ptr<osd::directory::entry> result;
+	while (iter.next(fullpath, path.c_str()))
+	{
+		result = osd_stat(fullpath);
+		if (result != nullptr)
+			break;
+	}
+	return result;
 }
 
 

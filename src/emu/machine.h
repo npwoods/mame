@@ -235,7 +235,6 @@ public:
 	UINT32 rand();
 	const char *describe_context();
 	std::string compose_saveload_filename(const char *base_filename, const char **searchpath = nullptr);
-	std::time_t get_save_state_modified_time(const char *filename);
 
 	// CPU information
 	cpu_device *            firstcpu;           // first CPU
