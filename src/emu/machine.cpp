@@ -576,7 +576,7 @@ std::string running_machine::compose_saveload_filename(const char *filename, con
 		// take into account the statename option
 		const char *stateopt = options().state_name();
 		std::string statename = get_statename(stateopt);
-		m_saveload_pending_file = string_format("%s%s%s.sta", statename, PATH_SEPARATOR, filename);
+		result = string_format("%s%s%s.sta", statename, PATH_SEPARATOR, filename);
 	}
 	return result;
 }
