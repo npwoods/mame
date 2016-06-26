@@ -10,27 +10,31 @@
 
 #include "timeconv.h"
 
-namespace util {
+#include <ctime>
 
-/***************************************************************************
+
+namespace util {
+namespace {
+
+	/***************************************************************************
 	PROTOTYPES
 ***************************************************************************/
 
-static util::ntfs_duration calculate_ntfs_offset();
+util::ntfs_duration calculate_ntfs_offset();
 
 
 /***************************************************************************
 	GLOBAL VARIABLES
 ***************************************************************************/
 
-static util::ntfs_duration s_ntfs_offset(calculate_ntfs_offset());
+util::ntfs_duration f_ntfs_offset(calculate_ntfs_offset());
 
 
 /***************************************************************************
 	IMPLEMENTATION
 ***************************************************************************/
 
-static util::ntfs_duration calculate_ntfs_offset()
+util::ntfs_duration calculate_ntfs_offset()
 {
 	constexpr auto days_in_year(365);
 	constexpr auto days_in_four_years((days_in_year * 4) + 1);
@@ -63,6 +67,9 @@ static util::ntfs_duration calculate_ntfs_offset()
 	return result;
 }
 
+} // anonymous namespace
+
+
 
 // -------------------------------------------------
 // system_clock_time_point_from_ntfs_duration
@@ -70,8 +77,7 @@ static util::ntfs_duration calculate_ntfs_offset()
 
 std::chrono::system_clock::time_point system_clock_time_point_from_ntfs_duration(ntfs_duration d)
 {
-	return std::chrono::system_clock::from_time_t(0) + std::chrono::duration_cast<std::chrono::system_clock::duration>(d - s_ntfs_offset);
+	return std::chrono::system_clock::from_time_t(0) + std::chrono::duration_cast<std::chrono::system_clock::duration>(d - f_ntfs_offset);
 }
 
-
-};
+} // namespace util

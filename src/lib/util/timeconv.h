@@ -35,7 +35,7 @@ typedef std::chrono::duration<std::uint64_t, std::ratio<1, 10000000> > ntfs_dura
 // ntfs_duration_from_filetime
 // -------------------------------------------------
 
-inline ntfs_duration ntfs_duration_from_filetime(std::uint32_t high, std::uint32_t low)
+inline constexpr ntfs_duration ntfs_duration_from_filetime(std::uint32_t high, std::uint32_t low)
 {
 	return ntfs_duration((std::uint64_t(high) << 32) | std::uint64_t(low));
 }
@@ -45,7 +45,6 @@ inline ntfs_duration ntfs_duration_from_filetime(std::uint32_t high, std::uint32
 	FUNCTION PROTOTYPES
 ***************************************************************************/
 
-ntfs_duration ntfs_duration_from_filetime(std::uint32_t high, std::uint32_t low);
 std::chrono::system_clock::time_point system_clock_time_point_from_ntfs_duration(ntfs_duration d);
 
 
