@@ -37,8 +37,7 @@
 #endif
 #endif
 
-#undef _POSIX_C_SOURCE  // to get DT_xxx on OS X
-
+#define _DARWIN_C_SOURCE  // to get DT_xxx on OS X
 
 #include "osdcore.h"
 #include "modules/lib/osdlib.h"
@@ -65,10 +64,8 @@ namespace {
 
 #if defined(WIN32)
 constexpr char PATHSEPCH = '\\';
-constexpr char INVPATHSEPCH = '/';
 #else
 constexpr char PATHSEPCH = '/';
-constexpr char INVPATHSEPCH = '\\';
 #endif
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(__DragonFly__) || defined(EMSCRIPTEN) || defined(__ANDROID__) || defined(WIN32) || defined(SDLMAME_NO64BITIO)
@@ -99,7 +96,7 @@ public:
 
 	virtual const entry *read() override;
 
-	virtual bool opendir(std::string const &dirname) override;
+	bool open_impl(std::string const &dirname);
 
 private:
 	typedef std::unique_ptr<DIR, int (*)(DIR *)>	dir_ptr;
@@ -183,10 +180,10 @@ const osd::directory::entry *posix_directory::read()
 
 
 //============================================================
-//  posix_directory::opendir
+//  posix_directory::open_impl
 //============================================================
 
-bool posix_directory::opendir(std::string const &dirname)
+bool posix_directory::open_impl(std::string const &dirname)
 {
 	assert(!m_fd);
 
@@ -204,14 +201,14 @@ bool posix_directory::opendir(std::string const &dirname)
 
 directory::ptr directory::open(std::string const &dirname)
 {
-	ptr dir;
-	try { dir = std::make_unique<posix_directory>(); }
+	std::unique_ptr<posix_directory> dir;
+	try { dir.reset(new posix_directory); }
 	catch (...) { return nullptr; }
 
-	if (!dir->opendir(dirname))
+	if (!dir->open_impl(dirname))
 		return nullptr;
 
-	return dir;
+	return ptr(std::move(dir));
 }
 
 } // namespace osd

@@ -320,7 +320,6 @@ namespace osd
 				OTHER
 			};
 
-			entry() : name(nullptr), type(entry_type::NONE), size(0) {}
 			const char *							name;           // name of the entry
 			entry_type								type;           // type of the entry
 			std::uint64_t							size;           // size of the entry
@@ -357,9 +356,6 @@ namespace osd
 		// present
 		// -----------------------------------------------------------------------------
 		virtual const entry *read() = 0;
-
-	protected:
-		virtual bool opendir(std::string const &dirname) = 0;
 	};
 };
 

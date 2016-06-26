@@ -40,7 +40,7 @@ public:
 
 	virtual const entry *read() override;
 
-	virtual bool opendir(std::string const &dirname) override;
+	bool open_impl(std::string const &dirname);
 
 private:
 	HANDLE              m_find;                   // handle to the finder
@@ -57,6 +57,7 @@ win_directory::win_directory()
 	: m_find(INVALID_HANDLE_VALUE)
 	, m_is_first(true)
 {
+	m_entry.name = nullptr;
 	std::memset(&m_data, 0, sizeof(m_data));
 }
 
@@ -106,10 +107,10 @@ const directory::entry *win_directory::read()
 
 
 //============================================================
-//  win_directory::opendir
+//  win_directory::open_impl
 //============================================================
 
-bool win_directory::opendir(std::string const &dirname)
+bool win_directory::open_impl(std::string const &dirname)
 {
 	assert(m_find == INVALID_HANDLE_VALUE);
 
@@ -121,16 +122,13 @@ bool win_directory::opendir(std::string const &dirname)
 	// append \*.* to the directory name
 	auto const dirfilter_size = _tcslen(t_dirname.get()) + 5;
 	std::unique_ptr<TCHAR []> dirfilter;
-	try { dirfilter = std::make_unique<TCHAR[]>(dirfilter_size); }
+	try { dirfilter.reset(new TCHAR[dirfilter_size]); }
 	catch (...) { return false; }
 	_sntprintf(dirfilter.get(), dirfilter_size, TEXT("%s\\*.*"), t_dirname.get());
 
 	// attempt to find the first file
 	m_find = FindFirstFileEx(dirfilter.get(), FindExInfoStandard, &m_data, FindExSearchNameMatch, nullptr, 0);
-	if (m_find == INVALID_HANDLE_VALUE)
-		return false;
-
-	return true;
+	return m_find != INVALID_HANDLE_VALUE;
 }
 
 } // anonymous namespace
@@ -143,14 +141,14 @@ bool win_directory::opendir(std::string const &dirname)
 directory::ptr directory::open(std::string const &dirname)
 {
 	// allocate memory to hold the osd_tool_directory structure
-	ptr dir;
-	try { dir = std::make_unique<win_directory>(); }
+	std::unique_ptr<win_directory> dir;
+	try { dir.reset(new win_directory()); }
 	catch (...) { return nullptr; }
 
-	if (!dir->opendir(dirname))
-		return false;
+	if (!dir->open_impl(dirname))
+		return nullptr;
 
-	return dir;
+	return ptr(std::move(dir));
 }
 
 } // namesapce osd
