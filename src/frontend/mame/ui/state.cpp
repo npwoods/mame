@@ -41,6 +41,10 @@ menu_load_save_state_base::menu_load_save_state_base(mame_ui_manager &mui, rende
 
 menu_load_save_state_base::~menu_load_save_state_base()
 {
+	// resume if appropriate (is the destructor really the right place
+	// to do this sort of activity?)
+	if (!m_was_paused)
+		machine().resume();
 }
 
 
@@ -166,10 +170,6 @@ void menu_load_save_state_base::slot_selected(int slot)
 
 	// no matter what, pop out
 	menu::stack_pop(machine());
-
-	// resume if appropriate
-	if (!m_was_paused)
-		machine().resume();
 }
 
 
