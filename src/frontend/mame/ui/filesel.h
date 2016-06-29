@@ -18,7 +18,6 @@
 class floppy_image_format_t;
 
 namespace ui {
-
 // ======================> menu_confirm_save_as
 
 class menu_confirm_save_as : public menu
