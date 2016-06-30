@@ -632,7 +632,7 @@ void menu_file_selector::handle()
 		if (event->iptkey == IPT_UI_SELECT)
 		{
 			auto entry = (const file_selector_entry *) event->itemref;
-			switch(entry->type)
+			switch (entry->type)
 			{
 			case SELECTOR_ENTRY_TYPE_EMPTY:
 				// empty slot - unload

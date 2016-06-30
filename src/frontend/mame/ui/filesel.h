@@ -90,16 +90,16 @@ private:
 	};
 
 	// internal state
-	device_image_interface *			m_image;
-	std::string &						m_current_directory;
-	std::string &						m_current_file;
-	bool								m_has_empty;
-	bool								m_has_softlist;
-	bool								m_has_create;
-	int *								m_result;
+	device_image_interface *    m_image;
+	std::string &               m_current_directory;
+	std::string &               m_current_file;
+	bool                        m_has_empty;
+	bool                        m_has_softlist;
+	bool                        m_has_create;
+	int *                       m_result;
 	std::vector<file_selector_entry>	m_entrylist;
-	std::string							m_hover_directory;
-	char								m_filename_buffer[1024];
+	std::string                 m_hover_directory;
+	char                        m_filename_buffer[1024];
 
 	// methods
 	int compare_entries(const file_selector_entry *e1, const file_selector_entry *e2);
