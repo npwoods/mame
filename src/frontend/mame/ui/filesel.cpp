@@ -693,7 +693,7 @@ void menu_file_selector::handle()
 				{
 					auto buffer_oldend = m_filename.c_str() + buflen;
 					auto buffer_newend = utf8_previous_char(buffer_oldend);
-					m_filename.resize(buffer_oldend - buffer_newend);
+					m_filename.resize(buffer_newend - m_filename.c_str());
 					update_selected = true;
 
 					ui().popup_time(ERROR_MESSAGE_TIME, "%s", m_filename.c_str());
