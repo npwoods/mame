@@ -65,7 +65,7 @@ static void input_character(std::string &buffer, unicode_char unichar, F &&filte
 		{
 			auto buffer_oldend = buffer.c_str() + buflen;
 			auto buffer_newend = utf8_previous_char(buffer_oldend);
-			buffer.resize(buffer_oldend - buffer_newend);
+			buffer.resize(buffer_newend - buffer.c_str());
 		}
 	}
 	else if ((unichar >= ' ') && (!filter || filter(unichar)))
@@ -177,10 +177,10 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 	*m_ok = true;
 	auto const sep = current_file.rfind(PATH_SEPARATOR);
 
-	m_filename = sep != std::string::npos
-		? current_file.substr(sep, current_file.size() - sep)
-		: current_file;
 	m_filename.reserve(1024);
+	m_filename = sep != std::string::npos
+		? current_file.substr(sep + strlen(PATH_SEPARATOR), current_file.size() - sep - strlen(PATH_SEPARATOR))
+		: current_file;
 }
 
 
