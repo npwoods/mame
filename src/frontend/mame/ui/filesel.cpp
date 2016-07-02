@@ -177,7 +177,7 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 	*m_ok = true;
 	auto const sep = current_file.rfind(PATH_SEPARATOR);
 
-	m_filename = sep == std::string::npos
+	m_filename = sep != std::string::npos
 		? current_file.substr(sep, current_file.size() - sep)
 		: current_file;
 	m_filename.reserve(1024);
