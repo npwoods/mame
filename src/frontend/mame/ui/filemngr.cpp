@@ -198,6 +198,9 @@ void menu_file_manager::handle()
 
 std::unique_ptr<menu> menu_file_manager::create_device_menu(mame_ui_manager &ui, render_container *container, device_image_interface *device)
 {
+	// commenting the other code out while I refactor image creation
+	return std::unique_ptr<menu>(global_alloc_clear<menu_control_device_image>(ui, container, device));
+#if 0
 	floppy_image_device *floppy_device = dynamic_cast<floppy_image_device *>(device);
 	if (floppy_device != nullptr)
 	{
@@ -207,6 +210,7 @@ std::unique_ptr<menu> menu_file_manager::create_device_menu(mame_ui_manager &ui,
 	{
 		return std::unique_ptr<menu>(global_alloc_clear<menu_control_device_image>(ui, container, device));
 	}
+#endif
 }
 
 

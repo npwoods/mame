@@ -104,8 +104,6 @@ files {
 	MAME_DIR .. "src/frontend/mame/ui/filemngr.h",
 	MAME_DIR .. "src/frontend/mame/ui/filesel.cpp",
 	MAME_DIR .. "src/frontend/mame/ui/filesel.h",
-	MAME_DIR .. "src/frontend/mame/ui/floppycntrl.cpp",
-	MAME_DIR .. "src/frontend/mame/ui/floppycntrl.h",
 	MAME_DIR .. "src/frontend/mame/ui/imgcntrl.cpp",
 	MAME_DIR .. "src/frontend/mame/ui/imgcntrl.h",
 	MAME_DIR .. "src/frontend/mame/ui/info.cpp",

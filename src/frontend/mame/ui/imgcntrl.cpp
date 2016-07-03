@@ -23,7 +23,26 @@
 #include "zippath.h"
 
 
+/***************************************************************************
+SHIMS - temporarily until the core is refactored
+***************************************************************************/
+
+static std::string zippath_parent(const char *path)
+{
+	std::string result;
+	util::zippath_parent(result, path);
+	return result;
+}
+
+static std::string zippath_combine(const std::string &path1, const std::string &path2)
+{
+	std::string result;
+	util::zippath_combine(result, path1.c_str(), path2.c_str());
+	return result;
+}
+
 namespace ui {
+
 /***************************************************************************
     IMPLEMENTATION
 ***************************************************************************/
@@ -40,43 +59,24 @@ menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, rende
 {
 	image = _image;
 
-	if (image->software_list_name())
-		sld = software_list_device::find_by_name(mui.machine().config(), image->software_list_name());
-	else
-		sld = nullptr;
-	swi = image->software_entry();
-	swp = image->part_entry();
+	state = START_FILE;
 
-	if(swi)
+	// does the image exist?
+	if (image->exists())
 	{
-		state = START_OTHER_PART;
-		current_directory.assign(image->working_directory());
+		// if so, set the current file and directory based on that file
+		m_current_file = image->filename();
+		m_current_directory = zippath_parent(m_current_file.c_str());
 	}
 	else
 	{
-		state = START_FILE;
-
-		/* if the image exists, set the working directory to the parent directory */
-		if (image->exists())
-		{
-			current_file.assign(image->filename());
-			util::zippath_parent(current_directory, current_file.c_str());
-		} else
-			current_directory.assign(image->working_directory());
-
-		/* check to see if the path exists; if not clear it */
-		if (util::zippath_opendir(current_directory.c_str(), nullptr) != osd_file::error::NONE)
-			current_directory.clear();
+		// if not, just set the current directory to that slot's current working directory
+		m_current_directory = image->working_directory();
 	}
-}
 
-
-//-------------------------------------------------
-//  dtor
-//-------------------------------------------------
-
-menu_control_device_image::~menu_control_device_image()
-{
+	// check to see if the path exists; if not clear it
+	if (util::zippath_opendir(m_current_directory.c_str(), nullptr) != osd_file::error::NONE)
+		m_current_directory.clear();
 }
 
 
@@ -86,11 +86,10 @@ menu_control_device_image::~menu_control_device_image()
 
 void menu_control_device_image::test_create(bool &can_create, bool &need_confirm)
 {
-	std::string path;
 	osd::directory::entry::entry_type file_type;
 
-	/* assemble the full path */
-	util::zippath_combine(path, current_directory.c_str(), current_file.c_str());
+	// assemble the full path
+	auto path = zippath_combine(m_current_directory, m_current_file);
 
 	/* does a file or a directory exist at the path */
 	auto entry = osd_stat(path.c_str());
@@ -126,29 +125,6 @@ void menu_control_device_image::test_create(bool &can_create, bool &need_confirm
 
 
 //-------------------------------------------------
-//  load_software_part
-//-------------------------------------------------
-
-void menu_control_device_image::load_software_part()
-{
-	std::string temp_name = std::string(sld->list_name()).append(":").append(swi->shortname()).append(":").append(swp->name());
-
-	driver_enumerator drivlist(machine().options(), machine().options().system_name());
-	drivlist.next();
-	media_auditor auditor(drivlist);
-	media_auditor::summary summary = auditor.audit_software(sld->list_name(), (software_info *)swi, AUDIT_VALIDATE_FAST);
-	// if everything looks good, load software
-	if (summary == media_auditor::CORRECT || summary == media_auditor::BEST_AVAILABLE || summary == media_auditor::NONE_NEEDED)
-		hook_load(temp_name, true);
-	else
-	{
-		machine().popmessage(_("The software selected is missing one or more required ROM or CHD images. Please select a different one."));
-		state = SELECT_SOFTLIST;
-	}
-}
-
-
-//-------------------------------------------------
 //  hook_load
 //-------------------------------------------------
 
@@ -178,92 +154,11 @@ void menu_control_device_image::handle()
 	switch(state) {
 	case START_FILE: {
 		submenu_result = -1;
-		menu::stack_push<menu_file_selector>(ui(), container, image, current_directory, current_file, true, image->image_interface()!=nullptr, image->is_creatable(), &submenu_result);
+		menu::stack_push<menu_file_selector>(ui(), container, image, m_current_directory, m_current_file, true, image->image_interface()!=nullptr, image->is_creatable(), &submenu_result);
 		state = SELECT_FILE;
 		break;
 	}
 
-	case START_SOFTLIST:
-		sld = nullptr;
-		menu::stack_push<menu_software>(ui(), container, image->image_interface(), &sld);
-		state = SELECT_SOFTLIST;
-		break;
-
-	case START_OTHER_PART: {
-		submenu_result = -1;
-		menu::stack_push<menu_software_parts>(ui(), container, swi, swp->interface(), &swp, true, &submenu_result);
-		state = SELECT_OTHER_PART;
-		break;
-	}
-
-	case SELECT_SOFTLIST:
-		if(!sld) {
-			menu::stack_pop(machine());
-			break;
-		}
-		software_info_name = "";
-		menu::stack_push<menu_software_list>(ui(), container, sld, image->image_interface(), software_info_name);
-		state = SELECT_PARTLIST;
-		break;
-
-	case SELECT_PARTLIST:
-		swi = sld->find(software_info_name.c_str());
-		if (!swi)
-			state = START_SOFTLIST;
-		else if(swi->has_multiple_parts(image->image_interface()))
-		{
-			submenu_result = -1;
-			swp = nullptr;
-			menu::stack_push<menu_software_parts>(ui(), container, swi, image->image_interface(), &swp, false, &submenu_result);
-			state = SELECT_ONE_PART;
-		}
-		else
-		{
-			swp = swi->first_part();
-			load_software_part();
-		}
-		break;
-
-	case SELECT_ONE_PART:
-		switch(submenu_result) {
-		case menu_software_parts::T_ENTRY: {
-			load_software_part();
-			break;
-		}
-
-		case -1: // return to list
-			state = SELECT_SOFTLIST;
-			break;
-
-		}
-		break;
-
-	case SELECT_OTHER_PART:
-		switch(submenu_result) {
-		case menu_software_parts::T_ENTRY:
-			load_software_part();
-			break;
-
-		case menu_software_parts::T_FMGR:
-			state = START_FILE;
-			handle();
-			break;
-
-		case menu_software_parts::T_EMPTY:
-			image->unload();
-			menu::stack_pop(machine());
-			break;
-
-		case menu_software_parts::T_SWLIST:
-			state = START_SOFTLIST;
-			handle();
-			break;
-
-		case -1: // return to system
-			menu::stack_pop(machine());
-			break;
-
-		}
 		break;
 
 	case SELECT_FILE:
@@ -274,17 +169,12 @@ void menu_control_device_image::handle()
 			break;
 
 		case menu_file_selector::R_FILE:
-			hook_load(current_file, false);
+			hook_load(m_current_file, false);
 			break;
 
 		case menu_file_selector::R_CREATE:
-			menu::stack_push<menu_file_create>(ui(), container, image, current_directory, current_file, &create_ok);
+			menu::stack_push<menu_file_create>(ui(), container, image, m_current_directory, m_current_file, &create_ok);
 			state = CHECK_CREATE;
-			break;
-
-		case menu_file_selector::R_SOFTLIST:
-			state = START_SOFTLIST;
-			handle();
 			break;
 
 		case -1: // return to system
@@ -322,8 +212,7 @@ void menu_control_device_image::handle()
 		break;
 
 	case DO_CREATE: {
-		std::string path;
-		util::zippath_combine(path, current_directory.c_str(), current_file.c_str());
+		auto path = zippath_combine(m_current_directory, m_current_file);
 		int err = image->create(path.c_str(), nullptr, nullptr);
 		if (err != 0)
 			machine().popmessage("Error: %s", image->error());
