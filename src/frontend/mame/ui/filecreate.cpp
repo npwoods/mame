@@ -136,25 +136,21 @@ FILE CREATE MENU
 ***************************************************************************/
 
 //-------------------------------------------------
-//  is_valid_filename_char - tests to see if a
-//  character is valid in a filename
+//  is_valid_filepath_char - tests to see if a
+//  character is valid in a file path
 //-------------------------------------------------
 
-static int is_valid_filename_char(unicode_char unichar)
+static bool is_valid_filepath_char(unicode_char unichar)
 {
-	// this should really be in the OSD layer, and it shouldn't be 7-bit bullshit
-	static const char valid_filename_char[] =
-	{
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     // 00-0f
-		0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     // 10-1f
-		1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0,     //  !"#$%&'()*+,-./
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,     // 0123456789:;<=>?
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,     // @ABCDEFGHIJKLMNO
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1,     // PQRSTUVWXYZ[\]^_
-		0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,     // `abcdefghijklmno
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0,     // pqrstuvwxyz{|}~
-	};
-	return (unichar < ARRAY_LENGTH(valid_filename_char)) && valid_filename_char[unichar];
+	// this should really be in the OSD layer
+	return unichar >= 0x20
+		&& unichar != '<'
+		&& unichar != '>'
+		&& unichar != '\"'
+		&& unichar != '|'
+		&& unichar != '?'
+		&& unichar != '*'
+		&& uchar_isvalid(unichar);
 }
 
 
@@ -256,22 +252,13 @@ void menu_file_create::handle()
 		{
 		case IPT_UI_SELECT:
 			if ((event->itemref == ITEMREF_CREATE) || (event->itemref == ITEMREF_NEW_IMAGE_NAME))
-			{
-				std::string tmp_file(m_filename);
-				if (tmp_file.find(".") != -1 && tmp_file.find(".") < tmp_file.length() - 1)
-				{
-					m_current_file = m_filename;
-					menu::stack_pop(machine());
-				}
-				else
-					ui().popup_time(1, "%s", _("Please enter a file extension too"));
-			}
+				do_select();
 			break;
 
 		case IPT_SPECIAL:
 			if (get_selection() == ITEMREF_NEW_IMAGE_NAME)
 			{
-				input_character(m_filename, event->unichar, &is_valid_filename_char);
+				input_character(m_filename, event->unichar, &is_valid_filepath_char);
 				reset(reset_options::REMEMBER_POSITION);
 			}
 			break;
@@ -280,6 +267,45 @@ void menu_file_create::handle()
 			break;
 		}
 	}
+}
+
+
+//-------------------------------------------------
+//  do_select
+//-------------------------------------------------
+
+void menu_file_create::do_select()
+{
+	// was this an absolute path?
+	if (osd_is_absolute_path(m_filename))
+	{
+		// if so, did we move to a directory?
+		if (osd_stat(m_filename)->type == osd::directory::entry::entry_type::DIR)
+		{
+			m_current_directory = std::move(m_filename);
+			m_filename.clear();
+			return;
+		}
+
+		// check the parent
+		auto parent = util::zippath_parent(m_filename.c_str());
+		if (osd_stat(m_filename)->type != osd::directory::entry::entry_type::DIR)
+		{
+			ui().popup_time(1, "%s", _("Invalid directory"));
+			return;
+		}
+	}
+
+	// check for a file extension
+	auto period_position = m_filename.find(".");
+	if (period_position == std::string::npos || period_position >= m_filename.length() - 1)
+	{
+		ui().popup_time(1, "%s", _("Please enter a file extension too"));
+		return;
+	}
+
+	m_current_file = std::move(m_filename);
+	menu::stack_pop(machine());
 }
 
 

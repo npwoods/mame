@@ -50,10 +50,11 @@ private:
 	std::string &                   m_current_file;
 	const image_device_format *     m_current_format;
 	std::string						m_filename;
-
-protected:
 	bool *                          m_ok;
+
+	void do_select();
 };
+
 
 // ======================> menu_select_format
 
