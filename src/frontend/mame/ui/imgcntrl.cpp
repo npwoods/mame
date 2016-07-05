@@ -4,7 +4,7 @@
 
     ui/imgcntrl.cpp
 
-    MESS's clunky built-in file manager
+    MAME's clunky built-in file manager
 
 ***************************************************************************/
 
@@ -14,6 +14,7 @@
 
 #include "ui/ui.h"
 #include "ui/filesel.h"
+#include "ui/filecreate.h"
 #include "ui/swlist.h"
 
 #include "audit.h"
@@ -22,24 +23,6 @@
 #include "softlist.h"
 #include "zippath.h"
 
-
-/***************************************************************************
-SHIMS - temporarily until the core is refactored
-***************************************************************************/
-
-static std::string zippath_parent(const char *path)
-{
-	std::string result;
-	util::zippath_parent(result, path);
-	return result;
-}
-
-static std::string zippath_combine(const std::string &path1, const std::string &path2)
-{
-	std::string result;
-	util::zippath_combine(result, path1.c_str(), path2.c_str());
-	return result;
-}
 
 namespace ui {
 
@@ -53,28 +36,24 @@ namespace ui {
 
 menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, render_container *container, device_image_interface *_image)
 	: menu(mui, container),
-		submenu_result(0),
 		create_ok(false),
 		create_confirmed(false)
 {
 	image = _image;
+	submenu_result.i = -1;
 
 	state = START_FILE;
 
-	// does the image exist?
+	/* if the image exists, set the working directory to the parent directory */
 	if (image->exists())
 	{
-		// if so, set the current file and directory based on that file
-		m_current_file = image->filename();
-		m_current_directory = zippath_parent(m_current_file.c_str());
+		m_current_file.assign(image->filename());
+		util::zippath_parent(m_current_directory, m_current_file.c_str());
 	}
 	else
-	{
-		// if not, just set the current directory to that slot's current working directory
-		m_current_directory = image->working_directory();
-	}
+		m_current_directory.assign(image->working_directory());
 
-	// check to see if the path exists; if not clear it
+	/* check to see if the path exists; if not clear it */
 	if (util::zippath_opendir(m_current_directory.c_str(), nullptr) != osd_file::error::NONE)
 		m_current_directory.clear();
 }
@@ -88,8 +67,8 @@ void menu_control_device_image::test_create(bool &can_create, bool &need_confirm
 {
 	osd::directory::entry::entry_type file_type;
 
-	// assemble the full path
-	auto path = zippath_combine(m_current_directory, m_current_file);
+	/* assemble the full path */
+	auto path = util::zippath_combine(m_current_directory.c_str(), m_current_file.c_str());
 
 	/* does a file or a directory exist at the path */
 	auto entry = osd_stat(path.c_str());
@@ -152,32 +131,29 @@ void menu_control_device_image::populate()
 void menu_control_device_image::handle()
 {
 	switch(state) {
-	case START_FILE: {
-		submenu_result = -1;
-		menu::stack_push<menu_file_selector>(ui(), container, image, m_current_directory, m_current_file, true, image->image_interface()!=nullptr, image->is_creatable(), &submenu_result);
+	case START_FILE:
+		submenu_result.filesel = menu_file_selector::result::INVALID;
+		menu::stack_push<menu_file_selector>(ui(), container, image, m_current_directory, m_current_file, true, image->image_interface()!=nullptr, image->is_creatable(), submenu_result.filesel);
 		state = SELECT_FILE;
-		break;
-	}
-
 		break;
 
 	case SELECT_FILE:
-		switch(submenu_result) {
-		case menu_file_selector::R_EMPTY:
+		switch(submenu_result.filesel) {
+		case menu_file_selector::result::EMPTY:
 			image->unload();
 			menu::stack_pop(machine());
 			break;
 
-		case menu_file_selector::R_FILE:
+		case menu_file_selector::result::FILE:
 			hook_load(m_current_file, false);
 			break;
 
-		case menu_file_selector::R_CREATE:
+		case menu_file_selector::result::CREATE:
 			menu::stack_push<menu_file_create>(ui(), container, image, m_current_directory, m_current_file, &create_ok);
 			state = CHECK_CREATE;
 			break;
 
-		case -1: // return to system
+		default: // return to system
 			menu::stack_pop(machine());
 			break;
 		}
@@ -212,7 +188,7 @@ void menu_control_device_image::handle()
 		break;
 
 	case DO_CREATE: {
-		auto path = zippath_combine(m_current_directory, m_current_file);
+		auto path = util::zippath_combine(m_current_directory.c_str(), m_current_file.c_str());
 		int err = image->create(path.c_str(), nullptr, nullptr);
 		if (err != 0)
 			machine().popmessage("Error: %s", image->error());
