@@ -220,17 +220,26 @@ void menu_file_create::populate()
 		new_image_name = &m_filename;
 	}
 	item_append(_("New Image Name:"), *new_image_name, 0, ITEMREF_NEW_IMAGE_NAME);
+	item_append(menu_item_type::SEPARATOR);
 
 	// do we support multiple formats?
 	if (has_formats())
 	{
+		// display the format
 		UINT32 flags =	(has_previous_format() ? FLAG_LEFT_ARROW : 0)
 					|	(has_next_format() ? FLAG_RIGHT_ARROW : 0);
 		item_append(_("Format:"), (*m_current_format)->description(), flags, ITEMREF_FORMAT);
+
+		// do we have options?
+		auto option_guide = m_image->create_option_guide();
+		if (option_guide != nullptr)
+		{
+
+		}
+		item_append(menu_item_type::SEPARATOR);
 	}
 
 	// finish up
-	item_append(menu_item_type::SEPARATOR);
 	customtop = ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
 }
 

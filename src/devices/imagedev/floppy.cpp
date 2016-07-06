@@ -10,6 +10,7 @@
 #include "zippath.h"
 #include "floppy.h"
 #include "formats/imageutl.h"
+#include "formats/flopimg.h"
 
 /*
     Debugging flags. Set to 0 or 1.
@@ -934,6 +935,11 @@ UINT32 floppy_image_device::get_form_factor() const
 UINT32 floppy_image_device::get_variant() const
 {
 	return image ? image->get_variant() : 0;
+}
+
+const option_guide *floppy_image_device::create_option_guide() const
+{
+	return floppy_option_guide;
 }
 
 //===================================================================
