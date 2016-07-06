@@ -493,7 +493,7 @@ bool bitbanger_device::call_load(void)
 	return IMAGE_INIT_PASS;
 }
 
-bool bitbanger_device::call_create(int format_type, option_resolution *format_options)
+bool bitbanger_device::call_create(int format_type, util::option_resolution *format_options)
 {
 	m_input_timer->enable(true);
 	m_input_timer->adjust(attotime::zero, 0, attotime::from_seconds(1));
