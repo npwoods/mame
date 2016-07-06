@@ -97,8 +97,8 @@
 ***************************************************************************/
 
 FLOPPY_FORMATS_MEMBER( coco_fdc_device::floppy_formats )
-	FLOPPY_DMK_FORMAT,
 	FLOPPY_JVC_FORMAT,
+	FLOPPY_DMK_FORMAT,
 	FLOPPY_VDK_FORMAT
 FLOPPY_FORMATS_END
 

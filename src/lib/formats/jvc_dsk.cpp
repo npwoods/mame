@@ -32,7 +32,7 @@ const char *jvc_format::description() const
 
 const char *jvc_format::extensions() const
 {
-	return "jvc,dsk";
+	return "dsk,jvc";
 }
 
 bool jvc_format::parse_header(io_generic *io, int &header_size, int &tracks, int &heads, int &sectors, int &sector_size, int &base_sector_id)
