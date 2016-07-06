@@ -30,11 +30,10 @@ CONSTANTS
 
 // conditional compilation to enable chosing of image formats - this is not
 // yet fully implemented
-#define ENABLE_FORMATS          0
+#define ENABLE_FORMATS          1
 
 // itemrefs for key menu items
 #define ITEMREF_NEW_IMAGE_NAME  ((void *) 0x0001)
-#define ITEMREF_CREATE          ((void *) 0x0002)
 #define ITEMREF_FORMAT          ((void *) 0x0003)
 #define ITEMREF_NO              ((void *) 0x0004)
 #define ITEMREF_YES             ((void *) 0x0005)
@@ -162,7 +161,6 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 	: menu(mui, container)
 	, m_current_directory(current_directory)
 	, m_current_file(current_file)
-	, m_current_format(nullptr)
 {
 	m_image = image;
 	m_ok = ok;
@@ -173,15 +171,20 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 	m_filename = sep != std::string::npos
 		? current_file.substr(sep + strlen(PATH_SEPARATOR), current_file.size() - sep - strlen(PATH_SEPARATOR))
 		: current_file;
+
+	// chose a format
+	if (has_formats())
+		m_current_format = m_image->formatlist().begin();
 }
 
 
 //-------------------------------------------------
-//  dtor
+//  has_formats
 //-------------------------------------------------
 
-menu_file_create::~menu_file_create()
+bool menu_file_create::has_formats() const
 {
+	return ENABLE_FORMATS && m_image->formatlist().size() > 0;
 }
 
 
@@ -204,7 +207,6 @@ void menu_file_create::custom_render(void *selectedref, float top, float bottom,
 void menu_file_create::populate()
 {
 	std::string buffer;
-	const image_device_format *format;
 	const std::string *new_image_name;
 
 	// append the "New Image Name" item
@@ -220,17 +222,15 @@ void menu_file_create::populate()
 	item_append(_("New Image Name:"), *new_image_name, 0, ITEMREF_NEW_IMAGE_NAME);
 
 	// do we support multiple formats?
-	if (ENABLE_FORMATS) format = m_image->formatlist().front().get();
-	if (ENABLE_FORMATS && (format != nullptr))
+	if (has_formats())
 	{
-		item_append(_("Image Format:"), m_current_format->description(), 0, ITEMREF_FORMAT);
-		m_current_format = format;
+		UINT32 flags =	(has_previous_format() ? FLAG_LEFT_ARROW : 0)
+					|	(has_next_format() ? FLAG_RIGHT_ARROW : 0);
+		item_append(_("Format:"), (*m_current_format)->description(), flags, ITEMREF_FORMAT);
 	}
 
-	// finish up the menu
+	// finish up
 	item_append(menu_item_type::SEPARATOR);
-	item_append(_("Create"), "", 0, ITEMREF_CREATE);
-
 	customtop = ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
 }
 
@@ -251,8 +251,7 @@ void menu_file_create::handle()
 		switch (event->iptkey)
 		{
 		case IPT_UI_SELECT:
-			if ((event->itemref == ITEMREF_CREATE) || (event->itemref == ITEMREF_NEW_IMAGE_NAME))
-				do_select();
+			do_select();
 			break;
 
 		case IPT_SPECIAL:
@@ -262,6 +261,17 @@ void menu_file_create::handle()
 				reset(reset_options::REMEMBER_POSITION);
 			}
 			break;
+
+		case IPT_UI_LEFT:
+			if (get_selection() == ITEMREF_FORMAT)
+				previous_format();
+			break;
+
+		case IPT_UI_RIGHT:
+			if (get_selection() == ITEMREF_FORMAT)
+				next_format();
+			break;
+
 		case IPT_UI_CANCEL:
 			*m_ok = false;
 			break;
@@ -306,6 +316,54 @@ void menu_file_create::do_select()
 
 	m_current_file = std::move(m_filename);
 	menu::stack_pop(machine());
+}
+
+
+//-------------------------------------------------
+//  previous_format
+//-------------------------------------------------
+
+void menu_file_create::previous_format()
+{
+	if (has_previous_format())
+	{
+		m_current_format--;
+		reset(reset_options::REMEMBER_REF);
+	}
+}
+
+
+//-------------------------------------------------
+//  next_format
+//-------------------------------------------------
+
+void menu_file_create::next_format()
+{
+	if (has_next_format())
+	{
+		m_current_format++;
+		reset(reset_options::REMEMBER_REF);
+	}
+}
+
+
+//-------------------------------------------------
+//  has_previous_format
+//-------------------------------------------------
+
+bool menu_file_create::has_previous_format() const
+{
+	return m_current_format != m_image->formatlist().begin();
+}
+
+
+//-------------------------------------------------
+//  has_next_format
+//-------------------------------------------------
+
+bool menu_file_create::has_next_format() const
+{
+	return (m_current_format + 1) != m_image->formatlist().end();
 }
 
 
