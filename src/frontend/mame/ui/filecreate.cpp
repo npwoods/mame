@@ -174,7 +174,10 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 
 	// chose a format
 	if (has_formats())
+	{
+		// get the first format for now
 		m_current_format = m_image->formatlist().begin();
+	}
 }
 
 
@@ -234,7 +237,27 @@ void menu_file_create::populate()
 		auto option_guide = m_image->create_option_guide();
 		if (option_guide != nullptr)
 		{
-
+			auto resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec());
+			resolution->finish();
+			while (option_guide->option_type != OPTIONTYPE_END)
+			{
+				std::string name = string_format("%s:", _(option_guide->display_name));
+				std::string value;
+				switch (option_guide->option_type)
+				{
+					case OPTIONTYPE_INT:
+						value = string_format("%d", resolution->lookup_int(option_guide->parameter));
+						break;
+					case OPTIONTYPE_STRING:
+						value = resolution->lookup_string(option_guide->parameter);
+						break;
+					default:
+						fatalerror("Should not get here");
+						break;
+				}
+				item_append(name, value, 0, nullptr);
+				option_guide++;
+			}
 		}
 		item_append(menu_item_type::SEPARATOR);
 	}
