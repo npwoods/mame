@@ -131,25 +131,6 @@ FILE CREATE MENU
 ***************************************************************************/
 
 //-------------------------------------------------
-//  is_valid_filepath_char - tests to see if a
-//  character is valid in a file path
-//-------------------------------------------------
-
-static bool is_valid_filepath_char(unicode_char unichar)
-{
-	// this should really be in the OSD layer
-	return unichar >= 0x20
-		&& unichar != '<'
-		&& unichar != '>'
-		&& unichar != '\"'
-		&& unichar != '|'
-		&& unichar != '?'
-		&& unichar != '*'
-		&& uchar_isvalid(unichar);
-}
-
-
-//-------------------------------------------------
 //  ctor
 //-------------------------------------------------
 
@@ -297,7 +278,7 @@ void menu_file_create::handle()
 		case IPT_SPECIAL:
 			if (get_selection() == ITEMREF_NEW_IMAGE_NAME)
 			{
-				input_character(m_filename, event->unichar, &is_valid_filepath_char);
+				input_character(m_filename, event->unichar, &osd_is_valid_filename_char);
 				reset(reset_options::REMEMBER_POSITION);
 			}
 			break;
