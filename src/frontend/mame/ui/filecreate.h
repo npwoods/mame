@@ -57,6 +57,7 @@ private:
 	void next_format();
 	bool has_previous_format() const;
 	bool has_next_format() const;
+	void format_changed();
 };
 
 

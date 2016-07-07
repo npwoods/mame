@@ -11,21 +11,17 @@
 
 ***************************************************************************/
 
-#include "emu.h"
+#include <cstring>
 
+#include "emu.h"
+#include "imagedev/floppy.h"
+#include "zippath.h"
 #include "ui/filecreate.h"
 #include "ui/ui.h"
 
-#include "imagedev/floppy.h"
-
-#include "zippath.h"
-
-#include <cstring>
-
-
 namespace ui {
 /***************************************************************************
-CONSTANTS
+	CONSTANTS
 ***************************************************************************/
 
 // conditional compilation to enable chosing of image formats - this is not
@@ -167,6 +163,7 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 	*m_ok = true;
 	auto const sep = current_file.rfind(PATH_SEPARATOR);
 
+	// set up initial filename
 	m_filename.reserve(1024);
 	m_filename = sep != std::string::npos
 		? current_file.substr(sep + strlen(PATH_SEPARATOR), current_file.size() - sep - strlen(PATH_SEPARATOR))
@@ -177,6 +174,17 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 	{
 		// get the first format for now
 		m_current_format = m_image->formatlist().begin();
+
+		// if we have an initial file format, lets try naming this file
+		if (m_filename.empty())
+		{
+			std::string extensions = (*m_current_format)->extensions();
+			auto comma_pos = extensions.find(',');
+			if (comma_pos != std::string::npos)
+				extensions.resize(comma_pos);
+
+			m_filename = string_format("%s.%s", m_image->brief_instance_name(), extensions);
+		}
 	}
 }
 
@@ -360,7 +368,7 @@ void menu_file_create::previous_format()
 	if (has_previous_format())
 	{
 		m_current_format--;
-		reset(reset_options::REMEMBER_REF);
+		format_changed();
 	}
 }
 
@@ -374,7 +382,7 @@ void menu_file_create::next_format()
 	if (has_next_format())
 	{
 		m_current_format++;
-		reset(reset_options::REMEMBER_REF);
+		format_changed();
 	}
 }
 
@@ -396,6 +404,29 @@ bool menu_file_create::has_previous_format() const
 bool menu_file_create::has_next_format() const
 {
 	return (m_current_format + 1) != m_image->formatlist().end();
+}
+
+
+//-------------------------------------------------
+//  format_changed
+//-------------------------------------------------
+
+void menu_file_create::format_changed()
+{
+	// we need to repopulate the menu
+	reset(reset_options::REMEMBER_REF);
+
+	// rename the file appropriately
+	std::string extensions = (*m_current_format)->extensions();
+	auto comma_pos = extensions.find(',');
+	if (comma_pos != std::string::npos)
+		extensions.resize(comma_pos);
+
+	auto period_pos = m_filename.rfind('.');
+	if (period_pos != std::string::npos)
+		m_filename.resize(period_pos);
+	if (!extensions.empty())
+		m_filename += "." + extensions;
 }
 
 
