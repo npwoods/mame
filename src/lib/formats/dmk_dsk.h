@@ -27,6 +27,7 @@ public:
 	virtual const char *name() const override;
 	virtual const char *description() const override;
 	virtual const char *extensions() const override;
+	virtual const char *option_spec() const override;
 	virtual bool supports_save() const override;
 };
 

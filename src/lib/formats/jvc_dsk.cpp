@@ -35,6 +35,16 @@ const char *jvc_format::extensions() const
 	return "dsk,jvc";
 }
 
+const char *jvc_format::option_spec() const
+{
+	return
+		HEADS([1]-2)
+		TRACKS([35]-255)
+		SECTORS(1-[18]-255)
+		SECTOR_LENGTH(128/[256]/512/1024)
+		FIRST_SECTOR_ID(0-[1]);
+}
+
 bool jvc_format::parse_header(io_generic *io, int &header_size, int &tracks, int &heads, int &sectors, int &sector_size, int &base_sector_id)
 {
 	UINT64 size = io_generic_size(io);

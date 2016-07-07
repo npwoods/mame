@@ -32,6 +32,16 @@ const char *vdk_format::extensions() const
 	return "vdk";
 }
 
+const char *vdk_format::option_spec() const
+{
+	return
+		HEADS([1]-2)
+		TRACKS([35]-255)
+		SECTORS([18])
+		SECTOR_LENGTH([256])
+		FIRST_SECTOR_ID([1]);
+}
+
 int vdk_format::identify(io_generic *io, UINT32 form_factor)
 {
 	UINT8 id[2];

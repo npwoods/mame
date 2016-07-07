@@ -263,6 +263,7 @@ public:
 	//! @returns string containing comma-separated list of file
 	//! extensions the format may use.
 	virtual const char *extensions() const = 0;
+	virtual const char *option_spec() const { return ""; };
 	//! @returns true if format supports saving.
 	virtual bool supports_save() const = 0;
 

@@ -35,6 +35,7 @@ public:
 	virtual const char *name() const override;
 	virtual const char *description() const override;
 	virtual const char *extensions() const override;
+	virtual const char *option_spec() const override;
 
 	virtual int identify(io_generic *io, UINT32 form_factor) override;
 	virtual bool load(io_generic *io, UINT32 form_factor, floppy_image *image) override;

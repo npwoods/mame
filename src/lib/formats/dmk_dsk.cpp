@@ -41,6 +41,18 @@ const char *dmk_format::extensions() const
 }
 
 
+const char *dmk_format::option_spec() const
+{
+	return
+		HEADS([1]-2)
+		TRACKS([35]-255)
+		SECTORS(1-[18])
+		SECTOR_LENGTH(128/[256]/512/1024/2048/4096/8192)
+		INTERLEAVE(0-[6]-17)
+		FIRST_SECTOR_ID(0-[1]);
+}
+
+
 int dmk_format::identify(io_generic *io, UINT32 form_factor)
 {
 	const int header_size = 16;
