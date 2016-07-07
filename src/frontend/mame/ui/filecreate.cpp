@@ -134,14 +134,14 @@ FILE CREATE MENU
 //  ctor
 //-------------------------------------------------
 
-menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *container, device_image_interface *image, std::string &current_directory, std::string &current_file, bool *ok)
+menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *container, device_image_interface *image, std::string &current_directory, std::string &current_file, bool &ok)
 	: menu(mui, container)
 	, m_current_directory(current_directory)
 	, m_current_file(current_file)
+	, m_ok(ok)
 {
 	m_image = image;
-	m_ok = ok;
-	*m_ok = true;
+	m_ok = true;
 	auto const sep = current_file.rfind(PATH_SEPARATOR);
 
 	// set up initial filename
@@ -167,6 +167,15 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 			m_filename = string_format("%s.%s", m_image->brief_instance_name(), extensions);
 		}
 	}
+}
+
+
+//-------------------------------------------------
+//  dtor
+//-------------------------------------------------
+
+menu_file_create::~menu_file_create()
+{
 }
 
 
@@ -226,7 +235,7 @@ void menu_file_create::populate()
 		auto option_guide = m_image->create_option_guide();
 		if (option_guide != nullptr)
 		{
-			auto resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec());
+			auto resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
 			resolution->finish();
 			while (option_guide->option_type != OPTIONTYPE_END)
 			{
@@ -278,7 +287,7 @@ void menu_file_create::handle()
 		case IPT_SPECIAL:
 			if (get_selection() == ITEMREF_NEW_IMAGE_NAME)
 			{
-				input_character(m_filename, event->unichar, &osd_is_valid_filename_char);
+				input_character(m_filename, event->unichar, &osd_is_valid_filepath_char);
 				reset(reset_options::REMEMBER_POSITION);
 			}
 			break;
@@ -294,7 +303,7 @@ void menu_file_create::handle()
 			break;
 
 		case IPT_UI_CANCEL:
-			*m_ok = false;
+			m_ok = false;
 			break;
 		}
 	}

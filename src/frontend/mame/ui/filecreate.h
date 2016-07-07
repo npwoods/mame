@@ -38,7 +38,8 @@ private:
 class menu_file_create : public menu
 {
 public:
-	menu_file_create(mame_ui_manager &mui, render_container *container, device_image_interface *image, std::string &current_directory, std::string &current_file, bool *ok);
+	menu_file_create(mame_ui_manager &mui, render_container *container, device_image_interface *image, std::string &current_directory, std::string &current_file, bool &ok);
+	virtual ~menu_file_create() override;
 	virtual void populate() override;
 	virtual void handle() override;
 	virtual void custom_render(void *selectedref, float top, float bottom, float x, float y, float x2, float y2) override;
@@ -49,7 +50,7 @@ private:
 	std::string &											m_current_file;
 	device_image_interface::formatlist_type::const_iterator	m_current_format;
 	std::string												m_filename;
-	bool *													m_ok;
+	bool &													m_ok;
 
 	void do_select();
 	bool has_formats() const;
