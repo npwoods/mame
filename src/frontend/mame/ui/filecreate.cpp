@@ -159,11 +159,7 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container *conta
 		// if we have an initial file format, lets try naming this file
 		if (m_filename.empty())
 		{
-			std::string extensions = (*m_current_format)->extensions();
-			auto comma_pos = extensions.find(',');
-			if (comma_pos != std::string::npos)
-				extensions.resize(comma_pos);
-
+			const std::string &extensions = (*m_current_format)->extensions()[0];
 			m_filename = string_format("%s.%s", m_image->brief_instance_name(), extensions);
 		}
 	}
@@ -407,10 +403,7 @@ void menu_file_create::format_changed()
 	reset(reset_options::REMEMBER_REF);
 
 	// rename the file appropriately
-	std::string extensions = (*m_current_format)->extensions();
-	auto comma_pos = extensions.find(',');
-	if (comma_pos != std::string::npos)
-		extensions.resize(comma_pos);
+	const std::string &extensions = (*m_current_format)->extensions()[0];
 
 	auto period_pos = m_filename.rfind('.');
 	if (period_pos != std::string::npos)
