@@ -289,12 +289,12 @@ void menu_file_create::handle()
 			break;
 
 		case IPT_UI_LEFT:
-			if (get_selection() == ITEMREF_FORMAT)
+			if (get_selection_ref() == ITEMREF_FORMAT)
 				previous_format();
 			break;
 
 		case IPT_UI_RIGHT:
-			if (get_selection() == ITEMREF_FORMAT)
+			if (get_selection_ref() == ITEMREF_FORMAT)
 				next_format();
 			break;
 
