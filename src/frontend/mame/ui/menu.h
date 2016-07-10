@@ -311,6 +311,13 @@ private:
 public:
 	// push a new menu onto the stack
 	static void stack_push(std::unique_ptr<menu> &&menu) { get_global_state(menu->machine())->stack_push(std::move(menu)); }
+
+	// gets the global widgets
+	static widgets_manager &get_widgets_manager(running_machine &machine)
+	{
+		return *(get_global_state(machine).get());
+	}
+
 private:
 
 	void extra_text_draw_box(float origx1, float origx2, float origy, float yspan, const char *text, int direction);

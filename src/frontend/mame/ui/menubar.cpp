@@ -800,7 +800,11 @@ rgb_t menubar::adjust_color(rgb_t color)
 
 void menubar::highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor)
 {
-	// placeholder; have to refactor menu.cpp
+	// hack to get the widgets
+	widgets_manager &widgets(ui::menu::get_widgets_manager(machine()));
+
+	// do the highlight
+	container().add_quad(x0, y0, x1, y1, bgcolor, widgets.hilight_texture(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_TEXWRAP(TRUE) | PRIMFLAG_PACKABLE);
 }
 
 
@@ -810,7 +814,11 @@ void menubar::highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor)
 
 void menubar::draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, UINT32 orientation)
 {
-	// placeholder; have to refactor menu.cpp
+	// hack to get the widgets
+	widgets_manager &widgets(ui::menu::get_widgets_manager(machine()));
+
+	// do the draw_arrow
+	container().add_quad(x0, y0, x1, y1, fgcolor, widgets.arrow_texture(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_TEXORIENT(orientation) | PRIMFLAG_PACKABLE);
 }
 
 
