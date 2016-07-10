@@ -11,6 +11,7 @@
 
 ***************************************************************************/
 
+#include <functional>
 #include "emu.h"
 #include "ui/mame_menubar.h"
 #include "ui/selgame.h"
@@ -28,6 +29,7 @@
 #include "ui/slotopt.h"
 #include "ui/info.h"
 #include "ui/filemngr.h"
+#include "ui/imgcntrl.h"
 #include "softlist.h"
 #include "cheat.h"
 #include "mame.h"
@@ -70,7 +72,7 @@ mame_menubar::mame_menubar(mame_ui_manager &mui)
 //  handle
 //-------------------------------------------------
 
-void mame_menubar::handle(render_container *container)
+void mame_menubar::handle(render_container &container)
 {
 	// check to see if we have a softlist selection
 	if (s_softlist_result.length() > 0)
@@ -94,7 +96,8 @@ void mame_menubar::handle(render_container *container)
 
 void mame_menubar::start_menu(std::unique_ptr<menu> &&menu)
 {
-	ui().set_handler<mame_ui_manager&>(UI_CALLBACK_TYPE_MENU, ui::menu::ui_handler, ui());
+	using namespace std::placeholders;
+	ui().set_handler(ui_callback_type::MENU, std::bind(&ui::menu::ui_handler, _1, std::ref(ui())));
 	menu::stack_push(std::move(menu));
 }
 
@@ -624,7 +627,7 @@ void mame_menubar::barcode_reader_control()
 
 void mame_menubar::load(device_image_interface *image)
 {
-	start_menu(menu_file_manager::create_device_menu(ui(), container(), image));
+	start_menu<menu_control_device_image>(image);
 }
 
 
@@ -737,11 +740,13 @@ bool mame_menubar::warp_mode() const
 
 void mame_menubar::view_gfx()
 {
+	using namespace std::placeholders;
+
 	// first pause
 	machine().pause();
 
 	// and transfer control
-	ui().set_handler<mame_ui_manager&, bool>(UI_CALLBACK_TYPE_GENERAL, ui_gfx_ui_handler, ui(), machine().paused());
+	ui().set_handler(ui_callback_type::GENERAL, std::bind(&ui_gfx_ui_handler, _1, std::ref(ui()), machine().paused()));
 }
 
 } // namespace ui

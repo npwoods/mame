@@ -34,7 +34,7 @@ namespace ui {
 //  ctor
 //-------------------------------------------------
 
-menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, render_container *container, device_image_interface *_image)
+menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, render_container &container, device_image_interface *_image)
 	: menu(mui, container),
 		create_ok(false),
 		create_confirmed(false)
@@ -56,6 +56,15 @@ menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, rende
 	/* check to see if the path exists; if not clear it */
 	if (util::zippath_opendir(m_current_directory.c_str(), nullptr) != osd_file::error::NONE)
 		m_current_directory.clear();
+}
+
+
+//-------------------------------------------------
+//  dtor
+//-------------------------------------------------
+
+menu_control_device_image::~menu_control_device_image()
+{
 }
 
 
@@ -111,7 +120,7 @@ void menu_control_device_image::hook_load(std::string name, bool softlist)
 {
 	if (image->is_reset_on_load()) image->set_init_phase();
 	image->load(name.c_str());
-	menu::stack_pop(machine());
+	stack_pop();
 }
 
 
@@ -133,7 +142,7 @@ void menu_control_device_image::handle()
 	switch(state) {
 	case START_FILE:
 		submenu_result.filesel = menu_file_selector::result::INVALID;
-		menu::stack_push<menu_file_selector>(ui(), container, image, m_current_directory, m_current_file, true, image->image_interface()!=nullptr, image->is_creatable(), submenu_result.filesel);
+		menu::stack_push<menu_file_selector>(ui(), container(), image, m_current_directory, m_current_file, true, image->image_interface()!=nullptr, image->is_creatable(), submenu_result.filesel);
 		state = SELECT_FILE;
 		break;
 
@@ -141,7 +150,7 @@ void menu_control_device_image::handle()
 		switch(submenu_result.filesel) {
 		case menu_file_selector::result::EMPTY:
 			image->unload();
-			menu::stack_pop(machine());
+			stack_pop();
 			break;
 
 		case menu_file_selector::result::FILE:
@@ -149,12 +158,12 @@ void menu_control_device_image::handle()
 			break;
 
 		case menu_file_selector::result::CREATE:
-			menu::stack_push<menu_file_create>(ui(), container, image, m_current_directory, m_current_file, create_ok);
+			menu::stack_push<menu_file_create>(ui(), container(), image, m_current_directory, m_current_file, create_ok);
 			state = CHECK_CREATE;
 			break;
 
 		default: // return to system
-			menu::stack_pop(machine());
+			stack_pop();
 			break;
 		}
 		break;
@@ -164,7 +173,7 @@ void menu_control_device_image::handle()
 		test_create(can_create, need_confirm);
 		if(can_create) {
 			if(need_confirm) {
-				menu::stack_push<menu_confirm_save_as>(ui(), container, &create_confirmed);
+				menu::stack_push<menu_confirm_save_as>(ui(), container(), &create_confirmed);
 				state = CREATE_CONFIRM;
 			} else {
 				state = DO_CREATE;
@@ -192,7 +201,7 @@ void menu_control_device_image::handle()
 		int err = image->create(path.c_str(), nullptr, nullptr);
 		if (err != 0)
 			machine().popmessage("Error: %s", image->error());
-		menu::stack_pop(machine());
+		stack_pop();
 		break;
 	}
 	}

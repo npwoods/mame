@@ -150,7 +150,7 @@ public:
 
 	// methods
 	virtual void reset();
-	virtual void handle(render_container *container);
+	virtual void handle(render_container &container);
 
 	// getters
 	bool has_focus() const { return m_menubar_visibility == MENUBAR_VISIBILITY_VISIBLE; }
@@ -166,7 +166,7 @@ protected:
 	// accessors
 	mame_ui_manager &ui() const { return m_ui; }
 	running_machine &machine() const { return ui().machine(); }
-	render_container *container() { return m_container; }
+	render_container &container() { return *m_container; }
 
 private:
 	// classes
@@ -232,6 +232,8 @@ private:
 	bool find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button);
 	menubar_visibility_t get_menubar_visibility();
 	rgb_t adjust_color(rgb_t color);
+	void highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor);
+	void draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, UINT32 orientation);
 };
 
 } // namespace ui

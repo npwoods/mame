@@ -107,9 +107,9 @@ bool menubar::shortcut_key_pressed(int key)
 //  handle
 //-------------------------------------------------
 
-void menubar::handle(render_container *current_container)
+void menubar::handle(render_container &current_container)
 {
-	m_container = current_container;
+	m_container = &current_container;
 
 	// do we need to initialize the menus?
 	if (m_menus.is_empty())
@@ -575,7 +575,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 		if (mi->is_separator())
 		{
 			// draw separator
-			container()->add_line(
+			container().add_line(
 				x,
 				my + spacing + separator_height / 2,
 				x + max_width + (spacing * 2),
@@ -669,7 +669,7 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 
 	// highlight?
 	if (bgcolor != UI_TEXT_BG_COLOR)
-		ui::menu::highlight(container(), x0, y0, x1, y1, adjust_color(bgcolor));
+		highlight(x0, y0, x1, y1, adjust_color(bgcolor));
 
 	// do we have to draw additional decorations?
 	if (decorations)
@@ -683,8 +683,7 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 		if (mi->child())
 		{
 			float lr_arrow_width = 0.4f * (y1 - y0) * machine().render().ui_aspect();
-			ui::menu::draw_arrow(
-				container(),
+			draw_arrow(
 				x1 - lr_arrow_width,
 				y0 + (0.1f * (y1 - y0)),
 				x1,
@@ -731,7 +730,7 @@ bool menubar::find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button)
 	render_target *mouse_target = machine().ui_input().find_mouse(&mouse_target_x, &mouse_target_y, &mouse_button);
 	if (mouse_target != nullptr)
 	{
-		if (mouse_target->map_point_container(mouse_target_x, mouse_target_y, *container(), mouse_x, mouse_y))
+		if (mouse_target->map_point_container(mouse_target_x, mouse_target_y, container(), mouse_x, mouse_y))
 			result = true;
 	}
 
@@ -792,6 +791,26 @@ rgb_t menubar::adjust_color(rgb_t color)
 			break;
 	}
 	return color;
+}
+
+
+//-------------------------------------------------
+//  highlight
+//-------------------------------------------------
+
+void menubar::highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor)
+{
+	// placeholder; have to refactor menu.cpp
+}
+
+
+//-------------------------------------------------
+//  draw_arrow
+//-------------------------------------------------
+
+void menubar::draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, UINT32 orientation)
+{
+	// placeholder; have to refactor menu.cpp
 }
 
 

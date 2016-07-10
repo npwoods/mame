@@ -31,7 +31,7 @@ namespace ui {
 //  ctor
 //-------------------------------------------------
 
-menu_file_manager::menu_file_manager(mame_ui_manager &mui, render_container *container, const char *warnings) : menu(mui, container), selected_device(nullptr)
+menu_file_manager::menu_file_manager(mame_ui_manager &mui, render_container &container, const char *warnings) : menu(mui, container), selected_device(nullptr)
 {
 	// This warning string is used when accessing from the force_file_manager call, i.e.
 	// when the file manager is loaded top front in the case of mandatory image devices
@@ -181,7 +181,7 @@ void menu_file_manager::handle()
 			if (selected_device != nullptr)
 			{
 				m_curr_selected = TRUE;
-				menu::stack_push(create_device_menu(ui(), container, selected_device));
+				menu::stack_push<menu_control_device_image>(ui(), container(), selected_device);
 
 				// reset the existing menu
 				reset(reset_options::REMEMBER_POSITION);
@@ -191,31 +191,8 @@ void menu_file_manager::handle()
 }
 
 
-//-------------------------------------------------
-//  create_device_menu - pulled out so this can be
-//  shared with the menubar code
-//-------------------------------------------------
-
-std::unique_ptr<menu> menu_file_manager::create_device_menu(mame_ui_manager &ui, render_container *container, device_image_interface *device)
-{
-	// commenting the other code out while I refactor image creation
-	return std::unique_ptr<menu>(global_alloc_clear<menu_control_device_image>(ui, container, device));
-#if 0
-	floppy_image_device *floppy_device = dynamic_cast<floppy_image_device *>(device);
-	if (floppy_device != nullptr)
-	{
-		return std::unique_ptr<menu>(global_alloc_clear<menu_control_floppy_image>(ui, container, floppy_device));
-	}
-	else
-	{
-		return std::unique_ptr<menu>(global_alloc_clear<menu_control_device_image>(ui, container, device));
-	}
-#endif
-}
-
-
 // force file manager menu
-void menu_file_manager::force_file_manager(mame_ui_manager &mui, render_container *container, const char *warnings)
+void menu_file_manager::force_file_manager(mame_ui_manager &mui, render_container &container, const char *warnings)
 {
 	// reset the menu stack
 	menu::stack_reset(mui.machine());

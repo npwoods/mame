@@ -23,9 +23,8 @@ namespace ui {
 class menu_control_device_image : public menu
 {
 public:
-	menu_control_device_image(mame_ui_manager &mui, render_container *container, device_image_interface *image);
-	virtual void populate() override;
-	virtual void handle() override;
+	menu_control_device_image(mame_ui_manager &mui, render_container &container, device_image_interface *image);
+	virtual ~menu_control_device_image() override;
 
 protected:
 	enum {
@@ -53,10 +52,13 @@ protected:
 
 	// methods
 	virtual void hook_load(std::string filename, bool softlist);
+	virtual void handle() override;
 
 	bool create_ok;
 
 private:
+	virtual void populate() override;
+
 	// instance variables
 	bool create_confirmed;
 

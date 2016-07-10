@@ -35,7 +35,7 @@ namespace ui {
 //  ctor
 //-------------------------------------------------
 
-ui_menu_bitbanger_control::ui_menu_bitbanger_control(mame_ui_manager &mui, render_container *container, bitbanger_device *device)
+ui_menu_bitbanger_control::ui_menu_bitbanger_control(mame_ui_manager &mui, render_container &container, bitbanger_device *device)
 	: menu_device_control<bitbanger_device>(mui, container, device)
 {
 }

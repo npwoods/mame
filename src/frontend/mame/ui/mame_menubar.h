@@ -27,7 +27,7 @@ class mame_menubar : public menubar
 public:
 	mame_menubar(::mame_ui_manager &mui);
 
-	virtual void handle(render_container *container) override;
+	virtual void handle(render_container &container) override;
 
 protected:
 	virtual void menubar_build_menus() override;
