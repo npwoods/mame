@@ -238,8 +238,12 @@ void menu_file_create::populate()
 			{
 				std::string name = string_format("%s:", _(option_guide->display_name));
 				std::string value;
-				switch (option_guide->option_type)
+
+				bool enabled = resolution->has_option(option_guide->parameter);
+				if (enabled)
 				{
+					switch (option_guide->option_type)
+					{
 					case OPTIONTYPE_INT:
 						value = string_format("%d", resolution->lookup_int(option_guide->parameter));
 						break;
@@ -249,8 +253,16 @@ void menu_file_create::populate()
 					default:
 						fatalerror("Should not get here");
 						break;
+					}
 				}
-				item_append(name, value, 0, nullptr);
+				else
+				{
+					// this item is disabled
+					value = _("N/A");
+				}
+
+				UINT32 flags = enabled ? 0 : FLAG_DISABLE;
+				item_append(name, value, flags, nullptr);
 				option_guide++;
 			}
 		}

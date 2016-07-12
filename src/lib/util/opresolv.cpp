@@ -389,13 +389,24 @@ const option_resolution::entry *option_resolution::lookup_entry(int option_char)
 
 
 // -------------------------------------------------
+//	has_option
+// -------------------------------------------------
+
+bool option_resolution::has_option(int option_char) const
+{
+	return lookup_entry(option_char) != nullptr;
+}
+
+
+// -------------------------------------------------
 //	lookup_int
 // -------------------------------------------------
 
 int option_resolution::lookup_int(int option_char) const
 {
 	auto entry = lookup_entry(option_char);
-	return entry ? entry->int_value() : -1;
+	assert(entry != nullptr);
+	return entry->int_value();
 }
 
 
@@ -403,10 +414,11 @@ int option_resolution::lookup_int(int option_char) const
 //	lookup_string
 // -------------------------------------------------
 
-const char *option_resolution::lookup_string(int option_char) const
+const std::string &option_resolution::lookup_string(int option_char) const
 {
 	auto entry = lookup_entry(option_char);
-	return entry ? entry->value.c_str() : nullptr;
+	assert(entry != nullptr);
+	return entry->value;
 }
 
 

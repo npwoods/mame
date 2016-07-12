@@ -114,8 +114,9 @@ public:
 	// processing options with option_resolution objects
 	error add_param(const char *param, const std::string &value);
 	error finish();
+	bool has_option(int option_char) const;
 	int lookup_int(int option_char) const;
-	const char *lookup_string(int option_char) const;
+	const std::string &lookup_string(int option_char) const;
 
 	// accessors
 	const char *specification() const { return m_specification; }
