@@ -67,7 +67,7 @@ void cdrom_image_device::device_config_complete()
 	update_names();
 }
 
-const option_guide *cdrom_image_device::create_option_guide() const
+const util::option_guide &cdrom_image_device::create_option_guide() const
 {
 	return cd_option_guide;
 }

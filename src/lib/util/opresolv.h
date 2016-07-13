@@ -50,46 +50,78 @@
 //  TYPE DEFINITIONS
 //**************************************************************************
 
-enum option_type
-{
-	OPTIONTYPE_END,
-	OPTIONTYPE_INT,
-	OPTIONTYPE_STRING,
-	OPTIONTYPE_ENUM_BEGIN,
-	OPTIONTYPE_ENUM_VALUE
-};
-
-struct option_guide
-{
-	enum option_type option_type;
-	int parameter;
-	const char *identifier;
-	const char *display_name;
-};
-
 #define OPTION_GUIDE_START(option_guide_)                                   \
-	const option_guide option_guide_[] =                                \
+	const util::option_guide option_guide_ =										\
 	{
 #define OPTION_GUIDE_END                                                    \
-		{ OPTIONTYPE_END }                                                  \
 	};
 #define OPTION_GUIDE_EXTERN(option_guide_)                                  \
-	extern const option_guide option_guide_[]
+	extern const util::option_guide option_guide_
 #define OPTION_INT(option_char, identifier, display_name)                   \
-		{ OPTIONTYPE_INT, (option_char), (identifier), (display_name) },
+	{ util::option_guide::entry::option_type::INT, (option_char), (identifier), (display_name) },
 #define OPTION_STRING(option_char, identifier, display_name)                \
-	{ OPTIONTYPE_STRING, (option_char), (identifier), (display_name) },
+	{ util::option_guide::entry::option_type::STRING, (option_char), (identifier), (display_name) },
 #define OPTION_ENUM_START(option_char, identifier, display_name)            \
-	{ OPTIONTYPE_ENUM_BEGIN, (option_char), (identifier), (display_name) },
+	{ util::option_guide::entry::option_type::ENUM_START, (option_char), (identifier), (display_name) },
 #define OPTION_ENUM(value, identifier, display_name)                        \
-	{ OPTIONTYPE_ENUM_VALUE, (value), (identifier), (display_name) },
+	{ util::option_guide::entry::option_type::ENUM_VALUE, (value), (identifier), (display_name) },
 #define OPTION_ENUM_END
 
 namespace util {
 
+// ======================> option_guide
+
+class option_guide
+{
+public:
+	class entry
+	{
+	public:
+		enum class option_type
+		{
+			INT,
+			STRING,
+			ENUM_BEGIN,
+			ENUM_VALUE
+		};
+
+		constexpr entry(option_type type, int parameter = 0, const char *identifier = nullptr, const char *display_name = nullptr)
+			: m_type(type), m_parameter(parameter), m_identifier(identifier), m_display_name(display_name)
+		{
+		}
+
+		// accessors
+		const option_type type() const { return m_type; }
+		int parameter() const { return m_parameter; }
+		const char *identifier() const { return m_identifier; }
+		const char *display_name() const { return m_display_name; }
+	
+	private:
+		option_type	m_type;
+		int			m_parameter;
+		const char *m_identifier;
+		const char *m_display_name;
+	};
+
+	typedef std::vector<option_guide::entry> entrylist;
+
+	option_guide(std::initializer_list<entry> entries)
+		: m_entries(entries)
+	{
+	}
+
+	const entrylist &entries() const { return m_entries; }
+
+private:
+	entrylist m_entries;
+};
+
+// ======================> option_resolution
+
 class option_resolution
 {
 public:
+	// TODO - audit unused parameters
 	enum class error
 	{
 		SUCCESS,
@@ -108,7 +140,7 @@ public:
 		int min, max;
 	};
 
-	option_resolution(const option_guide *guide, const char *specification);
+	option_resolution(const option_guide &guide, const char *specification);
 	~option_resolution();
 
 	// processing options with option_resolution objects
@@ -120,11 +152,8 @@ public:
 
 	// accessors
 	const char *specification() const { return m_specification; }
-	const option_guide *find_option(int option_char) const;
-	const option_guide *index_option(int indx) const;
-
-	// processing option guides
-	static size_t count_options(const option_guide *guide, const char *specification);
+	const option_guide::entry *find_option(int option_char) const;
+	const option_guide::entry *index_option(int indx) const;
 
 	// processing option specifications
 	static error list_ranges(const char *specification, int option_char,
@@ -143,14 +172,32 @@ private:
 		SPECIFIED
 	};
 
-	struct entry
+	class entry
 	{
-		const option_guide *guide_entry;
-		entry_state state;
-		std::string value;
+	public:
+		entry(const option_guide::entry &guide_entry);
+		entry(const option_guide::entry &guide_entry, option_guide::entrylist::const_iterator enum_value_begin, option_guide::entrylist::const_iterator enum_value_end);
+
+		option_guide::entrylist::const_iterator	enum_value_begin() const;
+		option_guide::entrylist::const_iterator	enum_value_end() const;
+
+		const option_guide::entry &guide_entry() const { return m_guide_entry; }
+		entry_state state() const { return m_state; }
 
 		int int_value() const;
 		void set_int_value(int i);
+
+		const std::string &string_value() const;
+		void set_string_value(const std::string &value);
+
+	private:
+		const option_guide::entry &				m_guide_entry;
+		option_guide::entrylist::const_iterator	m_enum_value_begin;
+		option_guide::entrylist::const_iterator	m_enum_value_end;
+		entry_state								m_state;
+		std::string								m_value;
+
+		void mark_specified();
 	};
 
 	const char *m_specification;
@@ -158,7 +205,7 @@ private:
 
 	static error resolve_single_param(const char *specification, entry *param_value,
 		struct range *range, size_t range_count);
-	static const char *lookup_in_specification(const char *specification, const option_guide *option);
+	static const char *lookup_in_specification(const char *specification, const option_guide::entry &option);
 	const entry *lookup_entry(int option_char) const;
 };
 

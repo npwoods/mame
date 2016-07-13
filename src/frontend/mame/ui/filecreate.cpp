@@ -230,25 +230,27 @@ void menu_file_create::populate()
 
 		// do we have options?
 		auto option_guide = m_image->create_option_guide();
-		if (option_guide != nullptr)
+		if (option_guide.entries().size() > 0)
 		{
 			auto resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
 			resolution->finish();
-			while (option_guide->option_type != OPTIONTYPE_END)
+
+			for (auto &entry : option_guide.entries())
 			{
-				std::string name = string_format("%s:", _(option_guide->display_name));
+				std::string name = string_format("%s:", _(entry.display_name()));
 				std::string value;
 
-				bool enabled = resolution->has_option(option_guide->parameter);
+				auto parameter = entry.parameter();
+				bool enabled = resolution->has_option(parameter);
 				if (enabled)
 				{
-					switch (option_guide->option_type)
+					switch (entry.type())
 					{
-					case OPTIONTYPE_INT:
-						value = string_format("%d", resolution->lookup_int(option_guide->parameter));
+					case util::option_guide::entry::option_type::INT:
+						value = string_format("%d", resolution->lookup_int(parameter));
 						break;
-					case OPTIONTYPE_STRING:
-						value = resolution->lookup_string(option_guide->parameter);
+					case util::option_guide::entry::option_type::STRING:
+						value = resolution->lookup_string(parameter);
 						break;
 					default:
 						fatalerror("Should not get here");
@@ -263,7 +265,6 @@ void menu_file_create::populate()
 
 				UINT32 flags = enabled ? 0 : FLAG_DISABLE;
 				item_append(name, value, flags, nullptr);
-				option_guide++;
 			}
 		}
 		item_append(menu_item_type::SEPARATOR);

@@ -937,7 +937,7 @@ UINT32 floppy_image_device::get_variant() const
 	return image ? image->get_variant() : 0;
 }
 
-const option_guide *floppy_image_device::create_option_guide() const
+const util::option_guide &floppy_image_device::create_option_guide() const
 {
 	return floppy_option_guide;
 }

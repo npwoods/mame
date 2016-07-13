@@ -2,7 +2,7 @@
 // copyright-holders:Nathan Woods
 /****************************************************************************
 
-    opresolv.h
+    opresolv.cpp
 
     Extensible ranged option resolution handling
 
@@ -23,26 +23,6 @@ namespace util {
 /***************************************************************************
 	option_resolution
 ***************************************************************************/
-
-// -------------------------------------------------
-//	entry::int_value
-// -------------------------------------------------
-
-int option_resolution::entry::int_value() const
-{
-	return atoi(value.c_str());
-}
-
-
-// -------------------------------------------------
-//	entry::set_int_value
-// -------------------------------------------------
-
-void option_resolution::entry::set_int_value(int i)
-{
-	value = string_format("%d", i);
-}
-
 
 // -------------------------------------------------
 //	resolve_single_param
@@ -184,10 +164,10 @@ option_resolution::error option_resolution::resolve_single_param(const char *spe
 //	lookup_in_specification
 // -------------------------------------------------
 
-const char *option_resolution::lookup_in_specification(const char *specification, const option_guide *option)
+const char *option_resolution::lookup_in_specification(const char *specification, const option_guide::entry &option)
 {
 	const char *s;
-	s = strchr(specification, option->parameter);
+	s = strchr(specification, option.parameter());
 	return s ? s + 1 : nullptr;
 }
 
@@ -196,45 +176,41 @@ const char *option_resolution::lookup_in_specification(const char *specification
 //	ctor
 // -------------------------------------------------
 
-option_resolution::option_resolution(const option_guide *guide, const char *specification)
+option_resolution::option_resolution(const option_guide &guide, const char *specification)
 {
-	const option_guide *guide_entry;
-	int option_count;
-	int opt = -1;
-
-	assert(guide);
-
 	// first count the number of options specified in the guide 
-	option_count = count_options(guide, specification);
+	auto option_count = guide.entries().size();
 
 	// set up the entries list
 	m_specification = specification;
-	m_entries.resize(option_count);
+	m_entries.reserve(option_count);
 
 	// initialize each of the entries 
-	opt = 0;
-	guide_entry = guide;
-	while(guide_entry->option_type != OPTIONTYPE_END)
+	for (auto index = 0; index < option_count; index++)
 	{
-		switch(guide_entry->option_type)
+		// if this is an enumeration, identify the values
+		option_guide::entrylist::const_iterator enum_value_begin;
+		option_guide::entrylist::const_iterator enum_value_end;
+		if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN)
 		{
-		case OPTIONTYPE_INT:
-		case OPTIONTYPE_ENUM_BEGIN:
-		case OPTIONTYPE_STRING:
-			if (lookup_in_specification(specification, guide_entry))
-				m_entries[opt++].guide_entry = guide_entry;
-			break;
+			// enum values begin after the ENUM_BEGIN
+			enum_value_begin = enum_value_end = guide.entries().begin() + index + 1;
 
-		case OPTIONTYPE_ENUM_VALUE:
-			break;
-
-		default:
-			assert(false && "Invalid option type");
-			break;
+			// and identify all entries of type ENUM_VALUE
+			while (enum_value_end != guide.entries().end() && enum_value_end->type() == option_guide::entry::option_type::ENUM_VALUE)
+			{
+				index++;
+				enum_value_end++;
+			}
 		}
-		guide_entry++;
+
+#if 1
+		entry entry(guide.entries()[index]);
+		m_entries.push_back(std::move(entry));
+#else
+		m_entries.emplace_back(guide.entries()[index]);
+#endif
 	}
-	assert(opt == option_count);
 }
 
 
@@ -248,75 +224,66 @@ option_resolution::~option_resolution()
 
 
 // -------------------------------------------------
-//	add_param
+//	add_param - TODO:  rename to set_value()
 // -------------------------------------------------
 
 option_resolution::error option_resolution::add_param(const char *param, const std::string &value)
 {
-	int i;
-	bool must_resolve;
-	error err;
-	const char *option_specification;
-	entry *entry = nullptr;
-
-	for(auto &this_entry : m_entries)
-	{
-		if (!strcmp(param, this_entry.guide_entry->identifier))
-		{
-			entry = &this_entry;
-			break;
-		}
-	}
-	if (entry == nullptr)
+	// find the appropriate entry
+	auto iter = std::find_if(
+		m_entries.begin(),
+		m_entries.end(),
+		[&](const option_resolution::entry &e) { return !strcmp(param, e.guide_entry().identifier()); });
+	
+	// fail if the parameter is unknown
+	if (iter == m_entries.end())
 		return error::PARAMNOTFOUND;
 
-	if (entry->state != entry_state::UNSPECIFIED)
-		return error::PARAMALREADYSPECIFIED;
+	option_resolution::entry &entry = *iter;
+	option_guide::entrylist::const_iterator enum_value_iter;
+	bool must_resolve = false;
+	switch (entry.guide_entry().type())
+	{
+		case option_guide::entry::option_type::INT:
+			entry.set_int_value(atoi(value.c_str()));
+			must_resolve = true;
+			break;
 
-	switch(entry->guide_entry->option_type) {
-	case OPTIONTYPE_INT:
-		entry->set_int_value(atoi(value.c_str()));
-		entry->state = entry_state::SPECIFIED;
-		must_resolve = true;
-		break;
+		case option_guide::entry::option_type::STRING:
+			entry.set_string_value(value);
+			break;
 
-	case OPTIONTYPE_STRING:
-		entry->value = value;
-		entry->state = entry_state::SPECIFIED;
-		must_resolve = false;
-		break;
+		case option_guide::entry::option_type::ENUM_BEGIN:
+			// look up the enum value
+			enum_value_iter = std::find_if(
+				entry.enum_value_begin(),
+				entry.enum_value_end(),
+				[&](const option_guide::entry &e) { return !core_stricmp(value.c_str(), e.identifier()); });
 
-	case OPTIONTYPE_ENUM_BEGIN:
-		for (i = 1; entry->guide_entry[i].option_type == OPTIONTYPE_ENUM_VALUE; i++)
-		{
-			if (!core_stricmp(value.c_str(), entry->guide_entry[i].identifier))
-			{
-				entry->set_int_value(entry->guide_entry[i].parameter);
-				entry->state = entry_state::SPECIFIED;
-				break;
-			}
-		}
-		if (entry->state != entry_state::SPECIFIED)
-			return error::BADPARAM;
+			// fail if not found
+			if (enum_value_iter == entry.enum_value_end())
+				return error::BADPARAM;
 
-		must_resolve = true;
-		break;
+			// set the value
+			entry.set_int_value(enum_value_iter->parameter());
+			must_resolve = true;
+			break;
 
-	default:
-		assert(0);
-		return error::INTERNAL;
+		default:
+			assert(false);
+			break;
 	}
 
 	// do a resolution step if necessary
 	if (must_resolve)
 	{
-		option_specification = lookup_in_specification(m_specification, entry->guide_entry);
-		err = resolve_single_param(option_specification, entry, nullptr, 0);
+		auto option_specification = lookup_in_specification(m_specification, entry.guide_entry());
+		auto err = resolve_single_param(option_specification, &entry, nullptr, 0);
 		if (err != error::SUCCESS)
 			return err;
 
 		// did we not get a real value?
-		if (entry->int_value() < 0)
+		if (entry.int_value() < 0)
 			return error::PARAMNOTSPECIFIED;
 	}
 
@@ -325,7 +292,7 @@ option_resolution::error option_resolution::add_param(const char *param, const s
 
 
 // -------------------------------------------------
-//	finish
+//	finish - TODO - this should be an unnecessary step
 // -------------------------------------------------
 
 option_resolution::error option_resolution::finish()
@@ -335,28 +302,28 @@ option_resolution::error option_resolution::finish()
 
 	for (auto &entry : m_entries)
 	{
-		if (entry.state == entry_state::UNSPECIFIED)
+		if (entry.state() == entry_state::UNSPECIFIED)
 		{
-			switch(entry.guide_entry->option_type) {
-			case OPTIONTYPE_INT:
-			case OPTIONTYPE_ENUM_BEGIN:
-				option_specification = lookup_in_specification(m_specification, entry.guide_entry);
-				assert(option_specification);
-				entry.set_int_value(-1);
-				err = resolve_single_param(option_specification, &entry, nullptr, 0);
-				if (err != error::SUCCESS)
-					return err;
-				break;
+			switch(entry.guide_entry().type())
+			{
+				case option_guide::entry::option_type::INT:
+				case option_guide::entry::option_type::ENUM_BEGIN:
+					option_specification = lookup_in_specification(m_specification, entry.guide_entry());
+					assert(option_specification);
+					entry.set_int_value(-1);
+					err = resolve_single_param(option_specification, &entry, nullptr, 0);
+					if (err != error::SUCCESS)
+						return err;
+					break;
 
-			case OPTIONTYPE_STRING:
-				entry.value = "";
-				break;
+				case option_guide::entry::option_type::STRING:
+					entry.set_string_value("");
+					break;
 
-			default:
-				assert(FALSE);
-				return error::INTERNAL;
+				default:
+					assert(false);
+					return error::INTERNAL;
 			}
-			entry.state = entry_state::SPECIFIED;
 		}
 	}
 	return error::SUCCESS;
@@ -371,17 +338,18 @@ const option_resolution::entry *option_resolution::lookup_entry(int option_char)
 {
 	for (auto &entry : m_entries)
 	{
-		switch(entry.guide_entry->option_type) {
-		case OPTIONTYPE_INT:
-		case OPTIONTYPE_STRING:
-		case OPTIONTYPE_ENUM_BEGIN:
-			if (entry.guide_entry->parameter == option_char)
-				return &entry;
-			break;
+		switch(entry.guide_entry().type())
+		{
+			case option_guide::entry::option_type::INT:
+			case option_guide::entry::option_type::STRING:
+			case option_guide::entry::option_type::ENUM_BEGIN:
+				if (entry.guide_entry().parameter() == option_char)
+					return &entry;
+				break;
 
-		default:
-			assert(FALSE);
-			return nullptr;
+			default:
+				assert(false);
+				return nullptr;
 		}
 	}
 	return nullptr;
@@ -418,7 +386,7 @@ const std::string &option_resolution::lookup_string(int option_char) const
 {
 	auto entry = lookup_entry(option_char);
 	assert(entry != nullptr);
-	return entry->value;
+	return entry->string_value();
 }
 
 
@@ -426,10 +394,10 @@ const std::string &option_resolution::lookup_string(int option_char) const
 //	find_option
 // -------------------------------------------------
 
-const option_guide *option_resolution::find_option(int option_char) const
+const option_guide::entry *option_resolution::find_option(int option_char) const
 {
 	auto entry = lookup_entry(option_char);
-	return entry ? entry->guide_entry : nullptr;
+	return entry ? &entry->guide_entry() : nullptr;
 }
 
 
@@ -437,40 +405,11 @@ const option_guide *option_resolution::find_option(int option_char) const
 //	index_option
 // -------------------------------------------------
 
-const option_guide *option_resolution::index_option(int indx) const
+const option_guide::entry *option_resolution::index_option(int indx) const
 {
 	if ((indx < 0) || (indx >= m_entries.size()))
 		return nullptr;
-	return m_entries[indx].guide_entry;
-}
-
-
-// -------------------------------------------------
-//	count_options
-// -------------------------------------------------
-
-size_t option_resolution::count_options(const option_guide *guide, const char *specification)
-{
-	size_t option_count = 0;
-
-	while(guide->option_type != OPTIONTYPE_END)
-	{
-		switch(guide->option_type) {
-		case OPTIONTYPE_INT:
-		case OPTIONTYPE_STRING:
-		case OPTIONTYPE_ENUM_BEGIN:
-			if (lookup_in_specification(specification, guide))
-				option_count++;
-			break;
-		case OPTIONTYPE_ENUM_VALUE:
-			break;
-		default:
-			assert(FALSE);
-			return 0;
-		}
-		guide++;
-	}
-	return option_count;
+	return &m_entries[indx].guide_entry();
 }
 
 
@@ -513,7 +452,8 @@ option_resolution::error option_resolution::get_default(const char *specificatio
 		return error::SYNTAX;
 	}
 
-	entry ent;
+	option_guide::entry dummy(option_guide::entry::option_type::INT);
+	entry ent(dummy);
 	auto err = resolve_single_param(specification + 1, &ent, nullptr, 0);
 	*val = ent.int_value();
 	return err;
@@ -573,5 +513,104 @@ const char *option_resolution::error_string(option_resolution::error err)
 	}
 	return nullptr;
 }
+
+
+// -------------------------------------------------
+//	entry::ctor
+// -------------------------------------------------
+
+option_resolution::entry::entry(const option_guide::entry &guide_entry)
+	: m_guide_entry(guide_entry)
+	, m_state(entry_state::UNSPECIFIED)
+{
+}
+
+
+// -------------------------------------------------
+//	entry::ctor
+// -------------------------------------------------
+
+option_resolution::entry::entry(const option_guide::entry &guide_entry, option_guide::entrylist::const_iterator enum_value_begin, option_guide::entrylist::const_iterator enum_value_end)
+	: m_guide_entry(guide_entry)
+	, m_enum_value_begin(enum_value_begin)
+	, m_enum_value_end(enum_value_end)
+	, m_state(entry_state::UNSPECIFIED)
+{
+}
+
+
+// -------------------------------------------------
+//	entry::enum_value_begin
+// -------------------------------------------------
+
+option_guide::entrylist::const_iterator	option_resolution::entry::enum_value_begin() const
+{
+	assert(guide_entry().type() == option_guide::entry::option_type::ENUM_BEGIN);
+	return m_enum_value_begin;
+}
+
+
+// -------------------------------------------------
+//	entry::enum_value_end
+// -------------------------------------------------
+
+option_guide::entrylist::const_iterator	option_resolution::entry::enum_value_end() const
+{
+	assert(guide_entry().type() == option_guide::entry::option_type::ENUM_BEGIN);
+	return m_enum_value_end;
+}
+
+
+// -------------------------------------------------
+//	entry::int_value
+// -------------------------------------------------
+
+int option_resolution::entry::int_value() const
+{
+	return atoi(m_value.c_str());
+}
+
+
+// -------------------------------------------------
+//	entry::set_int_value
+// -------------------------------------------------
+
+void option_resolution::entry::set_int_value(int i)
+{
+	m_value = string_format("%d", i);
+	mark_specified();
+}
+
+
+// -------------------------------------------------
+//	entry::string_value
+// -------------------------------------------------
+
+const std::string &option_resolution::entry::string_value() const
+{
+	return m_value;
+}
+
+
+// -------------------------------------------------
+//	entry::set_string_value
+// -------------------------------------------------
+
+void option_resolution::entry::set_string_value(const std::string &value)
+{
+	m_value = value;
+	mark_specified();
+}
+
+
+// -------------------------------------------------
+//	entry::mark_specified
+// -------------------------------------------------
+
+void option_resolution::entry::mark_specified()
+{
+	m_state = entry_state::SPECIFIED;
+}
+
 
 } // namespace util
