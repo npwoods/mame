@@ -166,23 +166,17 @@ public:
 	static const char *error_string(error err);
 
 private:
-	enum class entry_state
-	{
-		UNSPECIFIED,
-		SPECIFIED
-	};
-
 	class entry
 	{
 	public:
 		entry(const option_guide::entry &guide_entry);
-		entry(const option_guide::entry &guide_entry, option_guide::entrylist::const_iterator enum_value_begin, option_guide::entrylist::const_iterator enum_value_end);
+
+		void set_enum_value_range(option_guide::entrylist::const_iterator begin, option_guide::entrylist::const_iterator end);
 
 		option_guide::entrylist::const_iterator	enum_value_begin() const;
 		option_guide::entrylist::const_iterator	enum_value_end() const;
 
 		const option_guide::entry &guide_entry() const { return m_guide_entry; }
-		entry_state state() const { return m_state; }
 
 		int int_value() const;
 		void set_int_value(int i);
@@ -194,10 +188,7 @@ private:
 		const option_guide::entry &				m_guide_entry;
 		option_guide::entrylist::const_iterator	m_enum_value_begin;
 		option_guide::entrylist::const_iterator	m_enum_value_end;
-		entry_state								m_state;
 		std::string								m_value;
-
-		void mark_specified();
 	};
 
 	const char *m_specification;

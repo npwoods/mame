@@ -188,28 +188,41 @@ option_resolution::option_resolution(const option_guide &guide, const char *spec
 	// initialize each of the entries 
 	for (auto index = 0; index < option_count; index++)
 	{
-		// if this is an enumeration, identify the values
-		option_guide::entrylist::const_iterator enum_value_begin;
-		option_guide::entrylist::const_iterator enum_value_end;
-		if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN)
+		auto spec = lookup_in_specification(m_specification, guide.entries()[index]);
+		if (spec != nullptr)
 		{
-			// enum values begin after the ENUM_BEGIN
-			enum_value_begin = enum_value_end = guide.entries().begin() + index + 1;
+			// create the entry
+			entry entry(guide.entries()[index]);
 
-			// and identify all entries of type ENUM_VALUE
-			while (enum_value_end != guide.entries().end() && enum_value_end->type() == option_guide::entry::option_type::ENUM_VALUE)
+			// if this is an enumeration, identify the values
+			if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN)
 			{
-				index++;
-				enum_value_end++;
-			}
-		}
+				// enum values begin after the ENUM_BEGIN
+				auto enum_value_begin = guide.entries().begin() + index + 1;
+				auto enum_value_end = enum_value_begin;
 
-#if 1
-		entry entry(guide.entries()[index]);
-		m_entries.push_back(std::move(entry));
-#else
-		m_entries.emplace_back(guide.entries()[index]);
-#endif
+				// and identify all entries of type ENUM_VALUE
+				while (enum_value_end != guide.entries().end() && enum_value_end->type() == option_guide::entry::option_type::ENUM_VALUE)
+				{
+					index++;
+					enum_value_end++;
+				}
+
+				// set the range
+				entry.set_enum_value_range(enum_value_begin, enum_value_end);
+			}
+
+			// set default values for ints and enums
+			if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN
+				|| guide.entries()[index].type() == option_guide::entry::option_type::INT)
+			{
+				entry.set_int_value(-1);
+				resolve_single_param(spec, &entry, nullptr, 0);
+			}
+
+			// and append it
+			m_entries.push_back(std::move(entry));
+		}
 	}
 }
 
@@ -297,35 +310,6 @@ option_resolution::error option_resolution::add_param(const char *param, const s
 
 option_resolution::error option_resolution::finish()
 {
-	const char *option_specification;
-	error err;
-
-	for (auto &entry : m_entries)
-	{
-		if (entry.state() == entry_state::UNSPECIFIED)
-		{
-			switch(entry.guide_entry().type())
-			{
-				case option_guide::entry::option_type::INT:
-				case option_guide::entry::option_type::ENUM_BEGIN:
-					option_specification = lookup_in_specification(m_specification, entry.guide_entry());
-					assert(option_specification);
-					entry.set_int_value(-1);
-					err = resolve_single_param(option_specification, &entry, nullptr, 0);
-					if (err != error::SUCCESS)
-						return err;
-					break;
-
-				case option_guide::entry::option_type::STRING:
-					entry.set_string_value("");
-					break;
-
-				default:
-					assert(false);
-					return error::INTERNAL;
-			}
-		}
-	}
 	return error::SUCCESS;
 }
 
@@ -521,21 +505,18 @@ const char *option_resolution::error_string(option_resolution::error err)
 
 option_resolution::entry::entry(const option_guide::entry &guide_entry)
 	: m_guide_entry(guide_entry)
-	, m_state(entry_state::UNSPECIFIED)
 {
 }
 
 
 // -------------------------------------------------
-//	entry::ctor
+//	entry::set_enum_value_range
 // -------------------------------------------------
 
-option_resolution::entry::entry(const option_guide::entry &guide_entry, option_guide::entrylist::const_iterator enum_value_begin, option_guide::entrylist::const_iterator enum_value_end)
-	: m_guide_entry(guide_entry)
-	, m_enum_value_begin(enum_value_begin)
-	, m_enum_value_end(enum_value_end)
-	, m_state(entry_state::UNSPECIFIED)
+void option_resolution::entry::set_enum_value_range(option_guide::entrylist::const_iterator begin, option_guide::entrylist::const_iterator end)
 {
+	m_enum_value_begin = begin;
+	m_enum_value_end = end;
 }
 
 
@@ -578,7 +559,6 @@ int option_resolution::entry::int_value() const
 void option_resolution::entry::set_int_value(int i)
 {
 	m_value = string_format("%d", i);
-	mark_specified();
 }
 
 
@@ -599,17 +579,6 @@ const std::string &option_resolution::entry::string_value() const
 void option_resolution::entry::set_string_value(const std::string &value)
 {
 	m_value = value;
-	mark_specified();
-}
-
-
-// -------------------------------------------------
-//	entry::mark_specified
-// -------------------------------------------------
-
-void option_resolution::entry::mark_specified()
-{
-	m_state = entry_state::SPECIFIED;
 }
 
 
