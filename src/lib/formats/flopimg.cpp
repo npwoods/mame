@@ -204,35 +204,9 @@ floperr_t floppy_open_choices(void *fp, const struct io_procs *procs, const char
 
 
 
-static floperr_t option_to_floppy_error(util::option_resolution::error oerr)
-{
-	floperr_t err;
-	switch(oerr) {
-	case util::option_resolution::error::SUCCESS:
-		err = FLOPPY_ERROR_SUCCESS;
-		break;
-	case util::option_resolution::error::OUTOFMEMORY:
-		err = FLOPPY_ERROR_OUTOFMEMORY;
-		break;
-	case util::option_resolution::error::PARAMOUTOFRANGE:
-	case util::option_resolution::error::PARAMNOTSPECIFIED:
-	case util::option_resolution::error::PARAMNOTFOUND:
-	case util::option_resolution::error::PARAMALREADYSPECIFIED:
-	case util::option_resolution::error::BADPARAM:
-	case util::option_resolution::error::SYNTAX:
-	default:
-		err = FLOPPY_ERROR_INTERNAL;
-		break;
-	};
-	return err;
-}
-
-
-
 floperr_t floppy_create(void *fp, const struct io_procs *procs, const struct FloppyFormat *format, util::option_resolution *parameters, floppy_image_legacy **outfloppy)
 {
 	floppy_image_legacy *floppy = nullptr;
-	util::option_resolution::error oerr;
 	floperr_t err;
 	int heads, tracks, h, t;
 	std::unique_ptr<util::option_resolution> alloc_resolution;
@@ -257,17 +231,6 @@ floperr_t floppy_create(void *fp, const struct io_procs *procs, const struct Flo
 			goto done;
 		}
 		parameters = alloc_resolution.get();
-	}
-
-	/* finish the parameters, if specified */
-	if (parameters)
-	{
-		oerr = parameters->finish();
-		if (oerr != util::option_resolution::error::SUCCESS)
-		{
-			err = option_to_floppy_error(oerr);
-			goto done;
-		}
 	}
 
 	/* call the format constructor */
@@ -696,10 +659,6 @@ floperr_t floppy_format_track(floppy_image_legacy *floppy, int head, int track, 
 
 		parameters = alloc_resolution.get();
 	}
-
-	auto oerr = parameters->finish();
-	if (oerr != util::option_resolution::error::SUCCESS)
-		return option_to_floppy_error(oerr);
 
 	err = format->format_track(floppy, head, track, parameters);
 	if (err)

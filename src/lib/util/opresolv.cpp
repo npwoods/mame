@@ -237,10 +237,10 @@ option_resolution::~option_resolution()
 
 
 // -------------------------------------------------
-//	add_param - TODO:  rename to set_value()
+//	set_parameter
 // -------------------------------------------------
 
-option_resolution::error option_resolution::add_param(const char *param, const std::string &value)
+option_resolution::error option_resolution::set_parameter(const char *param, const std::string &value)
 {
 	// find the appropriate entry
 	auto iter = std::find_if(
@@ -300,16 +300,6 @@ option_resolution::error option_resolution::add_param(const char *param, const s
 			return error::PARAMNOTSPECIFIED;
 	}
 
-	return error::SUCCESS;
-}
-
-
-// -------------------------------------------------
-//	finish - TODO - this should be an unnecessary step
-// -------------------------------------------------
-
-option_resolution::error option_resolution::finish()
-{
 	return error::SUCCESS;
 }
 

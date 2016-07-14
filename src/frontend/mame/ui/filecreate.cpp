@@ -233,7 +233,6 @@ void menu_file_create::populate()
 		if (option_guide.entries().size() > 0)
 		{
 			auto resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
-			resolution->finish();
 
 			for (auto &entry : option_guide.entries())
 			{
