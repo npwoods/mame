@@ -255,6 +255,12 @@ void menu_file_create::populate()
 						fatalerror("Should not get here");
 						break;
 					}
+
+					//
+					if (entry.is_ranged())
+					{
+
+					}
 				}
 				else
 				{

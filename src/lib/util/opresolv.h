@@ -95,6 +95,7 @@ public:
 		int parameter() const { return m_parameter; }
 		const char *identifier() const { return m_identifier; }
 		const char *display_name() const { return m_display_name; }
+		bool is_ranged() const { return type() == option_type::INT || type() == option_type::ENUM_BEGIN; }
 	
 	private:
 		option_type	m_type;
@@ -148,6 +149,7 @@ public:
 	bool has_option(int option_char) const;
 	int lookup_int(int option_char) const;
 	const std::string &lookup_string(int option_char) const;
+	std::vector<range> list_ranges(int option_char) const;
 
 	// accessors
 	const char *specification() const { return m_specification; }
@@ -155,8 +157,7 @@ public:
 	const option_guide::entry *index_option(int indx) const;
 
 	// processing option specifications
-	static error list_ranges(const char *specification, int option_char,
-		range *range, size_t range_count);
+	static std::vector<range> list_ranges(const char *specification, int option_char);
 	static error get_default(const char *specification, int option_char, int *val);
 	static error is_valid_value(const char *specification, int option_char, int val);
 	static bool contains(const char *specification, int option_char);

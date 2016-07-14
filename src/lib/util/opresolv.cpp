@@ -391,21 +391,32 @@ const option_guide::entry *option_resolution::index_option(int indx) const
 //	list_ranges
 // -------------------------------------------------
 
-option_resolution::error option_resolution::list_ranges(const char *specification, int option_char, range *range, size_t range_count)
+std::vector<option_resolution::range> option_resolution::list_ranges(int option_char)
 {
-	assert(range_count > 0);
+	return list_ranges(m_specification, option_char);
+}
 
-	// clear out range
-	memset(range, -1, sizeof(*range) * range_count);
-	range_count--;
 
+// -------------------------------------------------
+//	list_ranges
+// -------------------------------------------------
+
+std::vector<option_resolution::range> option_resolution::list_ranges(const char *specification, int option_char)
+{
 	specification = strchr(specification, option_char);
-	if (!specification)
-	{
-		return error::SYNTAX;
-	}
+	assert(specification != nullptr);
 
-	return resolve_single_param(specification + 1, nullptr, range, range_count);
+	// TODO - resolve_single_param should really be changed here
+	range range_buffer[100];
+	memset(range_buffer, 0, sizeof(memset));
+	auto err = resolve_single_param(specification + 1, nullptr, range_buffer, ARRAY_LENGTH(range_buffer) - 1);
+	assert(err == error::SUCCESS);
+
+	int count = 0;
+	while (range_buffer[count].min == 0 && range_buffer[count].max == 0)
+		count++;
+
+	return std::vector<range>(count, range_buffer);
 }
 
 
