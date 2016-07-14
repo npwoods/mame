@@ -20,7 +20,7 @@
 #include "machine/x2212.h"
 #include "video/upd7220.h"
 
-#define VERBOSE_DBG 1       /* general debug messages */
+#define VERBOSE_DBG 0       /* general debug messages */
 
 #define DBG_LOG(N,M,A) \
 	do { \
@@ -95,6 +95,8 @@ public:
 	DECLARE_WRITE8_MEMBER(reg0_w);
 	DECLARE_WRITE8_MEMBER(reg1_w);
 	DECLARE_WRITE8_MEMBER(lu_w);
+	DECLARE_WRITE8_MEMBER(hbscrl_w);
+	DECLARE_WRITE8_MEMBER(lbscrl_w);
 	DECLARE_READ16_MEMBER(mem_r);
 	DECLARE_WRITE16_MEMBER(mem_w);
 
@@ -110,6 +112,7 @@ public:
 	UINT8 m_vom[16];
 	UINT8 m_vpat, m_patmult, m_patcnt, m_patidx;
 	bool m_lb;
+	UINT16 m_scrl;
 };
 
 WRITE_LINE_MEMBER(vt240_state::write_keyboard_clock)
@@ -360,9 +363,7 @@ WRITE16_MEMBER(vt240_state::vram_w)
 	offset &= 0xffff;
 	UINT8 chr = data;
 
-	if(BIT(m_reg1, 2))
-		chr = video_ram[offset];
-	else if(BIT(m_reg0, 4))
+	if(BIT(m_reg0, 4))
 	{
 		if(BIT(m_reg0, 6))
 		{
@@ -385,28 +386,45 @@ WRITE16_MEMBER(vt240_state::vram_w)
 			if(ps == 0)
 				i++;
 			UINT8 mem = video_ram[(offset & 0x7fff) + (0x8000 * i)];
+			UINT8 out = 0, ifore = BIT(m_lu, (i ? 5 : 4)), iback = BIT(m_lu, (i ? 3 : 2));
+			for(int j = 0; j < 8; j++)
+				out |= BIT(chr, j) ? (ifore << j) : (iback << j);
 			switch(m_lu >> 6)
 			{
 				case 0:
 					break;
 				case 1:
-					chr |= mem;
+					out |= mem;
 					break;
 				case 2:
 					logerror("invalid logic unit mode 2\n");
 					break;
 				case 3:
-					chr ^= mem;
+					out ^= ~mem;
 					break;
 			}
-			UINT8 out = 0, ifore = BIT(m_lu, (i ? 5 : 4)), iback = BIT(m_lu, (i ? 3 : 2));
-			for(int j = 0; j < 8; j++)
-				out |= BIT(chr, j) ? (ifore << j) : (iback << j);
 			if(!BIT(m_reg0, 3))
 				out = (out & ~m_mask) | (mem & m_mask);
 			else
 				out = (out & data) | (mem & ~data);
-			video_ram[(offset & 0x7fff) + (0x8000 * i)] = out;
+			if(BIT(m_reg1, 3))
+			{
+				UINT8 out2 = out;
+				if(BIT(m_reg1, 2))
+				{
+					out = video_ram[((offset & 0x7ffe) | 0) + (0x8000 * i)];
+					out2 = video_ram[((offset & 0x7ffe) | 1) + (0x8000 * i)];
+				}
+				video_ram[((m_scrl << 1) | 0) + (0x8000 * i)] = out;
+				video_ram[((m_scrl << 1) | 1) + (0x8000 * i)] = out2;
+			}
+			else
+				video_ram[(offset & 0x7fff) + (0x8000 * i)] = out;
+		}
+		if(BIT(m_reg1, 3))
+		{
+			m_scrl += BIT(m_reg1, 1) ? -1 : 1;
+			m_scrl &= 0x3fff;
 		}
 		return;
 	}
@@ -414,7 +432,21 @@ WRITE16_MEMBER(vt240_state::vram_w)
 		data = (chr & ~m_mask) | (video_ram[offset] & m_mask);
 	else
 		data = (chr & data) | (video_ram[offset] & ~data);
-	video_ram[offset] = data;
+	if(BIT(m_reg1, 3))
+	{
+		UINT8 data2 = data;
+		if(BIT(m_reg1, 2))
+		{
+			data = video_ram[(offset & ~1) | 0];
+			data2 = video_ram[(offset & ~1) | 1];
+		}
+		video_ram[(offset & 0x8000) | (m_scrl << 1) | 0] = data;
+		video_ram[(offset & 0x8000) | (m_scrl << 1) | 1] = data2;
+		m_scrl += BIT(m_reg1, 1) ? -1 : 1;
+		m_scrl &= 0x3fff;
+	}
+	else
+		video_ram[offset] = data;
 }
 
 WRITE8_MEMBER(vt240_state::mask_w)
@@ -450,6 +482,16 @@ WRITE8_MEMBER(vt240_state::lu_w)
 	m_lu = data;
 }
 
+WRITE8_MEMBER(vt240_state::lbscrl_w)
+{
+	m_scrl = (m_scrl & 0xff00) | data;
+}
+
+WRITE8_MEMBER(vt240_state::hbscrl_w)
+{
+	m_scrl = (m_scrl & 0xff) | ((data & 0x3f) << 8);
+}
+
 static ADDRESS_MAP_START(bank_map, AS_PROGRAM, 16, vt240_state)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x00000, 0x1ffff) AM_ROM AM_REGION("maincpu", 0)
@@ -479,6 +521,8 @@ static ADDRESS_MAP_START( vt240_mem, AS_PROGRAM, 16, vt240_state )
 	AM_RANGE (0174540, 0174541) AM_WRITE8(lu_w, 0x00ff)
 	AM_RANGE (0174600, 0174601) AM_WRITE8(reg0_w, 0x00ff)
 	AM_RANGE (0174640, 0174641) AM_WRITE8(reg1_w, 0x00ff)
+	AM_RANGE (0174700, 0174701) AM_WRITE8(hbscrl_w, 0x00ff)
+	AM_RANGE (0174740, 0174741) AM_WRITE8(lbscrl_w, 0x00ff)
 	AM_RANGE (0175000, 0175005) AM_READWRITE8(i8085_comm_r, i8085_comm_w, 0x00ff)
 	AM_RANGE (0176000, 0176777) AM_DEVREADWRITE8("x2212", x2212_device, read, write, 0x00ff)
 	// 017700x System comm logic
@@ -505,6 +549,8 @@ static ADDRESS_MAP_START(vt240_char_io, AS_IO, 8, vt240_state)
 	AM_RANGE(0xb0, 0xb0) AM_WRITE(lu_w)
 	AM_RANGE(0xc0, 0xc0) AM_WRITE(reg0_w)
 	AM_RANGE(0xd0, 0xd0) AM_WRITE(reg1_w)
+	AM_RANGE(0xe0, 0xe0) AM_WRITE(hbscrl_w)
+	AM_RANGE(0xf0, 0xf0) AM_WRITE(lbscrl_w)
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( upd7220_map, AS_0, 16, vt240_state)
@@ -684,7 +730,7 @@ ROM_START( vt240 )
 ROM_END
 
 /*    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT          CLASS   INIT    COMPANY                      FULLNAME       FLAGS */
-COMP( 1983, vt240,  0,      0,       vt240,    vt240, driver_device,   0,  "Digital Equipment Corporation", "VT240", MACHINE_NOT_WORKING )
+COMP( 1983, vt240,  0,      0,       vt240,    vt240, driver_device,   0,  "Digital Equipment Corporation", "VT240", MACHINE_IMPERFECT_GRAPHICS )
 //COMP( 1983, vt241,  0,      0,       vt220,     vt220, driver_device,   0,  "Digital Equipment Corporation", "VT241", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
 // NOTE: the only difference between VT240 and VT241 is the latter comes with a VR241 Color monitor, while the former comes with a mono display; the ROMs and operation are identical.
 COMP( 1983, mc7105, 0,      0,       mc7105,    vt240, driver_device,   0,  "Elektronika",                  "MC7105", MACHINE_NOT_WORKING )
