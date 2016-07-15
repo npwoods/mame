@@ -238,6 +238,8 @@ void menu_file_create::populate()
 			{
 				std::string name = string_format("%s:", _(entry.display_name()));
 				std::string value;
+				bool can_decrement = false;
+				bool can_increment = false;
 
 				auto parameter = entry.parameter();
 				bool enabled = resolution->has_option(parameter);
@@ -259,7 +261,10 @@ void menu_file_create::populate()
 					//
 					if (entry.is_ranged())
 					{
-
+						auto ranges = resolution->lookup_ranges(parameter);
+						auto value = resolution->lookup_int(parameter);
+						can_decrement = value > ranges.minimum();
+						can_increment = value < ranges.maximum();
 					}
 				}
 				else
@@ -268,7 +273,10 @@ void menu_file_create::populate()
 					value = _("N/A");
 				}
 
+				// append the entry
 				UINT32 flags = enabled ? 0 : FLAG_DISABLE;
+				flags |= can_decrement ? FLAG_LEFT_ARROW : 0;
+				flags |= can_increment ? FLAG_RIGHT_ARROW : 0;
 				item_append(name, value, flags, nullptr);
 			}
 		}
@@ -286,6 +294,7 @@ void menu_file_create::populate()
 
 void menu_file_create::handle()
 {
+
 	// process the menu
 	const event *event = process(0);
 

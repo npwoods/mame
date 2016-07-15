@@ -388,6 +388,18 @@ const option_guide::entry *option_resolution::index_option(int indx) const
 
 
 // -------------------------------------------------
+//	lookup_ranges
+// -------------------------------------------------
+
+const option_resolution::ranges<int> &option_resolution::lookup_ranges(int option_char) const
+{
+	auto entry = lookup_entry(option_char);
+	assert(entry != nullptr);
+	return entry->get_ranges();
+}
+
+
+// -------------------------------------------------
 //	list_ranges
 // -------------------------------------------------
 
@@ -513,6 +525,27 @@ void option_resolution::entry::set_enum_value_range(option_guide::entrylist::con
 {
 	m_enum_value_begin = begin;
 	m_enum_value_end = end;
+}
+
+
+// -------------------------------------------------
+//	entry::set_ranges
+// -------------------------------------------------
+
+void option_resolution::entry::set_ranges(std::vector<range> &&range_vec)
+{
+	// NYI
+}
+
+
+// -------------------------------------------------
+//	entry::get_ranges
+// -------------------------------------------------
+
+const option_resolution::ranges<int> &option_resolution::entry::get_ranges() const
+{
+	assert(m_ranges.get() != nullptr);
+	return *m_ranges.get();
 }
 
 

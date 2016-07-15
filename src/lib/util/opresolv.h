@@ -139,8 +139,23 @@ public:
 	struct range
 	{
 		range() { min = 0; max = 0; }
-
 		int min, max;
+	};
+
+	template<typename T>
+	class ranges
+	{
+	public:
+		ranges(std::vector<range> &&ranges)
+			: m_ranges(ranges)
+		{
+		}
+
+		T minimum() const { return m_ranges[0].min; }
+		T maximum() const { return m_ranges[m_ranges.size() - 1].max; }
+
+	private:
+		std::vector<range> m_ranges;
 	};
 
 	option_resolution(const option_guide &guide, const char *specification);
@@ -152,6 +167,7 @@ public:
 	int lookup_int(int option_char) const;
 	const std::string &lookup_string(int option_char) const;
 	std::vector<range> list_ranges(int option_char) const;
+	const option_resolution::ranges<int> &lookup_ranges(int option_char) const;
 
 	// accessors
 	const char *specification() const { return m_specification; }
@@ -174,7 +190,7 @@ private:
 		entry(const option_guide::entry &guide_entry);
 
 		void set_enum_value_range(option_guide::entrylist::const_iterator begin, option_guide::entrylist::const_iterator end);
-
+		void set_ranges(std::vector<range> &&range_vec);
 		option_guide::entrylist::const_iterator	enum_value_begin() const;
 		option_guide::entrylist::const_iterator	enum_value_end() const;
 
@@ -186,11 +202,14 @@ private:
 		const std::string &string_value() const;
 		void set_string_value(const std::string &value);
 
+		const ranges<int> &get_ranges() const;
+
 	private:
 		const option_guide::entry &				m_guide_entry;
 		option_guide::entrylist::const_iterator	m_enum_value_begin;
 		option_guide::entrylist::const_iterator	m_enum_value_end;
 		std::string								m_value;
+		std::unique_ptr<ranges<int> >			m_ranges;
 	};
 
 	const char *m_specification;
