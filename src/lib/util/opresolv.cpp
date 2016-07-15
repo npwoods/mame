@@ -213,11 +213,13 @@ option_resolution::option_resolution(const option_guide &guide, const char *spec
 			}
 
 			// set default values for ints and enums
-			if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN
-				|| guide.entries()[index].type() == option_guide::entry::option_type::INT)
+			if (guide.entries()[index].is_ranged())
 			{
 				entry.set_int_value(-1);
 				resolve_single_param(spec, &entry, nullptr, 0);
+
+				auto ranges = list_ranges(m_specification, guide.entries()[index].parameter());
+				entry.set_ranges(std::move(ranges));
 			}
 
 			// and append it
@@ -534,7 +536,7 @@ void option_resolution::entry::set_enum_value_range(option_guide::entrylist::con
 
 void option_resolution::entry::set_ranges(std::vector<range> &&range_vec)
 {
-	// NYI
+	m_ranges = std::make_unique<ranges<int>>(std::move(range_vec));
 }
 
 
