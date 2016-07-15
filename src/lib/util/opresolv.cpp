@@ -391,7 +391,7 @@ const option_guide::entry *option_resolution::index_option(int indx) const
 //	list_ranges
 // -------------------------------------------------
 
-std::vector<option_resolution::range> option_resolution::list_ranges(int option_char)
+std::vector<option_resolution::range> option_resolution::list_ranges(int option_char) const
 {
 	return list_ranges(m_specification, option_char);
 }
@@ -407,16 +407,18 @@ std::vector<option_resolution::range> option_resolution::list_ranges(const char 
 	assert(specification != nullptr);
 
 	// TODO - resolve_single_param should really be changed here
-	range range_buffer[100];
-	memset(range_buffer, 0, sizeof(memset));
-	auto err = resolve_single_param(specification + 1, nullptr, range_buffer, ARRAY_LENGTH(range_buffer) - 1);
+	std::vector<range> result(100);
+
+	auto err = resolve_single_param(specification + 1, nullptr, &result[0], result.size());
+	(void)err;
 	assert(err == error::SUCCESS);
 
 	int count = 0;
-	while (range_buffer[count].min == 0 && range_buffer[count].max == 0)
+	while (count < result.size() && (result[count].min != 0 || result[count].max != 0))
 		count++;
 
-	return std::vector<range>(count, range_buffer);
+	result.resize(count);
+	return result;
 }
 
 
@@ -451,17 +453,10 @@ option_resolution::error option_resolution::get_default(const char *specificatio
 
 option_resolution::error option_resolution::is_valid_value(const char *specification, int option_char, int val)
 {
-	option_resolution::error err;
-	range ranges[256];
-	int i;
-
-	err = list_ranges(specification, option_char, ranges, ARRAY_LENGTH(ranges));
-	if (err != error::SUCCESS)
-		return err;
-
-	for (i = 0; (ranges[i].min >= 0) && (ranges[i].max >= 0); i++)
+	auto ranges = list_ranges(specification, option_char);
+	for (auto &r : ranges)
 	{
-		if ((ranges[i].min <= val) && (ranges[i].max >= val))
+		if ((r.min <= val) && (r.max >= val))
 			return error::SUCCESS;
 	}
 	return error::PARAMOUTOFRANGE;

@@ -138,6 +138,8 @@ public:
 
 	struct range
 	{
+		range() { min = 0; max = 0; }
+
 		int min, max;
 	};
 
