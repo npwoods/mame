@@ -33,10 +33,12 @@ namespace ui {
 #define ENABLE_FORMATS          1
 
 // itemrefs for key menu items
-#define ITEMREF_NEW_IMAGE_NAME  ((void *) 0x0001)
-#define ITEMREF_FORMAT          ((void *) 0x0003)
-#define ITEMREF_NO              ((void *) 0x0004)
-#define ITEMREF_YES             ((void *) 0x0005)
+#define ITEMREF_NEW_IMAGE_NAME		((void *) 0x0001)
+#define ITEMREF_FORMAT				((void *) 0x0003)
+#define ITEMREF_NO					((void *) 0x0004)
+#define ITEMREF_YES					((void *) 0x0005)
+#define ITEMREF_PARAMETER_BEGIN		((void *) 0x1000)
+#define ITEMREF_PARAMETER_END		((void *) 0x1100)
 
 
 /***************************************************************************
@@ -232,7 +234,8 @@ void menu_file_create::populate()
 		auto option_guide = m_image->create_option_guide();
 		if (option_guide.entries().size() > 0)
 		{
-			auto resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
+			// set up the option resoltuion
+			m_option_resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
 
 			for (auto &entry : option_guide.entries())
 			{
@@ -242,27 +245,27 @@ void menu_file_create::populate()
 				bool can_increment = false;
 
 				auto parameter = entry.parameter();
-				bool enabled = resolution->has_option(parameter);
+				bool enabled = m_option_resolution->has_option(parameter);
 				if (enabled)
 				{
 					switch (entry.type())
 					{
 					case util::option_guide::entry::option_type::INT:
-						value = string_format("%d", resolution->lookup_int(parameter));
+						value = string_format("%d", m_option_resolution->lookup_int(parameter));
 						break;
 					case util::option_guide::entry::option_type::STRING:
-						value = resolution->lookup_string(parameter);
+						value = m_option_resolution->lookup_string(parameter);
 						break;
 					default:
 						fatalerror("Should not get here");
 						break;
 					}
 
-					//
+					// do we have the ability to toggle ranges?
 					if (entry.is_ranged())
 					{
-						auto ranges = resolution->lookup_ranges(parameter);
-						auto value = resolution->lookup_int(parameter);
+						auto ranges = m_option_resolution->lookup_ranges(parameter);
+						auto value = m_option_resolution->lookup_int(parameter);
 						can_decrement = value > ranges.minimum();
 						can_increment = value < ranges.maximum();
 					}
@@ -277,7 +280,8 @@ void menu_file_create::populate()
 				UINT32 flags = enabled ? 0 : FLAG_DISABLE;
 				flags |= can_decrement ? FLAG_LEFT_ARROW : 0;
 				flags |= can_increment ? FLAG_RIGHT_ARROW : 0;
-				item_append(name, value, flags, nullptr);
+				auto itemref = itemref_from_option_guide_parameter(parameter);
+				item_append(name, value, flags, itemref);
 			}
 		}
 		item_append(menu_item_type::SEPARATOR);
@@ -289,11 +293,26 @@ void menu_file_create::populate()
 
 
 //-------------------------------------------------
+//  itemref_from_option_guide_parameter
+//-------------------------------------------------
+
+void *menu_file_create::itemref_from_option_guide_parameter(int parameter)
+{
+	auto itemref_int = parameter + (int)(unsigned int)(FPTR)ITEMREF_PARAMETER_BEGIN;
+	return (void *)(FPTR)(unsigned int)itemref_int;
+}
+
+
+//-------------------------------------------------
 //  handle - file creator menu
 //-------------------------------------------------
 
 void menu_file_create::handle()
 {
+	// do we have an option selected?
+	int opt_parameter = (get_selection_ref() >= ITEMREF_PARAMETER_BEGIN) && (get_selection_ref() < ITEMREF_PARAMETER_END)
+		? ((int)(unsigned int)(FPTR)get_selection_ref()) - (int)(unsigned int)(FPTR)ITEMREF_PARAMETER_BEGIN
+		: 0;
 
 	// process the menu
 	const event *event = process(0);
@@ -319,11 +338,15 @@ void menu_file_create::handle()
 		case IPT_UI_LEFT:
 			if (get_selection_ref() == ITEMREF_FORMAT)
 				previous_format();
+			else if (opt_parameter != 0)
+				bump_parameter_lower(opt_parameter);
 			break;
 
 		case IPT_UI_RIGHT:
 			if (get_selection_ref() == ITEMREF_FORMAT)
 				next_format();
+			else if (opt_parameter != 0)
+				bump_parameter_higher(opt_parameter);
 			break;
 
 		case IPT_UI_CANCEL:
@@ -439,6 +462,62 @@ void menu_file_create::format_changed()
 	if (!extensions.empty())
 		m_filename += "." + extensions;
 }
+
+
+//-------------------------------------------------
+//  bump_parameter_lower
+//-------------------------------------------------
+
+void menu_file_create::bump_parameter_lower(int parameter)
+{
+	auto ranges = lookup_ranges(parameter);
+	if (ranges != nullptr)
+	{
+		auto value = m_option_resolution->lookup_int(parameter);
+		ranges->bump_lower(value);
+
+		auto value_string = string_format("%d", value);
+		m_option_resolution->set_parameter(parameter, value_string);
+	}
+}
+
+
+//-------------------------------------------------
+//  bump_parameter_higher
+//-------------------------------------------------
+
+void menu_file_create::bump_parameter_higher(int parameter)
+{
+	auto ranges = lookup_ranges(parameter);
+	if (ranges != nullptr)
+	{
+		auto value = m_option_resolution->lookup_int(parameter);
+		ranges->bump_higher(value);
+
+		auto value_string = string_format("%d", value);
+		m_option_resolution->set_parameter(parameter, value_string);
+	}
+}
+
+
+//-------------------------------------------------
+//  lookup_ranges
+//-------------------------------------------------
+
+const util::option_resolution::ranges<int> *menu_file_create::lookup_ranges(int parameter)
+{
+	auto option_guide = m_image->create_option_guide();
+
+	// find the entry
+	auto entry = option_guide.find_entry(parameter);
+	assert(entry != nullptr);
+
+	// we only want to do something for ranged parameters
+	return entry->is_ranged()
+		? &m_option_resolution->lookup_ranges(parameter)
+		: nullptr;
+}
+
 
 
 /***************************************************************************

@@ -55,14 +55,23 @@ private:
 	std::string &											m_current_file;
 	device_image_interface::formatlist_type::const_iterator	m_current_format;
 	std::string												m_filename;
+	std::unique_ptr<util::option_resolution>				m_option_resolution;
 
 	void do_select();
+	
+	// formats
 	bool has_formats() const;
 	void previous_format();
 	void next_format();
 	bool has_previous_format() const;
 	bool has_next_format() const;
 	void format_changed();
+
+	// parameters
+	static void *itemref_from_option_guide_parameter(int parameter);
+	const util::option_resolution::ranges<int> *lookup_ranges(int parameter);
+	void bump_parameter_lower(int parameter);
+	void bump_parameter_higher(int parameter);
 };
 
 

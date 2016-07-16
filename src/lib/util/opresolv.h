@@ -111,7 +111,9 @@ public:
 	{
 	}
 
+	// methods
 	const entrylist &entries() const { return m_entries; }
+	const option_guide::entry *option_guide::find_entry(int parameter) const;
 
 private:
 	entrylist m_entries;
@@ -154,14 +156,67 @@ public:
 		T minimum() const { return m_ranges[0].min; }
 		T maximum() const { return m_ranges[m_ranges.size() - 1].max; }
 
+		bool bump_higher(T &value) const
+		{
+			bool success = false;
+
+			auto iter = find(value);
+			if (iter != m_ranges.cend())
+			{
+				if (value < iter->max)
+				{
+					value++;
+					success = true;
+				}
+				else if (iter + 1 != m_ranges.cend())
+				{
+					value = (iter + 1)->min;
+					success = true;
+				}
+			}
+			return success;
+		}
+
+		bool bump_lower(T &value) const
+		{
+			bool success = false;
+
+			auto iter = find(value);
+			if (iter != m_ranges.cend())
+			{
+				if (value > iter->min)
+				{
+					value--;
+					success = true;
+				}
+				else if (iter != m_ranges.cbegin())
+				{
+					value = (iter - 1)->max;
+					success = true;
+				}
+			}
+			return success;
+		}
+
 	private:
-		std::vector<range> m_ranges;
+		typedef std::vector<range> rangelist;
+		rangelist m_ranges;
+
+		rangelist::const_iterator find(T value) const
+		{
+			return std::find_if(
+				m_ranges.cbegin(),
+				m_ranges.cend(),
+				[&](const range &r) { return r.min <= value && value <= r.max; });
+		}
+
 	};
 
 	option_resolution(const option_guide &guide, const char *specification);
 	~option_resolution();
 
 	// processing options with option_resolution objects
+	error set_parameter(int parameter, const std::string &value);
 	error set_parameter(const char *param, const std::string &value);
 	bool has_option(int option_char) const;
 	int lookup_int(int option_char) const;
@@ -214,6 +269,8 @@ private:
 
 	const char *m_specification;
 	std::vector<entry> m_entries;
+
+	error set_parameter(std::vector<entry>::iterator iter, const std::string &value);
 
 	static error resolve_single_param(const char *specification, entry *param_value,
 		struct range *range, size_t range_count);

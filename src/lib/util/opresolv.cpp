@@ -21,6 +21,27 @@
 namespace util {
 
 /***************************************************************************
+	option_guide
+***************************************************************************/
+
+// -------------------------------------------------
+//	find_entry
+// -------------------------------------------------
+
+const option_guide::entry *option_guide::find_entry(int parameter) const
+{
+	auto iter = std::find_if(
+		entries().cbegin(),
+		entries().cend(),
+		[&](const util::option_guide::entry &e) { return e.parameter() == parameter; });
+
+	return iter != entries().cend()
+		? &(*iter)
+		: nullptr;
+}
+
+
+/***************************************************************************
 	option_resolution
 ***************************************************************************/
 
@@ -242,6 +263,22 @@ option_resolution::~option_resolution()
 //	set_parameter
 // -------------------------------------------------
 
+option_resolution::error option_resolution::set_parameter(int parameter, const std::string &value)
+{
+	// find the appropriate entry
+	auto iter = std::find_if(
+		m_entries.begin(),
+		m_entries.end(),
+		[&](const option_resolution::entry &e) { return parameter == e.guide_entry().parameter(); });
+
+	return set_parameter(iter, value);
+}
+
+
+// -------------------------------------------------
+//	set_parameter
+// -------------------------------------------------
+
 option_resolution::error option_resolution::set_parameter(const char *param, const std::string &value)
 {
 	// find the appropriate entry
@@ -249,7 +286,16 @@ option_resolution::error option_resolution::set_parameter(const char *param, con
 		m_entries.begin(),
 		m_entries.end(),
 		[&](const option_resolution::entry &e) { return !strcmp(param, e.guide_entry().identifier()); });
-	
+
+	return set_parameter(iter, value);
+}
+
+// -------------------------------------------------
+//	set_parameter
+// -------------------------------------------------
+
+option_resolution::error option_resolution::set_parameter(std::vector<entry>::iterator iter, const std::string &value)
+{
 	// fail if the parameter is unknown
 	if (iter == m_entries.end())
 		return error::PARAMNOTFOUND;
