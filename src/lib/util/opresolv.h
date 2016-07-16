@@ -243,6 +243,7 @@ private:
 	{
 	public:
 		entry(const option_guide::entry &guide_entry);
+		entry(entry &&that);
 
 		void set_enum_value_range(option_guide::entrylist::const_iterator begin, option_guide::entrylist::const_iterator end);
 		void set_ranges(std::vector<range> &&range_vec);

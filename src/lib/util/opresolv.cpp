@@ -369,6 +369,10 @@ const option_resolution::entry *option_resolution::lookup_entry(int option_char)
 					return &entry;
 				break;
 
+			case option_guide::entry::option_type::ENUM_VALUE:
+				// continue
+				break;
+
 			default:
 				assert(false);
 				return nullptr;
@@ -561,6 +565,20 @@ const char *option_resolution::error_string(option_resolution::error err)
 
 option_resolution::entry::entry(const option_guide::entry &guide_entry)
 	: m_guide_entry(guide_entry)
+{
+}
+
+
+// -------------------------------------------------
+//	entry::ctor
+// -------------------------------------------------
+
+option_resolution::entry::entry(entry &&that)
+	: m_guide_entry(that.m_guide_entry)
+	, m_enum_value_begin(that.m_enum_value_begin)
+	, m_enum_value_end(that.m_enum_value_end)
+	, m_value(std::move(that.m_value))
+	, m_ranges(std::move(that.m_ranges))
 {
 }
 

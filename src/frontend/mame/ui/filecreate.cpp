@@ -231,7 +231,7 @@ void menu_file_create::populate()
 		item_append(_("Format:"), (*m_current_format)->description(), flags, ITEMREF_FORMAT);
 
 		// do we have options?
-		auto option_guide = m_image->create_option_guide();
+		const auto &option_guide = m_image->create_option_guide();
 		if (option_guide.entries().size() > 0)
 		{
 			// set up the option resoltuion
