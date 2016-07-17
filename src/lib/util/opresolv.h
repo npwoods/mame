@@ -44,7 +44,6 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
-#include <algorithm>
 
 
 //**************************************************************************
@@ -96,7 +95,6 @@ public:
 		int parameter() const { return m_parameter; }
 		const char *identifier() const { return m_identifier; }
 		const char *display_name() const { return m_display_name; }
-		bool is_ranged() const { return type() == option_type::INT || type() == option_type::ENUM_BEGIN; }
 	
 	private:
 		option_type	m_type;
@@ -114,7 +112,6 @@ public:
 
 	// methods
 	const entrylist &entries() const { return m_entries; }
-	const entry *find_entry(int parameter) const;
 
 private:
 	entrylist m_entries;
@@ -139,142 +136,89 @@ public:
 		INTERNAL
 	};
 
+	template<typename T>
 	struct range
 	{
-		range() { min = 0; max = 0; }
-		int min, max;
+		range() { min = -1; max = -1; }
+		T min, max;
 	};
 
-	template<typename T>
-	class ranges
-	{
-	public:
-		ranges(std::vector<range> &&ranges)
-			: m_ranges(ranges)
-		{
-		}
-
-		T minimum() const { return m_ranges[0].min; }
-		T maximum() const { return m_ranges[m_ranges.size() - 1].max; }
-
-		bool bump_higher(T &value) const
-		{
-			bool success = false;
-
-			auto iter = find(value);
-			if (iter != m_ranges.cend())
-			{
-				if (value < iter->max)
-				{
-					value++;
-					success = true;
-				}
-				else if (iter + 1 != m_ranges.cend())
-				{
-					value = (iter + 1)->min;
-					success = true;
-				}
-			}
-			return success;
-		}
-
-		bool bump_lower(T &value) const
-		{
-			bool success = false;
-
-			auto iter = find(value);
-			if (iter != m_ranges.cend())
-			{
-				if (value > iter->min)
-				{
-					value--;
-					success = true;
-				}
-				else if (iter != m_ranges.cbegin())
-				{
-					value = (iter - 1)->max;
-					success = true;
-				}
-			}
-			return success;
-		}
-
-	private:
-		typedef std::vector<range> rangelist;
-		rangelist m_ranges;
-
-		rangelist::const_iterator find(T value) const
-		{
-			return std::find_if(
-				m_ranges.cbegin(),
-				m_ranges.cend(),
-				[&](const range &r) { return r.min <= value && value <= r.max; });
-		}
-
-	};
-
-	option_resolution(const option_guide &guide, const char *specification);
-	~option_resolution();
-
-	// processing options with option_resolution objects
-	error set_parameter(int parameter, const std::string &value);
-	error set_parameter(const char *param, const std::string &value);
-	bool has_option(int option_char) const;
-	int lookup_int(int option_char) const;
-	const std::string &lookup_string(int option_char) const;
-	std::vector<range> list_ranges(int option_char) const;
-	const option_resolution::ranges<int> &lookup_ranges(int option_char) const;
-
-	// accessors
-	const char *specification() const { return m_specification; }
-	const option_guide::entry *find_option(int option_char) const;
-	const option_guide::entry *index_option(int indx) const;
-
-	// processing option specifications
-	static std::vector<range> list_ranges(const char *specification, int option_char);
-	static error get_default(const char *specification, int option_char, int *val);
-	static error is_valid_value(const char *specification, int option_char, int val);
-	static bool contains(const char *specification, int option_char);
-
-	// misc
-	static const char *error_string(error err);
-
-private:
+	// class to represent specific entry
 	class entry
 	{
+		friend class option_resolution;
+
 	public:
+		// ctor
 		entry(const option_guide::entry &guide_entry);
 
-		void set_enum_value_range(option_guide::entrylist::const_iterator begin, option_guide::entrylist::const_iterator end);
-		void set_ranges(std::vector<range> &&range_vec);
-		option_guide::entrylist::const_iterator	enum_value_begin() const;
-		option_guide::entrylist::const_iterator	enum_value_end() const;
+		// returns true if this entry is subject to range constraints
+		bool is_ranged() const { return !m_ranges.empty(); }
 
-		const option_guide::entry &guide_entry() const { return m_guide_entry; }
+		// accessors
+		bool is_pertinent() const { return m_is_pertinent; }
+		const std::string &value() const { return m_value; }
+		int value_int() const;
+		const std::string &default_value() const { return m_default_value; }
 
-		int int_value() const;
-		void set_int_value(int i);
+		// accessors for guide data
+		const char *display_name() const { return m_guide_entry.display_name(); }
+		int parameter() const { return m_guide_entry.parameter(); }
 
-		const std::string &string_value() const;
-		void set_string_value(const std::string &value);
+		// mutators
+		void set_value(const std::string &value) { m_value = value; }
+		void set_value(int value) { m_value = numeric_value(value); }
 
-		const ranges<int> &get_ranges() const;
+		// higher level operations
+		bool can_bump_lower() const;
+		bool can_bump_higher() const;
+		bool bump_lower();
+		bool bump_higher();
 
 	private:
+		typedef std::vector<range<int> > rangelist;
+
+		// references to the option guide
 		const option_guide::entry &				m_guide_entry;
 		option_guide::entrylist::const_iterator	m_enum_value_begin;
 		option_guide::entrylist::const_iterator	m_enum_value_end;
+
+		// runtime state
+		bool									m_is_pertinent;
 		std::string								m_value;
-		std::unique_ptr<ranges<int> >			m_ranges;
+		std::string								m_default_value;
+		rangelist								m_ranges;
+
+		// methods
+		void parse_specification(const char *specification);
+		void set_enum_value_range(option_guide::entrylist::const_iterator begin, option_guide::entrylist::const_iterator end);
+		static std::string numeric_value(int value);
+		rangelist::const_iterator find_in_ranges(int value) const;
 	};
 
+	// ctor/dtor
+	option_resolution(const option_guide &guide);
+	~option_resolution();
+
+	// sets a specification
+	void set_specification(const std::string &specification);
+
+	// entry lookup
+	std::vector<entry>::iterator entries_begin() { return m_entries.begin(); }
+	std::vector<entry>::iterator entries_end() { return m_entries.end(); }
+	entry *find(int parameter);
+	int lookup_int(int parameter);
+
+	// misc
+	static const char *error_string(error err);
+	static error get_default(const char *specification, int option_char, int *val);
+
+private:
 	const char *m_specification;
 	std::vector<entry> m_entries;
 
 	error set_parameter(std::vector<entry>::iterator iter, const std::string &value);
 
-	static error resolve_single_param(const char *specification, entry *param_value,
-		struct range *range, size_t range_count);
 	static const char *lookup_in_specification(const char *specification, const option_guide::entry &option);
 	const entry *lookup_entry(int option_char) const;
 };

@@ -224,12 +224,13 @@ floperr_t floppy_create(void *fp, const struct io_procs *procs, const struct Flo
 	/* if this format expects creation parameters and none were specified, create some */
 	if (!parameters && format->param_guidelines)
 	{
-		alloc_resolution = std::make_unique<util::option_resolution>(floppy_option_guide, format->param_guidelines);
+		alloc_resolution = std::make_unique<util::option_resolution>(floppy_option_guide);
 		if (!alloc_resolution)
 		{
 			err = FLOPPY_ERROR_OUTOFMEMORY;
 			goto done;
 		}
+		alloc_resolution->set_specification(format->param_guidelines);
 		parameters = alloc_resolution.get();
 	}
 
@@ -653,9 +654,10 @@ floperr_t floppy_format_track(floppy_image_legacy *floppy, int head, int track, 
 	/* create a dummy resolution; if no parameters were specified */
 	if (!parameters)
 	{
-		alloc_resolution = std::make_unique<util::option_resolution>(floppy_option_guide, floppy->floppy_option->param_guidelines);
+		alloc_resolution = std::make_unique<util::option_resolution>(floppy_option_guide);
 		if (!alloc_resolution)
 			return FLOPPY_ERROR_OUTOFMEMORY;
+		alloc_resolution->set_specification(floppy->floppy_option->param_guidelines);
 
 		parameters = alloc_resolution.get();
 	}

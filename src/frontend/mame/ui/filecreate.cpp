@@ -156,22 +156,26 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &conta
 	// chose a format
 	if (has_formats())
 	{
+		// do we have options?  if so, set them up
+		const auto &option_guide = m_image->create_option_guide();
+		if (option_guide.entries().size() > 0)
+		{
+			// set up the option resolution
+			m_option_resolution = std::make_unique<util::option_resolution>(option_guide);
+		}
+
 		// get the first format for now
 		m_current_format = m_image->formatlist().begin();
+
+		// set the specification to the current format
+		if (m_option_resolution.get() != nullptr && m_current_format != m_image->formatlist().end())
+			m_option_resolution->set_specification((*m_current_format)->optspec());
 
 		// if we have an initial file format, lets try naming this file
 		if (m_filename.empty())
 		{
 			const std::string &extensions = (*m_current_format)->extensions()[0];
 			m_filename = string_format("%s.%s", m_image->brief_instance_name(), extensions);
-		}
-
-		// do we have options?  if so, set them up
-		const auto &option_guide = m_image->create_option_guide();
-		if (option_guide.entries().size() > 0)
-		{
-			// set up the option resolution
-			m_option_resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
 		}
 	}
 }
@@ -239,56 +243,23 @@ void menu_file_create::populate()
 		item_append(_("Format:"), (*m_current_format)->description(), flags, ITEMREF_FORMAT);
 
 		// do we have options?
-		const auto &option_guide = m_image->create_option_guide();
-		if (option_guide.entries().size() > 0)
+		if (m_option_resolution.get() != nullptr)
 		{
-			// set up the option resoltuion
-			m_option_resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
-
-			for (auto &entry : option_guide.entries())
+			for (auto iter = m_option_resolution->entries_begin(); iter != m_option_resolution->entries_end(); iter++)
 			{
-				std::string name = string_format("%s:", _(entry.display_name()));
-				std::string value;
-				bool can_decrement = false;
-				bool can_increment = false;
+				auto &entry(*iter);
 
-				auto parameter = entry.parameter();
-				bool enabled = m_option_resolution->has_option(parameter);
-				if (enabled)
-				{
-					switch (entry.type())
-					{
-					case util::option_guide::entry::option_type::INT:
-						value = string_format("%d", m_option_resolution->lookup_int(parameter));
-						break;
-					case util::option_guide::entry::option_type::STRING:
-						value = m_option_resolution->lookup_string(parameter);
-						break;
-					default:
-						fatalerror("Should not get here");
-						break;
-					}
-
-					// do we have the ability to toggle ranges?
-					if (entry.is_ranged())
-					{
-						auto ranges = m_option_resolution->lookup_ranges(parameter);
-						auto value = m_option_resolution->lookup_int(parameter);
-						can_decrement = value > ranges.minimum();
-						can_increment = value < ranges.maximum();
-					}
-				}
-				else
-				{
-					// this item is disabled
-					value = _("N/A");
-				}
+				// get the name and value of this entry
+				auto name = string_format("%s:", _(entry.display_name()));
+				auto value = entry.is_pertinent()
+					? entry.value()
+					: _("N/A");
 
 				// append the entry
-				UINT32 flags = enabled ? 0 : FLAG_DISABLE;
-				flags |= can_decrement ? FLAG_LEFT_ARROW : 0;
-				flags |= can_increment ? FLAG_RIGHT_ARROW : 0;
-				auto itemref = itemref_from_option_guide_parameter(parameter);
+				UINT32 flags = entry.is_pertinent() ? 0 : FLAG_DISABLE;
+				flags |= entry.can_bump_lower() ? FLAG_LEFT_ARROW : 0;
+				flags |= entry.can_bump_higher() ? FLAG_RIGHT_ARROW : 0;
+				auto itemref = itemref_from_option_guide_parameter(entry.parameter());
 				item_append(name, value, flags, itemref);
 			}
 		}
@@ -478,14 +449,15 @@ void menu_file_create::format_changed()
 
 void menu_file_create::bump_parameter_lower(int parameter)
 {
-	auto ranges = lookup_ranges(parameter);
-	if (ranges != nullptr)
-	{
-		auto value = m_option_resolution->lookup_int(parameter);
-		ranges->bump_lower(value);
+	// look up the entry - this is expected to succeed
+	auto entry = m_option_resolution->find(parameter);
+	assert(entry != nullptr);
 
-		auto value_string = string_format("%d", value);
-		m_option_resolution->set_parameter(parameter, value_string);
+	// we need to make sure we can bump first
+	if (entry->can_bump_lower() && entry->bump_lower())
+	{
+		// we need to repopulate the menu
+		reset(reset_options::REMEMBER_REF);
 	}
 }
 
@@ -496,36 +468,17 @@ void menu_file_create::bump_parameter_lower(int parameter)
 
 void menu_file_create::bump_parameter_higher(int parameter)
 {
-	auto ranges = lookup_ranges(parameter);
-	if (ranges != nullptr)
-	{
-		auto value = m_option_resolution->lookup_int(parameter);
-		ranges->bump_higher(value);
-
-		auto value_string = string_format("%d", value);
-		m_option_resolution->set_parameter(parameter, value_string);
-	}
-}
-
-
-//-------------------------------------------------
-//  lookup_ranges
-//-------------------------------------------------
-
-const util::option_resolution::ranges<int> *menu_file_create::lookup_ranges(int parameter)
-{
-	auto option_guide = m_image->create_option_guide();
-
-	// find the entry
-	auto entry = option_guide.find_entry(parameter);
+	// look up the entry - this is expected to succeed
+	auto entry = m_option_resolution->find(parameter);
 	assert(entry != nullptr);
 
-	// we only want to do something for ranged parameters
-	return entry->is_ranged()
-		? &m_option_resolution->lookup_ranges(parameter)
-		: nullptr;
+	// we need to make sure we can bump first
+	if (entry->can_bump_higher() && entry->bump_higher())
+	{
+		// we need to repopulate the menu
+		reset(reset_options::REMEMBER_REF);
+	}
 }
-
 
 
 /***************************************************************************

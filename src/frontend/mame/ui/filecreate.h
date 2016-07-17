@@ -69,7 +69,6 @@ private:
 
 	// parameters
 	static void *itemref_from_option_guide_parameter(int parameter);
-	const util::option_resolution::ranges<int> *lookup_ranges(int parameter);
 	void bump_parameter_lower(int parameter);
 	void bump_parameter_higher(int parameter);
 };

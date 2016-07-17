@@ -21,163 +21,54 @@
 namespace util {
 
 /***************************************************************************
-	option_guide
-***************************************************************************/
-
-// -------------------------------------------------
-//	find_entry
-// -------------------------------------------------
-
-const option_guide::entry *option_guide::find_entry(int parameter) const
-{
-	auto iter = std::find_if(
-		entries().cbegin(),
-		entries().cend(),
-		[&](const util::option_guide::entry &e) { return e.parameter() == parameter; });
-
-	return iter != entries().cend()
-		? &(*iter)
-		: nullptr;
-}
-
-
-/***************************************************************************
 	option_resolution
 ***************************************************************************/
 
 // -------------------------------------------------
-//	resolve_single_param
+//	ctor
 // -------------------------------------------------
 
-option_resolution::error option_resolution::resolve_single_param(const char *specification, option_resolution::entry *param_value,
-	struct range *range, size_t range_count)
+option_resolution::option_resolution(const option_guide &guide)
+	: m_specification(nullptr)
 {
-	int FLAG_IN_RANGE           = 0x01;
-	int FLAG_IN_DEFAULT         = 0x02;
-	int FLAG_DEFAULT_SPECIFIED  = 0x04;
-	int FLAG_HALF_RANGE         = 0x08;
+	// reserve space for entries
+	m_entries.reserve(guide.entries().size());
 
-	int last_value = 0;
-	int value = 0;
-	int flags = 0;
-	const char *s = specification;
-
-	while(*s && !isalpha(*s))
+	// initialize each of the entries; can't use foreach because we need to scan the
+	// ENUM_VALUE entries
+	for (auto iter = guide.entries().cbegin(); iter != guide.entries().cend(); iter++)
 	{
-		if (*s == '-')
-		{
-			/* range specifier */
-			if (flags & (FLAG_IN_RANGE|FLAG_IN_DEFAULT))
-			{
-				return error::SYNTAX;
-			}
-			flags |= FLAG_IN_RANGE;
-			s++;
+		// create the entry
+		m_entries.emplace_back(*iter);
+		entry &entry(m_entries.back());
 
-			if (range)
-			{
-				range->max = -1;
-				if ((flags & FLAG_HALF_RANGE) == 0)
-				{
-					range->min = -1;
-					flags |= FLAG_HALF_RANGE;
-				}
-			}
-		}
-		else if (*s == '[')
+		// if this is an enumeration, identify the values
+		if (iter->type() == option_guide::entry::option_type::ENUM_BEGIN)
 		{
-			/* begin default value */
-			if (flags & (FLAG_IN_DEFAULT|FLAG_DEFAULT_SPECIFIED))
-			{
-				return error::SYNTAX;
-			}
-			flags |= FLAG_IN_DEFAULT;
-			s++;
-		}
-		else if (*s == ']')
-		{
-			/* end default value */
-			if ((flags & FLAG_IN_DEFAULT) == 0)
-			{
-				return error::SYNTAX;
-			}
-			flags &= ~FLAG_IN_DEFAULT;
-			flags |= FLAG_DEFAULT_SPECIFIED;
-			s++;
+			// enum values begin after the ENUM_BEGIN
+			auto enum_value_begin = iter + 1;
+			auto enum_value_end = enum_value_begin;
 
-			if (param_value && param_value->int_value() == -1)
-				param_value->set_int_value(value);
-		}
-		else if (*s == '/')
-		{
-			/* value separator */
-			if (flags & (FLAG_IN_DEFAULT|FLAG_IN_RANGE))
+			// and identify all entries of type ENUM_VALUE
+			while (enum_value_end != guide.entries().end() && enum_value_end->type() == option_guide::entry::option_type::ENUM_VALUE)
 			{
-				return error::SYNTAX;
-			}
-			s++;
-
-			/* if we are spitting out ranges, complete the range */
-			if (range && (flags & FLAG_HALF_RANGE))
-			{
-				range++;
-				flags &= ~FLAG_HALF_RANGE;
-				if (--range_count == 0)
-					range = nullptr;
-			}
-		}
-		else if (*s == ';')
-		{
-			/* basic separator */
-			s++;
-		}
-		else if (isdigit(*s))
-		{
-			/* numeric value */
-			last_value = value;
-			value = 0;
-			do
-			{
-				value *= 10;
-				value += *s - '0';
-				s++;
-			}
-			while(isdigit(*s));
-
-			if (range)
-			{
-				if ((flags & FLAG_HALF_RANGE) == 0)
-				{
-					range->min = value;
-					flags |= FLAG_HALF_RANGE;
-				}
-				range->max = value;
+				iter++;
+				enum_value_end++;
 			}
 
-			// if we have a value; check to see if it is out of range
-			if (param_value && (param_value->int_value() != -1) && (param_value->int_value() != value))
-			{
-				if ((last_value < param_value->int_value()) && (param_value->int_value() < value))
-				{
-					if ((flags & FLAG_IN_RANGE) == 0)
-						return error::PARAMOUTOFRANGE;
-				}
-			}
-			flags &= ~FLAG_IN_RANGE;
-		}
-		else
-		{
-			return error::SYNTAX;
+			// set the range
+			entry.set_enum_value_range(enum_value_begin, enum_value_end);
 		}
 	}
+}
 
-	// we can't have zero length guidelines strings
-	if (s == specification)
-	{
-		return error::SYNTAX;
-	}
 
-	return error::SUCCESS;
+// -------------------------------------------------
+//	dtor
+// -------------------------------------------------
+
+option_resolution::~option_resolution()
+{
 }
 
 
@@ -194,344 +85,66 @@ const char *option_resolution::lookup_in_specification(const char *specification
 
 
 // -------------------------------------------------
-//	ctor
+//	set_specification - sets the option specification
+//	and mutates values accordingly
 // -------------------------------------------------
 
-option_resolution::option_resolution(const option_guide &guide, const char *specification)
-{
-	// first count the number of options specified in the guide 
-	auto option_count = guide.entries().size();
-
-	// set up the entries list
-	m_specification = specification;
-	m_entries.reserve(option_count);
-
-	// initialize each of the entries 
-	for (auto index = 0; index < option_count; index++)
-	{
-		auto spec = lookup_in_specification(m_specification, guide.entries()[index]);
-		if (spec != nullptr)
-		{
-			// create the entry
-			m_entries.emplace_back(guide.entries()[index]);
-			entry &entry(m_entries.back());
-
-			// if this is an enumeration, identify the values
-			if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN)
-			{
-				// enum values begin after the ENUM_BEGIN
-				auto enum_value_begin = guide.entries().begin() + index + 1;
-				auto enum_value_end = enum_value_begin;
-
-				// and identify all entries of type ENUM_VALUE
-				while (enum_value_end != guide.entries().end() && enum_value_end->type() == option_guide::entry::option_type::ENUM_VALUE)
-				{
-					index++;
-					enum_value_end++;
-				}
-
-				// set the range
-				entry.set_enum_value_range(enum_value_begin, enum_value_end);
-			}
-
-			// set default values for ints and enums
-			if (guide.entries()[index].is_ranged())
-			{
-				entry.set_int_value(-1);
-				resolve_single_param(spec, &entry, nullptr, 0);
-
-				auto ranges = list_ranges(m_specification, guide.entries()[index].parameter());
-				entry.set_ranges(std::move(ranges));
-			}
-		}
-	}
-}
-
-
-// -------------------------------------------------
-//	dtor
-// -------------------------------------------------
-
-option_resolution::~option_resolution()
-{
-}
-
-
-// -------------------------------------------------
-//	set_parameter
-// -------------------------------------------------
-
-option_resolution::error option_resolution::set_parameter(int parameter, const std::string &value)
-{
-	// find the appropriate entry
-	auto iter = std::find_if(
-		m_entries.begin(),
-		m_entries.end(),
-		[&](const option_resolution::entry &e) { return parameter == e.guide_entry().parameter(); });
-
-	return set_parameter(iter, value);
-}
-
-
-// -------------------------------------------------
-//	set_parameter
-// -------------------------------------------------
-
-option_resolution::error option_resolution::set_parameter(const char *param, const std::string &value)
-{
-	// find the appropriate entry
-	auto iter = std::find_if(
-		m_entries.begin(),
-		m_entries.end(),
-		[&](const option_resolution::entry &e) { return !strcmp(param, e.guide_entry().identifier()); });
-
-	return set_parameter(iter, value);
-}
-
-// -------------------------------------------------
-//	set_parameter
-// -------------------------------------------------
-
-option_resolution::error option_resolution::set_parameter(std::vector<entry>::iterator iter, const std::string &value)
-{
-	// fail if the parameter is unknown
-	if (iter == m_entries.end())
-		return error::PARAMNOTFOUND;
-
-	option_resolution::entry &entry = *iter;
-	option_guide::entrylist::const_iterator enum_value_iter;
-	bool must_resolve = false;
-	switch (entry.guide_entry().type())
-	{
-		case option_guide::entry::option_type::INT:
-			entry.set_int_value(atoi(value.c_str()));
-			must_resolve = true;
-			break;
-
-		case option_guide::entry::option_type::STRING:
-			entry.set_string_value(value);
-			break;
-
-		case option_guide::entry::option_type::ENUM_BEGIN:
-			// look up the enum value
-			enum_value_iter = std::find_if(
-				entry.enum_value_begin(),
-				entry.enum_value_end(),
-				[&](const option_guide::entry &e) { return !core_stricmp(value.c_str(), e.identifier()); });
-
-			// fail if not found
-			if (enum_value_iter == entry.enum_value_end())
-				return error::BADPARAM;
-
-			// set the value
-			entry.set_int_value(enum_value_iter->parameter());
-			must_resolve = true;
-			break;
-
-		default:
-			assert(false);
-			break;
-	}
-
-	// do a resolution step if necessary
-	if (must_resolve)
-	{
-		auto option_specification = lookup_in_specification(m_specification, entry.guide_entry());
-		auto err = resolve_single_param(option_specification, &entry, nullptr, 0);
-		if (err != error::SUCCESS)
-			return err;
-
-		// did we not get a real value?
-		if (entry.int_value() < 0)
-			return error::PARAMNOTSPECIFIED;
-	}
-
-	return error::SUCCESS;
-}
-
-
-// -------------------------------------------------
-//	lookup_entry
-// -------------------------------------------------
-
-const option_resolution::entry *option_resolution::lookup_entry(int option_char) const
+void option_resolution::set_specification(const std::string &specification)
 {
 	for (auto &entry : m_entries)
 	{
-		switch(entry.guide_entry().type())
+		// find this entry's info in the specification
+		auto entry_specification = lookup_in_specification(specification.c_str(), entry.m_guide_entry);
+
+		// parse this entry's specification (e.g. - set up ranges and defaults)
+		entry.parse_specification(entry_specification);
+
+		// is this a range typed that needs to be defaulted for the first time?
+		if (entry.is_pertinent() && entry.is_ranged() && entry.value().empty())
 		{
-			case option_guide::entry::option_type::INT:
-			case option_guide::entry::option_type::STRING:
-			case option_guide::entry::option_type::ENUM_BEGIN:
-				if (entry.guide_entry().parameter() == option_char)
-					return &entry;
-				break;
-
-			case option_guide::entry::option_type::ENUM_VALUE:
-				// continue
-				break;
-
-			default:
-				assert(false);
-				return nullptr;
+			entry.set_value(entry.default_value());
 		}
 	}
-	return nullptr;
 }
 
 
 // -------------------------------------------------
-//	has_option
+//	find
 // -------------------------------------------------
 
-bool option_resolution::has_option(int option_char) const
+option_resolution::entry *option_resolution::find(int parameter)
 {
-	return lookup_entry(option_char) != nullptr;
+	auto iter = std::find_if(
+		m_entries.begin(),
+		m_entries.end(),
+		[&](const entry &e) { return e.parameter() == parameter; });
+
+	return iter != m_entries.end()
+		? &*iter
+		: nullptr;
 }
 
 
 // -------------------------------------------------
-//	lookup_int
+//	find
 // -------------------------------------------------
 
-int option_resolution::lookup_int(int option_char) const
+int option_resolution::lookup_int(int parameter)
 {
-	auto entry = lookup_entry(option_char);
+	auto entry = find(parameter);
 	assert(entry != nullptr);
-	return entry->int_value();
+	return entry->value_int();
 }
 
 
 // -------------------------------------------------
-//	lookup_string
-// -------------------------------------------------
-
-const std::string &option_resolution::lookup_string(int option_char) const
-{
-	auto entry = lookup_entry(option_char);
-	assert(entry != nullptr);
-	return entry->string_value();
-}
-
-
-// -------------------------------------------------
-//	find_option
-// -------------------------------------------------
-
-const option_guide::entry *option_resolution::find_option(int option_char) const
-{
-	auto entry = lookup_entry(option_char);
-	return entry ? &entry->guide_entry() : nullptr;
-}
-
-
-// -------------------------------------------------
-//	index_option
-// -------------------------------------------------
-
-const option_guide::entry *option_resolution::index_option(int indx) const
-{
-	if ((indx < 0) || (indx >= m_entries.size()))
-		return nullptr;
-	return &m_entries[indx].guide_entry();
-}
-
-
-// -------------------------------------------------
-//	lookup_ranges
-// -------------------------------------------------
-
-const option_resolution::ranges<int> &option_resolution::lookup_ranges(int option_char) const
-{
-	auto entry = lookup_entry(option_char);
-	assert(entry != nullptr);
-	return entry->get_ranges();
-}
-
-
-// -------------------------------------------------
-//	list_ranges
-// -------------------------------------------------
-
-std::vector<option_resolution::range> option_resolution::list_ranges(int option_char) const
-{
-	return list_ranges(m_specification, option_char);
-}
-
-
-// -------------------------------------------------
-//	list_ranges
-// -------------------------------------------------
-
-std::vector<option_resolution::range> option_resolution::list_ranges(const char *specification, int option_char)
-{
-	specification = strchr(specification, option_char);
-	assert(specification != nullptr);
-
-	// TODO - resolve_single_param should really be changed here
-	std::vector<range> result(100);
-
-	auto err = resolve_single_param(specification + 1, nullptr, &result[0], result.size());
-	(void)err;
-	assert(err == error::SUCCESS);
-
-	int count = 0;
-	while (count < result.size() && (result[count].min != 0 || result[count].max != 0))
-		count++;
-
-	result.resize(count);
-	return result;
-}
-
-
-// -------------------------------------------------
-//	get_default
+//	error_string
 // -------------------------------------------------
 
 option_resolution::error option_resolution::get_default(const char *specification, int option_char, int *val)
 {
-	assert(val);
-
-	// clear out default
-	*val = -1;
-
-	specification = strchr(specification, option_char);
-	if (!specification)
-	{
-		return error::SYNTAX;
-	}
-
-	option_guide::entry dummy(option_guide::entry::option_type::INT);
-	entry ent(dummy);
-	auto err = resolve_single_param(specification + 1, &ent, nullptr, 0);
-	*val = ent.int_value();
-	return err;
-}
-
-
-// -------------------------------------------------
-//	list_ranges
-// -------------------------------------------------
-
-option_resolution::error option_resolution::is_valid_value(const char *specification, int option_char, int val)
-{
-	auto ranges = list_ranges(specification, option_char);
-	for (auto &r : ranges)
-	{
-		if ((r.min <= val) && (r.max >= val))
-			return error::SUCCESS;
-	}
-	return error::PARAMOUTOFRANGE;
-}
-
-
-// -------------------------------------------------
-//	contains
-// -------------------------------------------------
-
-bool option_resolution::contains(const char *specification, int option_char)
-{
-	return strchr(specification, option_char) != nullptr;
+	// NYI
+	return error::INTERNAL;
 }
 
 
@@ -562,7 +175,7 @@ const char *option_resolution::error_string(option_resolution::error err)
 // -------------------------------------------------
 
 option_resolution::entry::entry(const option_guide::entry &guide_entry)
-	: m_guide_entry(guide_entry)
+	: m_guide_entry(guide_entry), m_is_pertinent(false)
 {
 }
 
@@ -579,85 +192,232 @@ void option_resolution::entry::set_enum_value_range(option_guide::entrylist::con
 
 
 // -------------------------------------------------
-//	entry::set_ranges
+//	entry::parse_specification
 // -------------------------------------------------
 
-void option_resolution::entry::set_ranges(std::vector<range> &&range_vec)
+void option_resolution::entry::parse_specification(const char *specification)
 {
-	m_ranges = std::make_unique<ranges<int>>(std::move(range_vec));
+	// clear some items out
+	m_ranges.clear();
+	m_default_value.clear();
+
+	// is this even pertinent?
+	m_is_pertinent = specification != nullptr;
+	if (specification != nullptr)
+	{
+		int value = 0;
+		bool in_range = false;
+		bool in_default = false;
+		bool default_specified = false;
+		bool half_range = false;
+		size_t pos = 0;
+
+		m_ranges.emplace_back();
+
+		while (specification[pos] && !isalpha(specification[pos]))
+		{
+			if (specification[pos] == '-')
+			{
+				// range specifier
+				assert(!in_range && !in_default && "Syntax error in specification");
+
+				in_range = true;
+				pos++;
+
+				m_ranges.back().max = -1;
+				if (!half_range)
+				{
+					m_ranges.back().min = -1;
+					half_range = true;
+				}
+			}
+			else if (specification[pos] == '[')
+			{
+				// begin default value
+				assert(!in_default && !default_specified && "Syntax error in specification");
+
+				in_default = true;
+				pos++;
+			}
+			else if (specification[pos] == ']')
+			{
+				// end default value
+				assert(in_default && "Syntax error in specification");
+
+				in_default = false;
+				default_specified = true;
+				pos++;
+
+				m_default_value = numeric_value(value);
+			}
+			else if (specification[pos] == '/')
+			{
+				// value separator
+				assert(!in_default && !in_range && "Syntax error in specification");
+				pos++;
+
+				// if we are spitting out ranges, complete the range
+				if (half_range)
+				{
+					m_ranges.emplace_back();
+					half_range = false;
+				}
+			}
+			else if (specification[pos] == ';')
+			{
+				// basic separator
+				pos++;
+			}
+			else if (isdigit(specification[pos]))
+			{
+				// numeric value */
+				value = 0;
+				do
+				{
+					value *= 10;
+					value += specification[pos++] - '0';
+				} while (isdigit(specification[pos]));
+
+				if (!half_range)
+				{
+					m_ranges.back().min = value;
+					half_range = true;
+				}
+				m_ranges.back().max = value;
+				in_range = false;
+			}
+			else
+			{
+				// invalid character
+				assert(false && "Syntax error in specification");
+			}
+		}
+
+		// we can't have zero length guidelines strings
+		assert(pos > 0);
+
+		// appease compiler for scenarios where assert() has been preprocessed out
+		(void)(in_range && in_default && default_specified);
+	}
 }
 
 
 // -------------------------------------------------
-//	entry::get_ranges
+//	entry::numeric_value
 // -------------------------------------------------
 
-const option_resolution::ranges<int> &option_resolution::entry::get_ranges() const
+std::string option_resolution::entry::numeric_value(int value)
 {
-	assert(m_ranges.get() != nullptr);
-	return *m_ranges.get();
+	return string_format("%d", value);
 }
 
 
 // -------------------------------------------------
-//	entry::enum_value_begin
+//	entry::value_int
 // -------------------------------------------------
 
-option_guide::entrylist::const_iterator	option_resolution::entry::enum_value_begin() const
+int option_resolution::entry::value_int() const
 {
-	assert(guide_entry().type() == option_guide::entry::option_type::ENUM_BEGIN);
-	return m_enum_value_begin;
+	return atoi(value().c_str());
 }
 
 
 // -------------------------------------------------
-//	entry::enum_value_end
+//	entry::can_bump_lower
 // -------------------------------------------------
 
-option_guide::entrylist::const_iterator	option_resolution::entry::enum_value_end() const
+bool option_resolution::entry::can_bump_lower() const
 {
-	assert(guide_entry().type() == option_guide::entry::option_type::ENUM_BEGIN);
-	return m_enum_value_end;
+	return !m_ranges.empty()
+		&& value_int() > m_ranges.front().min;
 }
 
 
 // -------------------------------------------------
-//	entry::int_value
+//	entry::can_bump_higher
 // -------------------------------------------------
 
-int option_resolution::entry::int_value() const
+bool option_resolution::entry::can_bump_higher() const
 {
-	return atoi(m_value.c_str());
+	return !m_ranges.empty()
+		&& value_int() < m_ranges.back().max;
 }
 
 
 // -------------------------------------------------
-//	entry::set_int_value
+//	entry::bump_lower
 // -------------------------------------------------
 
-void option_resolution::entry::set_int_value(int i)
+bool option_resolution::entry::bump_lower()
 {
-	m_value = string_format("%d", i);
+	auto old_value = value_int();
+	auto current_range = find_in_ranges(old_value);
+	assert(current_range != m_ranges.end());
+
+	int new_value;
+	if (old_value > current_range->min)
+	{
+		// decrement within current range
+		new_value = old_value - 1;
+	}
+	else if (current_range != m_ranges.begin())
+	{
+		// go to the top of the previous range
+		new_value = (current_range - 1)->max;
+	}
+	else
+	{
+		// at the minimum; don't bump
+		new_value = old_value;
+	}
+
+	set_value(new_value);
+	return new_value != old_value;
 }
 
 
 // -------------------------------------------------
-//	entry::string_value
+//	entry::bump_higher
 // -------------------------------------------------
 
-const std::string &option_resolution::entry::string_value() const
+bool option_resolution::entry::bump_higher()
 {
-	return m_value;
+	auto old_value = value_int();
+	auto current_range = find_in_ranges(old_value);
+	assert(current_range != m_ranges.end());
+
+	int new_value;
+	if (old_value < current_range->max)
+	{
+		// increment within current range
+		new_value = old_value + 1;
+	}
+	else if (current_range != (m_ranges.end() - 1))
+	{
+		// go to the bottom of the next range
+		new_value = (current_range + 1)->min;
+	}
+	else
+	{
+		// at the minimum; don't bump
+		new_value = old_value;
+	}
+
+	set_value(new_value);
+	return new_value != old_value;
 }
 
 
 // -------------------------------------------------
-//	entry::set_string_value
+//	entry::find_in_ranges
 // -------------------------------------------------
 
-void option_resolution::entry::set_string_value(const std::string &value)
+option_resolution::entry::rangelist::const_iterator option_resolution::entry::find_in_ranges(int value) const
 {
-	m_value = value;
+	return std::find_if(
+		m_ranges.begin(),
+		m_ranges.end(),
+		[&](const auto &r) { return r.min <= value && value <= r.max; });
 }
 
 
