@@ -213,7 +213,8 @@ option_resolution::option_resolution(const option_guide &guide, const char *spec
 		if (spec != nullptr)
 		{
 			// create the entry
-			entry entry(guide.entries()[index]);
+			m_entries.emplace_back(guide.entries()[index]);
+			entry &entry(m_entries.back());
 
 			// if this is an enumeration, identify the values
 			if (guide.entries()[index].type() == option_guide::entry::option_type::ENUM_BEGIN)
@@ -242,9 +243,6 @@ option_resolution::option_resolution(const option_guide &guide, const char *spec
 				auto ranges = list_ranges(m_specification, guide.entries()[index].parameter());
 				entry.set_ranges(std::move(ranges));
 			}
-
-			// and append it
-			m_entries.push_back(std::move(entry));
 		}
 	}
 }
@@ -565,20 +563,6 @@ const char *option_resolution::error_string(option_resolution::error err)
 
 option_resolution::entry::entry(const option_guide::entry &guide_entry)
 	: m_guide_entry(guide_entry)
-{
-}
-
-
-// -------------------------------------------------
-//	entry::ctor
-// -------------------------------------------------
-
-option_resolution::entry::entry(entry &&that)
-	: m_guide_entry(that.m_guide_entry)
-	, m_enum_value_begin(that.m_enum_value_begin)
-	, m_enum_value_end(that.m_enum_value_end)
-	, m_value(std::move(that.m_value))
-	, m_ranges(std::move(that.m_ranges))
 {
 }
 
