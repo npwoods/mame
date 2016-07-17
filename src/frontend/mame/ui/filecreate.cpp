@@ -440,6 +440,9 @@ void menu_file_create::format_changed()
 		m_filename.resize(period_pos);
 	if (!extensions.empty())
 		m_filename += "." + extensions;
+
+	// set the new specification
+	m_option_resolution->set_specification((*m_current_format)->optspec());
 }
 
 
