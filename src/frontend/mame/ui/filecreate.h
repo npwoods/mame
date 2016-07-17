@@ -44,6 +44,7 @@ public:
 
 protected:
 	virtual void custom_render(void *selectedref, float top, float bottom, float x, float y, float x2, float y2) override;
+	virtual void selection_changed();
 
 private:
 	virtual void populate() override;
@@ -56,6 +57,8 @@ private:
 	device_image_interface::formatlist_type::const_iterator	m_current_format;
 	std::string												m_filename;
 	std::unique_ptr<util::option_resolution>				m_option_resolution;
+	void *													m_new_value_itemref;
+	std::string												m_new_value;
 
 	void do_select();
 	
@@ -68,9 +71,12 @@ private:
 	void format_changed();
 
 	// parameters
+	void append_option_item(const util::option_resolution::entry &entry);
 	static void *itemref_from_option_guide_parameter(int parameter);
+	static int option_guide_parameter_from_itemref(void *itemref);
 	void bump_parameter_lower(int parameter);
 	void bump_parameter_higher(int parameter);
+	void flush_entered_value();
 };
 
 

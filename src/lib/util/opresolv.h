@@ -157,7 +157,7 @@ public:
 
 		// accessors
 		bool is_pertinent() const { return m_is_pertinent; }
-		const std::string &value() const { return m_value; }
+		const std::string &value() const;
 		int value_int() const;
 		const std::string &default_value() const { return m_default_value; }
 
@@ -166,8 +166,8 @@ public:
 		int parameter() const { return m_guide_entry.parameter(); }
 
 		// mutators
-		void set_value(const std::string &value) { m_value = value; }
-		void set_value(int value) { m_value = numeric_value(value); }
+		bool set_value(const std::string &value);
+		bool set_value(int value) { return set_value(numeric_value(value)); }
 
 		// higher level operations
 		bool can_bump_lower() const;

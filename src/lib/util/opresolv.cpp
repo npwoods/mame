@@ -313,12 +313,43 @@ std::string option_resolution::entry::numeric_value(int value)
 
 
 // -------------------------------------------------
+//	entry::value
+// -------------------------------------------------
+
+const std::string &option_resolution::entry::value() const
+{
+	static std::string empty_string;
+	return is_pertinent() ? m_value : empty_string;
+}
+
+
+// -------------------------------------------------
 //	entry::value_int
 // -------------------------------------------------
 
 int option_resolution::entry::value_int() const
 {
-	return atoi(value().c_str());
+	return is_pertinent() ? atoi(m_value.c_str()) : -1;
+}
+
+
+// -------------------------------------------------
+//	entry::set_value
+// -------------------------------------------------
+
+bool option_resolution::entry::set_value(const std::string &value)
+{
+	// reject the value if this isn't pertinent
+	if (!is_pertinent())
+		return false;
+
+	// if this is ranged, check against the ranges
+	if (is_ranged() && find_in_ranges(std::atoi(value.c_str())) == m_ranges.cend())
+		return false;
+
+	// looks good!  change the value
+	m_value = value;
+	return true;
 }
 
 

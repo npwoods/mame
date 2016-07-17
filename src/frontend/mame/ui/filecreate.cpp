@@ -65,7 +65,7 @@ static void input_character(std::string &buffer, unicode_char unichar, F &&filte
 			buffer.resize(buffer_newend - buffer.c_str());
 		}
 	}
-	else if ((unichar >= ' ') && (!filter || filter(unichar)))
+	else if ((unichar >= ' ') && filter(unichar))
 	{
 		// append this character
 		buffer += utf8_from_uchar(unichar);
@@ -145,6 +145,7 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &conta
 	, m_ok(ok)
 	, m_current_directory(current_directory)
 	, m_current_file(current_file)
+	, m_new_value_itemref(nullptr)
 {
 	m_image = image;
 	m_ok = true;
@@ -213,6 +214,16 @@ void menu_file_create::custom_render(void *selectedref, float top, float bottom,
 
 
 //-------------------------------------------------
+//  selection_changed
+//-------------------------------------------------
+
+void menu_file_create::selection_changed()
+{
+	flush_entered_value();
+}
+
+
+//-------------------------------------------------
 //  populate - populates the file creator menu
 //-------------------------------------------------
 
@@ -246,28 +257,45 @@ void menu_file_create::populate()
 		if (m_option_resolution.get() != nullptr)
 		{
 			for (auto iter = m_option_resolution->entries_begin(); iter != m_option_resolution->entries_end(); iter++)
-			{
-				auto &entry(*iter);
-
-				// get the name and value of this entry
-				auto name = string_format("%s:", _(entry.display_name()));
-				auto value = entry.is_pertinent()
-					? entry.value()
-					: _("N/A");
-
-				// append the entry
-				UINT32 flags = entry.is_pertinent() ? 0 : FLAG_DISABLE;
-				flags |= entry.can_bump_lower() ? FLAG_LEFT_ARROW : 0;
-				flags |= entry.can_bump_higher() ? FLAG_RIGHT_ARROW : 0;
-				auto itemref = itemref_from_option_guide_parameter(entry.parameter());
-				item_append(name, value, flags, itemref);
-			}
+				append_option_item(*iter);
 		}
 		item_append(menu_item_type::SEPARATOR);
 	}
 
 	// finish up
 	customtop = ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
+}
+
+
+//-------------------------------------------------
+//  append_option_item
+//-------------------------------------------------
+
+void menu_file_create::append_option_item(const util::option_resolution::entry &entry)
+{
+	auto itemref = itemref_from_option_guide_parameter(entry.parameter());
+
+	// build the name of this entry based on the display name
+	auto name = string_format("%s:", _(entry.display_name()));
+
+	// build the value - this one is a bit more complicated
+	std::string value;
+	if (itemref == m_new_value_itemref)
+	{
+		// we're typing stuff in
+		value = m_new_value + "_";
+	}
+	else
+	{
+		// get the value directly
+		value = entry.is_pertinent() ? entry.value() : _("N/A");
+	}
+
+	// append the entry
+	UINT32 flags = entry.is_pertinent() ? 0 : FLAG_DISABLE;
+	flags |= entry.can_bump_lower() ? FLAG_LEFT_ARROW : 0;
+	flags |= entry.can_bump_higher() ? FLAG_RIGHT_ARROW : 0;
+	item_append(name, value, flags, itemref);
 }
 
 
@@ -283,15 +311,50 @@ void *menu_file_create::itemref_from_option_guide_parameter(int parameter)
 
 
 //-------------------------------------------------
+//  option_guide_parameter_from_itemref
+//-------------------------------------------------
+
+int menu_file_create::option_guide_parameter_from_itemref(void *itemref)
+{
+	return (itemref >= ITEMREF_PARAMETER_BEGIN) && (itemref < ITEMREF_PARAMETER_END)
+		? ((int)(unsigned int)(FPTR)itemref) - (int)(unsigned int)(FPTR)ITEMREF_PARAMETER_BEGIN
+		: 0;
+}
+
+
+//-------------------------------------------------
+//  flush_entered_value
+//-------------------------------------------------
+
+void menu_file_create::flush_entered_value()
+{
+	int opt_parameter = option_guide_parameter_from_itemref(m_new_value_itemref);
+	if (opt_parameter != 0)
+	{
+		// look up the entry
+		auto entry = m_option_resolution->find(opt_parameter);
+		assert(entry != nullptr);
+
+		// and set the value if it is valid (the value will be automatically rejected if invalid)
+		entry->set_value(m_new_value);
+
+		// succeed or fail, we have to do this
+		reset(reset_options::REMEMBER_REF);
+	}
+
+	m_new_value_itemref = nullptr;
+	m_new_value.clear();
+}
+
+
+//-------------------------------------------------
 //  handle - file creator menu
 //-------------------------------------------------
 
 void menu_file_create::handle()
 {
 	// do we have an option selected?
-	int opt_parameter = (get_selection_ref() >= ITEMREF_PARAMETER_BEGIN) && (get_selection_ref() < ITEMREF_PARAMETER_END)
-		? ((int)(unsigned int)(FPTR)get_selection_ref()) - (int)(unsigned int)(FPTR)ITEMREF_PARAMETER_BEGIN
-		: 0;
+	auto opt_parameter = option_guide_parameter_from_itemref(get_selection_ref());
 
 	// process the menu
 	const event *event = process(0);
@@ -310,7 +373,13 @@ void menu_file_create::handle()
 			if (get_selection_ref() == ITEMREF_NEW_IMAGE_NAME)
 			{
 				input_character(m_filename, event->unichar, &osd_is_valid_filepath_char);
-				reset(reset_options::REMEMBER_POSITION);
+				reset(reset_options::REMEMBER_REF);
+			}
+			else if (opt_parameter != 0)
+			{
+				m_new_value_itemref = get_selection_ref();
+				input_character(m_new_value, event->unichar, [](unicode_char ch) { return isdigit(ch); });
+				reset(reset_options::REMEMBER_REF);
 			}
 			break;
 
