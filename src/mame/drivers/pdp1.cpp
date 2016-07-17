@@ -778,11 +778,7 @@ public:
 	virtual bool must_be_loaded() const override { return 0; }
 	virtual bool is_reset_on_load() const override { return 0; }
 	virtual const char *file_extensions() const override { return "drm"; }
-<<<<<<< HEAD
-	
-=======
 
->>>>>>> master
 	virtual bool call_load() override;
 	virtual void call_unload() override;
 protected:
