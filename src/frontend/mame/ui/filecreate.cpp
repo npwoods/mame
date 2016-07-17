@@ -165,6 +165,14 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &conta
 			const std::string &extensions = (*m_current_format)->extensions()[0];
 			m_filename = string_format("%s.%s", m_image->brief_instance_name(), extensions);
 		}
+
+		// do we have options?  if so, set them up
+		const auto &option_guide = m_image->create_option_guide();
+		if (option_guide.entries().size() > 0)
+		{
+			// set up the option resolution
+			m_option_resolution = std::make_unique<util::option_resolution>(option_guide, (*m_current_format)->optspec().c_str());
+		}
 	}
 }
 

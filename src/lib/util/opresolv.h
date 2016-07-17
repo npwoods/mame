@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 
 //**************************************************************************
@@ -113,7 +114,7 @@ public:
 
 	// methods
 	const entrylist &entries() const { return m_entries; }
-	const option_guide::entry *option_guide::find_entry(int parameter) const;
+	const entry *find_entry(int parameter) const;
 
 private:
 	entrylist m_entries;
