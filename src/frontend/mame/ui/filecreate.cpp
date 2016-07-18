@@ -140,15 +140,20 @@ FILE CREATE MENU
 //  ctor
 //-------------------------------------------------
 
-menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &container, device_image_interface *image, std::string &current_directory, std::string &current_file, bool &ok)
+menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &container, device_image_interface &image,
+		std::string &current_directory, std::string &current_file,
+		const image_device_format *&format, std::unique_ptr<util::option_resolution> &option_resolution, bool &ok)
 	: menu(mui, container)
-	, m_ok(ok)
+	, m_image(image)
 	, m_current_directory(current_directory)
 	, m_current_file(current_file)
+	, m_output_format(format)
+	, m_option_resolution(option_resolution)
+	, m_ok(ok)
 	, m_new_value_itemref(nullptr)
 {
-	m_image = image;
-	m_ok = true;
+	// basic setup
+	m_ok = false;
 
 	// set up initial filename
 	m_filename.reserve(1024);
@@ -158,7 +163,7 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &conta
 	if (has_formats())
 	{
 		// do we have options?  if so, set them up
-		const auto &option_guide = m_image->create_option_guide();
+		const auto &option_guide = m_image.create_option_guide();
 		if (option_guide.entries().size() > 0)
 		{
 			// set up the option resolution
@@ -166,17 +171,17 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &conta
 		}
 
 		// get the first format for now
-		m_current_format = m_image->formatlist().begin();
+		m_selected_format = m_image.formatlist().begin();
 
 		// set the specification to the current format
-		if (m_option_resolution.get() != nullptr && m_current_format != m_image->formatlist().end())
-			m_option_resolution->set_specification((*m_current_format)->optspec());
+		if (m_option_resolution.get() != nullptr && m_selected_format != m_image.formatlist().end())
+			m_option_resolution->set_specification((*m_selected_format)->optspec());
 
 		// if we have an initial file format, lets try naming this file
 		if (m_filename.empty())
 		{
-			const std::string &extensions = (*m_current_format)->extensions()[0];
-			m_filename = string_format("%s.%s", m_image->brief_instance_name(), extensions);
+			const std::string &extensions = (*m_selected_format)->extensions()[0];
+			m_filename = string_format("%s.%s", m_image.brief_instance_name(), extensions);
 		}
 	}
 }
@@ -197,7 +202,7 @@ menu_file_create::~menu_file_create()
 
 bool menu_file_create::has_formats() const
 {
-	return ENABLE_FORMATS && m_image->formatlist().size() > 0;
+	return ENABLE_FORMATS && m_image.formatlist().size() > 0;
 }
 
 
@@ -251,7 +256,7 @@ void menu_file_create::populate()
 		// display the format
 		UINT32 flags =	(has_previous_format() ? FLAG_LEFT_ARROW : 0)
 					|	(has_next_format() ? FLAG_RIGHT_ARROW : 0);
-		item_append(_("Format:"), (*m_current_format)->description(), flags, ITEMREF_FORMAT);
+		item_append(_("Format:"), (*m_selected_format)->description(), flags, ITEMREF_FORMAT);
 
 		// do we have options?
 		if (m_option_resolution.get() != nullptr)
@@ -439,7 +444,10 @@ void menu_file_create::do_select()
 		return;
 	}
 
+	// success! write everything out and we're done
 	m_current_file = std::move(m_filename);
+	m_output_format = m_selected_format->get();
+	m_ok = true;
 	menu::stack_pop(machine());
 }
 
@@ -452,7 +460,7 @@ void menu_file_create::previous_format()
 {
 	if (has_previous_format())
 	{
-		m_current_format--;
+		m_selected_format--;
 		format_changed();
 	}
 }
@@ -466,7 +474,7 @@ void menu_file_create::next_format()
 {
 	if (has_next_format())
 	{
-		m_current_format++;
+		m_selected_format++;
 		format_changed();
 	}
 }
@@ -478,7 +486,7 @@ void menu_file_create::next_format()
 
 bool menu_file_create::has_previous_format() const
 {
-	return m_current_format != m_image->formatlist().begin();
+	return m_selected_format != m_image.formatlist().begin();
 }
 
 
@@ -488,7 +496,7 @@ bool menu_file_create::has_previous_format() const
 
 bool menu_file_create::has_next_format() const
 {
-	return (m_current_format + 1) != m_image->formatlist().end();
+	return (m_selected_format + 1) != m_image.formatlist().end();
 }
 
 
@@ -502,7 +510,7 @@ void menu_file_create::format_changed()
 	reset(reset_options::REMEMBER_REF);
 
 	// rename the file appropriately
-	const std::string &extensions = (*m_current_format)->extensions()[0];
+	const std::string &extensions = (*m_selected_format)->extensions()[0];
 
 	auto period_pos = m_filename.rfind('.');
 	if (period_pos != std::string::npos)
@@ -511,7 +519,7 @@ void menu_file_create::format_changed()
 		m_filename += "." + extensions;
 
 	// set the new specification
-	m_option_resolution->set_specification((*m_current_format)->optspec());
+	m_option_resolution->set_specification((*m_selected_format)->optspec());
 }
 
 

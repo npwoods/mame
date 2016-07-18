@@ -29,7 +29,6 @@ namespace util {
 // -------------------------------------------------
 
 option_resolution::option_resolution(const option_guide &guide)
-	: m_specification(nullptr)
 {
 	// reserve space for entries
 	m_entries.reserve(guide.entries().size());

@@ -158,7 +158,7 @@ void menu_control_device_image::handle()
 			break;
 
 		case menu_file_selector::result::CREATE:
-			menu::stack_push<menu_file_create>(ui(), container(), image, m_current_directory, m_current_file, create_ok);
+			menu::stack_push<menu_file_create>(ui(), container(), *image, m_current_directory, m_current_file, m_create_format, m_option_resolution, create_ok);
 			state = CHECK_CREATE;
 			break;
 
@@ -198,7 +198,7 @@ void menu_control_device_image::handle()
 
 	case DO_CREATE: {
 		auto path = util::zippath_combine(m_current_directory.c_str(), m_current_file.c_str());
-		int err = image->create(path.c_str(), nullptr, nullptr);
+		int err = image->create(path.c_str(), m_create_format, m_option_resolution.get());
 		if (err != 0)
 			machine().popmessage("Error: %s", image->error());
 		stack_pop();

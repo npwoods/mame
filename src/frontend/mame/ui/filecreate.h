@@ -39,24 +39,31 @@ private:
 class menu_file_create : public menu
 {
 public:
-	menu_file_create(mame_ui_manager &mui, render_container &container, device_image_interface *image, std::string &current_directory, std::string &current_file, bool &ok);
+	menu_file_create(mame_ui_manager &mui, render_container &container, device_image_interface &image,
+		std::string &current_directory, std::string &current_file,
+		const image_device_format *&output_format, std::unique_ptr<util::option_resolution> &option_resolution,
+		bool &ok);
 	virtual ~menu_file_create() override;
 
 protected:
 	virtual void custom_render(void *selectedref, float top, float bottom, float x, float y, float x2, float y2) override;
-	virtual void selection_changed();
+	virtual void selection_changed() override;
 
 private:
 	virtual void populate() override;
 	virtual void handle() override;
 
-	bool &													m_ok;
-	device_image_interface *								m_image;
+	// these are passed in
+	device_image_interface &								m_image;
 	std::string &											m_current_directory;
 	std::string &											m_current_file;
-	device_image_interface::formatlist_type::const_iterator	m_current_format;
+	const image_device_format *&							m_output_format;
+	std::unique_ptr<util::option_resolution> &				m_option_resolution;
+	bool &													m_ok;
+
+	// these are "runtime" variables
+	device_image_interface::formatlist_type::const_iterator	m_selected_format;
 	std::string												m_filename;
-	std::unique_ptr<util::option_resolution>				m_option_resolution;
 	void *													m_new_value_itemref;
 	std::string												m_new_value;
 

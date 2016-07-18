@@ -49,6 +49,8 @@ protected:
 
 	std::string m_current_directory;
 	std::string m_current_file;
+	const image_device_format *					m_create_format;
+	std::unique_ptr<util::option_resolution>	m_option_resolution;
 
 	// methods
 	virtual void hook_load(std::string filename, bool softlist);

@@ -214,7 +214,6 @@ public:
 	static error get_default(const char *specification, int option_char, int *val);
 
 private:
-	const char *m_specification;
 	std::vector<entry> m_entries;
 
 	error set_parameter(std::vector<entry>::iterator iter, const std::string &value);
