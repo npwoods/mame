@@ -627,7 +627,7 @@ void mame_menubar::barcode_reader_control()
 
 void mame_menubar::load(device_image_interface *image)
 {
-	start_menu<menu_control_device_image>(image);
+	start_menu<menu_control_device_image>(*image);
 }
 
 
