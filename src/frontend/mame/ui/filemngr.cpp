@@ -181,7 +181,7 @@ void menu_file_manager::handle()
 			if (selected_device != nullptr)
 			{
 				m_curr_selected = TRUE;
-				menu::stack_push<menu_control_device_image>(ui(), container(), selected_device);
+				menu::stack_push<menu_control_device_image>(ui(), container(), *selected_device);
 
 				// reset the existing menu
 				reset(reset_options::REMEMBER_POSITION);

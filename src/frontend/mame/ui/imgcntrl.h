@@ -23,19 +23,16 @@ namespace ui {
 class menu_control_device_image : public menu
 {
 public:
-	menu_control_device_image(mame_ui_manager &mui, render_container &container, device_image_interface *image);
+	menu_control_device_image(mame_ui_manager &mui, render_container &container, device_image_interface &image);
 	virtual ~menu_control_device_image() override;
 
 protected:
-	enum {
+	enum
+	{
 		START_FILE,
 		SELECT_FILE, CREATE_FILE, CREATE_CONFIRM, CHECK_CREATE, DO_CREATE, SELECT_SOFTLIST,
 		LAST_ID
 	};
-
-	// protected instance variables
-	int state;
-	device_image_interface *image;
 
 	// this is a single union that contains all of the different types of
 	// results we could get from child menus
@@ -45,26 +42,27 @@ protected:
 		menu_software_parts::result swparts;
 		menu_select_rw::result rw;
 		int i;
-	} submenu_result;
+	} m_submenu_result;
 
-	std::string m_current_directory;
-	std::string m_current_file;
-	const image_device_format *					m_create_format;
-	std::unique_ptr<util::option_resolution>	m_option_resolution;
+	// instance variables - made protected so they can be shared with floppycntrl.cpp
+	int								m_state;
+	device_image_interface &		m_image;
+	std::string						m_current_directory;
+	std::string						m_current_file;
+	bool							m_create_ok;
 
 	// methods
 	virtual void hook_load(std::string filename, bool softlist);
 	virtual void handle() override;
 
-	bool create_ok;
-
 private:
-	virtual void populate() override;
-
 	// instance variables
-	bool create_confirmed;
+	bool							m_create_confirmed;
+	const image_device_format *					m_create_format;
+	std::unique_ptr<util::option_resolution>	m_option_resolution;
 
 	// methods
+	virtual void populate() override;
 	void test_create(bool &can_create, bool &need_confirm);
 };
 
