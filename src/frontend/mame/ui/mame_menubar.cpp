@@ -540,9 +540,9 @@ bool mame_menubar::is_softlist_relevant(software_list_device *swlist, const char
 {
 	bool result = false;
 
-	for (software_info &swinfo : swlist->get_info())
+	for (const software_info &swinfo : swlist->get_info())
 	{
-		software_part *part = swinfo.find_part(nullptr, nullptr);
+		const software_part *part = swinfo.find_part(nullptr, nullptr);
 		if (part->matches_interface(interface))
 		{
 			list_description = string_format(_("%s..."), swlist->description());
