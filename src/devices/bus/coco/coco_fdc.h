@@ -41,7 +41,7 @@ public:
 
 		// optional information overrides
 		virtual machine_config_constructor device_mconfig_additions() const override;
-		virtual const rom_entry *device_rom_region() const override;
+		virtual const util::rom_entry *device_rom_region() const override;
 
 		virtual UINT8* get_cart_base() override;
 
@@ -92,7 +92,7 @@ public:
 		coco_fdc_v11_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
 
 		// optional information overrides
-		virtual const rom_entry *device_rom_region() const override;
+		virtual const util::rom_entry *device_rom_region() const override;
 };
 
 
@@ -109,7 +109,7 @@ public:
 		coco3_hdb1_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
 
 		// optional information overrides
-		virtual const rom_entry *device_rom_region() const override;
+		virtual const util::rom_entry *device_rom_region() const override;
 };
 
 
@@ -126,7 +126,7 @@ public:
 		cp400_fdc_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
 
 		// optional information overrides
-		virtual const rom_entry *device_rom_region() const override;
+		virtual const util::rom_entry *device_rom_region() const override;
 };
 
 
@@ -145,7 +145,7 @@ public:
 
 		// optional information overrides
 		virtual machine_config_constructor device_mconfig_additions() const override;
-		virtual const rom_entry *device_rom_region() const override;
+		virtual const util::rom_entry *device_rom_region() const override;
 		virtual void update_lines() override;
 		virtual void dskreg_w(UINT8 data) override;
 protected:
@@ -169,7 +169,7 @@ public:
 		sdtandy_fdc_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
 
 		// optional information overrides
-		virtual const rom_entry *device_rom_region() const override;
+		virtual const util::rom_entry *device_rom_region() const override;
 };
 
 

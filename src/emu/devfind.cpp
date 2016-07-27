@@ -88,7 +88,7 @@ bool finder_base::validate_memregion(size_t bytes, bool required) const
 	// look for the region
 	for (device_t &dev : device_iterator(m_base.mconfig().root_device()))
 	{
-		for (const rom_entry *romp = rom_first_region(dev); romp != nullptr; romp = rom_next_region(romp))
+		for (const util::rom_entry *romp = rom_first_region(dev); romp != nullptr; romp = rom_next_region(romp))
 		{
 			if (rom_region_name(dev, romp) == region_fulltag)
 			{

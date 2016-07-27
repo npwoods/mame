@@ -35,7 +35,7 @@ ROM_END
 //  rom_region - device-specific ROM region
 //-------------------------------------------------
 
-const rom_entry *miracle_gold_card_t::device_rom_region() const
+const util::rom_entry *miracle_gold_card_t::device_rom_region() const
 {
 	return ROM_NAME( miracle_gold_card );
 }

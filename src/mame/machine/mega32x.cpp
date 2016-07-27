@@ -1733,7 +1733,7 @@ ROM_START( 32x )
 	ROM_REGION( 0x400000, "32x_slave_sh2", 0 )
 ROM_END
 
-const rom_entry *sega_32x_device::device_rom_region() const
+const util::rom_entry *sega_32x_device::device_rom_region() const
 {
 	return ROM_NAME( 32x );
 }

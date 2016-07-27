@@ -214,7 +214,7 @@ protected:
 	virtual void device_reset() override;
 
 	// optional information overrides
-//  virtual const rom_entry *device_rom_region() const;
+//  virtual const util::rom_entry *device_rom_region() const;
 	virtual machine_config_constructor device_mconfig_additions() const override;
 private:
 //  virtual void device_config_complete();

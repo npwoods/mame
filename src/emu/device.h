@@ -69,7 +69,6 @@ class device_execute_interface;
 class device_memory_interface;
 class device_state_interface;
 class validity_checker;
-struct rom_entry;
 class machine_config;
 class emu_timer;
 struct input_device_default;
@@ -203,7 +202,7 @@ public:
 	UINT32 configured_clock() const { return m_configured_clock; }
 	const machine_config &mconfig() const { return m_machine_config; }
 	const input_device_default *input_ports_defaults() const { return m_input_defaults; }
-	const rom_entry *rom_region() const { return device_rom_region(); }
+	const util::rom_entry *rom_region() const { return device_rom_region(); }
 	machine_config_constructor machine_config_additions() const { return device_mconfig_additions(); }
 	ioport_constructor input_ports() const { return device_input_ports(); }
 	UINT8 default_bios() const { return m_default_bios; }
@@ -304,7 +303,7 @@ protected:
 	//------------------- begin derived class overrides
 
 	// device-level overrides
-	virtual const rom_entry *device_rom_region() const;
+	virtual const util::rom_entry *device_rom_region() const;
 	virtual machine_config_constructor device_mconfig_additions() const;
 	virtual ioport_constructor device_input_ports() const;
 	virtual void device_config_complete();

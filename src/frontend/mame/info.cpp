@@ -517,12 +517,12 @@ void info_xml_creator::output_bios()
 
 	// first determine the default BIOS name
 	std::string defaultname;
-	for (const rom_entry *rom = m_drivlist.driver().rom; !ROMENTRY_ISEND(rom); rom++)
+	for (const util::rom_entry *rom = m_drivlist.driver().rom; !ROMENTRY_ISEND(rom); rom++)
 		if (ROMENTRY_ISDEFAULT_BIOS(rom))
 			defaultname = ROM_GETNAME(rom);
 
 	// iterate over ROM entries and look for BIOSes
-	for (const rom_entry *rom = m_drivlist.driver().rom; !ROMENTRY_ISEND(rom); rom++)
+	for (const util::rom_entry *rom = m_drivlist.driver().rom; !ROMENTRY_ISEND(rom); rom++)
 		if (ROMENTRY_ISSYSTEM_BIOS(rom))
 		{
 			// output extracted name and descriptions
@@ -545,7 +545,7 @@ void info_xml_creator::output_rom(device_t &device)
 {
 	// iterate over 3 different ROM "types": BIOS, ROMs, DISKs
 	for (int rom_type = 0; rom_type < 3; rom_type++)
-		for (const rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
+		for (const util::rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
 		{
 			bool is_disk = ROMREGION_ISDISKDATA(region);
 
@@ -554,7 +554,7 @@ void info_xml_creator::output_rom(device_t &device)
 				continue;
 
 			// iterate through ROM entries
-			for (const rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
+			for (const util::rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
 			{
 				bool is_bios = ROM_GETBIOSFLAGS(rom);
 				const char *name = ROM_GETNAME(rom);
@@ -577,7 +577,7 @@ void info_xml_creator::output_rom(device_t &device)
 				if (!is_disk && is_bios)
 				{
 					// scan backwards through the ROM entries
-					for (const rom_entry *brom = rom - 1; brom != m_drivlist.driver().rom; brom--)
+					for (const util::rom_entry *brom = rom - 1; brom != m_drivlist.driver().rom; brom--)
 						if (ROMENTRY_ISSYSTEM_BIOS(brom))
 						{
 							strcpy(bios_name, ROM_GETNAME(brom));
@@ -1611,8 +1611,8 @@ const char *info_xml_creator::get_merge_name(const util::hash_collection &romhas
 	{
 		// look in the parent's ROMs
 		device_t *device = &m_drivlist.config(clone_of, m_lookup_options).root_device();
-		for (const rom_entry *pregion = rom_first_region(*device); pregion != nullptr; pregion = rom_next_region(pregion))
-			for (const rom_entry *prom = rom_first_file(pregion); prom != nullptr; prom = rom_next_file(prom))
+		for (const util::rom_entry *pregion = rom_first_region(*device); pregion != nullptr; pregion = rom_next_region(pregion))
+			for (const util::rom_entry *prom = rom_first_file(pregion); prom != nullptr; prom = rom_next_file(prom))
 			{
 				util::hash_collection phashes(ROM_GETHASHDATA(prom));
 				if (!phashes.flag(util::hash_collection::FLAG_NO_DUMP) && romhashes == phashes)

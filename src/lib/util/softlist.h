@@ -15,7 +15,7 @@
 #include <list>
 #include <vector>
 
-#include "osdcomm.h"
+#include "romentry.h"
 #include "corefile.h"
 
 struct XML_ParserStruct;
@@ -63,70 +63,6 @@ private:
 };
 
 
-// ======================> software_rom_entry
-
-class software_rom_entry
-{
-public:
-	enum class entry_type
-	{
-		ROM,
-		ROM_DISK_READWRITE,
-		ROM_DISK_READONLY,
-		ROM_REGION,
-		DISK_REGION,
-		RELOAD,
-		RELOAD_INHERIT,
-		CONTINUE_INHERIT,
-		FILL,
-		IGNORE_INHERIT
-	};
-
-	enum class endianness
-	{
-		INVALID,
-		BIG,
-		LITTLE
-	};
-
-	enum class loadflag
-	{
-		DEFAULT,
-		LOAD16_WORD_SWAP,
-		LOAD16_BYTE,
-		LOAD32_WORD_SWAP,
-		LOAD32_WORD,
-		LOAD32_BYTE
-	};
-
-	software_rom_entry(std::string &&name, std::string &&hashdata, UINT32 offset, UINT32 length, entry_type entry_type, int bits, endianness endianness, loadflag loadflag);
-	software_rom_entry(software_rom_entry const &) = delete;
-	software_rom_entry(software_rom_entry &&) = delete;
-	software_rom_entry& operator=(software_rom_entry const &) = delete;
-	software_rom_entry& operator=(software_rom_entry &&) = delete;
-
-	// accessors
-	const std::string &name() const { return m_name; }
-	const std::string &hashdata() const { return m_hashdata; }
-	UINT32 offset() const { return m_offset; }
-	UINT32 length() const { return m_length; }
-	entry_type get_entry_type() const { return m_entry_type; }
-	int bits() const { return m_bits; }
-	endianness get_endianness() const { return m_endianness; }
-	loadflag get_loadflag() const { return m_loadflag; }
-
-private:
-	std::string		m_name;
-	std::string		m_hashdata;
-	UINT32			m_offset;
-	UINT32			m_length;
-	entry_type		m_entry_type;
-	int				m_bits;
-	endianness		m_endianness;
-	loadflag		m_loadflag;
-};
-
-
 // ======================> software_part
 
 // a single part of a software item
@@ -148,7 +84,7 @@ public:
 	const std::string &name() const { return m_name; }
 	const std::string &interface() const { return m_interface; }
 	const std::list<feature_list_item> &featurelist() const { return m_featurelist; }
-	const std::list<software_rom_entry> &romdata() const { return m_romdata; }
+	const std::vector<rom_entry> &romdata() const { return m_romdata; }
 
 	// helpers
 	bool matches_interface(const char *interface) const;
@@ -161,7 +97,7 @@ private:
 	std::string						m_name;
 	std::string						m_interface;
 	std::list<feature_list_item>	m_featurelist;
-	std::list<software_rom_entry>	m_romdata;
+	std::vector<rom_entry>			m_romdata;
 };
 
 
@@ -244,11 +180,7 @@ private:
 	template <typename T> std::vector<std::string> parse_attributes(const char **attributes, const T &attrlist);
 	bool parse_name_and_value(const char **attributes, std::string &name, std::string &value);
 
-	void add_rom_entry(std::string &&name, std::string &&hashdata, UINT32 offset, UINT32 length, software_rom_entry::entry_type entry_type,
-		int bits = 0, software_rom_entry::endianness endianness = software_rom_entry::endianness::INVALID,
-		software_rom_entry::loadflag loadflag = software_rom_entry::loadflag::DEFAULT);
-	void add_rom_entry(std::string &&name, std::string &&hashdata, UINT32 offset, UINT32 length, software_rom_entry::entry_type entry_type,
-		software_rom_entry::loadflag loadflag);
+	void add_rom_entry(std::string &&name, std::string &&hashdata, UINT32 offset, UINT32 length, UINT32 flags);
 
 	// expat callbacks
 	static void start_handler(void *data, const char *tagname, const char **attributes);

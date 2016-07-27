@@ -680,7 +680,7 @@ void menu_select_game::build_available_list()
 			auto driver = &driver_list::driver(x);
 			if (!m_included[x] && driver != &GAME_NAME(___empty))
 			{
-				const rom_entry *rom = driver->rom;
+				const util::rom_entry *rom = driver->rom;
 				bool noroms = true;
 
 				// check NO-DUMP
@@ -1111,7 +1111,7 @@ void menu_select_game::build_list(const char *filter_text, int filter, bool bios
 			}
 			break;
 		case FILTER_CHD:
-			for (const rom_entry *rom = s_driver->rom; !ROMENTRY_ISEND(rom); ++rom)
+			for (const util::rom_entry *rom = s_driver->rom; !ROMENTRY_ISEND(rom); ++rom)
 				if (ROMENTRY_ISREGION(rom) && ROMREGION_ISDISKDATA(rom))
 				{
 					m_displaylist.push_back(s_driver);
@@ -1121,7 +1121,7 @@ void menu_select_game::build_list(const char *filter_text, int filter, bool bios
 		case FILTER_NOCHD:
 			{
 				bool found = false;
-				for (const rom_entry *rom = s_driver->rom; !ROMENTRY_ISEND(rom); ++rom)
+				for (const util::rom_entry *rom = s_driver->rom; !ROMENTRY_ISEND(rom); ++rom)
 					if (ROMENTRY_ISREGION(rom) && ROMREGION_ISDISKDATA(rom))
 					{
 						found = true;
@@ -1301,7 +1301,7 @@ void menu_select_game::general_info(const game_driver *driver, std::string &buff
 	util::stream_format(str, _("Support Save: %1$s\n"), ((driver->flags & MACHINE_SUPPORTS_SAVE) ? _("Yes") : _("No")));
 	util::stream_format(str, _("Screen Orientation: %1$s\n"), ((driver->flags & ORIENTATION_SWAP_XY) ? _("Vertical") : _("Horizontal")));
 	bool found = false;
-	for (const rom_entry *rom = driver->rom; !ROMENTRY_ISEND(rom); ++rom)
+	for (const util::rom_entry *rom = driver->rom; !ROMENTRY_ISEND(rom); ++rom)
 		if (ROMENTRY_ISREGION(rom) && ROMREGION_ISDISKDATA(rom))
 		{
 			found = true;

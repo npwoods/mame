@@ -530,7 +530,7 @@ void device_t::device_validity_check(validity_checker &valid) const
 //  rom region description for this device
 //-------------------------------------------------
 
-const rom_entry *device_t::device_rom_region() const
+const util::rom_entry *device_t::device_rom_region() const
 {
 	// none by default
 	return nullptr;

@@ -58,12 +58,12 @@ machine_config_constructor jmfb_device::device_mconfig_additions() const
 //  rom_region - device-specific ROM region
 //-------------------------------------------------
 
-const rom_entry *jmfb_device::device_rom_region() const
+const util::rom_entry *jmfb_device::device_rom_region() const
 {
 	return ROM_NAME( gc48 );
 }
 
-const rom_entry *nubus_824gc_device::device_rom_region() const
+const util::rom_entry *nubus_824gc_device::device_rom_region() const
 {
 	return ROM_NAME( gc824 );
 }

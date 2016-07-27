@@ -43,7 +43,7 @@ image_software_list_loader image_software_list_loader::s_instance;
 //  false_software_list_loader::load_software
 //-------------------------------------------------
 
-bool false_software_list_loader::load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const
+bool false_software_list_loader::load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const
 {
 	return false;
 }
@@ -53,7 +53,7 @@ bool false_software_list_loader::load_software(device_image_interface &device, s
 //  rom_software_list_loader::load_software
 //-------------------------------------------------
 
-bool rom_software_list_loader::load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const
+bool rom_software_list_loader::load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const
 {
 	swlist.machine().rom_load().load_software_part_region(device, swlist, swname, start_entry);
 	return true;
@@ -64,7 +64,7 @@ bool rom_software_list_loader::load_software(device_image_interface &device, sof
 //  image_software_list_loader::load_software
 //-------------------------------------------------
 
-bool image_software_list_loader::load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const
+bool image_software_list_loader::load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const
 {
 	return device.load_software(swlist, swname, start_entry);
 }
@@ -386,146 +386,6 @@ device_image_interface *software_list_device::find_mountable_image(const machine
 
 
 //-------------------------------------------------
-//  romdata - builds a list of rom_entry structures
-//	for the pertinent software part
-//-------------------------------------------------
-
-std::vector<rom_entry> software_list_device::romdata(const util::software_part &part)
-{
-	rom_entry r;
-	std::vector<rom_entry> result;
-	result.reserve(part.romdata().size());
-
-	for (const auto &entry : part.romdata())
-	{
-		auto r = build_rom_entry(entry);
-		result.push_back(r);
-	}
-
-	// add a terminating entry
-	memset(&r, 0, sizeof(r));
-	r._flags = ROMENTRYTYPE_END;
-	result.push_back(r);
-
-	return result;
-}
-
-
-//-------------------------------------------------
-//  build_rom_entry
-//-------------------------------------------------
-
-rom_entry software_list_device::build_rom_entry(const util::software_rom_entry &entry)
-{
-	UINT32 flags = 0;
-	const char *hashdata = entry.hashdata().c_str();
-	switch (entry.get_entry_type())
-	{
-	case util::software_rom_entry::entry_type::ROM:
-		flags |= ROMENTRYTYPE_ROM;
-		break;
-
-	case util::software_rom_entry::entry_type::ROM_REGION:
-		flags |= ROMENTRYTYPE_REGION;
-		break;
-
-	case util::software_rom_entry::entry_type::DISK_REGION:
-		flags |= ROMENTRYTYPE_REGION | ROMREGION_DATATYPEDISK;
-		break;
-
-	case util::software_rom_entry::entry_type::RELOAD_INHERIT:
-		flags |= ROMENTRYTYPE_RELOAD | ROM_INHERITFLAGS;
-		break;
-
-	case util::software_rom_entry::entry_type::RELOAD:
-		flags |= ROMENTRYTYPE_RELOAD;
-		break;
-
-	case util::software_rom_entry::entry_type::CONTINUE_INHERIT:
-		flags |= ROMENTRYTYPE_CONTINUE | ROM_INHERITFLAGS;
-		break;
-
-	case util::software_rom_entry::entry_type::FILL:
-		flags |= ROMENTRYTYPE_FILL;
-		hashdata = (const char *)(FPTR)(strtol(hashdata, nullptr, 0) & 0xff);
-		break;
-
-	case util::software_rom_entry::entry_type::ROM_DISK_READONLY:
-		flags |= ROMENTRYTYPE_ROM | DISK_READONLY;
-		break;
-
-	case util::software_rom_entry::entry_type::ROM_DISK_READWRITE:
-		flags |= ROMENTRYTYPE_ROM | DISK_READWRITE;
-		break;
-
-	case util::software_rom_entry::entry_type::IGNORE_INHERIT:
-		flags |= ROMENTRYTYPE_IGNORE | ROM_INHERITFLAGS;
-		break;
-	}
-
-	switch (entry.bits())
-	{
-	case 8:
-		flags |= ROMREGION_8BIT;
-		break;
-	case 16:
-		flags |= ROMREGION_16BIT;
-		break;
-	case 32:
-		flags |= ROMREGION_32BIT;
-		break;
-	case 64:
-		flags |= ROMREGION_64BIT;
-		break;
-	default:
-		break;
-	}
-
-	switch (entry.get_endianness())
-	{
-	case util::software_rom_entry::endianness::LITTLE:
-		flags |= ROMREGION_LE;
-		break;
-	case util::software_rom_entry::endianness::BIG:
-		flags |= ROMREGION_BE;
-		break;
-	default:
-		break;
-	}
-
-	switch (entry.get_loadflag())
-	{
-	case util::software_rom_entry::loadflag::LOAD16_BYTE:
-		flags |= ROM_SKIP(1);
-		break;
-	case util::software_rom_entry::loadflag::LOAD16_WORD_SWAP:
-		flags |= ROM_GROUPWORD | ROM_REVERSE;
-		break;
-	case util::software_rom_entry::loadflag::LOAD32_BYTE:
-		flags |= ROM_SKIP(3);
-		break;
-	case util::software_rom_entry::loadflag::LOAD32_WORD:
-		flags |= ROM_GROUPWORD | ROM_SKIP(2);
-		break;
-	case util::software_rom_entry::loadflag::LOAD32_WORD_SWAP:
-		flags |= ROM_GROUPWORD | ROM_REVERSE | ROM_SKIP(2);
-		break;
-	default:
-		break;
-	}
-
-	// build the entry and return it
-	rom_entry r = { 0, };
-	r._name = entry.name().c_str();
-	r._hashdata = hashdata;
-	r._offset = entry.offset();
-	r._length = entry.length();
-	r._flags = flags;
-	return r;
-}
-
-
-//-------------------------------------------------
 //  device_validity_check - validate the device
 //  configuration
 //-------------------------------------------------
@@ -654,7 +514,7 @@ void software_list_device::internal_validity_check(validity_checker &valid)
 			if (!part_names.insert(std::make_pair(part.name(), &swinfo)).second)
 				osd_printf_error("%s: %s has a part (%s) whose name is duplicate\n", filename(), swinfo.shortname().c_str(), part.name().c_str());
 
-			for (const util::software_rom_entry &data : part.romdata())
+			for (const util::rom_entry &data : part.romdata())
 			{
 				if (!data.hashdata().empty())
 				{

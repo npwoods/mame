@@ -1427,7 +1427,7 @@ void validity_checker::validate_roms()
 		int items_since_region = 1;
 		int last_bios = 0;
 		int total_files = 0;
-		for (const rom_entry *romp = rom_first_region(device); romp != nullptr && !ROMENTRY_ISEND(romp); romp++)
+		for (const util::rom_entry *romp = rom_first_region(device); romp != nullptr && !ROMENTRY_ISEND(romp); romp++)
 		{
 			// if this is a region, make sure it's valid, and record the length
 			if (ROMENTRY_ISREGION(romp))

@@ -98,7 +98,7 @@ machine_config_constructor tvc_hbf_device::device_mconfig_additions() const
 //  device_rom_region
 //-------------------------------------------------
 
-const rom_entry *tvc_hbf_device::device_rom_region() const
+const util::rom_entry *tvc_hbf_device::device_rom_region() const
 {
 	return ROM_NAME( tvc_hbf );
 }

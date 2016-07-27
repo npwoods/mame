@@ -77,7 +77,7 @@ void mie_device::static_set_jvs_name(device_t &device, const char *name)
 	mie.jvs_name = name;
 }
 
-const rom_entry *mie_device::device_rom_region() const
+const util::rom_entry *mie_device::device_rom_region() const
 {
 	return ROM_NAME(mie);
 }

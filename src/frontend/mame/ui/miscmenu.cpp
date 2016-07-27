@@ -81,7 +81,7 @@ void menu_bios_selection::populate()
 		if (device.rom_region())
 		{
 			const char *val = "default";
-			for (const rom_entry *rom = device.rom_region(); !ROMENTRY_ISEND(rom); rom++)
+			for (const util::rom_entry *rom = device.rom_region(); !ROMENTRY_ISEND(rom); rom++)
 			{
 				if (ROMENTRY_ISSYSTEM_BIOS(rom) && ROM_GETBIOSFLAGS(rom) == device.system_bios())
 				{
@@ -117,7 +117,7 @@ void menu_bios_selection::handle()
 		{
 			device_t *dev = (device_t *)menu_event->itemref;
 			int cnt = 0;
-			for (const rom_entry *rom = dev->rom_region(); !ROMENTRY_ISEND(rom); rom++)
+			for (const util::rom_entry *rom = dev->rom_region(); !ROMENTRY_ISEND(rom); rom++)
 			{
 				if (ROMENTRY_ISSYSTEM_BIOS(rom)) cnt ++;
 			}
@@ -840,12 +840,12 @@ void menu_machine_configure::setup_bios()
 
 	std::string specbios(m_opts.bios());
 	std::string default_name;
-	for (const rom_entry *rom = m_drv->rom; !ROMENTRY_ISEND(rom); ++rom)
+	for (const util::rom_entry *rom = m_drv->rom; !ROMENTRY_ISEND(rom); ++rom)
 		if (ROMENTRY_ISDEFAULT_BIOS(rom))
 			default_name = ROM_GETNAME(rom);
 
 	std::size_t bios_count = 0;
-	for (const rom_entry *rom = m_drv->rom; !ROMENTRY_ISEND(rom); ++rom)
+	for (const util::rom_entry *rom = m_drv->rom; !ROMENTRY_ISEND(rom); ++rom)
 	{
 		if (ROMENTRY_ISSYSTEM_BIOS(rom))
 		{

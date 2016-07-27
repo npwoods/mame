@@ -2549,7 +2549,7 @@ time_t ioport_manager::initialize()
 			}
 		for (device_t &device : device_iterator(machine().root_device()))
 			if (device.rom_region())
-				for (const rom_entry *rom = device.rom_region(); !ROMENTRY_ISEND(rom); rom++)
+				for (const util::rom_entry *rom = device.rom_region(); !ROMENTRY_ISEND(rom); rom++)
 					if (ROMENTRY_ISSYSTEM_BIOS(rom)) { m_has_bioses= true; break; }
 	}
 

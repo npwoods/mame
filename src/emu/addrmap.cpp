@@ -723,7 +723,7 @@ void address_map::map_validity_check(validity_checker &valid, const device_t &de
 
 			// look for the region
 			for (device_t &dev : device_iterator(device.mconfig().root_device()))
-				for (const rom_entry *romp = rom_first_region(dev); romp != nullptr && !found; romp = rom_next_region(romp))
+				for (const util::rom_entry *romp = rom_first_region(dev); romp != nullptr && !found; romp = rom_next_region(romp))
 				{
 					if (rom_region_name(dev, romp) == entry_region)
 					{

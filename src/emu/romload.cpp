@@ -28,7 +28,7 @@
     HELPERS (also used by diimage.cpp)
  ***************************************************************************/
 
-static osd_file::error common_process_file(emu_options &options, const char *location, const char *ext, const rom_entry *romp, emu_file &image_file)
+static osd_file::error common_process_file(emu_options &options, const char *location, const char *ext, const util::rom_entry *romp, emu_file &image_file)
 {
 	osd_file::error filerr;
 
@@ -40,7 +40,7 @@ static osd_file::error common_process_file(emu_options &options, const char *loc
 	return filerr;
 }
 
-std::unique_ptr<emu_file> common_process_file(emu_options &options, const char *location, bool has_crc, UINT32 crc, const rom_entry *romp, osd_file::error &filerr)
+std::unique_ptr<emu_file> common_process_file(emu_options &options, const char *location, bool has_crc, UINT32 crc, const util::rom_entry *romp, osd_file::error &filerr)
 {
 	auto image_file = std::make_unique<emu_file>(options.media_path(), OPEN_FLAG_READ);
 
@@ -65,9 +65,9 @@ std::unique_ptr<emu_file> common_process_file(emu_options &options, const char *
     region
 -------------------------------------------------*/
 
-const rom_entry *rom_first_region(const device_t &device)
+const util::rom_entry *rom_first_region(const device_t &device)
 {
-	const rom_entry *romp = device.rom_region();
+	const util::rom_entry *romp = device.rom_region();
 	while (romp && ROMENTRY_ISPARAMETER(romp))
 		romp++;
 	return (romp != nullptr && !ROMENTRY_ISEND(romp)) ? romp : nullptr;
@@ -79,7 +79,7 @@ const rom_entry *rom_first_region(const device_t &device)
     region
 -------------------------------------------------*/
 
-const rom_entry *rom_next_region(const rom_entry *romp)
+const util::rom_entry *rom_next_region(const util::rom_entry *romp)
 {
 	romp++;
 	while (!ROMENTRY_ISREGIONEND(romp))
@@ -95,7 +95,7 @@ const rom_entry *rom_next_region(const rom_entry *romp)
     file
 -------------------------------------------------*/
 
-const rom_entry *rom_first_file(const rom_entry *romp)
+const util::rom_entry *rom_first_file(const util::rom_entry *romp)
 {
 	romp++;
 	while (!ROMENTRY_ISFILE(romp) && !ROMENTRY_ISREGIONEND(romp))
@@ -109,7 +109,7 @@ const rom_entry *rom_first_file(const rom_entry *romp)
     file
 -------------------------------------------------*/
 
-const rom_entry *rom_next_file(const rom_entry *romp)
+const util::rom_entry *rom_next_file(const util::rom_entry *romp)
 {
 	romp++;
 	while (!ROMENTRY_ISFILE(romp) && !ROMENTRY_ISREGIONEND(romp))
@@ -123,9 +123,9 @@ const rom_entry *rom_next_file(const rom_entry *romp)
     per-game parameter
 -------------------------------------------------*/
 
-const rom_entry *rom_first_parameter(const device_t &device)
+const util::rom_entry *rom_first_parameter(const device_t &device)
 {
-	const rom_entry *romp = device.rom_region();
+	const util::rom_entry *romp = device.rom_region();
 	while (romp && !ROMENTRY_ISEND(romp) && !ROMENTRY_ISPARAMETER(romp))
 		romp++;
 	return (romp != nullptr && !ROMENTRY_ISEND(romp)) ? romp : nullptr;
@@ -137,7 +137,7 @@ const rom_entry *rom_first_parameter(const device_t &device)
     per-game parameter
 -------------------------------------------------*/
 
-const rom_entry *rom_next_parameter(const rom_entry *romp)
+const util::rom_entry *rom_next_parameter(const util::rom_entry *romp)
 {
 	romp++;
 	while (!ROMENTRY_ISREGIONEND(romp) && !ROMENTRY_ISPARAMETER(romp))
@@ -151,7 +151,7 @@ const rom_entry *rom_next_parameter(const rom_entry *romp)
     for a rom region
 -------------------------------------------------*/
 
-std::string rom_region_name(const device_t &device, const rom_entry *romp)
+std::string rom_region_name(const device_t &device, const util::rom_entry *romp)
 {
 	return device.subtag(ROM_GETNAME(romp));
 }
@@ -162,9 +162,9 @@ std::string rom_region_name(const device_t &device, const rom_entry *romp)
     for a per-game parameter
 -------------------------------------------------*/
 
-std::string rom_parameter_name(const device_t &device, const rom_entry *romp)
+std::string rom_parameter_name(const device_t &device, const util::rom_entry *romp)
 {
-	return device.subtag(romp->_name);
+	return device.subtag(romp->name().c_str());
 }
 
 
@@ -173,9 +173,9 @@ std::string rom_parameter_name(const device_t &device, const rom_entry *romp)
     per-game parameter
 -------------------------------------------------*/
 
-std::string rom_parameter_value(const rom_entry *romp)
+std::string rom_parameter_value(const util::rom_entry *romp)
 {
-	return std::string(romp->_hashdata);
+	return romp->hashdata();
 }
 
 
@@ -184,7 +184,7 @@ std::string rom_parameter_value(const rom_entry *romp)
     file given the ROM description
 -------------------------------------------------*/
 
-UINT32 rom_file_size(const rom_entry *romp)
+UINT32 rom_file_size(const util::rom_entry *romp)
 {
 	UINT32 maxlength = 0;
 
@@ -268,7 +268,7 @@ int rom_load_manager::set_disk_handle(const char *region, const char *fullpath)
 void rom_load_manager::determine_bios_rom(device_t &device, const char *specbios)
 {
 	const char *defaultname = nullptr;
-	const rom_entry *rom;
+	const util::rom_entry *rom;
 	int default_no = 1;
 	int bios_count = 0;
 
@@ -321,7 +321,7 @@ void rom_load_manager::determine_bios_rom(device_t &device, const char *specbios
 
 void rom_load_manager::count_roms()
 {
-	const rom_entry *region, *rom;
+	const util::rom_entry *region, *rom;
 
 	/* start with 0 */
 	m_romstotal = 0;
@@ -356,7 +356,7 @@ void rom_load_manager::fill_random(UINT8 *base, UINT32 length)
     for missing files
 -------------------------------------------------*/
 
-void rom_load_manager::handle_missing_file(const rom_entry *romp, std::string tried_file_names, chd_error chderr)
+void rom_load_manager::handle_missing_file(const util::rom_entry *romp, std::string tried_file_names, chd_error chderr)
 {
 	if(tried_file_names.length() != 0)
 		tried_file_names = " (tried in " + tried_file_names + ")";
@@ -546,7 +546,7 @@ void rom_load_manager::region_post_process(const char *rgntag, bool invert)
     up the parent and loading by checksum
 -------------------------------------------------*/
 
-int rom_load_manager::open_rom_file(const char *regiontag, const rom_entry *romp, std::string &tried_file_names, bool from_list)
+int rom_load_manager::open_rom_file(const char *regiontag, const util::rom_entry *romp, std::string &tried_file_names, bool from_list)
 {
 	osd_file::error filerr = osd_file::error::NOT_FOUND;
 	UINT32 romsize = rom_file_size(romp);
@@ -664,7 +664,7 @@ int rom_load_manager::open_rom_file(const char *regiontag, const rom_entry *romp
     random data for a nullptr file
 -------------------------------------------------*/
 
-int rom_load_manager::rom_fread(UINT8 *buffer, int length, const rom_entry *parent_region)
+int rom_load_manager::rom_fread(UINT8 *buffer, int length, const util::rom_entry *parent_region)
 {
 	/* files just pass through */
 	if (m_file != nullptr)
@@ -683,7 +683,7 @@ int rom_load_manager::rom_fread(UINT8 *buffer, int length, const rom_entry *pare
     entry
 -------------------------------------------------*/
 
-int rom_load_manager::read_rom_data(const rom_entry *parent_region, const rom_entry *romp)
+int rom_load_manager::read_rom_data(const util::rom_entry *parent_region, const util::rom_entry *romp)
 {
 	int datashift = ROM_GETBITSHIFT(romp);
 	int datamask = ((1 << ROM_GETBITWIDTH(romp)) - 1) << datashift;
@@ -798,7 +798,7 @@ int rom_load_manager::read_rom_data(const rom_entry *parent_region, const rom_en
     fill_rom_data - fill a region of ROM space
 -------------------------------------------------*/
 
-void rom_load_manager::fill_rom_data(const rom_entry *romp)
+void rom_load_manager::fill_rom_data(const util::rom_entry *romp)
 {
 	UINT32 numbytes = ROM_GETLENGTH(romp);
 	int skip = ROM_GETSKIPCOUNT(romp);
@@ -816,10 +816,10 @@ void rom_load_manager::fill_rom_data(const rom_entry *romp)
 	if(skip != 0)
 	{
 		for (int i = 0; i < numbytes; i+= skip + 1)
-			base[i] = (FPTR)ROM_GETHASHDATA(romp) & 0xff;
+			base[i] = ROM_GETHASHDATA(romp)[0];
 	}
 	else
-		memset(base, (FPTR)ROM_GETHASHDATA(romp) & 0xff, numbytes);
+		memset(base, ROM_GETHASHDATA(romp)[0], numbytes);
 }
 
 
@@ -827,12 +827,12 @@ void rom_load_manager::fill_rom_data(const rom_entry *romp)
     copy_rom_data - copy a region of ROM space
 -------------------------------------------------*/
 
-void rom_load_manager::copy_rom_data(const rom_entry *romp)
+void rom_load_manager::copy_rom_data(const util::rom_entry *romp)
 {
 	UINT8 *base = m_region->base() + ROM_GETOFFSET(romp);
 	const char *srcrgntag = ROM_GETNAME(romp);
 	UINT32 numbytes = ROM_GETLENGTH(romp);
-	UINT32 srcoffs = (FPTR)ROM_GETHASHDATA(romp);  /* srcoffset in place of hashdata */
+	UINT32 srcoffs = (UINT32) strtol(ROM_GETHASHDATA(romp), nullptr, 0);  /* srcoffset in place of hashdata */
 
 	/* make sure we copy within the region space */
 	if (ROM_GETOFFSET(romp) + numbytes > m_region->bytes())
@@ -861,7 +861,7 @@ void rom_load_manager::copy_rom_data(const rom_entry *romp)
     for a region
 -------------------------------------------------*/
 
-void rom_load_manager::process_rom_entries(const char *regiontag, const rom_entry *parent_region, const rom_entry *romp, device_t *device, bool from_list)
+void rom_load_manager::process_rom_entries(const char *regiontag, const util::rom_entry *parent_region, const util::rom_entry *romp, device_t *device, bool from_list)
 {
 	UINT32 lastflags = 0;
 
@@ -892,7 +892,7 @@ void rom_load_manager::process_rom_entries(const char *regiontag, const rom_entr
 		else if (ROMENTRY_ISFILE(romp))
 		{
 			int irrelevantbios = (ROM_GETBIOSFLAGS(romp) != 0 && ROM_GETBIOSFLAGS(romp) != device->system_bios());
-			const rom_entry *baserom = romp;
+			const util::rom_entry *baserom = romp;
 			int explength = 0;
 
 			/* open the file if it is a non-BIOS or matches the current BIOS */
@@ -907,14 +907,14 @@ void rom_load_manager::process_rom_entries(const char *regiontag, const rom_entr
 				/* loop until we run out of continues/ignores */
 				do
 				{
-					rom_entry modified_romp = *romp++;
+					util::rom_entry modified_romp = *romp++;
 					//int readresult;
 
 					/* handle flag inheritance */
 					if (!ROM_INHERITSFLAGS(&modified_romp))
-						lastflags = modified_romp._flags;
+						lastflags = modified_romp.flags();
 					else
-						modified_romp._flags = (modified_romp._flags & ~ROM_INHERITEDFLAGS) | lastflags;
+						modified_romp.flags() = (modified_romp.flags() & ~ROM_INHERITEDFLAGS) | lastflags;
 
 					explength += ROM_GETLENGTH(&modified_romp);
 
@@ -961,10 +961,10 @@ void rom_load_manager::process_rom_entries(const char *regiontag, const rom_entr
     checksum
 -------------------------------------------------*/
 
-int open_disk_image(emu_options &options, const game_driver *gamedrv, const rom_entry *romp, chd_file &image_chd, const char *locationtag)
+int open_disk_image(emu_options &options, const game_driver *gamedrv, const util::rom_entry *romp, chd_file &image_chd, const char *locationtag)
 {
 	emu_file image_file(options.media_path(), OPEN_FLAG_READ);
-	const rom_entry *region, *rom;
+	const util::rom_entry *region, *rom;
 	osd_file::error filerr;
 	chd_error err;
 
@@ -1106,7 +1106,7 @@ int open_disk_image(emu_options &options, const game_driver *gamedrv, const rom_
     open_disk_diff - open a DISK diff file
 -------------------------------------------------*/
 
-chd_error rom_load_manager::open_disk_diff(emu_options &options, const rom_entry *romp, chd_file &source, chd_file &diff_chd)
+chd_error rom_load_manager::open_disk_diff(emu_options &options, const util::rom_entry *romp, chd_file &source, chd_file &diff_chd)
 {
 	std::string fname = std::string(ROM_GETNAME(romp)).append(".dif");
 
@@ -1151,7 +1151,7 @@ chd_error rom_load_manager::open_disk_diff(emu_options &options, const rom_entry
     for a region
 -------------------------------------------------*/
 
-void rom_load_manager::process_disk_entries(const char *regiontag, const rom_entry *parent_region, const rom_entry *romp, const char *locationtag)
+void rom_load_manager::process_disk_entries(const char *regiontag, const util::rom_entry *parent_region, const util::rom_entry *romp, const char *locationtag)
 {
 	/* loop until we hit the end of this region */
 	for ( ; !ROMENTRY_ISREGIONEND(romp); romp++)
@@ -1262,10 +1262,10 @@ void rom_load_manager::normalize_flags_for_device(running_machine &machine, cons
     more general process_region_list.
 -------------------------------------------------*/
 
-void rom_load_manager::load_software_part_region(device_t &device, software_list_device &swlist, const char *swname, const rom_entry *start_region)
+void rom_load_manager::load_software_part_region(device_t &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_region)
 {
 	std::string locationtag(swlist.list_name()), breakstr("%");
-	const rom_entry *region;
+	const util::rom_entry *region;
 	std::string regiontag;
 
 	m_errorstring.clear();
@@ -1349,7 +1349,7 @@ void rom_load_manager::load_software_part_region(device_t &device, software_list
 #endif
 
 		/* update total number of roms */
-		for (const rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
+		for (const util::rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
 		{
 			m_romstotal++;
 			m_romstotalsize += rom_file_size(rom);
@@ -1385,7 +1385,7 @@ void rom_load_manager::process_region_list()
 	/* loop until we hit the end */
 	device_iterator deviter(machine().root_device());
 	for (device_t &device : deviter)
-		for (const rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
+		for (const util::rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
 		{
 			UINT32 regionlength = ROMREGION_GETLENGTH(region);
 
@@ -1430,7 +1430,7 @@ void rom_load_manager::process_region_list()
 
 	/* now go back and post-process all the regions */
 	for (device_t &device : deviter)
-		for (const rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
+		for (const util::rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
 		{
 			regiontag = rom_region_name(device, region);
 			region_post_process(regiontag.c_str(), ROMREGION_ISINVERTED(region));
@@ -1438,7 +1438,7 @@ void rom_load_manager::process_region_list()
 
 	/* and finally register all per-game parameters */
 	for (device_t &device : deviter)
-		for (const rom_entry *param = rom_first_parameter(device); param != nullptr; param = rom_next_parameter(param))
+		for (const util::rom_entry *param = rom_first_parameter(device); param != nullptr; param = rom_next_parameter(param))
 		{
 			regiontag = rom_parameter_name(device, param);
 			machine().parameters().add(regiontag, rom_parameter_value(param));

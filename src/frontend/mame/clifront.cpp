@@ -349,8 +349,8 @@ int media_identifier::find_by_hash(const util::hash_collection &hashes, int leng
 		{
 			if (shortnames.insert(device.shortname()).second)
 			{
-				for (const rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
-					for (const rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
+				for (const util::rom_entry *region = rom_first_region(device); region != nullptr; region = rom_next_region(region))
+					for (const util::rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
 					{
 						util::hash_collection romhashes(ROM_GETHASHDATA(rom));
 						if (!romhashes.flag(util::hash_collection::FLAG_NO_DUMP) && hashes == romhashes)
@@ -376,10 +376,9 @@ int media_identifier::find_by_hash(const util::hash_collection &hashes, int leng
 				{
 					for (const util::software_part &part : swinfo.parts())
 					{
-						auto romdata = swlistdev.romdata(part);
-						for (const rom_entry *region = romdata.data(); region != nullptr; region = rom_next_region(region))
+						for (const util::rom_entry *region = part.romdata().data(); region != nullptr; region = rom_next_region(region))
 						{
-							for (const rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
+							for (const util::rom_entry *rom = rom_first_file(region); rom != nullptr; rom = rom_next_file(rom))
 							{
 								util::hash_collection romhashes(ROM_GETHASHDATA(rom));
 								if (hashes == romhashes)
@@ -823,8 +822,8 @@ void cli_frontend::listcrc(const char *gamename)
 	while (drivlist.next())
 	{
 		for (device_t &device : device_iterator(drivlist.config().root_device()))
-			for (const rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
-				for (const rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
+			for (const util::rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
+				for (const util::rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
 				{
 					// if we have a CRC, display it
 					UINT32 crc;
@@ -860,8 +859,8 @@ void cli_frontend::listroms(const char *gamename)
 
 		// iterate through roms
 		for (device_t &device : device_iterator(drivlist.config().root_device()))
-			for (const rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
-				for (const rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
+			for (const util::rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
+				for (const util::rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
 				{
 					// accumulate the total length of all chunks
 					int length = -1;
@@ -1424,8 +1423,7 @@ void cli_frontend::output_single_softlist(FILE *out, software_list_device &swlis
 				fprintf(out, "\t\t\t\t<feature name=\"%s\" value=\"%s\" />\n", flist.name().c_str(), xml_normalize_string(flist.value().c_str()));
 
 			/* TODO: display rom region information */
-			auto romdata = swlistdev.romdata(part);
-			for (const rom_entry *region = romdata.data(); region; region = rom_next_region(region))
+			for (const util::rom_entry *region = part.romdata().data(); region; region = rom_next_region(region))
 			{
 				int is_disk = ROMREGION_ISDISKDATA(region);
 
@@ -1434,7 +1432,7 @@ void cli_frontend::output_single_softlist(FILE *out, software_list_device &swlis
 				else
 					fprintf( out, "\t\t\t\t<diskarea name=\"%s\">\n", ROMREGION_GETTAG(region) );
 
-				for ( const rom_entry *rom = rom_first_file( region ); rom && !ROMENTRY_ISREGIONEND(rom); rom++ )
+				for ( const util::rom_entry *rom = rom_first_file( region ); rom && !ROMENTRY_ISREGIONEND(rom); rom++ )
 				{
 					if ( ROMENTRY_ISFILE(rom) )
 					{

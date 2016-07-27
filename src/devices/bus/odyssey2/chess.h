@@ -13,7 +13,7 @@
 class o2_chess_device : public o2_rom_device
 {
 	virtual machine_config_constructor device_mconfig_additions() const override;
-//  virtual const rom_entry *device_rom_region() const;
+//  virtual const util::rom_entry *device_rom_region() const;
 
 public:
 	// construction/destruction

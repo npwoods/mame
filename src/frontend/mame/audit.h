@@ -93,7 +93,7 @@ public:
 	public:
 		// media types
 		// construction/destruction
-		audit_record(const rom_entry &media, media_type type);
+		audit_record(const util::rom_entry &media, media_type type);
 		audit_record(const char *name, media_type type);
 		audit_record(const audit_record &) = default;
 		audit_record(audit_record &&) = default;
@@ -164,10 +164,10 @@ public:
 
 private:
 	// internal helpers
-	void audit_regions(const rom_entry *region, const char *locationtag, std::size_t &found, std::size_t &required);
-	audit_record &audit_one_rom(const rom_entry *rom);
-	audit_record &audit_one_disk(const rom_entry *rom, const char *locationtag);
-	void compute_status(audit_record &record, const rom_entry *rom, bool found);
+	void audit_regions(const util::rom_entry *region, const char *locationtag, std::size_t &found, std::size_t &required);
+	audit_record &audit_one_rom(const util::rom_entry *rom);
+	audit_record &audit_one_disk(const util::rom_entry *rom, const char *locationtag);
+	void compute_status(audit_record &record, const util::rom_entry *rom, bool found);
 	device_t *find_shared_device(device_t &device, const char *name, const util::hash_collection &romhashes, UINT64 romlength);
 
 	// internal state

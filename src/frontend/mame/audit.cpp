@@ -61,7 +61,7 @@ const char *driverpath = m_enumerator.config().root_device().searchpath();
 		m_searchpath = device.searchpath();
 
 		// now iterate over regions and ROMs within
-		for (const rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
+		for (const util::rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
 		{
 // temporary hack: add the driver path & region name
 std::string combinedpath = util::string_format("%s;%s", device.searchpath(), driverpath);
@@ -69,7 +69,7 @@ if (device.shortname())
 	combinedpath.append(";").append(device.shortname());
 m_searchpath = combinedpath.c_str();
 
-			for (const rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
+			for (const util::rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
 			{
 				char const *const name(ROM_GETNAME(rom));
 				util::hash_collection const hashes(ROM_GETHASHDATA(rom));
@@ -172,8 +172,7 @@ media_auditor::summary media_auditor::audit_software(software_list_device &swlis
 	// now iterate over software parts
 	for (const util::software_part &part : swinfo->parts())
 	{
-		auto romdata = swlist.romdata(part);
-		audit_regions(romdata.data(), locationtag.c_str(), found, required);
+		audit_regions(part.romdata().data(), locationtag.c_str(), found, required);
 	}
 
 	if ((found == 0) && (required > 0))
@@ -344,13 +343,13 @@ media_auditor::summary media_auditor::summarize(const char *name, std::ostream *
 //  audit_regions - validate/count for regions
 //-------------------------------------------------
 
-void media_auditor::audit_regions(const rom_entry *region, const char *locationtag, std::size_t &found, std::size_t &required)
+void media_auditor::audit_regions(const util::rom_entry *region, const char *locationtag, std::size_t &found, std::size_t &required)
 {
 	// now iterate over regions
 	for ( ; region; region = rom_next_region(region))
 	{
 		// now iterate over rom definitions
-		for (const rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
+		for (const util::rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
 		{
 			util::hash_collection const hashes(ROM_GETHASHDATA(rom));
 
@@ -376,7 +375,7 @@ void media_auditor::audit_regions(const rom_entry *region, const char *locationt
 //  audit_one_rom - validate a single ROM entry
 //-------------------------------------------------
 
-media_auditor::audit_record &media_auditor::audit_one_rom(const rom_entry *rom)
+media_auditor::audit_record &media_auditor::audit_one_rom(const util::rom_entry *rom)
 {
 	// allocate and append a new record
 	audit_record &record = *m_record_list.emplace(m_record_list.end(), *rom, media_type::ROM);
@@ -417,7 +416,7 @@ media_auditor::audit_record &media_auditor::audit_one_rom(const rom_entry *rom)
 //  audit_one_disk - validate a single disk entry
 //-------------------------------------------------
 
-media_auditor::audit_record &media_auditor::audit_one_disk(const rom_entry *rom, const char *locationtag)
+media_auditor::audit_record &media_auditor::audit_one_disk(const util::rom_entry *rom, const char *locationtag)
 {
 	// allocate and append a new record
 	audit_record &record = *m_record_list.emplace(m_record_list.end(), *rom, media_type::DISK);
@@ -450,7 +449,7 @@ media_auditor::audit_record &media_auditor::audit_one_disk(const rom_entry *rom,
 //  based on the information we have
 //-------------------------------------------------
 
-void media_auditor::compute_status(audit_record &record, const rom_entry *rom, bool found)
+void media_auditor::compute_status(audit_record &record, const util::rom_entry *rom, bool found)
 {
 	// if not found, provide more details
 	if (!found)
@@ -491,9 +490,9 @@ device_t *media_auditor::find_shared_device(device_t &device, const char *name, 
 	device_t *highest_device = nullptr;
 	if (device.owner())
 	{
-		for (const rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
+		for (const util::rom_entry *region = rom_first_region(device); region; region = rom_next_region(region))
 		{
-			for (const rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
+			for (const util::rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
 			{
 				if (ROM_GETLENGTH(rom) == romlength)
 				{
@@ -511,9 +510,9 @@ device_t *media_auditor::find_shared_device(device_t &device, const char *name, 
 		{
 			for (device_t &scandevice : device_iterator(m_enumerator.config(drvindex).root_device()))
 			{
-				for (const rom_entry *region = rom_first_region(scandevice); region; region = rom_next_region(region))
+				for (const util::rom_entry *region = rom_first_region(scandevice); region; region = rom_next_region(region))
 				{
-					for (const rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
+					for (const util::rom_entry *rom = rom_first_file(region); rom; rom = rom_next_file(rom))
 					{
 						if (ROM_GETLENGTH(rom) == romlength)
 						{
@@ -535,7 +534,7 @@ device_t *media_auditor::find_shared_device(device_t &device, const char *name, 
 //  audit_record - constructor
 //-------------------------------------------------
 
-media_auditor::audit_record::audit_record(const rom_entry &media, media_type type)
+media_auditor::audit_record::audit_record(const util::rom_entry &media, media_type type)
 	: m_type(type)
 	, m_status(audit_status::UNVERIFIED)
 	, m_substatus(audit_substatus::UNVERIFIED)

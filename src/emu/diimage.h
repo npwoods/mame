@@ -232,7 +232,7 @@ public:
 	bool finish_load();
 	void unload();
 	bool create(const char *path, const image_device_format *create_format, util::option_resolution *create_args);
-	bool load_software(software_list_device &swlist, const char *swname, const rom_entry *entry);
+	bool load_software(software_list_device &swlist, const char *swname, const util::rom_entry *entry);
 	int reopen_for_write(const char *path);
 
 	static void software_name_split(const char *swlist_swname, std::string &swlist_name, std::string &swname, std::string &swpart);

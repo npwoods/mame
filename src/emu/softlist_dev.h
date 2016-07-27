@@ -73,7 +73,6 @@ enum software_compatibility
 //  TYPE DEFINITIONS
 //**************************************************************************
 
-struct rom_entry;
 class device_image_interface;
 class software_list_device;
 
@@ -82,7 +81,7 @@ class software_list_device;
 class software_list_loader
 {
 public:
-	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const = 0;
+	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const = 0;
 };
 
 
@@ -91,7 +90,7 @@ public:
 class false_software_list_loader : public software_list_loader
 {
 public:
-	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const override;
+	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const override;
 	static const software_list_loader &instance() { return s_instance; }
 
 private:
@@ -104,7 +103,7 @@ private:
 class rom_software_list_loader : public software_list_loader
 {
 public:
-	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const override;
+	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const override;
 	static const software_list_loader &instance() { return s_instance; }
 
 private:
@@ -117,7 +116,7 @@ private:
 class image_software_list_loader : public software_list_loader
 {
 public:
-	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const rom_entry *start_entry) const override;
+	virtual bool load_software(device_image_interface &device, software_list_device &swlist, const char *swname, const util::rom_entry *start_entry) const override;
 	static const software_list_loader &instance() { return s_instance; }
 
 private:
@@ -151,7 +150,6 @@ public:
 	bool valid() { if (!m_parsed) parse(); return !m_infolist.empty(); }
 	const char *errors_string() { if (!m_parsed) parse(); return m_errors.c_str(); }
 	const std::list<util::software_info> &get_info() { if (!m_parsed) parse(); return m_infolist; }
-	std::vector<rom_entry> romdata(const util::software_part &part);
 
 	// operations
 	const util::software_info *find(const char *look_for);
@@ -173,7 +171,6 @@ private:
 	// internal helpers
 	void parse();
 	void internal_validity_check(validity_checker &valid) ATTR_COLD;
-	rom_entry build_rom_entry(const util::software_rom_entry &entry);
 
 	// configuration state
 	std::string						m_list_name;

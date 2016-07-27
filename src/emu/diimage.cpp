@@ -829,16 +829,16 @@ static int verify_length_and_hash(emu_file *file, const char *name, UINT32 exple
 //	load_software - software image loading
 //-------------------------------------------------
 
-bool device_image_interface::load_software(software_list_device &swlist, const char *swname, const rom_entry *start)
+bool device_image_interface::load_software(software_list_device &swlist, const char *swname, const util::rom_entry *start)
 {
 	std::string locationtag, breakstr("%");
-	const rom_entry *region;
+	const util::rom_entry *region;
 	bool retVal = FALSE;
 	int warningcount = 0;
 	for (region = start; region != nullptr; region = rom_next_region(region))
 	{
 		// loop until we hit the end of this region
-		const rom_entry *romp = region + 1;
+		const util::rom_entry *romp = region + 1;
 		while (!ROMENTRY_ISREGIONEND(romp))
 		{
 			// handle files
@@ -1363,9 +1363,8 @@ bool device_image_interface::load_software_part(const char *path, const util::so
 
 	// Load the software part
 	const char *swname = swpart->info().shortname().c_str();
-	auto start_entry = swlist->romdata(*swpart);
 	const software_list_loader &loader = get_software_list_loader();
-	bool result = loader.load_software(*this, *swlist, swname, start_entry.data());
+	bool result = loader.load_software(*this, *swlist, swname, swpart->romdata().data());
 
 #ifdef UNUSED_VARIABLE
 	// Tell the world which part we actually loaded
