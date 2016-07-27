@@ -45,11 +45,11 @@ protected:
 	} m_submenu_result;
 
 	// instance variables - made protected so they can be shared with floppycntrl.cpp
-	int								m_state;
-	device_image_interface &		m_image;
-	std::string						m_current_directory;
-	std::string						m_current_file;
-	bool							m_create_ok;
+	int                             m_state;
+	device_image_interface &        m_image;
+	std::string                     m_current_directory;
+	std::string                     m_current_file;
+	bool                            m_create_ok;
 
 	// methods
 	virtual void hook_load(std::string filename, bool softlist);
