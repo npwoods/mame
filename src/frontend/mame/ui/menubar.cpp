@@ -941,9 +941,13 @@ menubar::menu_item &menubar::menu_item::append(const char *text)
 
 void menubar::menu_item::append_separator()
 {
-	menu_item &separator = append("-");
-	separator.set_enabled(false);
-	separator.m_is_separator = true;
+	// only append a separator if the last item is not a separator
+	if (m_last_child != nullptr && !m_last_child->m_is_separator)
+	{
+		menu_item &separator = append("-");
+		separator.set_enabled(false);
+		separator.m_is_separator = true;
+	}
 }
 
 
