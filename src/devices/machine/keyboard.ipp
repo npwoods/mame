@@ -5,7 +5,7 @@
 
 #pragma once
 
-#ifdef _MSC_VER // NPW - Stupid warning to appease MSVC
+#ifdef _MSC_VER // NPW - Stupid warning ignore to appease MSVC
 #pragma warning ( disable : 4505 )
 #endif
 
