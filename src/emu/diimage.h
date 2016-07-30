@@ -80,7 +80,7 @@ class image_device_format
 {
 public:
 	image_device_format(const std::string &name, const std::string &description, const std::string &extensions, const std::string &optspec);
-	~image_device_format();
+	virtual ~image_device_format();
 
 	const std::string &name() const { return m_name; }
 	const std::string &description() const { return m_description; }

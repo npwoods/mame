@@ -53,6 +53,30 @@ static const floppy_error_map errmap[] =
 	{ FLOPPY_ERROR_INVALIDIMAGE,    IMAGE_ERROR_INVALIDIMAGE }
 };
 
+
+/***************************************************************************
+	FLOPPY DEVICE FORMAT
+***************************************************************************/
+
+namespace
+{
+	class floppy_image_device_format : public image_device_format
+	{
+	public:
+		floppy_image_device_format(const struct FloppyFormat &format)
+			: image_device_format(format.name, format.description, format.extensions, format.param_guidelines)
+			, m_format(format)
+		{
+		}
+
+		const struct FloppyFormat &format() const { return m_format; }
+
+	private:
+		const struct FloppyFormat &m_format;
+	};
+};
+
+
 /***************************************************************************
     IMPLEMENTATION
 ***************************************************************************/
@@ -425,14 +449,16 @@ int legacy_floppy_image_device::internal_floppy_device_load(const image_device_f
 	const char *extension;
 
 	device_image_interface *image = nullptr;
-	interface(image);   /* figure out the floppy options */
+	interface(image);   // figure out the floppy options
 	floppy_options = m_config->formats;
 
 	if (has_been_created())
 	{
-		/* creating an image */
-		assert(create_format >= 0);
-		err = floppy_create((void *) image, &image_ioprocs, nullptr /* FIXME!!!! &floppy_options[create_format]*/, create_args, &m_floppy);
+		// creating an image
+		const floppy_image_device_format *flop_create_format = dynamic_cast<const floppy_image_device_format *>(create_format);
+		assert(flop_create_format != nullptr);
+
+		err = floppy_create((void *) image, &image_ioprocs, &flop_create_format->format(), create_args, &m_floppy);
 		if (err)
 			goto error;
 	}
@@ -819,9 +845,11 @@ void legacy_floppy_image_device::device_config_complete()
 	for (int i = 0; floppy_options[i].construct; i++)
 	{
 		// only add if creatable
-		if (floppy_options[i].param_guidelines) {
+		if (floppy_options[i].param_guidelines != nullptr)
+		{
 			// allocate a new format and append it to the list
-			m_formatlist.push_back(std::make_unique<image_device_format>(floppy_options[i].name, floppy_options[i].description, floppy_options[i].extensions, floppy_options[i].param_guidelines));
+			auto format = std::make_unique<floppy_image_device_format>(floppy_options[i]);
+			m_formatlist.push_back(std::move(format));
 		}
 		image_specify_extension( m_extension_list, 256, floppy_options[i].extensions );
 	}
