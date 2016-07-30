@@ -417,7 +417,7 @@ void legacy_floppy_image_device::floppy_drive_set_controller(device_t *controlle
 	m_controller = controller;
 }
 
-int legacy_floppy_image_device::internal_floppy_device_load(int create_format, util::option_resolution *create_args)
+int legacy_floppy_image_device::internal_floppy_device_load(const image_device_format *create_format, util::option_resolution *create_args)
 {
 	floperr_t err;
 	const struct FloppyFormat *floppy_options;
@@ -432,7 +432,7 @@ int legacy_floppy_image_device::internal_floppy_device_load(int create_format, u
 	{
 		/* creating an image */
 		assert(create_format >= 0);
-		err = floppy_create((void *) image, &image_ioprocs, &floppy_options[create_format], create_args, &m_floppy);
+		err = floppy_create((void *) image, &image_ioprocs, nullptr /* FIXME!!!! &floppy_options[create_format]*/, create_args, &m_floppy);
 		if (err)
 			goto error;
 	}
@@ -832,12 +832,12 @@ void legacy_floppy_image_device::device_config_complete()
 
 bool legacy_floppy_image_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
-	return internal_floppy_device_load(format_type, format_options);
+	return internal_floppy_device_load(create_format, format_options);
 }
 
 bool legacy_floppy_image_device::call_load()
 {
-	int retVal = internal_floppy_device_load(-1, nullptr);
+	int retVal = internal_floppy_device_load(nullptr, nullptr);
 	if (retVal==IMAGE_INIT_PASS) {
 		/* if we have one of our hacky unload procs, call it */
 		if (m_load_proc)

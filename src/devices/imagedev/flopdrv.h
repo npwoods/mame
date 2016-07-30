@@ -162,7 +162,7 @@ private:
 	TIMER_CALLBACK_MEMBER(floppy_drive_index_callback);
 	void floppy_drive_init();
 	void floppy_drive_index_func();
-	int internal_floppy_device_load(int create_format, util::option_resolution *create_args);
+	int internal_floppy_device_load(const image_device_format *create_format, util::option_resolution *create_args);
 	TIMER_CALLBACK_MEMBER( set_wpt );
 
 protected:
