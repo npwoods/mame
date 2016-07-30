@@ -51,7 +51,9 @@ menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, rende
 		util::zippath_parent(m_current_directory, m_current_file.c_str());
 	}
 	else
+	{
 		m_current_directory.assign(m_image.working_directory());
+	}
 
 	// check to see if the path exists; if not clear it
 	if (util::zippath_opendir(m_current_directory, nullptr) != osd_file::error::NONE)
