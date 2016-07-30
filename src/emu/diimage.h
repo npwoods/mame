@@ -150,7 +150,7 @@ public:
 	virtual void device_compute_hash(util::hash_collection &hashes, const void *data, size_t length, const char *types) const;
 
 	virtual bool call_load() { return FALSE; }
-	virtual bool call_create(int format_type, util::option_resolution *format_options) { return FALSE; }
+	virtual bool call_create(const image_device_format *create_format, util::option_resolution *format_options) { return false; }
 	virtual void call_unload() { }
 	virtual std::string call_display() { return std::string(); }
 	virtual device_image_partialhash_func get_partial_hash() const { return nullptr; }
@@ -251,13 +251,13 @@ public:
 protected:
 	virtual const software_list_loader &get_software_list_loader() const { return false_software_list_loader::instance(); }
 
-	bool load_internal(const std::string &path, bool is_create, int create_format, util::option_resolution *create_args, bool just_load);
+	bool load_internal(const std::string &path, bool is_create, const image_device_format *create_format, util::option_resolution *create_args, bool just_load);
 	void determine_open_plan(int is_create, UINT32 *open_plan);
 	image_error_t load_image_by_path(UINT32 open_flags, const std::string &path);
 	void clear();
 	bool is_loaded();
 
-	image_error_t set_image_filename(const std::string &filename);
+	void set_image_filename(const std::string &filename);
 
 	void clear_error();
 
@@ -312,8 +312,8 @@ protected:
 	bool m_created;
 	bool m_init_phase;
 
-	/* special - used when creating */
-	int m_create_format;
+	// special - used when creating
+	const image_device_format *m_create_format;
 	util::option_resolution *m_create_args;
 
 	util::hash_collection m_hash;

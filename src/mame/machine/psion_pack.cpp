@@ -278,7 +278,7 @@ bool datapack_device::call_load()
     DEVICE_IMAGE_CREATE( datapack )
 -------------------------------------------------*/
 
-bool datapack_device::call_create(int format_type, util::option_resolution *create_args)
+bool datapack_device::call_create(const image_device_format *create_format, util::option_resolution *create_args)
 {
 	static const UINT8 opk_head[6] = {'O', 'P', 'K', 0x00, 0x00, 0x00};
 

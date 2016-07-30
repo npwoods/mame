@@ -830,7 +830,7 @@ void legacy_floppy_image_device::device_config_complete()
 	update_names();
 }
 
-bool legacy_floppy_image_device::call_create(int format_type, util::option_resolution *format_options)
+bool legacy_floppy_image_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
 	return internal_floppy_device_load(format_type, format_options);
 }

@@ -101,7 +101,7 @@ public:
 
 	virtual bool call_load() override;
 	virtual const software_list_loader &get_software_list_loader() const override { return image_software_list_loader::instance(); }
-	virtual bool call_create(int format_type, util::option_resolution *format_options) override;
+	virtual bool call_create(const image_device_format *create_format, util::option_resolution *format_options) override;
 	virtual void call_unload() override;
 
 	virtual iodevice_t image_type() const override { return IO_FLOPPY; }

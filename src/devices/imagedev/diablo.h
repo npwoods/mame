@@ -31,7 +31,7 @@ public:
 
 	// image-level overrides
 	virtual bool call_load() override;
-	virtual bool call_create(int create_format, util::option_resolution *create_args) override;
+	virtual bool call_create(const image_device_format *create_format, util::option_resolution *create_args) override;
 	virtual void call_unload() override;
 	virtual const software_list_loader &get_software_list_loader() const override { return rom_software_list_loader::instance(); }
 

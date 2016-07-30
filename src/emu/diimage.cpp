@@ -184,7 +184,7 @@ void device_image_interface::device_compute_hash(util::hash_collection &hashes, 
 //  an image
 //-------------------------------------------------
 
-image_error_t device_image_interface::set_image_filename(const std::string &filename)
+void device_image_interface::set_image_filename(const std::string &filename)
 {
 	m_image_name = filename;
 	util::zippath_parent(m_working_directory, filename.c_str());
@@ -212,8 +212,6 @@ image_error_t device_image_interface::set_image_filename(const std::string &file
 		m_basename_noext = m_basename_noext.substr(0, loc);
 		m_filetype = m_basename.substr(loc + 1);
 	}
-
-	return IMAGE_ERROR_SUCCESS;
 }
 
 /****************************************************************************
@@ -934,7 +932,7 @@ bool device_image_interface::load_software(software_list_device &swlist, const c
 //  load_internal - core image loading
 //-------------------------------------------------
 
-bool device_image_interface::load_internal(const std::string &path, bool is_create, int create_format, util::option_resolution *create_args, bool just_load)
+bool device_image_interface::load_internal(const std::string &path, bool is_create, const image_device_format *create_format, util::option_resolution *create_args, bool just_load)
 {
 	UINT32 open_plan[4];
 	int i;
@@ -953,10 +951,7 @@ bool device_image_interface::load_internal(const std::string &path, bool is_crea
 	m_is_loading = true;
 
 	// record the filename
-	m_err = set_image_filename(path);
-
-	if (m_err)
-		goto done;
+	set_image_filename(path);
 
 	if (core_opens_image_file())
 	{
@@ -973,7 +968,7 @@ bool device_image_interface::load_internal(const std::string &path, bool is_crea
 				// if we had launched from softlist with a specified part, e.g. "shortname:part"
 				// we would have recorded the wrong name, so record it again based on software_info
 				if (m_software_info_ptr && !m_full_software_name.empty())
-					m_err = set_image_filename(m_full_software_name);
+					set_image_filename(m_full_software_name);
 
 				// check if image should be read-only
 				const char *read_only = get_feature("read_only");
@@ -1142,17 +1137,7 @@ bool device_image_interface::finish_load()
 
 bool device_image_interface::create(const char *path, const image_device_format *create_format, util::option_resolution *create_args)
 {
-	int format_index = 0;
-	int cnt = 0;
-	for (auto &format : m_formatlist)
-	{
-		if (create_format == format.get()) {
-			format_index = cnt;
-			break;
-		}
-		cnt++;
-	}
-	return load_internal(path, true, format_index, create_args, false);
+	return load_internal(path, true, create_format, create_args, false);
 }
 
 

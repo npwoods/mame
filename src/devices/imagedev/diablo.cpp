@@ -108,7 +108,7 @@ bool diablo_image_device::call_load()
 
 }
 
-bool diablo_image_device::call_create(int create_format, util::option_resolution *create_args)
+bool diablo_image_device::call_create(const image_device_format *create_format, util::option_resolution *create_args)
 {
 	int err;
 	UINT32 sectorsize, hunksize;
