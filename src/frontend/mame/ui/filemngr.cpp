@@ -40,7 +40,7 @@ menu_file_manager::menu_file_manager(mame_ui_manager &mui, render_container &con
 	else
 		m_warnings.clear();
 
-	m_curr_selected = FALSE;
+	m_curr_selected = false;
 }
 
 
@@ -180,7 +180,7 @@ void menu_file_manager::handle()
 			selected_device = (device_image_interface *) event->itemref;
 			if (selected_device != nullptr)
 			{
-				m_curr_selected = TRUE;
+				m_curr_selected = true;
 				menu::stack_push<menu_control_device_image>(ui(), container(), *selected_device);
 
 				// reset the existing menu

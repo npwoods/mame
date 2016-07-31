@@ -537,13 +537,13 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 		{
 			float width = ui().get_string_width(iter.current());
 			assert(iter.index() < ARRAY_LENGTH(max_widths));
-			max_widths[iter.index()] = MAX(max_widths[iter.index()], width);
+			max_widths[iter.index()] = std::max(max_widths[iter.index()], width);
 		}
 
 		// measure the shortcut
 		float shortcut_width = mi->shortcut_text_width();
 		if (shortcut_width > 0)
-			max_shortcuts_width = MAX(max_shortcuts_width, shortcut_width + spacing);
+			max_shortcuts_width = std::max(max_shortcuts_width, shortcut_width + spacing);
 
 		// increase the height
 		total_height += (mi->is_separator() ? separator_height : text_height);
@@ -557,7 +557,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 	// are we going to go over the right of the screen?
 	float right = x + max_width + (spacing * 3);
 	if (right > 1.0f)
-		x = MAX(0.0f, x - (right - 1.0f));
+		x = std::max(0.0f, x - (right - 1.0f));
 
 	// draw the menu outline
 	ui().draw_outlined_box(

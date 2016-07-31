@@ -243,7 +243,7 @@ void floppy_image_device::set_formats(const floppy_format_type *formats)
 		else
 			fif_list->append(fif);
 
-		m_formatlist.push_back(std::make_unique<image_device_format>(fif->name(), fif->description(), fif->extensions(), fif->option_spec()));
+		add_format(fif->name(), fif->description(), fif->extensions(), fif->option_spec());
 
 		image_specify_extension( extension_list, 256, fif->extensions() );
 	}

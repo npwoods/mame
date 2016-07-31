@@ -399,7 +399,7 @@ void legacy_floppy_image_device::floppy_drive_write_sector_data(int side, int in
 	}
 }
 
-void legacy_floppy_image_device::floppy_install_load_proc(void (*proc)(device_image_interface &image))
+void legacy_floppy_image_device::floppy_install_load_proc(void (*proc)(device_image_interface &image, bool is_created))
 {
 	m_load_proc = proc;
 }
@@ -441,7 +441,7 @@ void legacy_floppy_image_device::floppy_drive_set_controller(device_t *controlle
 	m_controller = controller;
 }
 
-int legacy_floppy_image_device::internal_floppy_device_load(const image_device_format *create_format, util::option_resolution *create_args)
+int legacy_floppy_image_device::internal_floppy_device_load(bool is_create, const image_device_format *create_format, util::option_resolution *create_args)
 {
 	floperr_t err;
 	const struct FloppyFormat *floppy_options;
@@ -452,7 +452,7 @@ int legacy_floppy_image_device::internal_floppy_device_load(const image_device_f
 	interface(image);   // figure out the floppy options
 	floppy_options = m_config->formats;
 
-	if (has_been_created())
+	if (is_create)
 	{
 		// creating an image
 		const floppy_image_device_format *flop_create_format = dynamic_cast<const floppy_image_device_format *>(create_format);
@@ -477,6 +477,10 @@ int legacy_floppy_image_device::internal_floppy_device_load(const image_device_f
 	}
 	/* disk changed */
 	m_dskchg = CLEAR_LINE;
+
+	// If we have one of our hacky load procs, call it
+	if (m_load_proc)
+		m_load_proc(*this, is_create);
 
 	return IMAGE_INIT_PASS;
 
@@ -849,7 +853,7 @@ void legacy_floppy_image_device::device_config_complete()
 		{
 			// allocate a new format and append it to the list
 			auto format = std::make_unique<floppy_image_device_format>(floppy_options[i]);
-			m_formatlist.push_back(std::move(format));
+			add_format(std::move(format));
 		}
 		image_specify_extension( m_extension_list, 256, floppy_options[i].extensions );
 	}
@@ -860,17 +864,12 @@ void legacy_floppy_image_device::device_config_complete()
 
 bool legacy_floppy_image_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
-	return internal_floppy_device_load(create_format, format_options);
+	return internal_floppy_device_load(true, create_format, format_options);
 }
 
 bool legacy_floppy_image_device::call_load()
 {
-	int retVal = internal_floppy_device_load(nullptr, nullptr);
-	if (retVal==IMAGE_INIT_PASS) {
-		/* if we have one of our hacky unload procs, call it */
-		if (m_load_proc)
-			m_load_proc(*this);
-	}
+	int retVal = internal_floppy_device_load(false, nullptr, nullptr);
 
 	/* push disk halfway into drive */
 	m_wpt = CLEAR_LINE;
