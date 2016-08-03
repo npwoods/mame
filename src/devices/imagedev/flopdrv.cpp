@@ -441,12 +441,11 @@ void legacy_floppy_image_device::floppy_drive_set_controller(device_t *controlle
 	m_controller = controller;
 }
 
-int legacy_floppy_image_device::internal_floppy_device_load(bool is_create, const image_device_format *create_format, util::option_resolution *create_args)
+image_init_result legacy_floppy_image_device::internal_floppy_device_load(bool is_create, const image_device_format *create_format, util::option_resolution *create_args)
 {
 	floperr_t err;
 	const struct FloppyFormat *floppy_options;
 	int floppy_flags, i;
-	const char *extension;
 
 	device_image_interface *image = nullptr;
 	interface(image);   // figure out the floppy options
@@ -466,8 +465,7 @@ int legacy_floppy_image_device::internal_floppy_device_load(bool is_create, cons
 	{
 		/* opening an image */
 		floppy_flags = !is_readonly() ? FLOPPY_FLAGS_READWRITE : FLOPPY_FLAGS_READONLY;
-		extension = filetype();
-		err = floppy_open_choices((void *) image, &image_ioprocs, extension, floppy_options, floppy_flags, &m_floppy);
+		err = floppy_open_choices((void *) image, &image_ioprocs, filetype().c_str(), floppy_options, floppy_flags, &m_floppy);
 		if (err)
 			goto error;
 	}
@@ -482,7 +480,7 @@ int legacy_floppy_image_device::internal_floppy_device_load(bool is_create, cons
 	if (m_load_proc)
 		m_load_proc(*this, is_create);
 
-	return IMAGE_INIT_PASS;
+	return image_init_result::PASS;
 
 error:
 	for (i = 0; i < ARRAY_LENGTH(errmap); i++)
@@ -490,7 +488,7 @@ error:
 		if (err == errmap[i].ferr)
 			seterror(errmap[i].ierr, errmap[i].message);
 	}
-	return IMAGE_INIT_FAIL;
+	return image_init_result::FAIL;
 }
 
 TIMER_CALLBACK_MEMBER( legacy_floppy_image_device::set_wpt )
@@ -862,14 +860,14 @@ void legacy_floppy_image_device::device_config_complete()
 	update_names();
 }
 
-bool legacy_floppy_image_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
+image_init_result legacy_floppy_image_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
 	return internal_floppy_device_load(true, create_format, format_options);
 }
 
-bool legacy_floppy_image_device::call_load()
+image_init_result legacy_floppy_image_device::call_load()
 {
-	int retVal = internal_floppy_device_load(false, nullptr, nullptr);
+	image_init_result retVal = internal_floppy_device_load(false, nullptr, nullptr);
 
 	/* push disk halfway into drive */
 	m_wpt = CLEAR_LINE;

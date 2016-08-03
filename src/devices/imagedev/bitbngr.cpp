@@ -484,22 +484,22 @@ void bitbanger_device::output(int value)
     call_load
 -------------------------------------------------*/
 
-bool bitbanger_device::call_load(void)
+image_init_result bitbanger_device::call_load(void)
 {
 	m_input_timer->enable(true);
 	m_input_timer->adjust(attotime::zero, 0, attotime::from_seconds(1));
 
 	/* we don't need to do anything special */
-	return IMAGE_INIT_PASS;
+	return image_init_result::PASS;
 }
 
-bool bitbanger_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
+image_init_result bitbanger_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
 	m_input_timer->enable(true);
 	m_input_timer->adjust(attotime::zero, 0, attotime::from_seconds(1));
 
 	/* we don't need to do anything special */
-	return IMAGE_INIT_PASS;
+	return image_init_result::PASS;
 }
 
 /*-------------------------------------------------

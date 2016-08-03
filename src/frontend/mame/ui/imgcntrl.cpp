@@ -116,10 +116,10 @@ void menu_control_device_image::test_create(bool &can_create, bool &need_confirm
 //  hook_load
 //-------------------------------------------------
 
-void menu_control_device_image::hook_load(std::string name, bool softlist)
+void menu_control_device_image::hook_load(const std::string &name)
 {
 	if (m_image.is_reset_on_load()) m_image.set_init_phase();
-	m_image.load(name.c_str());
+	m_image.load(name);
 	stack_pop();
 }
 
@@ -156,7 +156,7 @@ void menu_control_device_image::handle()
 			break;
 
 		case menu_file_selector::result::FILE:
-			hook_load(m_current_file, false);
+			hook_load(m_current_file);
 			break;
 
 		case menu_file_selector::result::CREATE:
@@ -199,9 +199,9 @@ void menu_control_device_image::handle()
 		break;
 
 	case DO_CREATE: {
-		auto path = util::zippath_combine(m_current_directory.c_str(), m_current_file.c_str());
-		int err = m_image.create(path.c_str(), m_create_format, m_option_resolution.get());
-		if (err != 0)
+		auto path = util::zippath_combine(m_current_directory, m_current_file);
+		image_init_result err = m_image.create(path, m_create_format, m_option_resolution.get());
+		if (err != image_init_result::PASS)
 			machine().popmessage("Error: %s", m_image.error());
 		stack_pop();
 		break;
