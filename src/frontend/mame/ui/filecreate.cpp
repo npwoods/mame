@@ -15,6 +15,7 @@
 
 #include "ui/filecreate.h"
 #include "ui/ui.h"
+#include "ui/utils.h"
 
 #include "imagedev/floppy.h"
 
@@ -39,38 +40,6 @@ namespace ui {
 #define ITEMREF_YES					((void *) 0x0005)
 #define ITEMREF_PARAMETER_BEGIN		((void *) 0x1000)
 #define ITEMREF_PARAMETER_END		((void *) 0x1100)
-
-
-/***************************************************************************
-MENU HELPERS
-***************************************************************************/
-
-//-------------------------------------------------
-//  input_character - inputs a typed character
-//  into a buffer
-//-------------------------------------------------
-
-template <typename F>
-static void input_character(std::string &buffer, unicode_char unichar, F &&filter)
-{
-	auto buflen = buffer.size();
-
-	if ((unichar == 8) || (unichar == 0x7f))
-	{
-		// backspace
-		if (0 < buflen)
-		{
-			auto buffer_oldend = buffer.c_str() + buflen;
-			auto buffer_newend = utf8_previous_char(buffer_oldend);
-			buffer.resize(buffer_newend - buffer.c_str());
-		}
-	}
-	else if ((unichar >= ' ') && filter(unichar))
-	{
-		// append this character
-		buffer += utf8_from_uchar(unichar);
-	}
-}
 
 
 /***************************************************************************
