@@ -78,7 +78,7 @@ void mame_menubar::handle(render_container &container)
 	if (s_softlist_result.length() > 0)
 	{
 		// do the load
-		s_softlist_image->load(s_softlist_result.c_str());
+		s_softlist_image->load_software(s_softlist_result);
 
 		// clear out state
 		s_softlist_image = nullptr;
