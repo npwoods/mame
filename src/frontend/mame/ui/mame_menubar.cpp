@@ -488,21 +488,19 @@ void mame_menubar::build_settings_menu()
 	settings_menu.append<mame_menubar>(_("Machine Input"), &mame_menubar::start_menu<menu_input_specific>, *this);
 
 	// analog controls
-	if (machine().ioport().has_analog())
+	if (ui().machine_info().has_analog())
 		settings_menu.append<mame_menubar>(_("Analog Controls..."), &mame_menubar::start_menu<menu_analog>, *this);
 
 	// dip switches
-	if (machine().ioport().has_dips())
+	if (ui().machine_info().has_dips())
 		settings_menu.append<mame_menubar>(_("Dip Switches..."), &mame_menubar::start_menu<menu_settings_dip_switches>, *this);
 
 	// driver configuration
-	if (machine().ioport().has_configs())
-	{
+	if (ui().machine_info().has_configs())
 		settings_menu.append<mame_menubar>(_("Machine Configuration..."), &mame_menubar::start_menu<menu_settings_driver_config>, *this);
-	}
 
 	// bios selection
-	if (machine().ioport().has_bioses())
+	if (ui().machine_info().has_bioses())
 		settings_menu.append<mame_menubar>(_("Bios Selection..."), &mame_menubar::start_menu<menu_bios_selection>, *this);
 
 	// sliders
