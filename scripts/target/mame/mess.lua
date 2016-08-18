@@ -333,6 +333,7 @@ VIDEOS["VIC4567"] = true
 --VIDEOS+= VOODOO"] = true
 VIDEOS["SCN2674"] = true
 VIDEOS["GB_LCD"] = true
+VIDEOS["GBA_LCD"] = true
 
 --------------------------------------------------
 -- specify available machine cores
@@ -622,6 +623,7 @@ BUSES["CGENIE_PARALLEL"] = true
 BUSES["CHANNELF"] = true
 BUSES["COCO"] = true
 BUSES["COLECO"] = true
+BUSES["COMPIS_GRAPHICS"] = true
 BUSES["COMPUCOLOR"] = true
 BUSES["COMX35"] = true
 BUSES["CPC"] = true
@@ -910,6 +912,7 @@ function linkProjects_mame_mess(_target, _subtarget)
 		"epson",
 		"exidy",
 		"fairch",
+		"fairlight",
 		"fidelity",
 		"force",
 		"fujitsu",
@@ -1873,6 +1876,11 @@ files {
 	MAME_DIR .. "src/mame/video/channelf.cpp",
 }
 
+createMESSProjects(_target, _subtarget, "fairlight")
+files {
+	MAME_DIR .. "src/mame/drivers/cmi.cpp",
+}
+
 createMESSProjects(_target, _subtarget, "fidelity")
 files {
 	MAME_DIR .. "src/mame/drivers/fidelz80.cpp",
@@ -2307,7 +2315,6 @@ files {
 	MAME_DIR .. "src/mame/machine/gb.cpp",
 	MAME_DIR .. "src/mame/drivers/gba.cpp",
 	MAME_DIR .. "src/mame/includes/gba.h",
-	MAME_DIR .. "src/mame/video/gba.cpp",
 	MAME_DIR .. "src/mame/drivers/n64.cpp",
 	MAME_DIR .. "src/mame/includes/n64.h",
 	MAME_DIR .. "src/mame/drivers/nes.cpp",
@@ -2848,7 +2855,6 @@ files {
 createMESSProjects(_target, _subtarget, "telenova")
 files {
 	MAME_DIR .. "src/mame/drivers/compis.cpp",
-	MAME_DIR .. "src/mame/includes/compis.h",
 	MAME_DIR .. "src/mame/machine/compiskb.cpp",
 	MAME_DIR .. "src/mame/machine/compiskb.h",
 }
@@ -3029,6 +3035,7 @@ files {
 	MAME_DIR .. "src/mame/includes/tandy2k.h",
 	MAME_DIR .. "src/mame/machine/tandy2kb.cpp",
 	MAME_DIR .. "src/mame/machine/tandy2kb.h",
+	MAME_DIR .. "src/mame/drivers/vis.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "ultimachine")
