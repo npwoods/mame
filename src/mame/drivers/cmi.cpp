@@ -381,8 +381,9 @@ public:
 		, m_acia_mkbd_cmi(*this, "acia_mkbd_cmi")
 		, m_cmi07_ptm(*this, "cmi07_ptm")
 		, m_qfc9_region(*this, "qfc9")
-		, m_floppy_0(*this, "wd1791:0:8dsdd")
-		, m_floppy_1(*this, "wd1791:1:8dsdd")
+		, m_floppy_0(*this, "wd1791:0")
+		, m_floppy_1(*this, "wd1791:1")
+		, m_floppy(nullptr)
 		, m_wd1791(*this, "wd1791")
 		, m_cmi01a_0(*this, "cmi01a_0")
 		, m_cmi01a_1(*this, "cmi01a_1")
@@ -551,8 +552,9 @@ protected:
 	required_device<ptm6840_device> m_cmi07_ptm;
 
 	required_memory_region m_qfc9_region;
-	required_device<floppy_image_device> m_floppy_0;
-	required_device<floppy_image_device> m_floppy_1;
+	required_device<floppy_connector> m_floppy_0;
+	required_device<floppy_connector> m_floppy_1;
+	floppy_image_device *m_floppy;
 	required_device<fd1791_t> m_wd1791;
 
 	required_device<cmi01a_device> m_cmi01a_0;
@@ -661,9 +663,6 @@ private:
 	UINT8 	m_msm5832_addr;
 	int		m_mkbd_kbd_acia_irq;
 	int		m_mkbd_cmi_acia_irq;
-	int		m_mkbd_tx_start;
-	int		m_mkbd_tx_bits;
-	int		m_mkbd_tx_reg;
 
 	// Alphanumeric keyboard
 	int		m_ank_irqa;
@@ -1482,16 +1481,20 @@ void cmi_state::write_fdc_ctrl(UINT8 data)
 	int drive = data & 1;
 	int side = BIT(data, 5) ? 1 : 0;
 
+	m_floppy = nullptr;
+
 	if (drive)
 	{
-		m_floppy_1->ss_w(side);
-		m_wd1791->set_floppy(m_floppy_1);
+		m_floppy = m_floppy_1->get_device();
 	}
 	else
 	{
-		m_floppy_0->ss_w(side);
-		m_wd1791->set_floppy(m_floppy_0);
+		m_floppy = m_floppy_0->get_device();
 	}
+
+	if (m_floppy)
+		m_floppy->ss_w(side);
+	m_wd1791->set_floppy(m_floppy);
 	m_wd1791->dden_w(BIT(data, 7) ? true : false);
 
 	m_fdc_ctrl = data;
@@ -1543,113 +1546,54 @@ void cmi_state::fdc_dma_transfer()
 	UINT8 map_info = m_map_sel[MAPSEL_P2_A_DMA1];
 	int map = map_info & 0x1f;
 
+	int cpu_page = (m_fdc_dma_addr.w.l & ~PAGE_MASK) / PAGE_SIZE;
+	int phys_page = 0;
+
+	int i;
+	for (i = 0; i < NUM_Q256_CARDS; ++i)
+	{
+		phys_page = m_map_ram[i][(map << PAGE_SHIFT) | cpu_page];
+
+		if (phys_page & 0x80)
+			break;
+	}
+
+	//phys_page &= 0x7f;
+
 	/* Transfer from disk to RAM */
 	if (!BIT(m_fdc_ctrl, 4))
 	{
-		/* Determine the initial page */
-		int cpu_page = (m_fdc_dma_addr.w.l & ~PAGE_MASK) / PAGE_SIZE;
-		int phys_page = 0;
+		/* Read a byte at a time */
+		UINT8 data = m_wd1791->data_r() ^ 0xff;
 
-//		printf("FDC DMA: Disk to [%x] (%x bytes)\n", m_fdc_dma_addr.w.l, m_fdc_dma_cnt.w.l ^ 0xffff);
-
-		int i;
-		for (i = 0; i < NUM_Q256_CARDS; ++i)
+		if (m_cmi07_ctrl & 0x30)
+		if (BIT(m_cmi07_ctrl, 6) && !BIT(m_cmi07_ctrl, 7))
 		{
-			phys_page = m_map_ram[i][(map << PAGE_SHIFT) | cpu_page];
-
-			if (phys_page & 0x80)
-				break;
+			if ((m_fdc_dma_addr.w.l & 0xc000) == ((m_cmi07_ctrl & 0x30) << 10))
+				m_cmi07_ram[m_fdc_dma_addr.w.l & 0x3fff] = data;
 		}
 
-		//phys_page &= 0x7f;
+		if (phys_page & 0x80)
+			m_q256_ram[i][((phys_page & 0x7f) * PAGE_SIZE) + (m_fdc_dma_addr.w.l & PAGE_MASK)] = data;
 
-		for (; m_fdc_dma_cnt.w.l < 0xffff && m_fdc_drq; m_fdc_dma_cnt.w.l++)
-		{
-			/* Read a byte at a time */
-			UINT8 data = m_wd1791->data_r() ^ 0xff;
-
-			if (m_cmi07_ctrl & 0x30)
-			if (BIT(m_cmi07_ctrl, 6) && !BIT(m_cmi07_ctrl, 7))
-			{
-				if ((m_fdc_dma_addr.w.l & 0xc000) == ((m_cmi07_ctrl & 0x30) << 10))
-					m_cmi07_ram[m_fdc_dma_addr.w.l & 0x3fff] = data;
-			}
-
-			if (phys_page & 0x80)
-				m_q256_ram[i][((phys_page & 0x7f) * PAGE_SIZE) + (m_fdc_dma_addr.w.l & PAGE_MASK)] = data;
-
-			/* TODO: Is updating these correct? */
-			if (!BIT(m_fdc_ctrl, 3))
-				m_fdc_dma_addr.w.l++;
-
-			if ((m_fdc_dma_addr.w.l % PAGE_SIZE) == 0)
-			{
-				++cpu_page;
-
-				for (int i = 0; i < NUM_Q256_CARDS; ++i)
-				{
-					phys_page = m_map_ram[i][(map << PAGE_SHIFT) | cpu_page];
-
-					if (phys_page & 0x80)
-						break;
-				}
-			}
-		}
+		if (!BIT(m_fdc_ctrl, 3))
+			m_fdc_dma_addr.w.l++;
 	}
 
 	// Transfer from RAM to disk
 	else
 	{
-		/* TODO: Check me and combine common code with the above */
-		/* Determine the initial page */
-		int cpu_page = (m_fdc_dma_addr.w.l & ~PAGE_MASK) / PAGE_SIZE;
-		int phys_page = 0;
+		/* Write a byte at a time */
+		UINT8 data = 0;
 
-		int i;
-		for (i = 0; i < NUM_Q256_CARDS; ++i)
-		{
-			phys_page = m_map_ram[i][(map << PAGE_SHIFT) | cpu_page];
+		/* TODO: This should be stuck in a deferred write */
+		if (phys_page & 0x80)
+			data = m_q256_ram[i][((phys_page & 0x7f) * PAGE_SIZE) + (m_fdc_dma_addr.w.l & PAGE_MASK)];
 
-			if (phys_page & 0x80)
-				break;
-		}
+		m_wd1791->data_w(data ^ 0xff);
 
-		phys_page &= 0x7f;
-
-		for (; m_fdc_dma_cnt.w.l < 0xffff && m_fdc_drq; m_fdc_dma_cnt.w.l++)
-		{
-			/* Write a byte at a time */
-			UINT8 data = 0;
-
-			/* TODO: This should be stuck in a deferred write */
-			if (phys_page & 0x80)
-				data = m_q256_ram[i][((phys_page & 0x7f) * PAGE_SIZE) + (m_fdc_dma_addr.w.l & PAGE_MASK)];
-
-			m_wd1791->data_w(data ^ 0xff);
-
-			/* TODO: Is updating these correct? */
-			if (!BIT(m_fdc_ctrl, 3))
-				m_fdc_dma_addr.w.l++;
-
-			if ((m_fdc_dma_addr.w.l % PAGE_SIZE) == 0)
-			{
-				++cpu_page;
-
-				for (int i = 0; i < NUM_Q256_CARDS; ++i)
-				{
-					phys_page = m_map_ram[i][(map << PAGE_SHIFT) | cpu_page];
-
-					if (phys_page & 0x80)
-						break;
-				}
-
-				if ((phys_page & 0x80) == 0)
-				{
-					printf("Trying to DMA floppy data from a non-enabled page!\n");
-					return;
-				}
-			}
-		}
+		if (!BIT(m_fdc_ctrl, 3))
+			m_fdc_dma_addr.w.l++;
 	}
 }
 
@@ -2123,7 +2067,7 @@ void cmi_state::install_peripherals(int cpunum)
 	space->install_rom(0xf800, 0xfbff, m_q133_rom + (cpunum == CPU_2 ? 0x1800 : 0x2800));
 
 	space->install_readwrite_handler(0xfc40, 0xfc4f, read8_delegate(FUNC(cmi_state::parity_r),this), write8_delegate(FUNC(cmi_state::mapsel_w),this));
-	//space->install_readwrite_handler(0xfc5a, 0xfc5b, SMH_NOP, SMH_NOP); // Q077 HDD controller - not installed
+	space->nop_readwrite(0xfc5a, 0xfc5b); // Q077 HDD controller - not installed
 	space->install_readwrite_handler(0xfc5e, 0xfc5e, read8_delegate(FUNC(cmi_state::atomic_r),this), write8_delegate(FUNC(cmi_state::cpufunc_w),this));
 	space->install_readwrite_handler(0xfc5f, 0xfc5f, read8_delegate(FUNC(cmi_state::map_r),this), write8_delegate(FUNC(cmi_state::map_w),this));
 
@@ -2140,6 +2084,7 @@ void cmi_state::install_peripherals(int cpunum)
 	space->install_readwrite_handler(0xfcc8, 0xfccf, read8_delegate(FUNC(ptm6840_device::read),m_q219_ptm.target()), write8_delegate(FUNC(ptm6840_device::write),m_q219_ptm.target()));
 	space->install_readwrite_handler(0xfcd0, 0xfcdc, read8_delegate(FUNC(cmi_state::video_r),this), write8_delegate(FUNC(cmi_state::video_w),this));
 	space->install_readwrite_handler(0xfce0, 0xfce1, read8_delegate(FUNC(cmi_state::fdc_r),this), write8_delegate(FUNC(cmi_state::fdc_w),this));
+	space->nop_readwrite(0xfce2, 0xfcef); // Monitor ROM will attempt to detect floppy disk controller cards in this entire range
 	space->install_readwrite_handler(0xfcf0, 0xfcf7, read8_delegate(FUNC(pia6821_device::read),m_q133_pia_0.target()), write8_delegate(FUNC(pia6821_device::write),m_q133_pia_0.target()));
 	space->install_readwrite_handler(0xfcf8, 0xfcff, read8_delegate(FUNC(pia6821_device::read),m_q133_pia_1.target()), write8_delegate(FUNC(pia6821_device::write),m_q133_pia_1.target()));
 
@@ -2295,10 +2240,15 @@ READ8_MEMBER( cmi_state::q133_1_porta_r )
 WRITE8_MEMBER( cmi_state::q133_1_porta_w )
 {
 	m_msm5832_addr = data & 0xf;
+	m_msm5832->address_w(data & 0x0f);
 }
 
 WRITE8_MEMBER( cmi_state::q133_1_portb_w )
 {
+	m_msm5832->hold_w(BIT(data, 0));
+	m_msm5832->read_w(BIT(data, 1));
+	m_msm5832->write_w(BIT(data, 2));
+	m_msm5832->cs_w(1);
 }
 
 WRITE8_MEMBER( cmi_state::master_tune_w )
@@ -2793,7 +2743,7 @@ static MACHINE_CONFIG_START( cmi2x, cmi_state )
 	MCFG_WD_FDC_INTRQ_CALLBACK(WRITELINE(cmi_state, wd1791_irq))
 	MCFG_WD_FDC_DRQ_CALLBACK(WRITELINE(cmi_state, wd1791_drq))
 	MCFG_FLOPPY_DRIVE_ADD("wd1791:0", cmi2x_floppies, "8dsdd", floppy_image_device::default_floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("wd1791:1", cmi2x_floppies, "8dsdd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("wd1791:1", cmi2x_floppies, nullptr, floppy_image_device::default_floppy_formats)
 
 	// Channel cards
 	MCFG_CMI01A_ADD("cmi01a_0", 0)
