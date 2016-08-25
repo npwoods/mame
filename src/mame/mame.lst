@@ -119,6 +119,7 @@ cosmicmo                        // Universal
 cosmo                           // TDS & Mints
 darthvdr                        // bootleg
 desterth                        // bootleg
+escmars                         // bootleg
 galactic                        // (c) 19?? Taito
 galmonst                        // (c) Laguna S.A.
 galxwars                        // (c) 1979 Universal
@@ -2502,6 +2503,9 @@ metrocrsa                       // (c) 1985
 
 @source:barata.cpp
 barata                          //
+
+@source:barni.cpp
+redbarnp                        //
 
 @source:bartop52.cpp
 barbball                        // (proto)          (c) 1983
@@ -9303,6 +9307,7 @@ cham24                          // 2002
 champbas                        // (c) 1983 Sega
 champbasj                       // (c) 1983 Alpha Denshi Co.
 champbasja                      // (c) 1983 Alpha Denshi Co.
+champbasjb                      // (c) 1983 Alpha Denshi Co.
 champbb2                        // (c) 1983 Sega
 champbb2a                       // (c) 1983 ?
 champbb2j                       // (c) 1983 ?
@@ -11138,6 +11143,7 @@ gulfstrm                        // (c) 1991 Dooyong
 gulfstrma                       // (c) 1991 Dooyong
 gulfstrmb                       // (c) 1991 Dooyong
 gulfstrmm                       // (c) 1991 Dooyong + distributed by Media Shoji
+gulfstrmk
 gundl94                         // (c) 1994 Dooyong
 lastday                         // (c) 1990 Dooyong
 lastdaya                        // (c) 1990 Dooyong
@@ -14450,6 +14456,10 @@ zekepeak                        //
 @source:ichiban.cpp
 ichiban                         // (c) 199? Excel
 
+@source:idsa.cpp
+bsktbllp                        //
+v1                              //
+
 @source:ie15.cpp
 ie15                            //
 
@@ -14580,6 +14590,10 @@ metalman                        //
 mundial                         //
 pinclown                        //
 pinmoonl                        //
+
+@source:inderp.cpp
+centauri
+centauri2
 
 @source:indiana.cpp
 indiana                         //
@@ -14940,6 +14954,10 @@ jedi                            // 136030           (c) 1984
 @source:jeutel.cpp
 leking                          //
 olympic                         //
+
+@source:jeutel.cpp
+punkywil                        //
+walkyria                        //
 
 @source:jokrwild.cpp
 jokrwild                        // (c) 1988 Sigma
@@ -17393,6 +17411,17 @@ macsefd                         // 1988 Apple Macintosh SE (FDHD)
 pmac6100                        // 1993 Apple Power Macintosh 6100
 unitron                         // 1985 Unitron
 utrn1024                        // 1986 Unitron 1024
+
+@source:macp.cpp
+//glxplay                       //
+glxplay2                        //
+kidnap                          //
+mac_1808                        //
+macgalxy                        //
+macjungn                        //
+nbamac                          //
+spcpnthr                        //
+spctrain                        //
 
 @source:macpci.cpp
 pippin                          //
@@ -30118,6 +30147,7 @@ superpet                        //
 @source:peyper.cpp
 gamatros                        //
 hangonp                         //
+lancelot                        //
 nemesisp                        //
 odin                            //
 odin_dlx                        //
@@ -31547,6 +31577,7 @@ rx78                            //
 
 @source:s11.cpp
 gmine_l2                        //
+grand_l3                        //
 grand_l4                        //
 hs_l3                           //
 hs_l4                           //
@@ -31564,8 +31595,10 @@ f14_l1                          //
 f14_p3                          //
 f14_p4                          //
 f14_p5                          //
+fire_l2                         //
 fire_l3                         //
 milln_l3                        //
+pb_l1                           //
 pb_l2                           //
 pb_l3                           //
 pb_l5                           //
@@ -31579,13 +31612,17 @@ bguns_l8                        //
 bguns_la                        //
 bguns_p1                        //
 bk2k_l4                         //
+bk2k_la2                        //
 bk2k_lg1                        //
 bk2k_lg3                        //
+bk2k_pa5                        //
+bk2k_pa7                        //
 bk2k_pu1                        //
 bnzai_g3                        //
 bnzai_l1                        //
 bnzai_l3                        //
 bnzai_pa                        //
+cycln_l1                        //
 cycln_l4                        //
 cycln_l5                        //
 eatpm_4g                        //
@@ -31611,10 +31648,13 @@ polic_l2                        //
 polic_l3                        //
 polic_l4                        //
 spstn_l5                        //
+swrds_l1                        //
 swrds_l2                        //
 taxi_l3                         //
 taxi_l4                         //
 taxi_lg1                        //
+taxi_lu1                        //
+taxi_p5                         //
 tsptr_l3                        //
 whirl_l2                        //
 whirl_l3                        //
@@ -31626,6 +31666,7 @@ bbnny_lu                        //
 dd_l2                           //
 dd_p6                           //
 diner_l1                        //
+diner_l2                        //
 diner_l3                        //
 diner_l4                        //
 gs_l3                           //
@@ -31645,6 +31686,7 @@ rollr_l2                        //
 rollr_l3                        //
 rollr_p2                        //
 rvrbt_l3                        //
+rvrbt_p7                       //
 strax_p7                        //
 
 @source:s3.cpp
@@ -31735,6 +31777,7 @@ comet_l5                        //
 ratrc_l1                        //
 sorcr_l1                        //
 sorcr_l2                        //
+sshtl_l3                        //
 sshtl_l7                        //
 szone_l2                        //
 szone_l5                        //
@@ -34261,6 +34304,7 @@ cyvernj                         // 1998.02 (c) 1998 Kaneko (Japan)
 galpani4                        // 1996.09 (c) 1996 Kaneko (Japan)
 galpani4k                       // 1996.09 (c) 1996 Kaneko (Korea)
 galpanis                        // 1997.04 (c) 1997 Kaneko (Europe)
+galpanise                       // 1997.04 (c) 1997 Kaneko (Europe)
 galpanisj                       // 1997.04 (c) 1997 Kaneko (Japan)
 galpanisk                       // 1997.04 (c) 1997 Kaneko (Korea)
 galpans2                        // 1999.02 (c) 1999 Kaneko (Japan)
