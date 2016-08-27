@@ -30,7 +30,6 @@ path_iterator::path_iterator(std::string &&searchpath)
 	, m_current(m_searchpath.cbegin())
 	, m_is_first(true)
 {
-	assert(rawsearchpath != nullptr);
 }
 
 path_iterator::path_iterator(std::string const &searchpath)
