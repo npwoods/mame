@@ -128,11 +128,40 @@ option_resolution::entry *option_resolution::find(int parameter)
 //	find
 // -------------------------------------------------
 
+option_resolution::entry *option_resolution::find(const std::string &identifier)
+{
+	auto iter = std::find_if(
+		m_entries.begin(),
+		m_entries.end(),
+		[&](const entry &e) { return !strcmp(e.identifier(), identifier.c_str()); });
+
+	return iter != m_entries.end()
+		? &*iter
+		: nullptr;
+}
+
+
+// -------------------------------------------------
+//	lookup_int
+// -------------------------------------------------
+
 int option_resolution::lookup_int(int parameter)
 {
 	auto entry = find(parameter);
 	assert(entry != nullptr);
 	return entry->value_int();
+}
+
+
+// -------------------------------------------------
+//	lookup_string
+// -------------------------------------------------
+
+const std::string &option_resolution::lookup_string(int parameter)
+{
+	auto entry = find(parameter);
+	assert(entry != nullptr);
+	return entry->value();
 }
 
 
@@ -201,8 +230,8 @@ void option_resolution::entry::parse_specification(const char *specification)
 	m_default_value.clear();
 
 	// is this even pertinent?
-	m_is_pertinent = specification != nullptr;
-	if (specification != nullptr)
+	m_is_pertinent = (specification != nullptr) && (specification[0] != '\0');
+	if (m_is_pertinent)
 	{
 		int value = 0;
 		bool in_range = false;

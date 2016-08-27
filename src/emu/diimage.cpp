@@ -1214,17 +1214,17 @@ void device_image_interface::unload()
 
 
 //-------------------------------------------------
-//  software_get_default_slot
+//  create_option_guide
 //-------------------------------------------------
 
 const util::option_guide &device_image_interface::create_option_guide() const
 {
-	static util::option_guide null_option_guide = {};
+	static const util::option_guide null_option_guide = {};
 	return null_option_guide;
 }
 
 //-------------------------------------------------
-//	update_names - update brief and instance names
+//  update_names - update brief and instance names
 //-------------------------------------------------
 
 void device_image_interface::update_names(const device_type device_type, const char *inst, const char *brief)

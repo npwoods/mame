@@ -62,7 +62,7 @@
 #define OPTION_STRING(option_char, identifier, display_name)                \
 	{ util::option_guide::entry::option_type::STRING, (option_char), (identifier), (display_name) },
 #define OPTION_ENUM_START(option_char, identifier, display_name)            \
-	{ util::option_guide::entry::option_type::ENUM_START, (option_char), (identifier), (display_name) },
+	{ util::option_guide::entry::option_type::ENUM_BEGIN, (option_char), (identifier), (display_name) },
 #define OPTION_ENUM(value, identifier, display_name)                        \
 	{ util::option_guide::entry::option_type::ENUM_VALUE, (value), (identifier), (display_name) },
 #define OPTION_ENUM_END
@@ -149,6 +149,8 @@ public:
 		friend class option_resolution;
 
 	public:
+		typedef std::vector<range<int> > rangelist;
+
 		// ctor
 		entry(const option_guide::entry &guide_entry);
 
@@ -160,10 +162,16 @@ public:
 		const std::string &value() const;
 		int value_int() const;
 		const std::string &default_value() const { return m_default_value; }
+		const rangelist &ranges() const { return m_ranges; }
+		const option_guide::entrylist::const_iterator enum_value_begin() const { return m_enum_value_begin; }
+		const option_guide::entrylist::const_iterator enum_value_end() const { return m_enum_value_end; }
 
 		// accessors for guide data
+		option_guide::entry::option_type option_type() const { return m_guide_entry.type(); }
 		const char *display_name() const { return m_guide_entry.display_name(); }
+		const char *identifier() const { return m_guide_entry.identifier(); }
 		int parameter() const { return m_guide_entry.parameter(); }
+
 
 		// mutators
 		bool set_value(const std::string &value);
@@ -176,8 +184,6 @@ public:
 		bool bump_higher();
 
 	private:
-		typedef std::vector<range<int> > rangelist;
-
 		// references to the option guide
 		const option_guide::entry &				m_guide_entry;
 		option_guide::entrylist::const_iterator	m_enum_value_begin;
@@ -203,11 +209,14 @@ public:
 	// sets a specification
 	void set_specification(const std::string &specification);
 
-	// entry lookup
+	// entry lookup - note that we're not exposing m_entries directly because we don't really
+	// have a way of making the list be immutable but the members be mutable at the same time
 	std::vector<entry>::iterator entries_begin() { return m_entries.begin(); }
 	std::vector<entry>::iterator entries_end() { return m_entries.end(); }
 	entry *find(int parameter);
+	entry *find(const std::string &identifier);
 	int lookup_int(int parameter);
+	const std::string &lookup_string(int parameter);
 
 	// misc
 	static const char *error_string(error err);
