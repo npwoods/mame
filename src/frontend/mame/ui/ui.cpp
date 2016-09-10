@@ -757,7 +757,8 @@ void mame_ui_manager::show_mouse(bool status)
 bool mame_ui_manager::is_menu_active(void)
 {
 	return m_handler_callback_type == ui_callback_type::MENU
-		|| (machine().options().ui() == emu_options::UI_MENUS && m_menubar && m_menubar->has_focus());
+		|| (machine().options().ui() == emu_options::UI_MENUS && m_menubar && m_menubar->has_focus())
+		|| m_handler_callback_type == ui_callback_type::VIEWER;
 }
 
 
@@ -1166,7 +1167,7 @@ UINT32 mame_ui_manager::handler_ingame_old(render_container &container)
 		if (!is_paused)
 			machine().pause();
 		using namespace std::placeholders;
-		set_handler(ui_callback_type::GENERAL, std::bind(&ui_gfx_ui_handler, _1, std::ref(*this), is_paused));
+		set_handler(ui_callback_type::VIEWER, std::bind(&ui_gfx_ui_handler, _1, std::ref(*this), is_paused));
 		return is_paused ? 1 : 0;
 	}
 

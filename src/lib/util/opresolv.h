@@ -120,6 +120,7 @@ public:
 	// methods
 	const entry *begin() const { return m_begin; }
 	const entry *end() const { return m_end; }
+	size_t size() const { return end() - begin(); }
 
 protected:
 	option_guide(const entry *begin, const entry *end)

@@ -137,7 +137,8 @@ enum class ui_callback_type
 {
 	GENERAL,
 	MODAL,
-	MENU
+	MENU,
+	VIEWER
 };
 
 // ======================> mame_ui_manager
