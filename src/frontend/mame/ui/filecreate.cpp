@@ -133,7 +133,7 @@ menu_file_create::menu_file_create(mame_ui_manager &mui, render_container &conta
 	{
 		// do we have options?  if so, set them up
 		const auto &option_guide = m_image.create_option_guide();
-		if (option_guide.size() > 0)
+		if (!option_guide.entries().empty())
 		{
 			// set up the option resolution
 			m_option_resolution = std::make_unique<util::option_resolution>(option_guide);
