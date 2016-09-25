@@ -745,6 +745,119 @@ configuration { }
 strip()
 
 --------------------------------------------------
+-- wimgtool
+--------------------------------------------------
+
+project("wimgtool")
+uuid ("99782F21-549B-48B4-A821-B4A86614E999")
+kind "WindowedApp"
+
+flags {
+	"Symbols", -- always include minimum symbols for executables
+}
+
+if _OPTIONS["SEPARATE_BIN"]~="1" then
+	targetdir(MAME_DIR)
+end
+
+links {
+	"formats",
+	"emu",
+	"utils",
+	ext_lib("expat"),
+	"7z",
+	"ocore_" .. _OPTIONS["osd"],
+	ext_lib("zlib"),
+	ext_lib("flac"),
+}
+
+includedirs {
+	MAME_DIR .. "src/osd",
+	MAME_DIR .. "src/lib",
+	MAME_DIR .. "src/lib/util",
+	ext_includedir("zlib"),
+	MAME_DIR .. "src/tools/imgtool",
+	MAME_DIR .. "src/tools/imgtool/windows",
+}
+
+files {
+	MAME_DIR .. "src/tools/imgtool/stream.cpp",
+	MAME_DIR .. "src/tools/imgtool/stream.h",
+	MAME_DIR .. "src/tools/imgtool/library.cpp",
+	MAME_DIR .. "src/tools/imgtool/library.h",
+	MAME_DIR .. "src/tools/imgtool/modules.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules.h",
+	MAME_DIR .. "src/tools/imgtool/iflopimg.cpp",
+	MAME_DIR .. "src/tools/imgtool/iflopimg.h",
+	MAME_DIR .. "src/tools/imgtool/filter.cpp",
+	MAME_DIR .. "src/tools/imgtool/filter.h",
+	MAME_DIR .. "src/tools/imgtool/filteoln.cpp",
+	MAME_DIR .. "src/tools/imgtool/filtbas.cpp",
+	MAME_DIR .. "src/tools/imgtool/imgtool.cpp",
+	MAME_DIR .. "src/tools/imgtool/imgtool.h",
+	MAME_DIR .. "src/tools/imgtool/imgterrs.cpp",
+	MAME_DIR .. "src/tools/imgtool/imgterrs.h",
+	MAME_DIR .. "src/tools/imgtool/imghd.cpp",
+	MAME_DIR .. "src/tools/imgtool/imghd.h",
+	MAME_DIR .. "src/tools/imgtool/charconv.cpp",
+	MAME_DIR .. "src/tools/imgtool/charconv.h",
+	MAME_DIR .. "src/tools/imgtool/formats/vt_dsk.cpp",
+	MAME_DIR .. "src/tools/imgtool/formats/vt_dsk.h",
+	MAME_DIR .. "src/tools/imgtool/formats/coco_dsk.cpp",
+	MAME_DIR .. "src/tools/imgtool/formats/coco_dsk.h",
+	MAME_DIR .. "src/tools/imgtool/modules/amiga.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/macbin.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/rsdos.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/os9.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/mac.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/ti99.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/ti990hd.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/concept.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/fat.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/fat.h",
+	MAME_DIR .. "src/tools/imgtool/modules/pc_flop.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/pc_hard.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/prodos.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/vzdos.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/thomson.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/macutil.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/macutil.h",
+	MAME_DIR .. "src/tools/imgtool/modules/cybiko.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/cybikoxt.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/psion.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/bml3.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/hp48.cpp",
+	MAME_DIR .. "src/tools/imgtool/modules/hp9845_tape.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/assoc.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/assoc.h",
+	MAME_DIR .. "src/tools/imgtool/windows/assocdlg.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/attrdlg.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/attrdlg.h",
+	MAME_DIR .. "src/tools/imgtool/windows/hexview.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/hexview.h",
+	MAME_DIR .. "src/tools/imgtool/windows/opcntrl.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/opcntrl.h",
+	MAME_DIR .. "src/tools/imgtool/windows/pile.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/pile.h",
+	MAME_DIR .. "src/tools/imgtool/windows/secview.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/secview.h",
+	MAME_DIR .. "src/tools/imgtool/windows/wimgres.h",
+	MAME_DIR .. "src/tools/imgtool/windows/wimgtool.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/wimgtool.h",
+	MAME_DIR .. "src/tools/imgtool/windows/wimgtool.rc",
+	MAME_DIR .. "src/tools/imgtool/windows/winutils.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/winutils.h",
+	MAME_DIR .. "src/tools/imgtool/windows/wmain.cpp"
+}
+
+configuration { "mingw*" or "vs*" }
+	targetextension ".exe"
+
+configuration { }
+
+strip()
+
+--------------------------------------------------
 -- aueffectutil
 --------------------------------------------------
 
