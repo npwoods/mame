@@ -496,6 +496,7 @@ MACHINES["PC_FDC"] = true
 MACHINES["PC_LPT"] = true
 MACHINES["PCCARD"] = true
 MACHINES["PCF8593"] = true
+MACHINES["PCI"] = true
 MACHINES["PCKEYBRD"] = true
 MACHINES["PDC"] = true
 MACHINES["PIC8259"] = true
@@ -611,6 +612,7 @@ BUSES["ARCADIA"] = true
 BUSES["ASTROCADE"] = true
 BUSES["BBC_FDC"] = true
 BUSES["BBC_ANALOGUE"] = true
+BUSES["BBC_JOYPORT"] = true
 BUSES["BBC_1MHZBUS"] = true
 BUSES["BBC_TUBE"] = true
 BUSES["BBC_USERPORT"] = true
@@ -2740,6 +2742,7 @@ files {
 	MAME_DIR .. "src/mame/machine/pcd_kbd.h",
 	MAME_DIR .. "src/mame/video/pcd.cpp",
 	MAME_DIR .. "src/mame/video/pcd.h",
+	MAME_DIR .. "src/mame/drivers/pg685.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "slicer")
@@ -3333,6 +3336,8 @@ files {
 	MAME_DIR .. "src/mame/machine/ngen_kb.cpp",
 	MAME_DIR .. "src/mame/machine/ngen_kb.h",
 	MAME_DIR .. "src/mame/drivers/octopus.cpp",
+	MAME_DIR .. "src/mame/machine/octo_kbd.cpp",
+	MAME_DIR .. "src/mame/machine/octo_kbd.h",
 	MAME_DIR .. "src/mame/drivers/onyx.cpp",
 	MAME_DIR .. "src/mame/drivers/okean240.cpp",
 	MAME_DIR .. "src/mame/drivers/p8k.cpp",
