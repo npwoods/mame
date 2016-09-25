@@ -63,7 +63,7 @@ static void calc_hexview_bytesperrow(HWND hexview, const TEXTMETRIC *metrics,
 
 	*bytes_per_row = (width - info->left_margin - info->right_margin - metrics->tmMaxCharWidth * info->index_width)
 		/ (metrics->tmMaxCharWidth * (3 + info->byte_spacing));
-	*bytes_per_row = MAX(*bytes_per_row, 1);
+	*bytes_per_row = std::max(*bytes_per_row, 1);
 }
 
 

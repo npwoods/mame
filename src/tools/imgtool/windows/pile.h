@@ -27,12 +27,12 @@ void *pile_detach(mess_pile *pile);
 int pile_write(mess_pile *pile, const void *ptr, size_t size);
 int pile_writebyte(mess_pile *pile, char byte, size_t size);
 
-INLINE void *pile_getptr(mess_pile *pile)
+inline void *pile_getptr(mess_pile *pile)
 {
 	return pile->ptr;
 }
 
-INLINE size_t pile_size(mess_pile *pile)
+inline size_t pile_size(mess_pile *pile)
 {
 	return pile->logical_size;
 }

@@ -38,9 +38,11 @@ std::string utf8_from_wstring(const WCHAR *s);
 std::string &utf8_from_wstring(std::string &dst, const WCHAR *s);
 
 #ifdef UNICODE
+typedef std::wstring tstring;
 #define tstring_from_utf8   wstring_from_utf8
 #define utf8_from_tstring   utf8_from_wstring
 #else // !UNICODE
+typedef std::string tstring;
 #define tstring_from_utf8   astring_from_utf8
 #define utf8_from_tstring   utf8_from_astring
 #endif // UNICODE

@@ -88,16 +88,8 @@ static wimgtool_info *get_wimgtool_info(HWND window)
 
 static DWORD win_get_file_attributes_utf8(const char *filename)
 {
-	DWORD result = ~0;
-	LPTSTR t_filename;
-
-	t_filename = tstring_from_utf8(filename);
-	if (t_filename != NULL)
-	{
-		result = GetFileAttributes(t_filename);
-		osd_free(t_filename);
-	}
-	return result;
+	auto t_filename = tstring_from_utf8(filename);
+	return GetFileAttributes(t_filename.c_str());
 }
 
 struct foreach_entry
@@ -193,28 +185,35 @@ void wimgtool_report_error(HWND window, imgtoolerr_t err, const char *imagename,
 {
 	const char *error_text;
 	const char *source;
-	char buffer[512];
-	const char *message = buffer;
+	std::string imagename_basename;
+	std::string buffer;
+	const char *message;
 
 	error_text = imgtool_error(err);
 
 	switch(ERRORSOURCE(err))
 	{
 		case IMGTOOLERR_SRC_IMAGEFILE:
-			source = imgtool_basename((char *) imagename);
+			imagename_basename = core_filename_extract_base(imagename);
+			source = imagename_basename.c_str();
 			break;
 		case IMGTOOLERR_SRC_FILEONIMAGE:
 			source = filename;
 			break;
 		default:
-			source = NULL;
+			source = nullptr;
 			break;
 	}
 
 	if (source)
-		snprintf(buffer, ARRAY_LENGTH(buffer), "%s: %s", source, error_text);
+	{
+		buffer = string_format("%s: %s", source, error_text);
+		message = buffer.c_str();
+	}
 	else
+	{
 		message = error_text;
+	}
 	win_message_box_utf8(window, message, wimgtool_producttext, MB_OK);
 }
 

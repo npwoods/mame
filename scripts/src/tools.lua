@@ -773,6 +773,7 @@ links {
 
 includedirs {
 	MAME_DIR .. "src/osd",
+	MAME_DIR .. "src/osd/windows",
 	MAME_DIR .. "src/lib",
 	MAME_DIR .. "src/lib/util",
 	ext_includedir("zlib"),

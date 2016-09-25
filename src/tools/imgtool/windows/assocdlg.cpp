@@ -74,7 +74,6 @@ static INT_PTR CALLBACK win_association_dialog_proc(HWND dialog, UINT message,
 	TCHAR buf[32];
 	BOOL is_set;
 	BOOL currently_set;
-	TCHAR *t_extension;
 
 	switch(message)
 	{
@@ -95,11 +94,9 @@ static INT_PTR CALLBACK win_association_dialog_proc(HWND dialog, UINT message,
 			for (i = 0; i < dlginfo->extension_count; i++)
 			{
 				style = WS_CHILD | WS_VISIBLE | BS_CHECKBOX | BS_AUTOCHECKBOX;
-				t_extension = tstring_from_utf8(dlginfo->extensions[i]);
-				_sntprintf(buf, ARRAY_LENGTH(buf), TEXT(".%s"), t_extension);
-				osd_free(t_extension);
+				auto t_extension = tstring_from_utf8(dlginfo->extensions[i]);
 
-				control = CreateWindow(TEXT("BUTTON"), buf, style,
+				control = CreateWindow(TEXT("BUTTON"), t_extension.c_str(), style,
 					 xmargin, y, width, height, dialog, NULL, NULL, NULL);
 				if (!control)
 					return -1;
@@ -139,10 +136,8 @@ static INT_PTR CALLBACK win_association_dialog_proc(HWND dialog, UINT message,
 					{
 						is_set = SendMessage(GetDlgItem(dialog, CONTROL_START + i), BM_GETCHECK, 0, 0);
 
-						t_extension = tstring_from_utf8(dlginfo->extensions[i]);
-						_sntprintf(buf, ARRAY_LENGTH(buf), TEXT(".%s"), t_extension);
-						osd_free(t_extension);
-						currently_set = win_is_extension_associated(&assoc_info, buf);
+						auto t_extension = tstring_from_utf8(dlginfo->extensions[i]);
+						currently_set = win_is_extension_associated(&assoc_info, t_extension.c_str());
 
 						if (is_set && !currently_set)
 							win_associate_extension(&assoc_info, buf, TRUE);
@@ -179,12 +174,11 @@ static int CLIB_DECL extension_compare(const void *p1, const void *p2)
 
 static void setup_extensions(assocdlg_info *dlginfo)
 {
-	const imgtool_module *module = NULL;
 	char *s;
 	int buffer_pos;
 
 	// merge all file extensions onto one comma-delimited list
-	for (module = imgtool_find_module(NULL); module; module = module->next)
+	for (const auto &module : imgtool_get_modules())
 		image_specify_extension(dlginfo->buffer, ARRAY_LENGTH(dlginfo->buffer) - 1, module->extensions);
 
 	// split the comma delimited list, and convert it to a string array
