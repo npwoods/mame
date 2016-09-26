@@ -97,7 +97,7 @@ static INT_PTR CALLBACK win_association_dialog_proc(HWND dialog, UINT message,
 				auto t_extension = tstring_from_utf8(dlginfo->extensions[i]);
 
 				control = CreateWindow(TEXT("BUTTON"), t_extension.c_str(), style,
-					 xmargin, y, width, height, dialog, NULL, NULL, NULL);
+					 xmargin, y, width, height, dialog, nullptr, nullptr, nullptr);
 				if (!control)
 					return -1;
 
@@ -111,15 +111,15 @@ static INT_PTR CALLBACK win_association_dialog_proc(HWND dialog, UINT message,
 
 			r1.top += y;
 			r1.bottom += y;
-			SetWindowPos(cancel_button, NULL, r1.left - r2.left, r1.top - r2.top,
+			SetWindowPos(cancel_button, nullptr, r1.left - r2.left, r1.top - r2.top,
 				0, 0, SWP_NOZORDER | SWP_NOSIZE);
 			GetWindowRect(ok_button, &r1);
 			r1.top += y;
 			r1.bottom += y;
-			SetWindowPos(ok_button, NULL, r1.left - r2.left, r1.top - r2.top,
+			SetWindowPos(ok_button, nullptr, r1.left - r2.left, r1.top - r2.top,
 				0, 0, SWP_NOZORDER | SWP_NOSIZE);
 			r2.bottom += y + r1.bottom - r1.top;
-			SetWindowPos(dialog, NULL, 0, 0, r2.right - r2.left, r2.bottom - r2.top, SWP_NOZORDER | SWP_NOMOVE);
+			SetWindowPos(dialog, nullptr, 0, 0, r2.right - r2.left, r2.bottom - r2.top, SWP_NOZORDER | SWP_NOMOVE);
 			break;
 
 		case WM_COMMAND:
@@ -224,6 +224,6 @@ void win_association_dialog(HWND parent)
 	setup_extensions(&dlginfo);
 
 	// display dialog
-	DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ASSOCIATIONS), parent,
+	DialogBoxParam(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDD_ASSOCIATIONS), parent,
 		win_association_dialog_proc, (LPARAM) &dlginfo);
 }

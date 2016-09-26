@@ -76,12 +76,12 @@ static HFONT create_font(void)
 	HDC temp_dc;
 	HFONT font;
 
-	temp_dc = GetDC(NULL);
+	temp_dc = GetDC(nullptr);
 
 	font = CreateFont(-MulDiv(8, GetDeviceCaps(temp_dc, LOGPIXELSY), 72), 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE,
 				ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, TEXT("Lucida Console"));
 	if (temp_dc)
-		ReleaseDC(NULL, temp_dc);
+		ReleaseDC(nullptr, temp_dc);
 	return font;
 }
 
@@ -171,7 +171,7 @@ static void size_dialog(HWND dialog, const struct anchor_entry *anchor_entries,
 
 			// Actually move the window
 			SetWindowPos(dlgitem, 0, left, top, width, height, SWP_NOZORDER);
-			InvalidateRect(dlgitem, NULL, TRUE);
+			InvalidateRect(dlgitem, nullptr, TRUE);
 		}
 	}
 }
@@ -182,22 +182,14 @@ static void size_dialog(HWND dialog, const struct anchor_entry *anchor_entries,
 static imgtoolerr_t read_sector_data(HWND dialog, UINT32 track, UINT32 head, UINT32 sector)
 {
 	imgtoolerr_t err;
-	struct sectorview_info *info;
-	UINT32 length;
-	void *data;
+	struct sectorview_info *info = get_sectorview_info(dialog);
 
-	info = get_sectorview_info(dialog);
-
-	err = imgtool_image_get_sector_size(info->image, track, head, sector, &length);
+	std::vector<UINT8> data;
+	err = imgtool_image_read_sector(info->image, track, head, sector, data);
 	if (err)
 		goto done;
 
-	data = alloca(length);
-	err = imgtool_image_read_sector(info->image, track, head, sector, data, length);
-	if (err)
-		goto done;
-
-	if (!hexview_setdata(GetDlgItem(dialog, IDC_HEXVIEW), data, length))
+	if (!hexview_setdata(GetDlgItem(dialog, IDC_HEXVIEW), data.data(), data.size()))
 	{
 		err = IMGTOOLERR_OUTOFMEMORY;
 		goto done;
@@ -330,7 +322,7 @@ static INT_PTR CALLBACK win_sectorview_dialog_proc(HWND dialog, UINT message,
 			if (info->font)
 			{
 				DeleteObject(info->font);
-				info->font = NULL;
+				info->font = nullptr;
 			}
 			break;
 
@@ -390,6 +382,6 @@ void win_sectorview_dialog(HWND parent, imgtool_image *image)
 	memset(&info, 0, sizeof(info));
 	info.image = image;
 
-	DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_SECTORVIEW), parent,
+	DialogBoxParam(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDD_SECTORVIEW), parent,
 		win_sectorview_dialog_proc, (LPARAM) &info);
 }

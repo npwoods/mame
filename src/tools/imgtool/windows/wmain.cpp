@@ -14,16 +14,28 @@
 #include "winutf8.h"
 #include "strconv.h"
 
+static void rtrim(std::string &s)
+{
+	auto result = std::find_if(
+		s.rbegin(),
+		s.rend(),
+		[](const char ch) { return isspace(ch); });
+
+	s.resize(s.size() - (result - s.rbegin()));
+}
+
+
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
 	LPWSTR command_line_w, int cmd_show)
 {
 	MSG msg;
 	HWND window;
 	BOOL b;
-	int pos, rc = -1;
+	int rc = -1;
 	imgtoolerr_t err;
-	HACCEL accel = NULL;
-	LPSTR utf8_command_line = utf8_from_wstring(command_line_w);
+	HACCEL accel = nullptr;
+	std::string utf8_command_line = utf8_from_wstring(command_line_w);
+
 	// initialize Windows classes
 	InitCommonControls();
 	if (!wimgtool_registerclass())
@@ -35,8 +47,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
 	imgtool_init(TRUE, win_output_debug_string_utf8);
 
 	// create the window
-	window = CreateWindow(wimgtool_class, NULL, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, NULL, NULL);
+	window = CreateWindow(wimgtool_class, nullptr, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, nullptr, nullptr);
 	if (!window)
 		goto done;
 
@@ -51,35 +63,28 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
 #endif
 
 	// load image specified at the command line
-	if (utf8_command_line && utf8_command_line[0])
+	if (!utf8_command_line.empty())
 	{
 		rtrim(utf8_command_line);
-		pos = 0;
 
 		// check to see if everything is quoted
-		if ((utf8_command_line[pos] == '\"') && (utf8_command_line[strlen(utf8_command_line)-1] == '\"'))
-		{
-			utf8_command_line[strlen(utf8_command_line)-1] = '\0';
-			pos++;
-		}
+		if ((utf8_command_line[0] == '\"') && (utf8_command_line[utf8_command_line.size() - 1] == '\"'))
+			utf8_command_line = utf8_command_line.substr(1, utf8_command_line.size() - 2);
 
-		err = wimgtool_open_image(window, NULL, utf8_command_line + pos, OSD_FOPEN_RW);
+		err = wimgtool_open_image(window, nullptr, utf8_command_line, OSD_FOPEN_RW);
 		if (err)
-			wimgtool_report_error(window, err, utf8_command_line + pos, NULL);
+			wimgtool_report_error(window, err, utf8_command_line.c_str(), nullptr);
 	}
 
-	osd_free(utf8_command_line);
-	utf8_command_line = NULL;
-
-	accel = LoadAccelerators(NULL, MAKEINTRESOURCE(IDA_WIMGTOOL_MENU));
+	accel = LoadAccelerators(nullptr, MAKEINTRESOURCE(IDA_WIMGTOOL_MENU));
 
 	// pump messages until the window is gone
 	while(IsWindow(window))
 	{
-		b = GetMessage(&msg, NULL, 0, 0);
+		b = GetMessage(&msg, nullptr, 0, 0);
 		if (b <= 0)
 		{
-			window = NULL;
+			window = nullptr;
 		}
 		else if (!TranslateAccelerator(window, accel, &msg))
 		{

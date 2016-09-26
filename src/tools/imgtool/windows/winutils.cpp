@@ -130,7 +130,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	ofn->flags = os_ofn.Flags;
 
 	// copy file back out into passed structure
-	if (t_file != NULL)
+	if (t_file != nullptr)
 	{
 		auto utf8_file = utf8_from_tstring(t_file);
 		_sntprintf(ofn->filename, ARRAY_LENGTH(ofn->filename), "%s", utf8_file.c_str());
@@ -196,7 +196,7 @@ void win_scroll_window(HWND window, WPARAM wparam, int scroll_bar, int scroll_de
 	if (scroll_pos != si.nPos)
 	{
 		SetScrollPos(window, scroll_bar, scroll_pos, TRUE);
-		ScrollWindowEx(window, 0, si.nPos - scroll_pos, NULL, NULL, NULL, NULL, SW_SCROLLCHILDREN | SW_INVALIDATE | SW_ERASE);
+		ScrollWindowEx(window, 0, si.nPos - scroll_pos, nullptr, nullptr, nullptr, nullptr, SW_SCROLLCHILDREN | SW_INVALIDATE | SW_ERASE);
 	}
 }
 

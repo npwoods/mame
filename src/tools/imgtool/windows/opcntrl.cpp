@@ -139,7 +139,7 @@ static BOOL check_combobox(HWND control)
 static BOOL prepare_editbox(HWND control, const option_guide *guide,
 	const char *optspec)
 {
-	optreserr_t err = OPTIONRESOLUTION_ERROR_SUCCESS;
+	util::option_resolution::error err = OPTIONRESOLUTION_ERROR_SUCCESS;
 	char buf[32];
 	int val, has_option, option_count;
 
@@ -187,7 +187,7 @@ static BOOL check_editbox(HWND control)
 	char buf[256];
 	const option_guide *guide;
 	const char *optspec;
-	optreserr_t err;
+	util::option_resolution::error err;
 	HANDLE h;
 	void *val;
 	UINT64 i_val;
@@ -316,11 +316,11 @@ BOOL win_adjust_option_control(HWND control, int delta)
 
 
 
-optreserr_t win_add_resolution_parameter(HWND control, option_resolution *resolution)
+util::option_resolution::error win_add_resolution_parameter(HWND control, util::option_resolution *resolution)
 {
-	const option_guide *guide;
+	const util::option_guide *guide;
 	char buf[256];
-	optreserr_t err;
+	util::option_resolution::error err;
 	const char *text;
 	const char *old_text;
 	int i;
@@ -343,7 +343,7 @@ optreserr_t win_add_resolution_parameter(HWND control, option_resolution *resolu
 	{
 		/* need to convert display name to identifier */
 		old_text = text;
-		text = NULL;
+		text = nullptr;
 
 		for (i = 1; guide[i].option_type == OPTIONTYPE_ENUM_VALUE; i++)
 		{

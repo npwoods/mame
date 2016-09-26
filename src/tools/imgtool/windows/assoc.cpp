@@ -13,7 +13,7 @@ static LONG reg_query_string(HKEY key, TCHAR *buf, DWORD buflen)
 	DWORD type;
 
 	buflen *= sizeof(*buf);
-	rc = RegQueryValueEx(key, NULL, NULL, &type, (LPBYTE) buf, &buflen);
+	rc = RegQueryValueEx(key, nullptr, nullptr, &type, (LPBYTE) buf, &buflen);
 	if (rc != ERROR_SUCCESS)
 		return rc;
 	if (type != REG_SZ)
@@ -28,7 +28,7 @@ static void get_open_command(const struct win_association_info *assoc,
 {
 	int i;
 
-	GetModuleFileName(GetModuleHandle(NULL), buf, buflen);
+	GetModuleFileName(GetModuleHandle(nullptr), buf, buflen);
 
 	for (i = 0; buf[i]; i++)
 		buf[i] = toupper(buf[i]);
@@ -43,8 +43,8 @@ BOOL win_association_exists(const struct win_association_info *assoc)
 	BOOL rc = FALSE;
 	TCHAR buf[1024];
 	TCHAR expected[1024];
-	HKEY key1 = NULL;
-	HKEY key2 = NULL;
+	HKEY key1 = nullptr;
+	HKEY key2 = nullptr;
 
 	// first check to see if the extension is there at all
 	if (RegOpenKey(HKEY_CLASSES_ROOT, assoc->file_class, &key1))
@@ -72,7 +72,7 @@ done:
 BOOL win_is_extension_associated(const struct win_association_info *assoc,
 	LPCTSTR extension)
 {
-	HKEY key = NULL;
+	HKEY key = nullptr;
 	TCHAR buf[256];
 	BOOL rc = FALSE;
 
@@ -99,11 +99,11 @@ done:
 BOOL win_associate_extension(const struct win_association_info *assoc,
 	LPCTSTR extension, BOOL is_set)
 {
-	HKEY key1 = NULL;
-	HKEY key2 = NULL;
-	HKEY key3 = NULL;
-	HKEY key4 = NULL;
-	HKEY key5 = NULL;
+	HKEY key1 = nullptr;
+	HKEY key2 = nullptr;
+	HKEY key3 = nullptr;
+	HKEY key4 = nullptr;
+	HKEY key5 = nullptr;
 	DWORD disposition;
 	TCHAR buf[1024];
 	BOOL rc = FALSE;
@@ -119,28 +119,28 @@ BOOL win_associate_extension(const struct win_association_info *assoc,
 	{
 		if (!win_association_exists(assoc))
 		{
-			if (RegCreateKeyEx(HKEY_CLASSES_ROOT, assoc->file_class, 0, NULL, 0,
-					KEY_ALL_ACCESS, NULL, &key1, &disposition))
+			if (RegCreateKeyEx(HKEY_CLASSES_ROOT, assoc->file_class, 0, nullptr, 0,
+					KEY_ALL_ACCESS, nullptr, &key1, &disposition))
 				goto done;
-			if (RegCreateKeyEx(key1, TEXT("shell"), 0, NULL, 0,
-					KEY_ALL_ACCESS, NULL, &key2, &disposition))
+			if (RegCreateKeyEx(key1, TEXT("shell"), 0, nullptr, 0,
+					KEY_ALL_ACCESS, nullptr, &key2, &disposition))
 				goto done;
-			if (RegCreateKeyEx(key2, TEXT("open"), 0, NULL, 0,
-					KEY_ALL_ACCESS, NULL, &key3, &disposition))
+			if (RegCreateKeyEx(key2, TEXT("open"), 0, nullptr, 0,
+					KEY_ALL_ACCESS, nullptr, &key3, &disposition))
 				goto done;
-			if (RegCreateKeyEx(key3, TEXT("command"), 0, NULL, 0,
-					KEY_ALL_ACCESS, NULL, &key4, &disposition))
+			if (RegCreateKeyEx(key3, TEXT("command"), 0, nullptr, 0,
+					KEY_ALL_ACCESS, nullptr, &key4, &disposition))
 				goto done;
 
 			get_open_command(assoc, buf, ARRAY_LENGTH(buf));
-			if (RegSetValue(key4, NULL, REG_SZ, buf, sizeof(buf)))
+			if (RegSetValue(key4, nullptr, REG_SZ, buf, sizeof(buf)))
 				goto done;
 		}
 
-		if (RegCreateKeyEx(HKEY_CLASSES_ROOT, extension, 0, NULL, 0,
-				KEY_ALL_ACCESS, NULL, &key5, &disposition))
+		if (RegCreateKeyEx(HKEY_CLASSES_ROOT, extension, 0, nullptr, 0,
+				KEY_ALL_ACCESS, nullptr, &key5, &disposition))
 			goto done;
-		if (RegSetValue(key5, NULL, REG_SZ, assoc->file_class,
+		if (RegSetValue(key5, nullptr, REG_SZ, assoc->file_class,
 				(_tcslen(assoc->file_class) + 1) * sizeof(TCHAR)))
 			goto done;
 	}

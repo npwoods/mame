@@ -45,7 +45,7 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 	{
 		// set up label control
 		control = CreateWindow(TEXT("STATIC"), TEXT("Mode:"), WS_CHILD | WS_VISIBLE,
-			margin, *y + 2, label_width, control_height, dialog, NULL, NULL, NULL);
+			margin, *y + 2, label_width, control_height, dialog, nullptr, nullptr, nullptr);
 		SendMessage(control, WM_SETFONT, (WPARAM) font, 0);
 		SetProp(control, owner_prop, (HANDLE) 1);
 
@@ -54,8 +54,8 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 		width = dialog_rect.right - dialog_rect.left - x - margin;
 
 		style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST;
-		control = CreateWindow(TEXT("ComboBox"), NULL, style,
-				x, *y, width, control_height * 8, dialog, NULL, NULL, NULL);
+		control = CreateWindow(TEXT("ComboBox"), nullptr, style,
+				x, *y, width, control_height * 8, dialog, nullptr, nullptr, nullptr);
 
 		SetWindowLong(control, GWL_ID, CONTROL_FILTER);
 		SendMessage(control, WM_SETFONT, (WPARAM) font, 0);
@@ -80,7 +80,7 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 			// set up label control
 			snprintf(buf, ARRAY_LENGTH(buf), "%s:", guide[i].display_name);
 			control = win_create_window_ex_utf8(0, "STATIC", buf, WS_CHILD | WS_VISIBLE,
-				margin, *y + 2, label_width, control_height, dialog, NULL, NULL, NULL);
+				margin, *y + 2, label_width, control_height, dialog, nullptr, nullptr, nullptr);
 			SendMessage(control, WM_SETFONT, (WPARAM) font, 0);
 			SetProp(control, owner_prop, (HANDLE) 1);
 
@@ -88,22 +88,22 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 			x = margin + label_width;
 			width = dialog_rect.right - dialog_rect.left - x - margin;
 
-			aux_control = NULL;
+			aux_control = nullptr;
 			switch(guide[i].option_type)
 			{
 				case OPTIONTYPE_STRING:
 					style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP;
-					control = CreateWindow(TEXT("Edit"), NULL, style,
-							x, *y, width, control_height, dialog, NULL, NULL, NULL);
+					control = CreateWindow(TEXT("Edit"), nullptr, style,
+							x, *y, width, control_height, dialog, nullptr, nullptr, nullptr);
 					break;
 
 				case OPTIONTYPE_INT:
 					style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_NUMBER;
-					control = CreateWindow(TEXT("Edit"), NULL, style,
-							x, *y, width - 16, control_height, dialog, NULL, NULL, NULL);
+					control = CreateWindow(TEXT("Edit"), nullptr, style,
+							x, *y, width - 16, control_height, dialog, nullptr, nullptr, nullptr);
 					style = WS_CHILD | WS_VISIBLE | UDS_AUTOBUDDY;
-					aux_control = CreateWindow(TEXT("msctls_updown32"), NULL, style,
-							x + width - 16, *y, 16, control_height, dialog, NULL, NULL, NULL);
+					aux_control = CreateWindow(TEXT("msctls_updown32"), nullptr, style,
+							x + width - 16, *y, 16, control_height, dialog, nullptr, nullptr, nullptr);
 #if (_WIN32_IE >= 0x0400)
 					SendMessage(aux_control, UDM_SETRANGE32, 0x80000000, 0x7FFFFFFF);
 #else // !(_WIN32_IE >= 0x0400)
@@ -113,12 +113,12 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 
 				case OPTIONTYPE_ENUM_BEGIN:
 					style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST;
-					control = CreateWindow(TEXT("ComboBox"), NULL, style,
-							x, *y, width, control_height * 8, dialog, NULL, NULL, NULL);
+					control = CreateWindow(TEXT("ComboBox"), nullptr, style,
+							x, *y, width, control_height * 8, dialog, nullptr, nullptr, nullptr);
 					break;
 
 				default:
-					control = NULL;
+					control = nullptr;
 					break;
 			}
 
@@ -205,9 +205,9 @@ static void adjust_dialog_height(HWND dlgwnd)
 	GetWindowRect(dlgwnd, &r2);
 	GetWindowRect(info->parent, &r3);
 
-	SetWindowPos(dlgwnd, NULL, 0, 0, r2.right - r2.left,
+	SetWindowPos(dlgwnd, nullptr, 0, 0, r2.right - r2.left,
 		r1.bottom + info->margin - r2.top, SWP_NOMOVE | SWP_NOZORDER);
-	SetWindowPos(info->parent, NULL, 0, 0, r3.right - r3.left,
+	SetWindowPos(info->parent, nullptr, 0, 0, r3.right - r3.left,
 		r1.bottom + info->margin - r3.top, SWP_NOMOVE | SWP_NOZORDER);
 
 	SetWindowText(more_button, info->expanded ? TEXT("Less <<") : TEXT("More >>"));
@@ -234,12 +234,12 @@ static UINT_PTR new_dialog_typechange(HWND dlgwnd, int filter_index)
 
 	// clean out existing control windows
 	info->control_count = 0;
-	control = NULL;
-	while((control = FindWindowEx(dlgwnd, control, NULL, NULL)) != NULL)
+	control = nullptr;
+	while((control = FindWindowEx(dlgwnd, control, nullptr, nullptr)) != nullptr)
 	{
 		while(control && GetProp(control, owner_prop))
 		{
-			next_control = FindWindowEx(dlgwnd, control, NULL, NULL);
+			next_control = FindWindowEx(dlgwnd, control, nullptr, nullptr);
 			DestroyWindow(control);
 			control = next_control;
 		}
@@ -254,7 +254,7 @@ static UINT_PTR new_dialog_typechange(HWND dlgwnd, int filter_index)
 		y = r1.bottom + info->margin - r2.top;
 
 		info->control_count = create_option_controls(dlgwnd, font,
-			r1.left - r2.left, &y, NULL, guide, info->module->createimage_optspec);
+			r1.left - r2.left, &y, nullptr, guide, info->module->createimage_optspec);
 	}
 	adjust_dialog_height(dlgwnd);
 	return 0;
@@ -302,7 +302,7 @@ UINT_PTR CALLBACK win_new_dialog_hook(HWND dlgwnd, UINT message,
 
 			// change dlgwnd height
 			GetWindowRect(info->parent, &r1);
-			SetWindowPos(dlgwnd, NULL, 0, 0, r1.right - r1.left, r2.bottom - r2.top, SWP_NOMOVE | SWP_NOZORDER);
+			SetWindowPos(dlgwnd, nullptr, 0, 0, r1.right - r1.left, r2.bottom - r2.top, SWP_NOMOVE | SWP_NOZORDER);
 			break;
 
 		case WM_DESTROY:
@@ -349,12 +349,12 @@ UINT_PTR CALLBACK win_new_dialog_hook(HWND dlgwnd, UINT message,
 				case CDN_FILEOK:
 					ofn_notify = (const OFNOTIFY *) notify;
 					module = info->module;
-					resolution = NULL;
+					resolution = nullptr;
 
 					if (module->createimage_optguide && module->createimage_optspec)
 					{
 						resolution = option_resolution_create(module->createimage_optguide, module->createimage_optspec);
-						apply_option_controls(dlgwnd, NULL, resolution, info->control_count);
+						apply_option_controls(dlgwnd, nullptr, resolution, info->control_count);
 						option_resolution_finish(resolution);
 					}
 					*((option_resolution **) ofn_notify->lpOFN->lCustData) = resolution;
@@ -413,10 +413,10 @@ static INT_PTR CALLBACK putfileopt_dialogproc(HWND dialog, UINT message,
 			pfo_info->control_count = control_count;
 
 			y += ymargin;
-			SetWindowPos(cancel_button, NULL, xmargin, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+			SetWindowPos(cancel_button, nullptr, xmargin, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 			GetWindowRect(ok_button, &r1);
-			SetWindowPos(ok_button, NULL, r1.left - r2.left, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-			SetWindowPos(dialog, NULL, 0, 0, r2.right - r2.left, y + r1.bottom - r2.top, SWP_NOZORDER | SWP_NOMOVE);
+			SetWindowPos(ok_button, nullptr, r1.left - r2.left, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+			SetWindowPos(dialog, nullptr, 0, 0, r2.right - r2.left, y + r1.bottom - r2.top, SWP_NOZORDER | SWP_NOMOVE);
 			break;
 
 		case WM_COMMAND:
@@ -440,11 +440,11 @@ static INT_PTR CALLBACK putfileopt_dialogproc(HWND dialog, UINT message,
 
 
 imgtoolerr_t win_show_option_dialog(HWND parent, struct transfer_suggestion_info *suggestion_info,
-	const option_guide *guide, const char *optspec,
-	option_resolution **result, BOOL *cancel)
+	const util::option_guide *guide, const char *optspec,
+	std::unique_ptr<util::option_resolution> &result, BOOL *cancel)
 {
 	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
-	option_resolution *res = NULL;
+	std::unique_ptr<util::option_resolution> res;
 	struct putfileopt_info pfo_info;
 	int rc;
 
@@ -452,29 +452,21 @@ imgtoolerr_t win_show_option_dialog(HWND parent, struct transfer_suggestion_info
 
 	if (guide)
 	{
-		res = option_resolution_create(guide, optspec);
-		if (!res)
-		{
-			err = IMGTOOLERR_OUTOFMEMORY;
-			goto done;
-		}
+		res = std::make_unique<util::option_resolution>(guide);
+		res->set_specification(optspec);
 	}
 
-	pfo_info.resolution = res;
+	pfo_info.resolution = res.get();
 	pfo_info.guide = guide;
 	pfo_info.optspec = optspec;
 	pfo_info.suggestion_info = suggestion_info;
-	rc = DialogBoxParam(NULL, MAKEINTRESOURCE(IDD_FILEOPTIONS), parent,
+	rc = DialogBoxParam(nullptr, MAKEINTRESOURCE(IDD_FILEOPTIONS), parent,
 		putfileopt_dialogproc, (LPARAM) &pfo_info);
 	*cancel = (rc == IDCANCEL);
 
 done:
-	if (err && res)
-	{
-		option_resolution_close(res);
-		res = NULL;
-	}
-	*result = res;
+	if (err == IMGTOOLERR_SUCCESS)
+		result = std::move(res);
 	return err;
 }
 

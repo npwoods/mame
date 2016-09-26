@@ -15,7 +15,7 @@
 
 void pile_init(mess_pile *pile)
 {
-	pile->ptr = NULL;
+	pile->ptr = nullptr;
 	pile->physical_size = 0;
 	pile->logical_size = 0;
 }

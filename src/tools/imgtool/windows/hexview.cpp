@@ -4,15 +4,23 @@
 //
 //============================================================
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+
+// Win32 headers
 #include <windows.h>
 #include <windowsx.h>
-#include <shellapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
-#include "winutils.h"
+#include <shellapi.h>
+
+// C/C++ headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
+#include <algorithm>
+
+// MAME headers
+#include "winutils.h"
 #include "hexview.h"
 
 const TCHAR hexview_class[] = TEXT("hexview_class");
@@ -63,7 +71,7 @@ static void calc_hexview_bytesperrow(HWND hexview, const TEXTMETRIC *metrics,
 
 	*bytes_per_row = (width - info->left_margin - info->right_margin - metrics->tmMaxCharWidth * info->index_width)
 		/ (metrics->tmMaxCharWidth * (3 + info->byte_spacing));
-	*bytes_per_row = std::max(*bytes_per_row, 1);
+	*bytes_per_row = std::max(*bytes_per_row, (LONG)1);
 }
 
 
@@ -224,13 +232,13 @@ static LRESULT CALLBACK hexview_wndproc(HWND hexview, UINT message, WPARAM wpara
 
 		case WM_SIZE:
 			calc_scrollbar(hexview);
-			InvalidateRect(hexview, NULL, TRUE);
+			InvalidateRect(hexview, nullptr, TRUE);
 			break;
 
 		case WM_SETFONT:
 			info->font = (HFONT) wparam;
 			if (lparam)
-				RedrawWindow(hexview, NULL, NULL, 0);
+				RedrawWindow(hexview, nullptr, nullptr, 0);
 			return 0;
 
 		case WM_GETFONT:
@@ -265,7 +273,7 @@ BOOL hexview_setdata(HWND hexview, const void *data, size_t data_size)
 		info->data_size = data_size;
 
 		calc_scrollbar(hexview);
-		InvalidateRect(hexview, NULL, TRUE);
+		InvalidateRect(hexview, nullptr, TRUE);
 	}
 	return TRUE;
 }
