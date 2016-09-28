@@ -28,7 +28,7 @@ static HFONT get_window_font(HWND window)
 
 
 static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
-	struct transfer_suggestion_info *suggestion_info, const option_guide *guide, const char *optspec)
+	struct transfer_suggestion_info *suggestion_info, util::option_resolution *resolution)
 {
 	int label_width = 100;
 	int control_height = 20;
@@ -37,7 +37,6 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 	HWND control, aux_control;
 	DWORD style;
 	int i, x, width, selected;
-	char buf[256];
 
 	GetWindowRect(dialog, &dialog_rect);
 
@@ -73,13 +72,15 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 		*y += control_height;
 	}
 
-	if (guide)
+	if (resolution != nullptr)
 	{
-		for (i = 0; guide[i].option_type != OPTIONTYPE_END; i++)
+		for (auto iter = resolution->entries_begin(); iter != resolution->entries_end(); iter++)
 		{
+			const auto &entry = *iter;
+
 			// set up label control
-			snprintf(buf, ARRAY_LENGTH(buf), "%s:", guide[i].display_name);
-			control = win_create_window_ex_utf8(0, "STATIC", buf, WS_CHILD | WS_VISIBLE,
+			std::string buf = string_format("%s:", entry.display_name());
+			control = win_create_window_ex_utf8(0, "STATIC", buf.c_str(), WS_CHILD | WS_VISIBLE,
 				margin, *y + 2, label_width, control_height, dialog, nullptr, nullptr, nullptr);
 			SendMessage(control, WM_SETFONT, (WPARAM) font, 0);
 			SetProp(control, owner_prop, (HANDLE) 1);
@@ -89,37 +90,37 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 			width = dialog_rect.right - dialog_rect.left - x - margin;
 
 			aux_control = nullptr;
-			switch(guide[i].option_type)
+			switch(entry.option_type())
 			{
-				case OPTIONTYPE_STRING:
-					style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP;
-					control = CreateWindow(TEXT("Edit"), nullptr, style,
-							x, *y, width, control_height, dialog, nullptr, nullptr, nullptr);
-					break;
+			case util::option_guide::entry::option_type::STRING:
+				style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP;
+				control = CreateWindow(TEXT("Edit"), nullptr, style,
+						x, *y, width, control_height, dialog, nullptr, nullptr, nullptr);
+				break;
 
-				case OPTIONTYPE_INT:
-					style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_NUMBER;
-					control = CreateWindow(TEXT("Edit"), nullptr, style,
-							x, *y, width - 16, control_height, dialog, nullptr, nullptr, nullptr);
-					style = WS_CHILD | WS_VISIBLE | UDS_AUTOBUDDY;
-					aux_control = CreateWindow(TEXT("msctls_updown32"), nullptr, style,
-							x + width - 16, *y, 16, control_height, dialog, nullptr, nullptr, nullptr);
+			case util::option_guide::entry::option_type::INT:
+				style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP | ES_NUMBER;
+				control = CreateWindow(TEXT("Edit"), nullptr, style,
+					x, *y, width - 16, control_height, dialog, nullptr, nullptr, nullptr);
+				style = WS_CHILD | WS_VISIBLE | UDS_AUTOBUDDY;
+				aux_control = CreateWindow(TEXT("msctls_updown32"), nullptr, style,
+					x + width - 16, *y, 16, control_height, dialog, nullptr, nullptr, nullptr);
 #if (_WIN32_IE >= 0x0400)
-					SendMessage(aux_control, UDM_SETRANGE32, 0x80000000, 0x7FFFFFFF);
+				SendMessage(aux_control, UDM_SETRANGE32, 0x80000000, 0x7FFFFFFF);
 #else // !(_WIN32_IE >= 0x0400)
-					SendMessage(aux_control, UDM_SETRANGE, 0, MAKELONG(UD_MAXVAL, UD_MINVAL));
+				SendMessage(aux_control, UDM_SETRANGE, 0, MAKELONG(UD_MAXVAL, UD_MINVAL));
 #endif // (_WIN32_IE >= 0x0400)
-					break;
+				break;
 
-				case OPTIONTYPE_ENUM_BEGIN:
-					style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST;
-					control = CreateWindow(TEXT("ComboBox"), nullptr, style,
-							x, *y, width, control_height * 8, dialog, nullptr, nullptr, nullptr);
-					break;
+			case util::option_guide::entry::option_type::ENUM_BEGIN:
+				style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST;
+				control = CreateWindow(TEXT("ComboBox"), nullptr, style,
+						x, *y, width, control_height * 8, dialog, nullptr, nullptr, nullptr);
+				break;
 
-				default:
-					control = nullptr;
-					break;
+			default:
+				control = nullptr;
+				break;
 			}
 
 			if (!control)
@@ -128,15 +129,15 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 			SetWindowLong(control, GWL_ID, CONTROL_START + control_count++);
 			SendMessage(control, WM_SETFONT, (WPARAM) font, 0);
 			SetProp(control, owner_prop, (HANDLE) 1);
-			win_prepare_option_control(control, &guide[i], optspec);
+			win_prepare_option_control(control, *iter);
 
 			if (aux_control)
 				SetProp(aux_control, owner_prop, (HANDLE) 1);
 
-			if (guide[i].option_type == OPTIONTYPE_ENUM_BEGIN)
+			if (entry.option_type() == util::option_guide::entry::option_type::ENUM_BEGIN)
 			{
-				while(guide[i+1].option_type == OPTIONTYPE_ENUM_VALUE)
-					i++;
+				while((iter + 1)->option_type() == util::option_guide::entry::option_type::ENUM_VALUE)
+					iter++;
 			}
 
 			*y += control_height;
@@ -148,7 +149,7 @@ static int create_option_controls(HWND dialog, HFONT font, int margin, int *y,
 
 
 static void apply_option_controls(HWND dialog, struct transfer_suggestion_info *suggestion_info,
-	option_resolution *resolution, int control_count)
+	util::option_resolution *resolution, int control_count)
 {
 	int i;
 	HWND control;
@@ -219,7 +220,7 @@ static UINT_PTR new_dialog_typechange(HWND dlgwnd, int filter_index)
 {
 	struct new_dialog_info *info;
 	int y;
-	const option_guide *guide;
+	const util::option_guide *guide;
 	LONG_PTR l;
 	HWND more_button;
 	HWND control, next_control;
@@ -253,8 +254,11 @@ static UINT_PTR new_dialog_typechange(HWND dlgwnd, int filter_index)
 		GetWindowRect(dlgwnd, &r2);
 		y = r1.bottom + info->margin - r2.top;
 
+		auto resolution = std::make_unique<util::option_resolution>(*guide);
+		resolution->set_specification(info->module->createimage_optspec);
+
 		info->control_count = create_option_controls(dlgwnd, font,
-			r1.left - r2.left, &y, nullptr, guide, info->module->createimage_optspec);
+			r1.left - r2.left, &y, nullptr, resolution.get());
 	}
 	adjust_dialog_height(dlgwnd);
 	return 0;
@@ -275,7 +279,7 @@ UINT_PTR CALLBACK win_new_dialog_hook(HWND dlgwnd, UINT message,
 	RECT r1, r2;
 	LONG_PTR l;
 	int id;
-	option_resolution *resolution;
+	util::option_resolution *resolution;
 	HWND more_button;
 	LRESULT lres;
 
@@ -353,11 +357,11 @@ UINT_PTR CALLBACK win_new_dialog_hook(HWND dlgwnd, UINT message,
 
 					if (module->createimage_optguide && module->createimage_optspec)
 					{
-						resolution = option_resolution_create(module->createimage_optguide, module->createimage_optspec);
+						resolution = new util::option_resolution(*module->createimage_optguide);
+						resolution->set_specification(module->createimage_optspec);
 						apply_option_controls(dlgwnd, nullptr, resolution, info->control_count);
-						option_resolution_finish(resolution);
 					}
-					*((option_resolution **) ofn_notify->lpOFN->lCustData) = resolution;
+					*((util::option_resolution **) ofn_notify->lpOFN->lCustData) = resolution;
 					break;
 
 				case CDN_TYPECHANGE:
@@ -376,9 +380,7 @@ UINT_PTR CALLBACK win_new_dialog_hook(HWND dlgwnd, UINT message,
 struct putfileopt_info
 {
 	struct transfer_suggestion_info *suggestion_info;
-	option_resolution *resolution;
-	const option_guide *guide;
-	const char *optspec;
+	util::option_resolution *resolution;
 	int control_count;
 };
 
@@ -407,7 +409,7 @@ static INT_PTR CALLBACK putfileopt_dialogproc(HWND dialog, UINT message,
 			xmargin = r1.left - r2.left;
 			ymargin = y = r1.top - r2.top - 20;
 
-			control_count = create_option_controls(dialog, font, xmargin, &y, pfo_info->suggestion_info, pfo_info->guide, pfo_info->optspec);
+			control_count = create_option_controls(dialog, font, xmargin, &y, pfo_info->suggestion_info, pfo_info->resolution);
 			if (control_count < 0)
 				return -1;
 			pfo_info->control_count = control_count;
@@ -443,7 +445,6 @@ imgtoolerr_t win_show_option_dialog(HWND parent, struct transfer_suggestion_info
 	const util::option_guide *guide, const char *optspec,
 	std::unique_ptr<util::option_resolution> &result, BOOL *cancel)
 {
-	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
 	std::unique_ptr<util::option_resolution> res;
 	struct putfileopt_info pfo_info;
 	int rc;
@@ -452,22 +453,18 @@ imgtoolerr_t win_show_option_dialog(HWND parent, struct transfer_suggestion_info
 
 	if (guide)
 	{
-		res = std::make_unique<util::option_resolution>(guide);
+		res = std::make_unique<util::option_resolution>(*guide);
 		res->set_specification(optspec);
 	}
 
 	pfo_info.resolution = res.get();
-	pfo_info.guide = guide;
-	pfo_info.optspec = optspec;
 	pfo_info.suggestion_info = suggestion_info;
 	rc = DialogBoxParam(nullptr, MAKEINTRESOURCE(IDD_FILEOPTIONS), parent,
 		putfileopt_dialogproc, (LPARAM) &pfo_info);
 	*cancel = (rc == IDCANCEL);
 
-done:
-	if (err == IMGTOOLERR_SUCCESS)
-		result = std::move(res);
-	return err;
+	result = std::move(res);
+	return IMGTOOLERR_SUCCESS;
 }
 
 

@@ -1,6 +1,6 @@
 //============================================================
 //
-//  hexview.c - A Win32 hex editor control
+//  hexview.cpp - A Win32 hex editor control
 //
 //============================================================
 #define WIN32_LEAN_AND_MEAN

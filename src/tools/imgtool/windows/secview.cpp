@@ -1,6 +1,6 @@
 //============================================================
 //
-//  secview.c - A Win32 sector editor dialog
+//  secview.cpp - A Win32 sector editor dialog
 //
 //============================================================
 #define WIN32_LEAN_AND_MEAN

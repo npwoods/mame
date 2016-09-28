@@ -1,6 +1,6 @@
 //============================================================
 //
-//  wimgtool.c - Win32 Imgtool File Association Dialog
+//  assocdlg.cpp - Win32 Imgtool File Association Dialog
 //
 //============================================================
 
@@ -12,7 +12,7 @@
 // standard C headers
 #include <stdio.h>
 
-// MESS headers
+// MAME headers
 #include "assoc.h"
 #include "wimgres.h"
 #include "strconv.h"

@@ -626,7 +626,8 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	const char *statusbar_text[2];
 	imgtool_partition_features features;
 	std::string basename;
-	extern const char build_version[];
+	//extern const char build_version[];
+	static const char build_version[] = "TODOFIXME";
 
 	info = get_wimgtool_info(window);
 
@@ -863,7 +864,6 @@ done:
 const imgtool_module *find_filter_module(int filter_index,
 	BOOL creating_file)
 {
-	const imgtool_module *module = nullptr;
 	imgtool_module_features features;
 
 	if (filter_index-- == 0)
@@ -996,7 +996,7 @@ done:
 
 
 imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
-	const char *filename, int read_or_write)
+	const std::string &filename, int read_or_write)
 {
 	imgtoolerr_t err;
 	imgtool_image *image;
@@ -1012,7 +1012,7 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	// if the module is not specified, auto detect the format
 	if (!module)
 	{
-		err = imgtool_identify_file(filename, &identified_module, 1);
+		err = imgtool_identify_file(filename.c_str(), &identified_module, 1);
 		if (err)
 			goto done;
 		module = identified_module;
@@ -1028,7 +1028,7 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 
 	if (info->filename)
 		osd_free(info->filename);
-	info->filename = core_strdup(filename);
+	info->filename = core_strdup(filename.c_str());
 	if (!info->filename)
 	{
 		err = IMGTOOLERR_OUTOFMEMORY;
@@ -1036,12 +1036,12 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	}
 
 	// try to open the image
-	err = imgtool_image_open(module, filename, read_or_write, &image);
+	err = imgtool_image_open(module, filename.c_str(), read_or_write, &image);
 	if ((ERRORCODE(err) == IMGTOOLERR_READONLY) && read_or_write)
 	{
 		// if we failed when open a read/write image, try again
 		read_or_write = OSD_FOPEN_READ;
-		err = imgtool_image_open(module, filename, read_or_write, &image);
+		err = imgtool_image_open(module, filename.c_str(), read_or_write, &image);
 	}
 	if (err)
 		goto done;

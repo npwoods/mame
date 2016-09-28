@@ -1,6 +1,6 @@
 //============================================================
 //
-//  wmain.h - Win32 GUI Imgtool main code
+//  wmain.cpp - Win32 GUI Imgtool main code
 //
 //============================================================
 #define WIN32_LEAN_AND_MEAN
@@ -25,8 +25,8 @@ static void rtrim(std::string &s)
 }
 
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
-	LPWSTR command_line_w, int cmd_show)
+int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev_instance,
+	LPSTR command_line, int cmd_show)
 {
 	MSG msg;
 	HWND window;
@@ -34,7 +34,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
 	int rc = -1;
 	imgtoolerr_t err;
 	HACCEL accel = nullptr;
-	std::string utf8_command_line = utf8_from_wstring(command_line_w);
+	std::string utf8_command_line = utf8_from_tstring(GetCommandLine());
 
 	// initialize Windows classes
 	InitCommonControls();

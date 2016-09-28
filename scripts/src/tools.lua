@@ -754,6 +754,8 @@ kind "WindowedApp"
 
 flags {
 	"Symbols", -- always include minimum symbols for executables
+	"WinMain",
+	"Unicode"
 }
 
 if _OPTIONS["SEPARATE_BIN"]~="1" then
@@ -769,6 +771,7 @@ links {
 	"ocore_" .. _OPTIONS["osd"],
 	ext_lib("zlib"),
 	ext_lib("flac"),
+	"comctl32"
 }
 
 includedirs {

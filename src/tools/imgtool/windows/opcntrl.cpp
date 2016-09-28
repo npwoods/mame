@@ -1,6 +1,6 @@
 //============================================================
 //
-//  opcntrl.c - Code for handling option resolutions in
+//  opcntrl.cpp - Code for handling option resolutions in
 //  Win32 controls
 //
 //  This code was factored out of menu.c when Windows Imgtool
@@ -17,53 +17,40 @@
 #include "opcntrl.h"
 #include "strconv.h"
 #include "winutf8.h"
+#include "strformat.h"
 
 
-static const TCHAR guide_prop[] = TEXT("opcntrl_guide");
-static const TCHAR spec_prop[] = TEXT("opcntrl_optspec");
+static const TCHAR resolution_entry_prop[] = TEXT("opcntrl_resentry");
 static const TCHAR value_prop[] = TEXT("opcntrl_value");
 
 
-
-static int get_option_count(const option_guide *guide,
-	const char *optspec)
+static int get_option_count(const util::option_resolution::entry::rangelist &ranges)
 {
-	struct OptionRange ranges[128];
-	int count = 0, i;
+	int count = 0;
+	for (const auto &range : ranges)
+		count += range.max - range.min + 1;
 
-	option_resolution_listranges(optspec, guide->parameter,
-		ranges, ARRAY_LENGTH(ranges));
-
-	for (i = 0; ranges[i].min >= 0; i++)
-		count += ranges[i].max - ranges[i].min + 1;
 	return count;
 }
 
-
-
-static BOOL prepare_combobox(HWND control, const option_guide *guide,
-	const char *optspec)
+static BOOL prepare_combobox(HWND control, const util::option_resolution::entry *entry)
 {
-	struct OptionRange ranges[128];
-	int default_value, default_index, current_index, option_count;
-	int i, j, k;
-	BOOL has_option;
+	int default_index, current_index, option_count;
+	int i, j;
 	TCHAR buf1[256];
 	TCHAR buf2[256];
-	LPTSTR tempstr;
 
 	SendMessage(control, CB_GETLBTEXT, SendMessage(control, CB_GETCURSEL, 0, 0), (LPARAM) buf1);
 	SendMessage(control, CB_RESETCONTENT, 0, 0);
-	has_option = guide && optspec;
 
+	bool has_option = entry != nullptr;
 	if (has_option)
 	{
-		if ((guide->option_type != OPTIONTYPE_INT) && (guide->option_type != OPTIONTYPE_ENUM_BEGIN))
+		if ((entry->option_type() != util::option_guide::entry::option_type::INT) && (entry->option_type() != util::option_guide::entry::option_type::ENUM_BEGIN))
 			goto unexpected;
 
-		option_resolution_listranges(optspec, guide->parameter,
-			ranges, ARRAY_LENGTH(ranges));
-		option_resolution_getdefault(optspec, guide->parameter, &default_value);
+		const util::option_resolution::entry::rangelist &ranges = entry->ranges();
+		int default_value = atoi(entry->default_value().c_str());
 
 		option_count = 0;
 		default_index = -1;
@@ -73,23 +60,22 @@ static BOOL prepare_combobox(HWND control, const option_guide *guide,
 		{
 			for (j = ranges[i].min; j <= ranges[i].max; j++)
 			{
-				if (guide->option_type == OPTIONTYPE_INT)
+				if (entry->option_type() == util::option_guide::entry::option_type::INT)
 				{
 					_sntprintf(buf2, ARRAY_LENGTH(buf2), TEXT("%d"), j);
 					SendMessage(control, CB_ADDSTRING, 0, (LPARAM) buf2);
 				}
-				else if (guide->option_type == OPTIONTYPE_ENUM_BEGIN)
+				else if (entry->option_type() == util::option_guide::entry::option_type::ENUM_BEGIN)
 				{
-					for (k = 1; guide[k].option_type == OPTIONTYPE_ENUM_VALUE; k++)
-					{
-						if (guide[k].parameter == j)
-							break;
-					}
-					if (guide[k].option_type != OPTIONTYPE_ENUM_VALUE)
+					auto iter = std::find_if(
+						entry->enum_value_begin(),
+						entry->enum_value_end(),
+						[j](const auto &this_entry) { return this_entry.parameter() == j; });
+					if (iter == entry->enum_value_end())
 						goto unexpected;
-					tempstr = tstring_from_utf8(guide[k].display_name);
-					SendMessage(control, CB_ADDSTRING, 0, (LPARAM) tempstr);
-					osd_free(tempstr);
+
+					tstring tempstr = tstring_from_utf8(iter->display_name());
+					SendMessage(control, CB_ADDSTRING, 0, (LPARAM) tempstr.c_str());
 				}
 				else
 					goto unexpected;
@@ -106,7 +92,7 @@ static BOOL prepare_combobox(HWND control, const option_guide *guide,
 
 		// if there is only one option, it is effectively disabled
 		if (option_count <= 1)
-			has_option = FALSE;
+			has_option = false;
 
 		if (current_index >= 0)
 			SendMessage(control, CB_SETCURSEL, current_index, 0);
@@ -120,11 +106,10 @@ static BOOL prepare_combobox(HWND control, const option_guide *guide,
 		SendMessage(control, CB_SETCURSEL, 0, 0);
 	}
 	EnableWindow(control, has_option);
-	return TRUE;
+	return true;
 
 unexpected:
-	assert(FALSE);
-	return FALSE;
+	throw false;
 }
 
 
@@ -136,113 +121,100 @@ static BOOL check_combobox(HWND control)
 
 
 
-static BOOL prepare_editbox(HWND control, const option_guide *guide,
-	const char *optspec)
+static BOOL prepare_editbox(HWND control, const util::option_resolution::entry *entry)
 {
-	util::option_resolution::error err = OPTIONRESOLUTION_ERROR_SUCCESS;
-	char buf[32];
-	int val, has_option, option_count;
+	util::option_resolution::error err = util::option_resolution::error::SUCCESS;
+	std::string buf;
+	int option_count;
 
-	has_option = guide && optspec;
-	buf[0] = '\0';
-
+	bool has_option = entry != nullptr;
 	if (has_option)
 	{
-		switch(guide->option_type)
+		switch(entry->option_type())
 		{
-			case OPTIONTYPE_STRING:
-				break;
+		case util::option_guide::entry::option_type::STRING:
+			break;
 
-			case OPTIONTYPE_INT:
-				err = option_resolution_getdefault(optspec, guide->parameter, &val);
-				if (err)
-					goto done;
-				_snprintf(buf, ARRAY_LENGTH(buf), "%d", val);
-				break;
+		case util::option_guide::entry::option_type::INT:
+			buf = entry->default_value();
+			break;
 
-			default:
-				err = OPTIONRESOLTUION_ERROR_INTERNAL;
-				goto done;
+		default:
+			err = util::option_resolution::error::INTERNAL;
+			goto done;
 		}
 	}
 
 	if (has_option)
 	{
-		option_count = get_option_count(guide, optspec);
+		option_count = get_option_count(entry->ranges());
 		if (option_count <= 1)
-			has_option = FALSE;
+			has_option = false;
 	}
 
 done:
-	assert(err != OPTIONRESOLTUION_ERROR_INTERNAL);
-	win_set_window_text_utf8(control, buf);
-	EnableWindow(control, !err && has_option);
-	return err == OPTIONRESOLUTION_ERROR_SUCCESS;
+	assert(err != util::option_resolution::error::INTERNAL);
+	win_set_window_text_utf8(control, buf.c_str());
+	EnableWindow(control, (err == util::option_resolution::error::SUCCESS) && has_option);
+	return err == util::option_resolution::error::SUCCESS;
 }
 
 
 
 static BOOL check_editbox(HWND control)
 {
-	char buf[256];
-	const option_guide *guide;
-	const char *optspec;
-	util::option_resolution::error err;
 	HANDLE h;
 	void *val;
 	UINT64 i_val;
+	bool is_valid;
 
+	const util::option_resolution::entry &entry = *((const util::option_resolution::entry *) GetProp(control, resolution_entry_prop));
 
-	guide = (const option_guide *) GetProp(control, guide_prop);
-	optspec = (const char *) GetProp(control, spec_prop);
+	std::string buf = win_get_window_text_utf8(control);
 
-	win_get_window_text_utf8(control, buf, ARRAY_LENGTH(buf));
-
-	switch(guide->option_type)
+	switch(entry.option_type())
 	{
-		case OPTIONTYPE_INT:
-			i_val = atoi(buf);
-			err = option_resolution_isvalidvalue(optspec, guide->parameter, i_val);
-			if (err)
-			{
-				h = GetProp(control, value_prop);
-				val = (void*) h;
-				_snprintf(buf, ARRAY_LENGTH(buf), "%d", val);
-				win_set_window_text_utf8(control, buf);
-			}
-			else
-			{
-				SetProp(control, value_prop, (HANDLE) i_val);
-			}
-			break;
+	case util::option_guide::entry::option_type::INT:
+		i_val = atoi(buf.c_str());
+		is_valid = std::find_if(
+			entry.ranges().begin(),
+			entry.ranges().end(),
+			[i_val](const auto &r) { return r.min <= i_val && i_val <= r.max; }) != entry.ranges().end();
 
-		default:
-			err = OPTIONRESOLTUION_ERROR_INTERNAL;
-			goto done;
+		if (!is_valid)
+		{
+			h = GetProp(control, value_prop);
+			val = (void*) h;
+			buf = util::string_format("%d", val);
+			win_set_window_text_utf8(control, buf.c_str());
+		}
+		else
+		{
+			SetProp(control, value_prop, (HANDLE) i_val);
+		}
+		break;
+
+	default:
+		throw false;
 	}
 
-done:
-	assert(err != OPTIONRESOLTUION_ERROR_INTERNAL);
-	return (err != OPTIONRESOLUTION_ERROR_SUCCESS);
+	return TRUE;
 }
 
 
 
-BOOL win_prepare_option_control(HWND control, const option_guide *guide,
-	const char *optspec)
+BOOL win_prepare_option_control(HWND control, util::option_resolution::entry &entry)
 {
 	BOOL rc = FALSE;
 	TCHAR class_name[32];
 
-	SetProp(control, guide_prop, (HANDLE) guide);
-	SetProp(control, spec_prop, (HANDLE) optspec);
-	GetClassName(control, class_name, sizeof(class_name)
-		/ sizeof(class_name[0]));
+	SetProp(control, resolution_entry_prop, (HANDLE)&entry);
+	GetClassName(control, class_name, ARRAY_LENGTH(class_name));
 
 	if (!_tcsicmp(class_name, TEXT("ComboBox")))
-		rc = prepare_combobox(control, guide, optspec);
+		rc = prepare_combobox(control, &entry);
 	else if (!_tcsicmp(class_name, TEXT("Edit")))
-		rc = prepare_editbox(control, guide, optspec);
+		rc = prepare_editbox(control, &entry);
 
 	return rc;
 }
@@ -269,29 +241,24 @@ BOOL win_check_option_control(HWND control)
 
 BOOL win_adjust_option_control(HWND control, int delta)
 {
-	const option_guide *guide;
-	const char *optspec;
-	struct OptionRange ranges[128];
-	char buf[64];
 	int val, original_val, i;
 	BOOL changed = FALSE;
 
-	guide = (const option_guide *) GetProp(control, guide_prop);
-	optspec = (const char *) GetProp(control, spec_prop);
+	auto entry = (const util::option_resolution::entry *) GetProp(control, resolution_entry_prop);
 
-	assert(guide->option_type == OPTIONTYPE_INT);
+	assert(entry->option_type() == util::option_guide::entry::option_type::INT);
 
 	if (delta == 0)
 		return TRUE;
 
-	option_resolution_listranges(optspec, guide->parameter,
-		ranges, ARRAY_LENGTH(ranges));
+	const util::option_resolution::entry::rangelist &ranges = entry->ranges();
 
-	win_get_window_text_utf8(control, buf, ARRAY_LENGTH(buf));
-	original_val = atoi(buf);
+	std::string buf = win_get_window_text_utf8(control);
+
+	original_val = atoi(buf.c_str());
 	val = original_val + delta;
 
-	for (i = 0; ranges[i].min >= 0; i++)
+	for (i = 0; i < ranges.size(); i++)
 	{
 		if (ranges[i].min > val)
 		{
@@ -308,8 +275,8 @@ BOOL win_adjust_option_control(HWND control, int delta)
 
 	if (val != original_val)
 	{
-		_snprintf(buf, ARRAY_LENGTH(buf), "%d", val);
-		win_set_window_text_utf8(control, buf);
+		std::string buf = util::string_format("%d", val);
+		win_set_window_text_utf8(control, buf.c_str());
 	}
 	return TRUE;
 }
@@ -318,53 +285,34 @@ BOOL win_adjust_option_control(HWND control, int delta)
 
 util::option_resolution::error win_add_resolution_parameter(HWND control, util::option_resolution *resolution)
 {
-	const util::option_guide *guide;
-	char buf[256];
-	util::option_resolution::error err;
-	const char *text;
-	const char *old_text;
-	int i;
+	std::string text = win_get_window_text_utf8(control);
+	if (text.empty())
+		return util::option_resolution::error::INTERNAL;
 
-	if (!win_get_window_text_utf8(control, buf, ARRAY_LENGTH(buf)))
+	auto entry = (util::option_resolution::entry *) GetProp(control, resolution_entry_prop);
+	if (!entry)
+		return util::option_resolution::error::INTERNAL;
+
+	if (entry->option_type() == util::option_guide::entry::option_type::ENUM_BEGIN)
 	{
-		err = OPTIONRESOLTUION_ERROR_INTERNAL;
-		return err;
-	}
-	text = buf;
+		// need to convert display name to identifier
+		std::string old_text = text;
+		text.clear();
 
-	guide = (const option_guide *) GetProp(control, guide_prop);
-	if (!guide)
-	{
-		err = OPTIONRESOLTUION_ERROR_INTERNAL;
-		return err;
-	}
-
-	if (guide->option_type == OPTIONTYPE_ENUM_BEGIN)
-	{
-		/* need to convert display name to identifier */
-		old_text = text;
-		text = nullptr;
-
-		for (i = 1; guide[i].option_type == OPTIONTYPE_ENUM_VALUE; i++)
+		for (auto iter = entry->enum_value_begin(); iter != entry->enum_value_end(); iter++)
 		{
-			if (!strcmp(guide[i].display_name, old_text))
+			if (iter->display_name() == old_text)
 			{
-				text = guide[i].identifier;
+				text = iter->identifier();
 				break;
 			}
 		}
 	}
 
-	if (text)
-	{
-		err = option_resolution_add_param(resolution, guide->identifier, text);
-		if (err)
-			return err;
-	}
+	if (!text.empty())
+		entry->set_value(text);
 
-	err = OPTIONRESOLUTION_ERROR_SUCCESS;
-
-	return err;
+	return util::option_resolution::error::SUCCESS;
 }
 
 

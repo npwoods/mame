@@ -1,6 +1,6 @@
 //============================================================
 //
-//  winutils.c - Generic Win32 utility code
+//  winutils.cpp - Generic Win32 utility code
 //
 //============================================================
 
@@ -37,7 +37,6 @@
 
 BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 {
-	BOOL result = FALSE;
 	BOOL dialog_result;
 	OSVERSIONINFO vers;
 	OPENFILENAME os_ofn;
@@ -133,7 +132,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	if (t_file != nullptr)
 	{
 		auto utf8_file = utf8_from_tstring(t_file);
-		_sntprintf(ofn->filename, ARRAY_LENGTH(ofn->filename), "%s", utf8_file.c_str());
+		snprintf(ofn->filename, ARRAY_LENGTH(ofn->filename), "%s", utf8_file.c_str());
 	}
 
 	// we've completed the process
