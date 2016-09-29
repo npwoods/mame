@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <tchar.h>
+#include <map>
 
 #include "wimgtool.h"
 #include "wimgres.h"
@@ -41,9 +42,9 @@ const char wimgtool_producttext[] = "MAME Image Tool";
 
 extern void win_association_dialog(HWND parent);
 
-typedef struct _wimgtool_info wimgtool_info;
-struct _wimgtool_info
+class wimgtool_info
 {
+public:
 	HWND listview;					// handle to list view
 	HWND statusbar;					// handle to the status bar
 	imgtool_image *image;			// the currently loaded image
@@ -55,7 +56,7 @@ struct _wimgtool_info
 
 	HIMAGELIST iconlist_normal;
 	HIMAGELIST iconlist_small;
-	mess_pile iconlist_extensions;
+	std::map<std::string, int> iconlist_extensions;
 
 	HICON readonly_icon;
 	int readonly_icon_index;
@@ -63,6 +64,14 @@ struct _wimgtool_info
 
 	HIMAGELIST dragimage;
 	POINT dragpt;
+
+	wimgtool_info()
+		: listview(nullptr), statusbar(nullptr), image(nullptr), partition(nullptr)
+		, filename(nullptr), open_mode(0), current_directory(nullptr), iconlist_normal(nullptr)
+		, iconlist_small(nullptr), readonly_icon(nullptr), readonly_icon_index(0), directory_icon_index(0)
+		, dragimage(nullptr)
+	{
+	}
 };
 
 static void tstring_rtrim(TCHAR *buf)
@@ -382,10 +391,6 @@ static imgtoolerr_t append_dirent(HWND window, int index, const imgtool_dirent *
 	wimgtool_info *info;
 	TCHAR buffer[32];
 	int icon_index = -1;
-	const char *extension;
-	const char *ptr;
-	const char *s;
-	size_t size, i;
 	imgtool_partition_features features;
 	struct tm *local_time;
 
@@ -418,35 +423,25 @@ static imgtoolerr_t append_dirent(HWND window, int index, const imgtool_dirent *
 		}
 		else
 		{
-			extension = strrchr(entry->filename, '.');
-			if (!extension)
+			// identify and normalize the file extension
+			std::string extension = core_filename_extract_extension(entry->filename);
+			if (extension.empty())
 				extension = ".bin";
+			else
+				std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
-			ptr = (const char *)pile_getptr(&info->iconlist_extensions);
-			size = pile_size(&info->iconlist_extensions);
-			icon_index = -1;
-
-			i = 0;
-			while(i < size)
+			// try to find this icon
+			auto iter = info->iconlist_extensions.find(extension);
+			if (iter != info->iconlist_extensions.end())
 			{
-				s = &ptr[i];
-				i += strlen(&ptr[i]) + 1;
-				memcpy(&icon_index, &ptr[i], sizeof(icon_index));
-				i += sizeof(icon_index);
-
-				if (!core_stricmp(s, extension))
-					break;
+				// we've found it - use it
+				icon_index = iter->second;
 			}
-
-			if (i >= size)
+			else
 			{
-				icon_index = append_associated_icon(window, extension);
-				if (pile_puts(&info->iconlist_extensions, extension))
-					return IMGTOOLERR_OUTOFMEMORY;
-				if (pile_putc(&info->iconlist_extensions, '\0'))
-					return IMGTOOLERR_OUTOFMEMORY;
-				if (pile_write(&info->iconlist_extensions, &icon_index, sizeof(icon_index)))
-					return IMGTOOLERR_OUTOFMEMORY;
+				// we have not; create a new one
+				icon_index = append_associated_icon(window, extension.c_str());
+				info->iconlist_extensions[extension] = icon_index;
 			}
 		}
 	}
@@ -1565,11 +1560,9 @@ static LRESULT wimgtool_create(HWND window, CREATESTRUCT *pcs)
 	wimgtool_info *info;
 	static const int status_widths[3] = { 200, 400, -1 };
 
-	info = (wimgtool_info*)malloc(sizeof(*info));
+	info = new wimgtool_info();
 	if (!info)
 		return -1;
-	memset(info, 0, sizeof(*info));
-	pile_init(&info->iconlist_extensions);
 
 	SetWindowLongPtr(window, GWLP_USERDATA, (LONG_PTR) info);
 
@@ -1622,11 +1615,10 @@ static void wimgtool_destroy(HWND window)
 			imgtool_partition_close(info->partition);
 		if (info->image)
 			imgtool_image_close(info->image);
-		pile_delete(&info->iconlist_extensions);
 		DestroyIcon(info->readonly_icon);
 		if (info->current_directory)
 			osd_free(info->current_directory);
-		free(info);
+		delete info;
 	}
 }
 
