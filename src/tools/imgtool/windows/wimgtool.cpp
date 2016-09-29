@@ -1,6 +1,6 @@
 //============================================================
 //
-//  wimgtool.c - Win32 GUI Imgtool
+//  wimgtool.cpp - Win32 GUI Imgtool
 //
 //============================================================
 // standard windows headers
@@ -37,7 +37,7 @@
 #include "winutils.h"
 
 const TCHAR wimgtool_class[] = TEXT("wimgtool_class");
-const char wimgtool_producttext[] = "MESS Image Tool";
+const char wimgtool_producttext[] = "MAME Image Tool";
 
 extern void win_association_dialog(HWND parent);
 
