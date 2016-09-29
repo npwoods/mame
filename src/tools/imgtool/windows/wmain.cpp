@@ -6,6 +6,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <commctrl.h>
+#include <shellapi.h>
 
 #include "wimgtool.h"
 #include "wimgres.h"
@@ -14,16 +15,28 @@
 #include "winutf8.h"
 #include "strconv.h"
 
-static void rtrim(std::string &s)
-{
-	auto result = std::find_if(
-		s.rbegin(),
-		s.rend(),
-		[](const char ch) { return isspace(ch); });
 
-	s.resize(s.size() - (result - s.rbegin()));
+//-------------------------------------------------
+//  get_command_line_arguments
+//-------------------------------------------------
+
+static std::vector<std::string> get_command_line_arguments()
+{
+	int argc;
+	LPWSTR *w_argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+	std::vector<std::string> result(argc);
+	for (int i = 0; i < argc; i++)
+		result[i] = utf8_from_wstring(w_argv[i]);
+
+	LocalFree(w_argv);
+	return result;
 }
 
+
+//-------------------------------------------------
+//  WinMain
+//-------------------------------------------------
 
 int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 	LPSTR command_line, int cmd_show)
@@ -34,7 +47,8 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 	int rc = -1;
 	imgtoolerr_t err;
 	HACCEL accel = nullptr;
-	std::string utf8_command_line = utf8_from_tstring(GetCommandLine());
+
+	std::vector<std::string> argv = get_command_line_arguments();
 
 	// initialize Windows classes
 	InitCommonControls();
@@ -63,17 +77,11 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 #endif
 
 	// load image specified at the command line
-	if (!utf8_command_line.empty())
+	if (argv.size() >= 2)
 	{
-		rtrim(utf8_command_line);
-
-		// check to see if everything is quoted
-		if ((utf8_command_line[0] == '\"') && (utf8_command_line[utf8_command_line.size() - 1] == '\"'))
-			utf8_command_line = utf8_command_line.substr(1, utf8_command_line.size() - 2);
-
-		err = wimgtool_open_image(window, nullptr, utf8_command_line, OSD_FOPEN_RW);
+		err = wimgtool_open_image(window, nullptr, argv[1], OSD_FOPEN_RW);
 		if (err)
-			wimgtool_report_error(window, err, utf8_command_line.c_str(), nullptr);
+			wimgtool_report_error(window, err, argv[1].c_str(), nullptr);
 	}
 
 	accel = LoadAccelerators(nullptr, MAKEINTRESOURCE(IDA_WIMGTOOL_MENU));
@@ -99,12 +107,4 @@ done:
 	if (accel)
 		DestroyAcceleratorTable(accel);
 	return rc;
-}
-
-
-
-int utf8_main(int argc, char *argv[])
-{
-	/* dummy */
-	return 0;
 }
