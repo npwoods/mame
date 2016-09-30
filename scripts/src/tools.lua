@@ -838,6 +838,8 @@ files {
 	MAME_DIR .. "src/tools/imgtool/windows/assocdlg.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/attrdlg.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/attrdlg.h",
+	MAME_DIR .. "src/tools/imgtool/windows/exticon.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/exticon.h",
 	MAME_DIR .. "src/tools/imgtool/windows/hexview.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/hexview.h",
 	MAME_DIR .. "src/tools/imgtool/windows/opcntrl.cpp",

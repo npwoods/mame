@@ -25,12 +25,14 @@
 #include <tchar.h>
 #include <map>
 
+// Wimgtool headers
 #include "wimgtool.h"
 #include "wimgres.h"
 #include "pile.h"
 #include "pool.h"
 #include "strconv.h"
 #include "attrdlg.h"
+#include "exticon.h"
 #include "secview.h"
 #include "winfile.h"
 #include "winutf8.h"
@@ -54,21 +56,16 @@ public:
 	int open_mode;
 	char *current_directory;
 
-	HIMAGELIST iconlist_normal;
-	HIMAGELIST iconlist_small;
-	std::map<std::string, int> iconlist_extensions;
+	imgtool::windows::extension_icon_provider icon_provider;
 
 	HICON readonly_icon;
-	int readonly_icon_index;
-	int directory_icon_index;
 
 	HIMAGELIST dragimage;
 	POINT dragpt;
 
 	wimgtool_info()
 		: listview(nullptr), statusbar(nullptr), image(nullptr), partition(nullptr)
-		, filename(nullptr), open_mode(0), current_directory(nullptr), iconlist_normal(nullptr)
-		, iconlist_small(nullptr), readonly_icon(nullptr), readonly_icon_index(0), directory_icon_index(0)
+		, filename(nullptr), open_mode(0), current_directory(nullptr), readonly_icon(nullptr)
 		, dragimage(nullptr)
 	{
 	}
@@ -229,161 +226,6 @@ void wimgtool_report_error(HWND window, imgtoolerr_t err, const char *imagename,
 
 
 
-static HICON create_icon(int width, int height, const UINT32 *icondata)
-{
-	HDC dc = nullptr;
-	HICON icon = nullptr;
-	BYTE *color_bits, *mask_bits;
-	HBITMAP color_bitmap = nullptr, mask_bitmap = nullptr;
-	ICONINFO iconinfo;
-	UINT32 pixel;
-	UINT8 mask;
-	int x, y;
-	BITMAPINFO bmi;
-
-	// we need a device context
-	dc = CreateCompatibleDC(nullptr);
-	if (!dc)
-		goto done;
-
-	// create foreground bitmap
-	memset(&bmi, 0, sizeof(bmi));
-	bmi.bmiHeader.biWidth = width;
-	bmi.bmiHeader.biHeight = height;
-	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 24;
-	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
-	color_bitmap = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (void **) &color_bits, nullptr, 0);
-	if (!color_bitmap)
-		goto done;
-
-	// create mask bitmap
-	memset(&bmi, 0, sizeof(bmi));
-	bmi.bmiHeader.biWidth = width;
-	bmi.bmiHeader.biHeight = height;
-	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 1;
-	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
-	mask_bitmap = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (void **) &mask_bits, nullptr, 0);
-	if (!color_bitmap)
-		goto done;
-
-	// transfer data from our structure to the bitmaps
-	for (y = 0; y < height; y++)
-	{
-		for (x = 0; x < width; x++)
-		{
-			mask = 1 << (7 - (x % 8));
-			pixel = icondata[y * width + x];
-
-			// foreground icon
-			color_bits[((height - y - 1) * width + x) * 3 + 2] = (pixel >> 16);
-			color_bits[((height - y - 1) * width + x) * 3 + 1] = (pixel >>  8);
-			color_bits[((height - y - 1) * width + x) * 3 + 0] = (pixel >>  0);
-
-			// mask
-			if (pixel & 0x80000000)
-				mask_bits[((height - y - 1) * width + x) / 8] &= ~mask;
-			else
-				mask_bits[((height - y - 1) * width + x) / 8] |= mask;
-		}
-	}
-
-	// actually create the icon
-	memset(&iconinfo, 0, sizeof(iconinfo));
-	iconinfo.fIcon = TRUE;
-	iconinfo.hbmColor = color_bitmap;
-	iconinfo.hbmMask = mask_bitmap;
-	icon = CreateIconIndirect(&iconinfo);
-
-done:
-	if (color_bitmap)
-		DeleteObject(color_bitmap);
-	if (mask_bitmap)
-		DeleteObject(mask_bitmap);
-	if (dc)
-		DeleteDC(dc);
-	return icon;
-}
-
-
-
-static imgtoolerr_t hicons_from_imgtool_icon(const imgtool_iconinfo *iconinfo,
-    HICON *icon16x16, HICON *icon32x32)
-{
-	*icon16x16 = nullptr;
-	*icon32x32 = nullptr;
-
-	if (iconinfo->icon16x16_specified)
-	{
-	    *icon16x16 = create_icon(16, 16, (const UINT32 *) iconinfo->icon16x16);
-		if (!*icon16x16)
-	        return IMGTOOLERR_OUTOFMEMORY;
-	}
-
-	if (iconinfo->icon32x32_specified)
-	{
-	    *icon32x32 = create_icon(32, 32, (const UINT32 *) iconinfo->icon32x32);
-		if (!*icon32x32)
-	        return IMGTOOLERR_OUTOFMEMORY;
-	}
-
-    return IMGTOOLERR_SUCCESS;
-}
-
-
-
-#define FOLDER_ICON	((const char *) ~0)
-
-static int append_associated_icon(HWND window, const char *extension)
-{
-	HICON icon;
-	HANDLE file = INVALID_HANDLE_VALUE;
-	WORD icon_index;
-	TCHAR file_path[MAX_PATH];
-	int index = -1;
-	wimgtool_info *info;
-
-	info = get_wimgtool_info(window);
-
-	// retrieve temporary file path
-	GetTempPath(ARRAY_LENGTH(file_path), file_path);
-
-	// if we have the folder icon, we're done - otherwise...
-	if (extension != FOLDER_ICON)
-	{
-		// create bogus temporary file so that we can get the icon
-		_tcscat(file_path, TEXT("tmp"));
-		if (extension)
-		{
-			auto t_extension = tstring_from_utf8(extension);
-			_tcscat(file_path, t_extension.c_str());
-		}
-
-		file = CreateFile(file_path, GENERIC_WRITE, 0, nullptr, CREATE_NEW, 0, nullptr);
-	}
-
-	// extract the icon
-	icon = ExtractAssociatedIcon(GetModuleHandle(nullptr), file_path, &icon_index);
-	if (icon)
-	{
-		index = ImageList_AddIcon(info->iconlist_normal, icon);
-		ImageList_AddIcon(info->iconlist_small, icon);
-		DestroyIcon(icon);
-	}
-
-	// remote temporary file if we created one
-	if (file != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(file);
-		DeleteFile(file_path);
-	}
-
-	return index;
-}
-
-
-
 static imgtoolerr_t append_dirent(HWND window, int index, const imgtool_dirent *entry)
 {
 	LVITEM lvi;
@@ -400,49 +242,24 @@ static imgtoolerr_t append_dirent(HWND window, int index, const imgtool_dirent *
 	/* try to get a custom icon */
 	if (features.supports_geticoninfo)
 	{
-		char buf[256];
-		HICON icon16x16, icon32x32;
 		imgtool_iconinfo iconinfo;
+		std::string buf = string_format("%s%s", info->current_directory, entry->filename);
+		imgtool_partition_get_icon_info(info->partition, buf.c_str(), &iconinfo);
 
-		sprintf(buf, "%s%s", info->current_directory, entry->filename);
-		imgtool_partition_get_icon_info(info->partition, buf, &iconinfo);
-
-		hicons_from_imgtool_icon(&iconinfo, &icon16x16, &icon32x32);
-		if (icon16x16 || icon32x32)
-		{
-			icon_index = ImageList_AddIcon(info->iconlist_normal, icon32x32);
-			ImageList_AddIcon(info->iconlist_small, icon32x32);
-		}
+		icon_index = info->icon_provider.provide_icon_index(iconinfo);
 	}
 
 	if (icon_index < 0)
 	{
 		if (entry->directory)
 		{
-			icon_index = info->directory_icon_index;
+			icon_index = info->icon_provider.directory_icon_index();
 		}
 		else
 		{
 			// identify and normalize the file extension
 			std::string extension = core_filename_extract_extension(entry->filename);
-			if (extension.empty())
-				extension = ".bin";
-			else
-				std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-			// try to find this icon
-			auto iter = info->iconlist_extensions.find(extension);
-			if (iter != info->iconlist_extensions.end())
-			{
-				// we've found it - use it
-				icon_index = iter->second;
-			}
-			else
-			{
-				// we have not; create a new one
-				icon_index = append_associated_icon(window, extension.c_str());
-				info->iconlist_extensions[extension] = icon_index;
-			}
+			icon_index = info->icon_provider.provide_icon_index(std::move(extension));
 		}
 	}
 
@@ -1582,18 +1399,11 @@ static LRESULT wimgtool_create(HWND window, CREATESTRUCT *pcs)
 		(LPARAM) status_widths);
 
 	// create imagelists
-	info->iconlist_normal = ImageList_Create(32, 32, ILC_COLORDDB | ILC_MASK , 0, 0);
-	info->iconlist_small = ImageList_Create(16, 16, ILC_COLORDDB | ILC_MASK , 0, 0);
-	if (!info->iconlist_normal || !info->iconlist_small)
-		return -1;
-	(void)ListView_SetImageList(info->listview, info->iconlist_normal, LVSIL_NORMAL);
-	(void)ListView_SetImageList(info->listview, info->iconlist_small, LVSIL_SMALL);
+	(void)ListView_SetImageList(info->listview, info->icon_provider.normal_icon_list(), LVSIL_NORMAL);
+	(void)ListView_SetImageList(info->listview, info->icon_provider.small_icon_list(), LVSIL_SMALL);
 
 	// get icons
 	info->readonly_icon = (HICON)LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_READONLY), IMAGE_ICON, 16, 16, 0);
-	info->readonly_icon_index = ImageList_AddIcon(info->iconlist_normal, info->readonly_icon);
-	ImageList_AddIcon(info->iconlist_small, info->readonly_icon);
-	info->directory_icon_index = append_associated_icon(window, FOLDER_ICON);
 
 	full_refresh_image(window);
 	return 0;
