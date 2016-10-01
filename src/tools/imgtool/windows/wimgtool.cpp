@@ -640,7 +640,7 @@ static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, HWND wind
 	if (info->filename)
 	{
 		// copy the filename into the filename structure
-		snprintf(ofn->filename, ARRAY_LENGTH(ofn->filename), "%s", info->filename);
+		ofn->filename = info->filename;
 
 		// specify an initial directory
 		initial_dir = (char*)alloca((strlen(info->filename) + 1) * sizeof(*info->filename));
@@ -904,7 +904,7 @@ static void menu_new(HWND window)
 
 	module = find_filter_module(ofn.filter_index, TRUE);
 
-	err = imgtool_image_create(module, ofn.filename, resolution.get(), nullptr);
+	err = imgtool_image_create(module, ofn.filename.c_str(), resolution.get(), nullptr);
 	if (err)
 		goto done;
 
@@ -914,7 +914,7 @@ static void menu_new(HWND window)
 
 done:
 	if (err)
-		wimgtool_report_error(window, err, ofn.filename, nullptr);
+		wimgtool_report_error(window, err, ofn.filename.c_str(), nullptr);
 }
 
 
@@ -937,7 +937,7 @@ static void menu_open(HWND window)
 	module = find_filter_module(ofn.filter_index, FALSE);
 
 	// is this file read only?
-	if ((ofn.flags & OFN_READONLY) || (win_get_file_attributes_utf8(ofn.filename) & FILE_ATTRIBUTE_READONLY))
+	if ((ofn.flags & OFN_READONLY) || (win_get_file_attributes_utf8(ofn.filename.c_str()) & FILE_ATTRIBUTE_READONLY))
 		read_or_write = OSD_FOPEN_READ;
 	else
 		read_or_write = OSD_FOPEN_RW;
@@ -948,7 +948,7 @@ static void menu_open(HWND window)
 
 done:
 	if (err)
-		wimgtool_report_error(window, err, ofn.filename, nullptr);
+		wimgtool_report_error(window, err, ofn.filename.c_str(), nullptr);
 }
 
 
@@ -957,7 +957,6 @@ static void menu_insert(HWND window)
 {
 	imgtoolerr_t err;
 	char *image_filename = nullptr;
-	const char *s1;
 	win_open_file_name ofn;
 	wimgtool_info *info;
 	std::unique_ptr<util::option_resolution> opts;
@@ -970,6 +969,7 @@ static void menu_insert(HWND window)
 	filter_getinfoproc filter = nullptr;
 	const util::option_guide *writefile_optguide;
 	const char *writefile_optspec;
+	std::string basename;
 
 	info = get_wimgtool_info(window);
 
@@ -984,7 +984,7 @@ static void menu_insert(HWND window)
 	}
 
 	/* we need to open the stream at this point, so that we can suggest the transfer */
-	stream = stream_open(ofn.filename, OSD_FOPEN_READ);
+	stream = stream_open(ofn.filename.c_str(), OSD_FOPEN_READ);
 	if (!stream)
 	{
 		err = IMGTOOLERR_FILENOTFOUND;
@@ -1015,11 +1015,10 @@ static void menu_insert(HWND window)
 		}
 	}
 
-	/* figure out the image filename */
-	s1 = strrchr(ofn.filename, '\\');
-	s1 = s1 ? s1 + 1 : ofn.filename;
-	image_filename = (char *) alloca(strlen(s1) + 1);
-	strcpy(image_filename, s1);
+	// figure out the image filename
+	basename = core_filename_extract_base(ofn.filename);
+	image_filename = (char *) alloca((basename.size() + 1) * sizeof(image_filename[0]));
+	strcpy(image_filename, basename.c_str());
 
 	/* append the current directory, if appropriate */
 	if (info->current_directory != nullptr)
@@ -1037,7 +1036,7 @@ static void menu_insert(HWND window)
 
 done:
 	if (err)
-		wimgtool_report_error(window, err, image_filename, ofn.filename);
+		wimgtool_report_error(window, err, image_filename, ofn.filename.c_str());
 }
 
 
@@ -1135,8 +1134,7 @@ static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent *entry, 
 	ofn.owner = window;
 	ofn.flags = OFN_EXPLORER;
 	ofn.filter = "All files (*.*)|*.*";
-
-	snprintf(ofn.filename, ARRAY_LENGTH(ofn.filename), "%s", image_basename);
+	ofn.filename = image_basename;
 
 	if (suggestion_info.suggestions[0].viability)
 	{
@@ -1153,7 +1151,7 @@ static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent *entry, 
 
 	if (entry->directory)
 	{
-		err = get_recursive_directory(info->partition, filename, ofn.filename);
+		err = get_recursive_directory(info->partition, filename, ofn.filename.c_str());
 		if (err)
 			goto done;
 	}
@@ -1170,14 +1168,14 @@ static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent *entry, 
 			filter = nullptr;
 		}
 
-		err = imgtool_partition_get_file(info->partition, filename, fork, ofn.filename, filter);
+		err = imgtool_partition_get_file(info->partition, filename, fork, ofn.filename.c_str(), filter);
 		if (err)
 			goto done;
 	}
 
 done:
 	if (err)
-		wimgtool_report_error(window, err, filename, ofn.filename);
+		wimgtool_report_error(window, err, filename, ofn.filename.c_str());
 	return err;
 }
 

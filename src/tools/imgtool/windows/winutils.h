@@ -30,7 +30,7 @@ struct _win_open_file_name
 	HINSTANCE				instance;			// instance
 	std::string				filter;				// pipe char ("|") delimited strings
 	DWORD					filter_index;		// index into filter
-	char					filename[MAX_PATH];	// filename buffer
+	std::string				filename;			// filename buffer
 	const char *			initial_directory;	// initial directory for dialog
 	DWORD					flags;				// standard flags
 	LPARAM					custom_data;		// custom data for dialog hook

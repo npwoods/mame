@@ -79,9 +79,8 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	}
 
 	// do we need to translate the file parameter?
-	if (ofn->filename != nullptr)
 	{
-		auto buffer = tstring_from_utf8(ofn->filename);
+		auto buffer = tstring_from_utf8(ofn->filename.c_str());
 		t_file_size = std::max(buffer.length() + 1, (size_t)MAX_PATH);
 		t_file = (LPTSTR)alloca(t_file_size * sizeof(*t_file));
 		_tcscpy(t_file, buffer.c_str());
@@ -128,11 +127,9 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	ofn->flags = os_ofn.Flags;
 
 	// copy file back out into passed structure
-	if (t_file != nullptr)
-	{
-		auto utf8_file = utf8_from_tstring(t_file);
-		snprintf(ofn->filename, ARRAY_LENGTH(ofn->filename), "%s", utf8_file.c_str());
-	}
+	ofn->filename = t_file != nullptr
+		? utf8_from_tstring(t_file)
+		: "";
 
 	// we've completed the process
 	return dialog_result;
