@@ -28,7 +28,7 @@ struct _win_open_file_name
 	win_file_dialog_type	type;				// type of file dialog
 	HWND					owner;				// owner of the dialog
 	HINSTANCE				instance;			// instance
-	const char *			filter;				// pipe char ("|") delimited strings
+	std::string				filter;				// pipe char ("|") delimited strings
 	DWORD					filter_index;		// index into filter
 	char					filename[MAX_PATH];	// filename buffer
 	const char *			initial_directory;	// initial directory for dialog

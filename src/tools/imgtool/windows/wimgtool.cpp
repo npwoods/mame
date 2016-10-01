@@ -28,7 +28,6 @@
 // Wimgtool headers
 #include "wimgtool.h"
 #include "wimgres.h"
-#include "pile.h"
 #include "pool.h"
 #include "strconv.h"
 #include "attrdlg.h"
@@ -567,13 +566,10 @@ static imgtoolerr_t full_refresh_image(HWND window)
 
 
 
-static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, object_pool *pool,
-	HWND window, BOOL creating_file)
+static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, HWND window, bool creating_file)
 {
 	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
-	mess_pile pile;
 	const imgtool_module *default_module = nullptr;
-	char *filter;
 	char *initial_dir = nullptr;
 	char *dir_char;
 	imgtool_module_features features;
@@ -585,12 +581,13 @@ static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, object_po
 	if (info->image)
 		default_module = imgtool_image_module(info->image);
 
-	pile_init(&pile);
+	std::stringstream filter;
 
+	// if we're opening (not creating), then "Autodetect" is pertinent
 	if (!creating_file)
 	{
 		current_index++;
-		pile_puts(&pile, "Autodetect (*.*)|*.*|");
+		filter << "Autodetect (*.*)|*.*|";
 	}
 
 	// write out library modules
@@ -605,48 +602,38 @@ static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, object_po
 			if (module.get() == default_module)
 				filter_index = current_index;
 
-			pile_puts(&pile, module->description);
-			pile_puts(&pile, " (");
+			filter << module->description << " (";
 
 			for (i = 0; module->extensions[i]; i++)
 			{
 				if (module->extensions[i] == ',')
-					pile_putc(&pile, ';');
+					filter << ';';
 				if ((i == 0) || (module->extensions[i] == ','))
-					pile_printf(&pile, "*.");
+					filter << "*.";
 				if (module->extensions[i] != ',')
-					pile_putc(&pile, module->extensions[i]);
+					filter << module->extensions[i];
 			}
-			pile_puts(&pile, ")|");
+			filter << ")|";
 
 			for (i = 0; module->extensions[i]; i++)
 			{
 				if (module->extensions[i] == ',')
-					pile_putc(&pile, ';');
+					filter << ';';
 				if ((i == 0) || (module->extensions[i] == ','))
-					pile_printf(&pile, "*.");
+					filter << "*.";
 				if (module->extensions[i] != ',')
-					pile_putc(&pile, module->extensions[i]);
+					filter << module->extensions[i];
 			}
 
-			pile_putc(&pile, '|');
+			filter << '|';
 		}
 	}
-	pile_putc(&pile, '\0');
-
-	filter = (char*)pool_malloc_lib(pool, pile_size(&pile));
-	if (!filter)
-	{
-		err = IMGTOOLERR_OUTOFMEMORY;
-		goto done;
-	}
-	memcpy(filter, pile_getptr(&pile), pile_size(&pile));
 
 	// populate the actual structure
 	memset(ofn, 0, sizeof(*ofn));
 	ofn->flags = OFN_EXPLORER;
 	ofn->owner = window;
-	ofn->filter = filter;
+	ofn->filter = filter.str();
 	ofn->filter_index = filter_index;
 
 	// can we specify an initial directory?
@@ -666,8 +653,6 @@ static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, object_po
 		ofn->initial_directory = initial_dir;
 	}
 
-done:
-	pile_delete(&pile);
 	return err;
 }
 
@@ -901,14 +886,11 @@ done:
 static void menu_new(HWND window)
 {
 	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
-	object_pool *pool;
 	win_open_file_name ofn;
 	const imgtool_module *module;
 	std::unique_ptr<util::option_resolution> resolution;
 
-	pool = pool_alloc_lib(nullptr);
-
-	err = setup_openfilename_struct(&ofn, pool, window, TRUE);
+	err = setup_openfilename_struct(&ofn, window, true);
 	if (err)
 		goto done;
 	ofn.flags |= OFN_ENABLETEMPLATE | OFN_ENABLEHOOK;
@@ -933,8 +915,6 @@ static void menu_new(HWND window)
 done:
 	if (err)
 		wimgtool_report_error(window, err, ofn.filename, nullptr);
-	if (pool)
-		pool_free_lib(pool);
 }
 
 
@@ -942,22 +922,11 @@ done:
 static void menu_open(HWND window)
 {
 	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
-	object_pool *pool;
 	win_open_file_name ofn;
 	const imgtool_module *module;
-	//wimgtool_info *info;
 	int read_or_write;
 
-	pool = pool_alloc_lib(nullptr);
-	if (!pool)
-	{
-		err = IMGTOOLERR_OUTOFMEMORY;
-		goto done;
-	}
-
-	//info = get_wimgtool_info(window);
-
-	err = setup_openfilename_struct(&ofn, pool, window, FALSE);
+	err = setup_openfilename_struct(&ofn, window, false);
 	if (err)
 		goto done;
 	ofn.flags |= OFN_FILEMUSTEXIST;
@@ -980,8 +949,6 @@ static void menu_open(HWND window)
 done:
 	if (err)
 		wimgtool_report_error(window, err, ofn.filename, nullptr);
-	if (pool)
-		pool_free_lib(pool);
 }
 
 

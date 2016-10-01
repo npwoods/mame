@@ -844,8 +844,6 @@ files {
 	MAME_DIR .. "src/tools/imgtool/windows/hexview.h",
 	MAME_DIR .. "src/tools/imgtool/windows/opcntrl.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/opcntrl.h",
-	MAME_DIR .. "src/tools/imgtool/windows/pile.cpp",
-	MAME_DIR .. "src/tools/imgtool/windows/pile.h",
 	MAME_DIR .. "src/tools/imgtool/windows/secview.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/secview.h",
 	MAME_DIR .. "src/tools/imgtool/windows/wimgres.h",

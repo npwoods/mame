@@ -41,11 +41,10 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	OSVERSIONINFO vers;
 	OPENFILENAME os_ofn;
 	DWORD os_ofn_size;
-	LPTSTR t_filter = nullptr;
+	tstring t_filter;
 	LPTSTR t_file = nullptr;
 	std::unique_ptr<tstring> t_initial_directory;
 	DWORD t_file_size = 0;
-	int i;
 
 	// determine the version of Windows
 	memset(&vers, 0, sizeof(vers));
@@ -67,16 +66,16 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	}
 
 	// do we have to translate the filter?
-	if (ofn->filter != nullptr)
+	if (!ofn->filter.empty())
 	{
-		auto buffer = tstring_from_utf8(ofn->filter);
+		t_filter = tstring_from_utf8(ofn->filter.c_str());
 
 		// convert a pipe-char delimited string into a NUL delimited string
-		t_filter = (LPTSTR) alloca((buffer.length() + 2) * sizeof(*t_filter));
-		for (i = 0; buffer[i] != '\0'; i++)
-			t_filter[i] = (buffer[i] != '|') ? buffer[i] : '\0';
-		t_filter[i++] = '\0';
-		t_filter[i++] = '\0';
+		for (auto iter = t_filter.begin(); iter != t_filter.end(); iter++)
+			*iter = (*iter != '|') ? *iter : '\0';
+		
+		// we need another NUL
+		t_filter += (TCHAR)'\0';
 	}
 
 	// do we need to translate the file parameter?
@@ -97,7 +96,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	os_ofn.lStructSize = os_ofn_size;
 	os_ofn.hwndOwner = ofn->owner;
 	os_ofn.hInstance = ofn->instance;
-	os_ofn.lpstrFilter = t_filter;
+	os_ofn.lpstrFilter = !t_filter.empty() ? t_filter.c_str() : nullptr;
 	os_ofn.nFilterIndex = ofn->filter_index;
 	os_ofn.lpstrFile = t_file;
 	os_ofn.nMaxFile = t_file_size;
