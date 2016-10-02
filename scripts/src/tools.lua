@@ -831,7 +831,8 @@ files {
 	MAME_DIR .. "src/tools/imgtool/windows/wimgtool.rc",
 	MAME_DIR .. "src/tools/imgtool/windows/winutils.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/winutils.h",
-	MAME_DIR .. "src/tools/imgtool/windows/wmain.cpp"
+	MAME_DIR .. "src/tools/imgtool/windows/wmain.cpp",
+	GEN_DIR .. "version.cpp",
 }
 
 configuration { "mingw*" or "vs*" }

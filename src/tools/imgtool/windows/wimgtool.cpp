@@ -437,8 +437,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	const char *statusbar_text[2];
 	imgtool_partition_features features;
 	std::string basename;
-	//extern const char build_version[];
-	static const char build_version[] = "TODOFIXME";
+	extern const char build_version[];
 
 	info = get_wimgtool_info(window);
 
