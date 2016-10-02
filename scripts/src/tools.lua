@@ -651,30 +651,16 @@ configuration { }
 strip()
 
 --------------------------------------------------
--- imgtool
+-- imgtool_core
 --------------------------------------------------
 
-project("imgtool")
-uuid ("f3707807-e587-4297-a5d8-bc98f3d0b1ca")
-kind "ConsoleApp"
+project("imgtool_core")
+uuid ("7d53f5ae-d4b5-4e20-905b-03e1bbc102fa")
+kind (LIBTYPE)
 
-flags {
-	"Symbols", -- always include minimum symbols for executables
-}
-
-if _OPTIONS["SEPARATE_BIN"]~="1" then
-	targetdir(MAME_DIR)
-end
-
-links {
-	"formats",
-	"emu",
-	"utils",
-	ext_lib("expat"),
-	"7z",
-	"ocore_" .. _OPTIONS["osd"],
-	ext_lib("zlib"),
-	ext_lib("flac"),
+addprojectflags()
+options {
+	"ArchiveSplit",
 }
 
 includedirs {
@@ -686,8 +672,6 @@ includedirs {
 }
 
 files {
-	MAME_DIR .. "src/tools/imgtool/main.cpp",
-	MAME_DIR .. "src/tools/imgtool/main.h",
 	MAME_DIR .. "src/tools/imgtool/stream.cpp",
 	MAME_DIR .. "src/tools/imgtool/stream.h",
 	MAME_DIR .. "src/tools/imgtool/library.cpp",
@@ -737,6 +721,47 @@ files {
 		MAME_DIR .. "src/tools/imgtool/modules/hp9845_tape.cpp",
 }
 
+--------------------------------------------------
+-- imgtool
+--------------------------------------------------
+
+project("imgtool")
+uuid ("f3707807-e587-4297-a5d8-bc98f3d0b1ca")
+kind "ConsoleApp"
+
+flags {
+	"Symbols", -- always include minimum symbols for executables
+}
+
+if _OPTIONS["SEPARATE_BIN"]~="1" then
+	targetdir(MAME_DIR)
+end
+
+links {
+	"formats",
+	"emu",
+	"utils",
+	"imgtool_core",
+	ext_lib("expat"),
+	"7z",
+	"ocore_" .. _OPTIONS["osd"],
+	ext_lib("zlib"),
+	ext_lib("flac"),
+}
+
+includedirs {
+	MAME_DIR .. "src/osd",
+	MAME_DIR .. "src/lib",
+	MAME_DIR .. "src/lib/util",
+	ext_includedir("zlib"),
+	MAME_DIR .. "src/tools/imgtool",
+}
+
+files {
+	MAME_DIR .. "src/tools/imgtool/main.cpp",
+	MAME_DIR .. "src/tools/imgtool/main.h"
+}
+
 configuration { "mingw*" or "vs*" }
 	targetextension ".exe"
 
@@ -766,6 +791,7 @@ links {
 	"formats",
 	"emu",
 	"utils",
+	"imgtool_core",
 	ext_lib("expat"),
 	"7z",
 	"ocore_" .. _OPTIONS["osd"],
@@ -786,53 +812,6 @@ includedirs {
 }
 
 files {
-	MAME_DIR .. "src/tools/imgtool/stream.cpp",
-	MAME_DIR .. "src/tools/imgtool/stream.h",
-	MAME_DIR .. "src/tools/imgtool/library.cpp",
-	MAME_DIR .. "src/tools/imgtool/library.h",
-	MAME_DIR .. "src/tools/imgtool/modules.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules.h",
-	MAME_DIR .. "src/tools/imgtool/iflopimg.cpp",
-	MAME_DIR .. "src/tools/imgtool/iflopimg.h",
-	MAME_DIR .. "src/tools/imgtool/filter.cpp",
-	MAME_DIR .. "src/tools/imgtool/filter.h",
-	MAME_DIR .. "src/tools/imgtool/filteoln.cpp",
-	MAME_DIR .. "src/tools/imgtool/filtbas.cpp",
-	MAME_DIR .. "src/tools/imgtool/imgtool.cpp",
-	MAME_DIR .. "src/tools/imgtool/imgtool.h",
-	MAME_DIR .. "src/tools/imgtool/imgterrs.cpp",
-	MAME_DIR .. "src/tools/imgtool/imgterrs.h",
-	MAME_DIR .. "src/tools/imgtool/imghd.cpp",
-	MAME_DIR .. "src/tools/imgtool/imghd.h",
-	MAME_DIR .. "src/tools/imgtool/charconv.cpp",
-	MAME_DIR .. "src/tools/imgtool/charconv.h",
-	MAME_DIR .. "src/tools/imgtool/formats/vt_dsk.cpp",
-	MAME_DIR .. "src/tools/imgtool/formats/vt_dsk.h",
-	MAME_DIR .. "src/tools/imgtool/formats/coco_dsk.cpp",
-	MAME_DIR .. "src/tools/imgtool/formats/coco_dsk.h",
-	MAME_DIR .. "src/tools/imgtool/modules/amiga.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/macbin.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/rsdos.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/os9.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/mac.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/ti99.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/ti990hd.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/concept.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/fat.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/fat.h",
-	MAME_DIR .. "src/tools/imgtool/modules/pc_flop.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/pc_hard.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/prodos.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/vzdos.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/thomson.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/macutil.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/macutil.h",
-	MAME_DIR .. "src/tools/imgtool/modules/cybiko.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/cybikoxt.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/psion.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/bml3.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/hp48.cpp",
-	MAME_DIR .. "src/tools/imgtool/modules/hp9845_tape.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/assoc.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/assoc.h",
 	MAME_DIR .. "src/tools/imgtool/windows/assocdlg.cpp",
