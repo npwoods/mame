@@ -88,36 +88,53 @@ int extension_icon_provider::provide_icon_index(std::string &&extension)
 
 
 //-------------------------------------------------
+//  win_get_temp_path
+//-------------------------------------------------
+
+osd::text::tstring extension_icon_provider::win_get_temp_path()
+{
+	osd::text::tstring buffer;
+	const size_t buffer_size = MAX_PATH + 1;
+
+	// reserve buffer space
+	buffer.resize(buffer_size - 1);
+
+	// retrieve temporary file path
+	size_t length = GetTempPath(buffer_size, &buffer[0]);
+
+	// resize appropriately
+	buffer.resize(length);
+
+	return buffer;
+}
+
+
+//-------------------------------------------------
 //  append_associated_icon
 //-------------------------------------------------
 
 int extension_icon_provider::append_associated_icon(const char *extension)
 {
-	HICON icon;
 	HANDLE file = INVALID_HANDLE_VALUE;
 	WORD icon_index;
-	TCHAR file_path[MAX_PATH];
 	int index = -1;
 
 	// retrieve temporary file path
-	GetTempPath(ARRAY_LENGTH(file_path), file_path);
+	osd::text::tstring file_path = win_get_temp_path();
 
 	// if we have the folder icon, we're done - otherwise...
 	if (extension != FOLDER_ICON)
 	{
 		// create bogus temporary file so that we can get the icon
-		_tcscat(file_path, TEXT("tmp"));
+		file_path += TEXT("tmp");
 		if (extension)
-		{
-			auto t_extension = osd::text::to_tstring(extension);
-			_tcscat(file_path, t_extension.c_str());
-		}
+			file_path += osd::text::to_tstring(extension);
 
-		file = CreateFile(file_path, GENERIC_WRITE, 0, nullptr, CREATE_NEW, 0, nullptr);
+		file = CreateFile(file_path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, 0, nullptr);
 	}
 
 	// extract the icon
-	icon = ExtractAssociatedIcon(GetModuleHandle(nullptr), file_path, &icon_index);
+	HICON icon = ExtractAssociatedIcon(GetModuleHandle(nullptr), (LPTSTR) file_path.c_str(), &icon_index);
 	if (icon)
 	{
 		index = ImageList_AddIcon(m_normal.handle(), icon);
@@ -129,7 +146,7 @@ int extension_icon_provider::append_associated_icon(const char *extension)
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(file);
-		DeleteFile(file_path);
+		DeleteFile(file_path.c_str());
 	}
 
 	return index;

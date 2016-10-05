@@ -29,6 +29,7 @@
 
 // imgtool headers
 #include "imgtool.h"
+#include "strconv.h"
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -73,6 +74,8 @@ namespace imgtool
 
 			int append_associated_icon(const char *extension);
 			template<int size> HICON create_icon(const UINT32 icon_data[size][size]);
+
+			static osd::text::tstring win_get_temp_path();
 		};
 	};
 };
