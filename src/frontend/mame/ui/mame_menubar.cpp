@@ -33,6 +33,7 @@
 #include "softlist.h"
 #include "cheat.h"
 #include "mame.h"
+#include "natkeyboard.h"
 
 
 namespace ui {

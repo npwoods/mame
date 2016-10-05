@@ -27,7 +27,7 @@ static std::vector<std::string> get_command_line_arguments()
 
 	std::vector<std::string> result(argc);
 	for (int i = 0; i < argc; i++)
-		result[i] = utf8_from_wstring(w_argv[i]);
+		result[i] = osd::text::from_wstring(w_argv[i]);
 
 	LocalFree(w_argv);
 	return result;

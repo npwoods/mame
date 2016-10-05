@@ -41,9 +41,9 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	OSVERSIONINFO vers;
 	OPENFILENAME os_ofn;
 	DWORD os_ofn_size;
-	tstring t_filter;
+	osd::text::tstring t_filter;
 	LPTSTR t_file = nullptr;
-	std::unique_ptr<tstring> t_initial_directory;
+	std::unique_ptr<osd::text::tstring> t_initial_directory;
 	DWORD t_file_size = 0;
 
 	// determine the version of Windows
@@ -68,7 +68,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 	// do we have to translate the filter?
 	if (!ofn->filter.empty())
 	{
-		t_filter = tstring_from_utf8(ofn->filter.c_str());
+		t_filter = osd::text::to_tstring(ofn->filter);
 
 		// convert a pipe-char delimited string into a NUL delimited string
 		for (auto iter = t_filter.begin(); iter != t_filter.end(); iter++)
@@ -80,7 +80,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 
 	// do we need to translate the file parameter?
 	{
-		auto buffer = tstring_from_utf8(ofn->filename.c_str());
+		auto buffer = osd::text::to_tstring(ofn->filename);
 		t_file_size = std::max(buffer.length() + 1, (size_t)MAX_PATH);
 		t_file = (LPTSTR)alloca(t_file_size * sizeof(*t_file));
 		_tcscpy(t_file, buffer.c_str());
@@ -88,7 +88,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 
 	// do we need to translate the initial directory?
 	if (ofn->initial_directory != nullptr)
-		t_initial_directory = std::make_unique<tstring>(tstring_from_utf8(ofn->initial_directory));
+		t_initial_directory = std::make_unique<osd::text::tstring>(osd::text::to_tstring(ofn->initial_directory));
 
 	// translate our custom structure to a native Win32 structure
 	memset(&os_ofn, 0, sizeof(os_ofn));
@@ -128,7 +128,7 @@ BOOL win_get_file_name_dialog(win_open_file_name *ofn)
 
 	// copy file back out into passed structure
 	ofn->filename = t_file != nullptr
-		? utf8_from_tstring(t_file)
+		? osd::text::from_tstring(t_file)
 		: "";
 
 	// we've completed the process
@@ -204,12 +204,12 @@ void win_scroll_window(HWND window, WPARAM wparam, int scroll_bar, int scroll_de
 BOOL win_append_menu_utf8(HMENU menu, UINT flags, UINT_PTR id, const char *item)
 {
 	const TCHAR *t_item = (const TCHAR*)item;
-	tstring t_str;
+	osd::text::tstring t_str;
 
 	// only convert string when it's not a bitmap
 	if (!(flags & MF_BITMAP) && item)
 	{
-		t_str = tstring_from_utf8(item);
+		t_str = osd::text::to_tstring(item);
 		t_item = t_str.c_str();
 	}
 

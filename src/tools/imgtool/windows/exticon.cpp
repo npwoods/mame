@@ -109,7 +109,7 @@ int extension_icon_provider::append_associated_icon(const char *extension)
 		_tcscat(file_path, TEXT("tmp"));
 		if (extension)
 		{
-			auto t_extension = tstring_from_utf8(extension);
+			auto t_extension = osd::text::to_tstring(extension);
 			_tcscat(file_path, t_extension.c_str());
 		}
 

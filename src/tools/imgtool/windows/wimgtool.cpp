@@ -94,7 +94,7 @@ static wimgtool_info *get_wimgtool_info(HWND window)
 
 static DWORD win_get_file_attributes_utf8(const char *filename)
 {
-	auto t_filename = tstring_from_utf8(filename);
+	auto t_filename = osd::text::to_tstring(filename);
 	return GetFileAttributes(t_filename.c_str());
 }
 
@@ -262,7 +262,7 @@ static imgtoolerr_t append_dirent(HWND window, int index, const imgtool_dirent *
 		}
 	}
 
-	tstring t_entry_filename = tstring_from_utf8(entry->filename);
+	osd::text::tstring t_entry_filename = osd::text::to_tstring(entry->filename);
 
 	memset(&lvi, 0, sizeof(lvi));
 	lvi.iItem = ListView_GetItemCount(info->listview);
@@ -320,7 +320,7 @@ static imgtoolerr_t append_dirent(HWND window, int index, const imgtool_dirent *
 	// set attributes and corruption notice
 	if (entry->attr)
 	{
-		tstring t_tempstr = tstring_from_utf8(entry->attr);
+		osd::text::tstring t_tempstr = osd::text::to_tstring(entry->attr);
 		ListView_SetItemText(info->listview, new_index, column_index++, (LPTSTR) t_tempstr.c_str());
 	}
 	if (entry->corrupt)
@@ -345,7 +345,7 @@ static imgtoolerr_t refresh_image(HWND window)
 	imgtool_partition_features features;
 	char path_separator;
 	HRESULT res;
-	tstring tempstr;
+	osd::text::tstring tempstr;
 
 	info = get_wimgtool_info(window);
 	size_buf[0] = '\0';
@@ -413,7 +413,7 @@ static imgtoolerr_t refresh_image(HWND window)
 
 	}
 
-	tempstr = tstring_from_utf8(size_buf);
+	tempstr = osd::text::to_tstring(size_buf);
 	SendMessage(info->statusbar, SB_SETTEXT, 2, (LPARAM) tempstr.c_str());
 
 done:
@@ -450,9 +450,9 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	if (info->filename)
 	{
 		// get file title from Windows
-		tstring t_filename = tstring_from_utf8(info->filename);
+		osd::text::tstring t_filename = osd::text::to_tstring(info->filename);
 		GetFileTitle(t_filename.c_str(), file_title_buf, ARRAY_LENGTH(file_title_buf));
-		std::string utf8_file_title = utf8_from_tstring(file_title_buf);
+		std::string utf8_file_title = osd::text::from_tstring(file_title_buf);
 
 		// get info from image
 		if (info->image && (imgtool_image_info(info->image, imageinfo_buf, sizeof(imageinfo_buf)
@@ -499,8 +499,8 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	for (i = 0; i < ARRAY_LENGTH(statusbar_text); i++)
 	{
 		auto t_tempstr = statusbar_text[i]
-			? std::make_unique<tstring>(tstring_from_utf8(statusbar_text[i]))
-			: std::unique_ptr<tstring>();
+			? std::make_unique<osd::text::tstring>(osd::text::to_tstring(statusbar_text[i]))
+			: std::unique_ptr<osd::text::tstring>();
 
 		SendMessage(info->statusbar, SB_SETTEXT, i, (LPARAM)(t_tempstr.get() ? t_tempstr->c_str() : nullptr));
 	}
@@ -685,7 +685,7 @@ const imgtool_module *find_filter_module(int filter_index,
 
 osd_file::error win_mkdir(const char *dir)
 {
-	tstring tempstr = tstring_from_utf8(dir);
+	osd::text::tstring tempstr = osd::text::to_tstring(dir);
 
 	return !CreateDirectory(tempstr.c_str(), nullptr)
 		? win_error_to_file_error(GetLastError())
@@ -764,7 +764,7 @@ static imgtoolerr_t put_recursive_directory(imgtool_partition *partition, LPCTST
 			if (_tcscmp(wfd.cFileName, TEXT(".")) && _tcscmp(wfd.cFileName, TEXT("..")))
 			{
 				_sntprintf(local_subpath, ARRAY_LENGTH(local_subpath), TEXT("%s\\%s"), local_path, wfd.cFileName);
-				std::string filename = utf8_from_tstring(wfd.cFileName);
+				std::string filename = osd::text::from_tstring(wfd.cFileName);
 				subpath = imgtool_partition_path_concatenate(partition, path, filename.c_str());
 
 				if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -773,7 +773,7 @@ static imgtoolerr_t put_recursive_directory(imgtool_partition *partition, LPCTST
 				}
 				else
 				{
-					std::string tempstr = utf8_from_tstring(local_subpath);
+					std::string tempstr = osd::text::from_tstring(local_subpath);
 					err = imgtool_partition_put_file(partition, subpath, nullptr, tempstr.c_str(), nullptr, nullptr);
 				}
 				if (err)
@@ -1257,7 +1257,7 @@ static void menu_createdir(HWND window)
 
 	if (cdi.buf[0] == '\0')
 		goto done;
-	utf8_dirname = utf8_from_tstring(cdi.buf);
+	utf8_dirname = osd::text::from_tstring(cdi.buf);
 
 	if (info->current_directory)
 	{
@@ -1412,7 +1412,7 @@ static void drop_files(HWND window, HDROP drop)
 	for (i = 0; i < count; i++)
 	{
 		DragQueryFile(drop, i, buffer, ARRAY_LENGTH(buffer));
-		std::string filename = utf8_from_tstring(buffer);
+		std::string filename = osd::text::from_tstring(buffer);
 
 		// figure out the file/dir name on the image
 		subpath = string_format("%s%s",

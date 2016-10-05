@@ -216,7 +216,7 @@ public:
 
 	static void set_channel_number(device_t &device, int channel) { dynamic_cast<cmi01a_device&>(device).m_channel = channel; }
 
-	DECLARE_WRITE8_MEMBER( ptm_out0 );
+	DECLARE_WRITE_LINE_MEMBER( ptm_out0 );
 
 	DECLARE_WRITE8_MEMBER( write );
 	DECLARE_READ8_MEMBER( read );
@@ -326,7 +326,7 @@ MACHINE_CONFIG_FRAGMENT( cmi01a_device )
 	MCFG_DEVICE_ADD("cmi01a_ptm", PTM6840, 0) // ptm_cmi01a_config
 	MCFG_PTM6840_INTERNAL_CLOCK(2000000)
 	MCFG_PTM6840_EXTERNAL_CLOCKS(250000, 500000, 500000)
-	MCFG_PTM6840_OUT0_CB(WRITE8(cmi01a_device, ptm_out0))
+	MCFG_PTM6840_OUT0_CB(WRITELINE(cmi01a_device, ptm_out0))
 	MCFG_PTM6840_IRQ_CB(WRITELINE(cmi01a_device, ptm_irq))
 MACHINE_CONFIG_END
 
@@ -528,6 +528,7 @@ public:
 	DECLARE_WRITE8_MEMBER( cmi02_w );
 	DECLARE_WRITE8_MEMBER( master_tune_w );
 	DECLARE_WRITE_LINE_MEMBER( cmi02_ptm_irq );
+	DECLARE_WRITE_LINE_MEMBER( cmi02_ptm_o1 );
 
 	// Alphanumeric keyboard
 	DECLARE_READ8_MEMBER( ank_col_r );
@@ -1929,9 +1930,9 @@ void cmi01a_device::update_wave_addr(int inc)
 	/* Zero crossing interrupt is a pulse */
 }
 
-WRITE8_MEMBER( cmi01a_device::ptm_out0 )
+WRITE_LINE_MEMBER( cmi01a_device::ptm_out0 )
 {
-	m_ptm_out0 = data;
+	m_ptm_out0 = state;
 }
 
 READ_LINE_MEMBER( cmi01a_device::eosi_r )
@@ -1947,6 +1948,7 @@ READ_LINE_MEMBER( cmi01a_device::zx_r )
 WRITE8_MEMBER( cmi01a_device::write )
 {
 	//printf("C%d W: %02x = %02x\n", m_channel, offset, data);
+
 	switch (offset)
 	{
 		case 0x0:
@@ -2067,6 +2069,12 @@ WRITE_LINE_MEMBER( cmi_state::cmi02_ptm_irq )
 	set_interrupt(CPU_1, IRQ_TIMINT_LEVEL, m_cmi02_ptm_irq ? ASSERT_LINE : CLEAR_LINE);
 }
 
+WRITE_LINE_MEMBER( cmi_state::cmi02_ptm_o1 )
+{
+	m_cmi02_ptm->set_c1(state);
+	m_cmi02_ptm->set_c3(state);
+}
+
 READ8_MEMBER( cmi_state::cmi02_r )
 {
 	if (space.debugger_access())
@@ -2184,6 +2192,7 @@ WRITE8_MEMBER( cmi_state::i8214_cpu1_w )
 
 WRITE8_MEMBER( cmi_state::i8214_cpu2_w )
 {
+	//printf("i8214_cpu2_w: %02x\n", data);
 	m_maincpu2->set_input_line(M6809_IRQ_LINE, CLEAR_LINE);
 	data ^= 0xff;
 	m_i8214_1->sgs_w((data >> 3) & 1);
@@ -2337,10 +2346,7 @@ WRITE_LINE_MEMBER( cmi_state::i8214_1_int_w )
 {
 	//printf("i8214_1_int_w: %d\n", state);
 	if (state)
-	{
-		//machine().debug_break();
 		m_maincpu1->set_input_line(M6809_IRQ_LINE, ASSERT_LINE);
-	}
 }
 
 WRITE_LINE_MEMBER( cmi_state::i8214_2_int_w )
@@ -2809,6 +2815,7 @@ static MACHINE_CONFIG_START( cmi2x, cmi_state )
 
 	MCFG_DEVICE_ADD("cmi02_ptm", PTM6840, 0) // ptm_cmi02_config
 	MCFG_PTM6840_INTERNAL_CLOCK(2000000) // TODO
+	MCFG_PTM6840_OUT1_CB(WRITELINE(cmi_state, cmi02_ptm_o1))
 	MCFG_PTM6840_IRQ_CB(WRITELINE(cmi_state, cmi02_ptm_irq))
 
 	MCFG_DEVICE_ADD("mkbd_acia_clock", CLOCK, 9600*16)

@@ -74,7 +74,7 @@ static BOOL prepare_combobox(HWND control, const util::option_resolution::entry 
 					if (iter == entry->enum_value_end())
 						goto unexpected;
 
-					tstring tempstr = tstring_from_utf8(iter->display_name());
+					osd::text::tstring tempstr = osd::text::to_tstring(iter->display_name());
 					SendMessage(control, CB_ADDSTRING, 0, (LPARAM) tempstr.c_str());
 				}
 				else
