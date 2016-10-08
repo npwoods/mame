@@ -37,7 +37,7 @@ struct anchor_entry
 
 struct sectorview_info
 {
-	imgtool_image *image;
+	imgtool::image *image;
 	HFONT font;
 	UINT32 track, head, sector;
 	LONG old_width;
@@ -185,7 +185,7 @@ static imgtoolerr_t read_sector_data(HWND dialog, UINT32 track, UINT32 head, UIN
 	struct sectorview_info *info = get_sectorview_info(dialog);
 
 	std::vector<UINT8> data;
-	err = imgtool_image_read_sector(info->image, track, head, sector, data);
+	err = info->image->read_sector(track, head, sector, data);
 	if (err)
 		goto done;
 
@@ -375,7 +375,7 @@ static INT_PTR CALLBACK win_sectorview_dialog_proc(HWND dialog, UINT message,
 
 
 
-void win_sectorview_dialog(HWND parent, imgtool_image *image)
+void win_sectorview_dialog(HWND parent, imgtool::image *image)
 {
 	struct sectorview_info info;
 

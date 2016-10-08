@@ -10,6 +10,6 @@
 #include <windows.h>
 #include "../imgtool.h"
 
-void win_sectorview_dialog(HWND parent, imgtool_image *image);
+void win_sectorview_dialog(HWND parent, imgtool::image *image);
 
 #endif // SECVIEW_H

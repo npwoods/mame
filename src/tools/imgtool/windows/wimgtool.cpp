@@ -48,7 +48,7 @@ class wimgtool_info
 public:
 	HWND listview;					// handle to list view
 	HWND statusbar;					// handle to the status bar
-	imgtool_image *image;			// the currently loaded image
+	imgtool::image::ptr image;		// the currently loaded image
 	imgtool_partition *partition;	// the currently loaded partition
 
 	char *filename;
@@ -455,7 +455,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 		std::string utf8_file_title = osd::text::from_tstring(file_title_buf);
 
 		// get info from image
-		if (info->image && (imgtool_image_info(info->image, imageinfo_buf, sizeof(imageinfo_buf)
+		if (info->image && (info->image->info(imageinfo_buf, sizeof(imageinfo_buf)
 			/ sizeof(imageinfo_buf[0])) == IMGTOOLERR_SUCCESS))
 		{
 			if (imageinfo_buf[0])
@@ -485,7 +485,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 
 		basename = core_filename_extract_base(info->filename);
 		statusbar_text[0] = basename.c_str();
-		statusbar_text[1] = imgtool_image_module(info->image)->description;
+		statusbar_text[1] = info->image->module().description;
 	}
 	else
 	{
@@ -578,7 +578,7 @@ static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, HWND wind
 
 	info = get_wimgtool_info(window);
 	if (info->image)
-		default_module = imgtool_image_module(info->image);
+		default_module = &info->image->module();
 
 	std::stringstream filter;
 
@@ -795,7 +795,7 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	const std::string &filename, int read_or_write)
 {
 	imgtoolerr_t err;
-	imgtool_image *image;
+	imgtool::image::ptr image;
 	imgtool_partition *partition;
 	imgtool_module *identified_module;
 	wimgtool_info *info;
@@ -808,7 +808,7 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	// if the module is not specified, auto detect the format
 	if (!module)
 	{
-		err = imgtool_identify_file(filename.c_str(), &identified_module, 1);
+		err = imgtool::image::identify_file(filename.c_str(), &identified_module, 1);
 		if (err)
 			goto done;
 		module = identified_module;
@@ -832,27 +832,25 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	}
 
 	// try to open the image
-	err = imgtool_image_open(module, filename.c_str(), read_or_write, &image);
+	err = imgtool::image::open(module, filename.c_str(), read_or_write, image);
 	if ((ERRORCODE(err) == IMGTOOLERR_READONLY) && read_or_write)
 	{
 		// if we failed when open a read/write image, try again
 		read_or_write = OSD_FOPEN_READ;
-		err = imgtool_image_open(module, filename.c_str(), read_or_write, &image);
+		err = imgtool::image::open(module, filename.c_str(), read_or_write, image);
 	}
 	if (err)
 		goto done;
 
 	// try to open the partition
-	err = imgtool_partition_open(image, partition_index, &partition);
+	err = imgtool_partition_open(image.get(), partition_index, &partition);
 	if (err)
 		goto done;
 
 	// unload current image and partition
 	if (info->partition)
 		imgtool_partition_close(info->partition);
-	if (info->image)
-		imgtool_image_close(info->image);
-	info->image = image;
+	info->image = std::move(image);
 	info->partition = partition;
 	info->open_mode = read_or_write;
 	if (info->current_directory)
@@ -903,7 +901,7 @@ static void menu_new(HWND window)
 
 	module = find_filter_module(ofn.filter_index, TRUE);
 
-	err = imgtool_image_create(module, ofn.filename.c_str(), resolution.get(), nullptr);
+	err = imgtool::image::create(module, ofn.filename.c_str(), resolution.get());
 	if (err)
 		goto done;
 
@@ -990,7 +988,7 @@ static void menu_insert(HWND window)
 		goto done;
 	}
 
-	//module = imgtool_image_module(info->image);
+	//module = info->image->module();
 
 	/* figure out which filters are appropriate for this file */
 	imgtool_partition_suggest_file_filters(info->partition, nullptr, stream, suggestion_info.suggestions,
@@ -1319,7 +1317,7 @@ static void menu_sectorview(HWND window)
 {
 	wimgtool_info *info;
 	info = get_wimgtool_info(window);
-	win_sectorview_dialog(window, info->image);
+	win_sectorview_dialog(window, info->image.get());
 }
 
 
@@ -1387,8 +1385,6 @@ static void wimgtool_destroy(HWND window)
 			osd_free(info->filename);
 		if (info->partition)
 			imgtool_partition_close(info->partition);
-		if (info->image)
-			imgtool_image_close(info->image);
 		DestroyIcon(info->readonly_icon);
 		if (info->current_directory)
 			osd_free(info->current_directory);
@@ -1574,7 +1570,7 @@ static void init_menu(HWND window, HMENU menu)
 
 	if (info->image)
 	{
-		module_features = imgtool_get_module_features(imgtool_image_module(info->image));
+		module_features = imgtool_get_module_features(&info->image->module());
 		partition_features = imgtool_partition_get_features(info->partition);
 		foreach_selected_item(window, init_menu_proc, &si);
 	}
