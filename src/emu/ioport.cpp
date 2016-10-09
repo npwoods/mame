@@ -1697,8 +1697,21 @@ time_t ioport_manager::initialize()
 
 	// do we have a keyboard?  if so, we may need to change default UI keys in
 	// response if we're running with menus
-	if (machine().options().ui() == emu_options::UI_MENUS && has_keyboard())
-		adjust_ui_seqs_for_keyboard();
+	if (machine().options().ui() == emu_options::UI_MENUS)
+	{
+		bool has_keyboard = std::any_of(
+			m_portlist.begin(),
+			m_portlist.end(),
+			[](const auto &port)
+			{
+				return std::any_of(
+					port.second->fields().begin(),
+					port.second->fields().end(),
+					[](const auto &field) { return field.type() == IPT_KEYBOARD; });
+			});
+		if (has_keyboard)
+			adjust_ui_seqs_for_keyboard();
+	}
 
 	// renumber player numbers for controller ports
 	int player_offset = 0;
