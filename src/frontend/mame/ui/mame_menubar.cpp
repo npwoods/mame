@@ -190,7 +190,7 @@ void mame_menubar::build_file_menu()
 	file_menu.append_separator();
 
 	// paste
-	if (machine().ioport().has_keyboard() && machine().ioport().natkeyboard().can_post())
+	if (ui().machine_info().has_keyboard() && machine().ioport().natkeyboard().can_post())
 	{
 		menu_item &paste_menu = file_menu.append(_("Paste"), &mame_ui_manager::paste, ui(), IPT_UI_PASTE);
 		paste_menu.set_enabled(ui().can_paste());
@@ -399,7 +399,7 @@ void mame_menubar::build_options_menu()
 		options_menu.append<mame_menubar>(_("Network Devices..."), &mame_menubar::start_menu<menu_network_devices>, *this);
 
 	// keyboard
-	if (machine().ioport().has_keyboard() && machine().ioport().natkeyboard().can_post())
+	if (ui().machine_info().has_keyboard() && machine().ioport().natkeyboard().can_post())
 	{
 		menu_item &keyboard_menu = options_menu.append(_("Keyboard"));
 		keyboard_menu.append<mame_ui_manager, bool>(_("Emulated"), &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), false);
