@@ -951,7 +951,7 @@ static void menu_insert(HWND window)
 	const char *fork = nullptr;
 	struct transfer_suggestion_info suggestion_info;
 	int use_suggestion_info;
-	imgtool_stream *stream = nullptr;
+	imgtool::stream::ptr stream;
 	filter_getinfoproc filter = nullptr;
 	const util::option_guide *writefile_optguide;
 	const char *writefile_optspec;
@@ -970,7 +970,7 @@ static void menu_insert(HWND window)
 	}
 
 	/* we need to open the stream at this point, so that we can suggest the transfer */
-	stream = stream_open(ofn.filename.c_str(), OSD_FOPEN_READ);
+	stream = imgtool::stream::ptr(imgtool::stream::open(ofn.filename.c_str(), OSD_FOPEN_READ));
 	if (!stream)
 	{
 		err = IMGTOOLERR_FILENOTFOUND;
@@ -980,7 +980,7 @@ static void menu_insert(HWND window)
 	//module = info->image->module();
 
 	/* figure out which filters are appropriate for this file */
-	info->partition->suggest_file_filters(nullptr, stream, suggestion_info.suggestions,
+	info->partition->suggest_file_filters(nullptr, stream.get(), suggestion_info.suggestions,
 		ARRAY_LENGTH(suggestion_info.suggestions));
 
 	/* do we need to show an option dialog? */
@@ -1012,7 +1012,7 @@ static void menu_insert(HWND window)
 		image_filename = (char *)info->partition->path_concatenate(info->current_directory, image_filename);
 	}
 
-	err = info->partition->write_file(image_filename, fork, stream, opts.get(), filter);
+	err = info->partition->write_file(image_filename, fork, *stream, opts.get(), filter);
 	if (err)
 		goto done;
 
