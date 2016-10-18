@@ -68,7 +68,7 @@ struct granule_list_t {
 #define BML3_OPTIONS_FTYPE     'T'
 #define BML3_OPTIONS_ASCII     'M'
 
-static imgtoolerr_t bml3_diskimage_deletefile(imgtool::partition *partition, const char *fname);
+static imgtoolerr_t bml3_diskimage_deletefile(imgtool::partition &partition, const char *fname);
 
 
 
@@ -548,7 +548,7 @@ static imgtoolerr_t bml3_diskimage_open(imgtool::image &image, imgtool::stream::
 
 
 
-static imgtoolerr_t bml3_diskimage_nextenum(imgtool::directory *enumeration, imgtool_dirent *ent)
+static imgtoolerr_t bml3_diskimage_nextenum(imgtool::directory &enumeration, imgtool_dirent &ent)
 {
 	floperr_t ferr;
 	imgtoolerr_t err;
@@ -556,9 +556,9 @@ static imgtoolerr_t bml3_diskimage_nextenum(imgtool::directory *enumeration, img
 	struct bml3_direnum *rsenum;
 	struct bml3_dirent rsent;
 	char fname[13];
-	imgtool::image &image(enumeration->image());
+	imgtool::image &image(enumeration.image());
 
-	rsenum = (struct bml3_direnum *) enumeration->extra_bytes();
+	rsenum = (struct bml3_direnum *) enumeration.extra_bytes();
 
 	/* Did we hit the end of file before? */
 	if (rsenum->eof)
@@ -580,7 +580,7 @@ static imgtoolerr_t bml3_diskimage_nextenum(imgtool::directory *enumeration, img
 	{
 		rsenum->eof = 1;
 eof:
-		ent->eof = 1;
+		ent.eof = 1;
 	}
 	else
 	{
@@ -592,34 +592,34 @@ eof:
 		if (filesize == ((size_t) -1))
 		{
 			/* corrupt! */
-			ent->filesize = 0;
-			ent->corrupt = 1;
+			ent.filesize = 0;
+			ent.corrupt = 1;
 		}
 		else
 		{
-			ent->filesize = filesize;
-			ent->corrupt = 0;
+			ent.filesize = filesize;
+			ent.corrupt = 0;
 		}
-		ent->eof = 0;
+		ent.eof = 0;
 
 		get_dirent_fname(fname, &rsent);
 
-		snprintf(ent->filename, ARRAY_LENGTH(ent->filename), "%s", fname);
-		snprintf(ent->attr, ARRAY_LENGTH(ent->attr), "%d %c", (int) rsent.ftype, (char) (rsent.asciiflag + 'B'));
+		snprintf(ent.filename, ARRAY_LENGTH(ent.filename), "%s", fname);
+		snprintf(ent.attr, ARRAY_LENGTH(ent.attr), "%d %c", (int) rsent.ftype, (char) (rsent.asciiflag + 'B'));
 	}
 	return IMGTOOLERR_SUCCESS;
 }
 
 
 
-static imgtoolerr_t bml3_diskimage_freespace(imgtool::partition *partition, UINT64 *size)
+static imgtoolerr_t bml3_diskimage_freespace(imgtool::partition &partition, UINT64 *size)
 {
 	floperr_t ferr;
 	UINT8 i;
 	size_t s = 0;
 	UINT8 granule_count;
 	UINT8 granule_map[MAX_GRANULEMAP_SIZE];
-	imgtool::image &image(partition->image());
+	imgtool::image &image(partition.image());
 	bml3_diskinfo *info = bml3_get_diskinfo(image);
 
 	ferr = get_granule_map(image, granule_map, &granule_count);
@@ -672,12 +672,12 @@ static imgtoolerr_t delete_entry(imgtool::image &img, struct bml3_dirent *ent, i
 
 
 
-static imgtoolerr_t bml3_diskimage_readfile(imgtool::partition *partition, const char *fname, const char *fork, imgtool::stream &destf)
+static imgtoolerr_t bml3_diskimage_readfile(imgtool::partition &partition, const char *fname, const char *fork, imgtool::stream &destf)
 {
 	imgtoolerr_t err;
 	struct bml3_dirent ent;
 	size_t size;
-	imgtool::image &img(partition->image());
+	imgtool::image &img(partition.image());
 
 	err = lookup_bml3_file(img, fname, &ent, nullptr);
 	if (err)
@@ -695,11 +695,11 @@ static imgtoolerr_t bml3_diskimage_readfile(imgtool::partition *partition, const
 
 
 
-static imgtoolerr_t bml3_diskimage_writefile(imgtool::partition *partition, const char *fname, const char *fork, imgtool::stream &sourcef, util::option_resolution *writeoptions)
+static imgtoolerr_t bml3_diskimage_writefile(imgtool::partition &partition, const char *fname, const char *fork, imgtool::stream &sourcef, util::option_resolution *writeoptions)
 {
 	floperr_t ferr;
 	imgtoolerr_t err;
-	imgtool::image &img(partition->image());
+	imgtool::image &img(partition.image());
 	bml3_diskinfo *info = bml3_get_diskinfo(img);
 	struct bml3_dirent ent, ent2;
 	size_t i;
@@ -816,10 +816,10 @@ static imgtoolerr_t bml3_diskimage_writefile(imgtool::partition *partition, cons
 
 
 
-static imgtoolerr_t bml3_diskimage_deletefile(imgtool::partition *partition, const char *fname)
+static imgtoolerr_t bml3_diskimage_deletefile(imgtool::partition &partition, const char *fname)
 {
 	imgtoolerr_t err;
-	imgtool::image &image(partition->image());
+	imgtool::image &image(partition.image());
 	int pos = 0;
 	struct bml3_dirent ent;
 
@@ -832,10 +832,10 @@ static imgtoolerr_t bml3_diskimage_deletefile(imgtool::partition *partition, con
 
 
 
-static imgtoolerr_t bml3_diskimage_suggesttransfer(imgtool::partition *partition, const char *fname, imgtool_transfer_suggestion *suggestions, size_t suggestions_length)
+static imgtoolerr_t bml3_diskimage_suggesttransfer(imgtool::partition &partition, const char *fname, imgtool_transfer_suggestion *suggestions, size_t suggestions_length)
 {
 	imgtoolerr_t err;
-	imgtool::image &image(partition->image());
+	imgtool::image &image(partition.image());
 	struct bml3_dirent ent;
 	int pos;
 

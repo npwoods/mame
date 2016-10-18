@@ -27668,6 +27668,7 @@ viostormub                      // GX168 (c) 1993 (US)
 myvision                        //
 
 @source:mz2000.cpp
+mz80b                           // 1981 Sharp MZ80B
 mz2000                          // 1981 Sharp MZ2000
 mz2200                          // 1981 Sharp MZ2200
 
@@ -27689,7 +27690,6 @@ mz800                           // 1984 Sharp MZ800
 
 @source:mz80.cpp
 mz80a                           // 1982 Sharp MZ80A
-mz80b                           // 1981 Sharp MZ80B
 mz80k                           // 1979 Sharp MZ80K
 mz80kj                          // 1979 Sharp MZ80K
 
@@ -34135,6 +34135,7 @@ stuntair                        // (c) 1983 Nuova Videotron
 astrass                         // 1998.06 Astra Super Stars (Sunsoft)
 bakubaku                        // 1995.04 Bakubaku Animal
 batmanfr                        // 1996.02 Batman Forever (Acclaim)
+choroqhr						// 1998.12 Choro Q Hyper Racing Five (Takara)
 colmns97                        // 1997.01 Columns 97
 cotton2                         // 1997.11 Cotton 2 (Success)
 cottonbm                        // 1998.09 Cotton Boomerang (Success)
@@ -35381,6 +35382,7 @@ gorodki                         // (c) 1988 Terminal
 kot                             // (c) 1988 Terminal
 
 @source:ticalc1x.cpp
+cmulti8                         // Canon
 dataman                         //
 lilprof                         //
 lilprof78                       //
