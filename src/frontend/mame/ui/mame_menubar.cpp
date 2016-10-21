@@ -2,7 +2,7 @@
 // copyright-holders:Nathan Woods
 /***************************************************************************
 
-    mame_menubar.c
+    mame_menubar.cpp
 
     Internal MAME menu bar for the user interface.
 
@@ -402,8 +402,8 @@ void mame_menubar::build_options_menu()
 	if (ui().machine_info().has_keyboard() && machine().ioport().natkeyboard().can_post())
 	{
 		menu_item &keyboard_menu = options_menu.append(_("Keyboard"));
-		keyboard_menu.append<mame_ui_manager, bool>(_("Emulated"), &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), false);
-		keyboard_menu.append<mame_ui_manager, bool>(_("Natural"),  &mame_ui_manager::set_use_natural_keyboard, &mame_ui_manager::use_natural_keyboard, ui(), true);
+		keyboard_menu.append<natural_keyboard, bool>(_("Emulated"), &natural_keyboard::set_in_use, &natural_keyboard::in_use, machine().ioport().natkeyboard(), false);
+		keyboard_menu.append<natural_keyboard, bool>(_("Natural"),  &natural_keyboard::set_in_use, &natural_keyboard::in_use, machine().ioport().natkeyboard(), true);
 	}
 
 	// crosshair options

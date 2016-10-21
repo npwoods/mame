@@ -428,8 +428,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	int column_index = 0;
 	int i;
 	std::string buf;
-	char imageinfo_buf[256];
-	const char *imageinfo = nullptr;
+	std::string imageinfo;
 	TCHAR file_title_buf[MAX_PATH];
 	const char *statusbar_text[2];
 	imgtool_partition_features features;
@@ -452,18 +451,14 @@ static imgtoolerr_t full_refresh_image(HWND window)
 		std::string utf8_file_title = osd::text::from_tstring(file_title_buf);
 
 		// get info from image
-		if (info->image && (info->image->info(imageinfo_buf, sizeof(imageinfo_buf)
-			/ sizeof(imageinfo_buf[0])) == IMGTOOLERR_SUCCESS))
-		{
-			if (imageinfo_buf[0])
-				imageinfo = imageinfo_buf;
-		}
+		if (info->image)
+			imageinfo = info->image->info();
 
 		// combine all of this into a title bar
 		if (info->current_directory && info->current_directory[0])
 		{
 			// has a current directory
-			if (imageinfo)
+			if (!imageinfo.empty())
 			{
 				buf = string_format("%s (\"%s\") - %s", utf8_file_title, imageinfo, info->current_directory);
 			}
@@ -476,7 +471,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 		{
 			// no current directory
 			buf = string_format(
-				imageinfo ? "%s (\"%s\")" : "%s",
+				!imageinfo.empty() ? "%s (\"%s\")" : "%s",
 				utf8_file_title, imageinfo);
 		}
 

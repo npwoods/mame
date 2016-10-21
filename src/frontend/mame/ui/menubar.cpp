@@ -1,6 +1,6 @@
 /***************************************************************************
 
-    menubar.c
+    menubar.cpp
 
     Internal MAME menu bar for the user interface.
 
@@ -10,6 +10,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "natkeyboard.h"
 #include "ui/menubar.h"
 #include "ui/ui.h"
 #include "uiinput.h"
@@ -166,7 +167,7 @@ void menubar::handle(render_container &current_container)
 	}
 
 	// is the natural keyboard enabled?
-	if (ui().use_natural_keyboard() && (ui().machine().phase() == MACHINE_PHASE_RUNNING))
+	if (machine().ioport().natkeyboard().in_use() && (ui().machine().phase() == MACHINE_PHASE_RUNNING))
 		 ui().process_natural_keyboard();
 
 	// loop while we have interesting events
