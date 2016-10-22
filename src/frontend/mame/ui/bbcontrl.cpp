@@ -56,7 +56,7 @@ ui_menu_bitbanger_control::~ui_menu_bitbanger_control()
 
 void ui_menu_bitbanger_control::populate()
 {
-	UINT32 flags = 0, mode_flags = 0, baud_flags = 0, tune_flags = 0;
+	uint32_t flags = 0, mode_flags = 0, baud_flags = 0, tune_flags = 0;
 
 	if( count() > 0 )
 	{
@@ -70,22 +70,22 @@ void ui_menu_bitbanger_control::populate()
 
 	if ((current_device() != NULL) && (current_device()->exists()))
 	{
-		if (current_device()->inc_mode(TRUE))
+		if (current_device()->inc_mode(true))
 			mode_flags |= FLAG_RIGHT_ARROW;
 
-		if (current_device()->dec_mode(TRUE))
+		if (current_device()->dec_mode(true))
 			mode_flags |= FLAG_LEFT_ARROW;
 
-		if (current_device()->inc_baud(TRUE))
+		if (current_device()->inc_baud(true))
 			baud_flags |= FLAG_RIGHT_ARROW;
 
-		if (current_device()->dec_baud(TRUE))
+		if (current_device()->dec_baud(true))
 			baud_flags |= FLAG_LEFT_ARROW;
 
-		if (current_device()->inc_tune(TRUE))
+		if (current_device()->inc_tune(true))
 			tune_flags |= FLAG_RIGHT_ARROW;
 
-		if (current_device()->dec_tune(TRUE))
+		if (current_device()->dec_tune(true))
 			tune_flags |= FLAG_LEFT_ARROW;
 
 		// name of bitbanger file

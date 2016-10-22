@@ -727,7 +727,7 @@ bool menubar::find_mouse(float &mouse_x, float &mouse_y, bool &mouse_button)
 	mouse_x = -1;
 	mouse_y = -1;
 
-	INT32 mouse_target_x, mouse_target_y;
+	int32_t mouse_target_x, mouse_target_y;
 	render_target *mouse_target = machine().ui_input().find_mouse(&mouse_target_x, &mouse_target_y, &mouse_button);
 	if (mouse_target != nullptr)
 	{
@@ -805,7 +805,7 @@ void menubar::highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor)
 	widgets_manager &widgets(ui::menu::get_widgets_manager(machine()));
 
 	// do the highlight
-	container().add_quad(x0, y0, x1, y1, bgcolor, widgets.hilight_texture(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_TEXWRAP(TRUE) | PRIMFLAG_PACKABLE);
+	container().add_quad(x0, y0, x1, y1, bgcolor, widgets.hilight_texture(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_TEXWRAP(true) | PRIMFLAG_PACKABLE);
 }
 
 
@@ -813,7 +813,7 @@ void menubar::highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor)
 //  draw_arrow
 //-------------------------------------------------
 
-void menubar::draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, UINT32 orientation)
+void menubar::draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, uint32_t orientation)
 {
 	// hack to get the widgets
 	widgets_manager &widgets(ui::menu::get_widgets_manager(machine()));

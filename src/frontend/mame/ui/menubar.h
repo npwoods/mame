@@ -154,7 +154,7 @@ public:
 
 	// getters
 	bool has_focus() const { return m_menubar_visibility == MENUBAR_VISIBILITY_VISIBLE; }
-	bool has_selection() const { return m_selected_item != NULL; }
+	bool has_selection() const { return m_selected_item != nullptr; }
 	menu_item &root_menu() { return m_menus; }
 	bool has_been_invoked() const { return m_has_been_invoked; }
 
@@ -233,7 +233,7 @@ private:
 	menubar_visibility_t get_menubar_visibility();
 	rgb_t adjust_color(rgb_t color);
 	void highlight(float x0, float y0, float x1, float y1, rgb_t bgcolor);
-	void draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, UINT32 orientation);
+	void draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, uint32_t orientation);
 };
 
 } // namespace ui

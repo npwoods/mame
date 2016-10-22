@@ -223,7 +223,7 @@ void menu_file_create::populate()
 	if (has_formats())
 	{
 		// display the format
-		UINT32 flags =	(has_previous_format() ? FLAG_LEFT_ARROW : 0)
+		uint32_t flags =	(has_previous_format() ? FLAG_LEFT_ARROW : 0)
 					|	(has_next_format() ? FLAG_RIGHT_ARROW : 0);
 		item_append(_("Format:"), (*m_selected_format)->description(), flags, ITEMREF_FORMAT);
 
@@ -266,7 +266,7 @@ void menu_file_create::append_option_item(const util::option_resolution::entry &
 	}
 
 	// append the entry
-	UINT32 flags = entry.is_pertinent() ? 0 : FLAG_DISABLE;
+	uint32_t flags = entry.is_pertinent() ? 0 : FLAG_DISABLE;
 	flags |= entry.can_bump_lower() ? FLAG_LEFT_ARROW : 0;
 	flags |= entry.can_bump_higher() ? FLAG_RIGHT_ARROW : 0;
 	item_append(name, value, flags, itemref);
@@ -279,8 +279,8 @@ void menu_file_create::append_option_item(const util::option_resolution::entry &
 
 void *menu_file_create::itemref_from_option_guide_parameter(int parameter)
 {
-	auto itemref_int = parameter + (int)(unsigned int)(FPTR)ITEMREF_PARAMETER_BEGIN;
-	return (void *)(FPTR)(unsigned int)itemref_int;
+	auto itemref_int = parameter + (int)(unsigned int)(uintptr_t)ITEMREF_PARAMETER_BEGIN;
+	return (void *)(uintptr_t)(unsigned int)itemref_int;
 }
 
 
@@ -291,7 +291,7 @@ void *menu_file_create::itemref_from_option_guide_parameter(int parameter)
 int menu_file_create::option_guide_parameter_from_itemref(void *itemref)
 {
 	return (itemref >= ITEMREF_PARAMETER_BEGIN) && (itemref < ITEMREF_PARAMETER_END)
-		? ((int)(unsigned int)(FPTR)itemref) - (int)(unsigned int)(FPTR)ITEMREF_PARAMETER_BEGIN
+		? ((int)(unsigned int)(uintptr_t)itemref) - (int)(unsigned int)(uintptr_t)ITEMREF_PARAMETER_BEGIN
 		: 0;
 }
 
@@ -352,7 +352,7 @@ void menu_file_create::handle()
 			else if (opt_parameter != 0)
 			{
 				m_new_value_itemref = get_selection_ref();
-				input_character(m_new_value, event->unichar, [](unicode_char ch) { return isdigit(ch); });
+				input_character(m_new_value, event->unichar, [](char32_t ch) { return isdigit(ch); });
 				reset(reset_options::REMEMBER_REF);
 			}
 			break;
@@ -570,7 +570,7 @@ void menu_select_format::populate()
 
 		if (i && i == m_ext_match)
 			item_append(menu_item_type::SEPARATOR);
-		item_append(fmt->description(), fmt->name(), 0, (void *)(FPTR)i);
+		item_append(fmt->description(), fmt->name(), 0, (void *)(uintptr_t)i);
 	}
 }
 
@@ -585,7 +585,7 @@ void menu_select_format::handle()
 	const event *event = process(0);
 	if (event != nullptr && event->iptkey == IPT_UI_SELECT)
 	{
-		*m_result = int(FPTR(event->itemref));
+		*m_result = int(uintptr_t(event->itemref));
 		stack_pop();
 	}
 }

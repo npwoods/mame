@@ -23,7 +23,7 @@ const device_type BITBANGER = &device_creator<bitbanger_device>;
     ctor
 -------------------------------------------------*/
 
-bitbanger_device::bitbanger_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock) :
+bitbanger_device::bitbanger_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	device_t(mconfig, BITBANGER, "Bitbanger", tag, owner, clock, "bitbanger", __FILE__),
 	device_image_interface(mconfig, *this),
 	m_input_callback(*this),
@@ -51,7 +51,7 @@ bitbanger_device::bitbanger_device(const machine_config &mconfig, const char *ta
     native_output - outputs data to a file
 -------------------------------------------------*/
 
-void bitbanger_device::native_output(UINT8 data)
+void bitbanger_device::native_output(uint8_t data)
 {
 	if (exists())
 	{
@@ -64,7 +64,7 @@ void bitbanger_device::native_output(UINT8 data)
     native_input - inputs data from a file
 -------------------------------------------------*/
 
-UINT32 bitbanger_device::native_input(void *buffer, UINT32 length)
+uint32_t bitbanger_device::native_input(void *buffer, uint32_t length)
 {
 	if (exists())
 	{
@@ -96,12 +96,12 @@ bool bitbanger_device::inc_mode(bool test)
 	int adjust_mode = (int)m_mode + 1;
 
 	if( adjust_mode >= BITBANGER_MODE_MAX )
-		return FALSE;
+		return false;
 
 	if( !test)
 		m_mode = adjust_mode;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -115,12 +115,12 @@ bool bitbanger_device::dec_mode(bool test)
 	int adjust_mode = m_mode - 1;
 
 	if( adjust_mode < 0 )
-		return FALSE;
+		return false;
 
 	if( !test)
 		m_mode = adjust_mode;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -155,12 +155,12 @@ float bitbanger_device::tune_value()
     baud_value
 -------------------------------------------------*/
 
-UINT32 bitbanger_device::baud_value()
+uint32_t bitbanger_device::baud_value()
 {
 	static const float bauds[] = { 150.0f, 300.0f, 600.0f, 1200.0f, 2400.0f, 4800.0f, 9600.0f,
 			14400.0f, 19200.0f, 28800.0f, 38400.0f, 57600.0f, 115200.0f};
 	float result = tune_value() * bauds[m_baud];
-	return (UINT32)result;
+	return (uint32_t)result;
 }
 
 
@@ -187,7 +187,7 @@ bool bitbanger_device::inc_baud(bool test)
 	int adjust_baud = (int)m_baud + 1;
 
 	if( adjust_baud >= BITBANGER_BAUD_MAX )
-		return FALSE;
+		return false;
 
 	if( !test)
 	{
@@ -195,7 +195,7 @@ bool bitbanger_device::inc_baud(bool test)
 		m_current_baud = attotime::from_hz(baud_value());
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -208,15 +208,15 @@ bool bitbanger_device::dec_baud(bool test)
 	int adjust_baud = m_baud - 1;
 
 	if( adjust_baud < 0 )
-		return FALSE;
+		return false;
 
-	if( !test)
+	if (!test)
 	{
 		m_baud = adjust_baud;
 		m_current_baud = attotime::from_hz(baud_value());
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -229,7 +229,7 @@ bool bitbanger_device::inc_tune(bool test)
 	int adjust_tune = (int)m_tune + 1;
 
 	if( adjust_tune >= BITBANGER_TUNE_MAX )
-		return FALSE;
+		return false;
 
 	if (!test)
 	{
@@ -237,7 +237,7 @@ bool bitbanger_device::inc_tune(bool test)
 		m_current_baud = attotime::from_hz(baud_value());
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -251,7 +251,7 @@ bool bitbanger_device::dec_tune(bool test)
 	int adjust_tune = m_tune - 1;
 
 	if( adjust_tune < 0 )
-		return FALSE;
+		return false;
 
 	if( !test)
 	{
@@ -259,7 +259,7 @@ bool bitbanger_device::dec_tune(bool test)
 		m_current_baud = attotime::from_hz(baud_value());
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -270,10 +270,10 @@ bool bitbanger_device::dec_tune(bool test)
 
 void bitbanger_device::bytes_to_bits_81N(void)
 {
-	UINT8 byte_buffer[100];
-	UINT32 byte_buffer_size, bit_buffer_size;
+	uint8_t byte_buffer[100];
+	uint32_t byte_buffer_size, bit_buffer_size;
 	int i, j;
-	static const UINT8 bitmask[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+	static const uint8_t bitmask[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
 
 	bit_buffer_size = 0;
 	byte_buffer_size = native_input(byte_buffer, sizeof(byte_buffer));
@@ -440,7 +440,7 @@ void bitbanger_device::timer_input(void)
     set_input_line
 -------------------------------------------------*/
 
-void bitbanger_device::set_input_line(UINT8 line)
+void bitbanger_device::set_input_line(uint8_t line)
 {
 	/* normalize */
 	line = line ? ASSERT_LINE : CLEAR_LINE;

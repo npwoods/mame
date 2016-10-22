@@ -89,7 +89,7 @@ class bitbanger_device : public device_t,
 {
 public:
 	// construction/destruction
-	bitbanger_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	bitbanger_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 	// image-level overrides
 	virtual image_init_result call_load() override;
@@ -105,7 +105,7 @@ public:
 	virtual bool is_reset_on_load() const override { return 0; }
 	virtual const char *file_extensions() const override { return ""; }
 
-	UINT32 input(void *buffer, UINT32 length)
+	uint32_t input(void *buffer, uint32_t length)
 	{
 		return 0;
 	}
@@ -139,14 +139,14 @@ private:
 	static const device_timer_id TIMER_INPUT = 1;
 
 	// methods
-	void native_output(UINT8 data);
-	UINT32 native_input(void *buffer, UINT32 length);
+	void native_output(uint8_t data);
+	uint32_t native_input(void *buffer, uint32_t length);
 	void bytes_to_bits_81N(void);
 	void timer_input(void);
 	void timer_output(void);
 	float tune_value(void);
-	UINT32 baud_value(void);
-	void set_input_line(UINT8 line);
+	uint32_t baud_value(void);
+	void set_input_line(uint8_t line);
 
 	
 	// configuration
@@ -164,13 +164,13 @@ private:
 	int                     m_build_byte;
 	attotime                m_idle_delay;
 	attotime                m_current_baud;
-	UINT32                  m_input_buffer_size;
-	UINT32                  m_input_buffer_cursor;
+	uint32_t                m_input_buffer_size;
+	uint32_t                m_input_buffer_cursor;
 	int                     m_mode;
 	int                     m_baud;
 	int                     m_tune;
-	UINT8                   m_current_input;
-	UINT8                   m_input_buffer[1000];
+	uint8_t                 m_current_input;
+	uint8_t                 m_input_buffer[1000];
 };
 
 // device type definition
