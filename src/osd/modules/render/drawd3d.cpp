@@ -179,7 +179,7 @@ render_primitive_list *renderer_d3d9::get_primitives()
 	if (win == nullptr)
 		return nullptr;
 
-	GetClientRectExceptMenu(win->platform_window<HWND>(), &client, win->fullscreen());
+	GetClientRectExceptMenu(std::static_pointer_cast<win_window_info>(win)->platform_window(), &client, win->fullscreen());
 	if (rect_width(&client) > 0 && rect_height(&client) > 0)
 	{
 		win->target()->set_bounds(rect_width(&client), rect_height(&client), win->pixel_aspect());
@@ -526,7 +526,7 @@ int renderer_d3d9::initialize()
 
 	// create the device immediately for the full screen case (defer for window mode in update_window_size())
 	auto win = assert_window();
-	if (win->fullscreen() && device_create(win->main_window()->platform_window<HWND>()))
+	if (win->fullscreen() && device_create(std::static_pointer_cast<win_window_info>(win->main_window())->platform_window()))
 	{
 		return false;
 	}
@@ -747,7 +747,7 @@ void renderer_d3d9::update_presentation_parameters()
 	m_presentation.BackBufferCount = video_config.triplebuf ? 2 : 1;
 	m_presentation.MultiSampleType = D3DMULTISAMPLE_NONE;
 	m_presentation.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	m_presentation.hDeviceWindow = win->platform_window<HWND>();
+	m_presentation.hDeviceWindow = std::static_pointer_cast<win_window_info>(win)->platform_window();
 	m_presentation.Windowed = !win->fullscreen() || win->win_has_menu();
 	m_presentation.EnableAutoDepthStencil = FALSE;
 	m_presentation.AutoDepthStencilFormat = D3DFMT_D16;
@@ -1214,7 +1214,7 @@ int renderer_d3d9::config_adapter_mode()
 		RECT client;
 
 		// bounds are from the window client rect
-		GetClientRectExceptMenu(win->platform_window<HWND>(), &client, win->fullscreen());
+		GetClientRectExceptMenu(std::static_pointer_cast<win_window_info>(win)->platform_window(), &client, win->fullscreen());
 		m_width = client.right - client.left;
 		m_height = client.bottom - client.top;
 
@@ -1384,7 +1384,7 @@ bool renderer_d3d9::update_window_size()
 
 	// get the current window bounds
 	RECT client;
-	GetClientRectExceptMenu(win->platform_window<HWND>(), &client, win->fullscreen());
+	GetClientRectExceptMenu(std::static_pointer_cast<win_window_info>(win)->platform_window(), &client, win->fullscreen());
 
 	// if we have a device and matching width/height, nothing to do
 	if (m_device != nullptr && rect_width(&client) == m_width && rect_height(&client) == m_height)
@@ -1402,7 +1402,7 @@ bool renderer_d3d9::update_window_size()
 	// set the new bounds and create the device again
 	m_width = rect_width(&client);
 	m_height = rect_height(&client);
-	if (device_create(win->main_window()->platform_window<HWND>()))
+	if (device_create(std::static_pointer_cast<win_window_info>(win->main_window())->platform_window()))
 		return false;
 
 	// reset the resize state to normal, and indicate we made a change
@@ -1857,9 +1857,6 @@ void renderer_d3d9::primitive_flush_pending()
 			set_modmode(m_poly[polynum].modmode());
 		}
 
-		// set the blendmode if different
-		set_blendmode(PRIMFLAG_GET_BLENDMODE(flags));
-
 		if (vertnum + m_poly[polynum].numverts() > m_numverts)
 		{
 			osd_printf_error("Error: vertnum (%d) plus poly vertex count (%d) > %d\n", vertnum, m_poly[polynum].numverts(), m_numverts);
@@ -1870,10 +1867,16 @@ void renderer_d3d9::primitive_flush_pending()
 
 		if(m_shaders->enabled())
 		{
+			// reset blend mode (handled by shader passes)
+			set_blendmode(BLENDMODE_NONE);
+
 			m_shaders->render_quad(&m_poly[polynum], vertnum);
 		}
 		else
 		{
+			// set blend mode
+			set_blendmode(PRIMFLAG_GET_BLENDMODE(flags));
+
 			// add the primitives
 			result = m_device->DrawPrimitive(m_poly[polynum].type(), vertnum, m_poly[polynum].count());
 			if (FAILED(result))
@@ -2150,7 +2153,26 @@ void texture_info::compute_size(int texwidth, int texheight)
 	int finalheight = texheight;
 	int finalwidth = texwidth;
 
-	bool shaders_enabled = m_renderer->get_shaders()->enabled();
+	m_xborderpix = 0;
+	m_yborderpix = 0;
+
+ 	bool shaders_enabled = m_renderer->get_shaders()->enabled();
+	bool wrap_texture = (m_flags & PRIMFLAG_TEXWRAP_MASK) == PRIMFLAG_TEXWRAP_MASK;
+
+	// skip border when shaders are enabled
+	if (!shaders_enabled)
+	{
+		// if we're not wrapping, add a 1-2 pixel border on all sides
+		if (!wrap_texture)
+		{
+			// note we need 2 pixels in X for YUY textures
+			m_xborderpix = (PRIMFLAG_GET_TEXFORMAT(m_flags) == TEXFORMAT_YUY16) ? 2 : 1;
+			m_yborderpix = 1;
+		}
+	}
+
+	finalwidth += 2 * m_xborderpix;
+	finalheight += 2 * m_yborderpix;
 
 	// take texture size as given when shaders are enabled
 	if (!shaders_enabled)
@@ -2162,6 +2184,9 @@ void texture_info::compute_size(int texwidth, int texheight)
 		{
 			finalheight = texheight;
 			finalwidth = texwidth;
+
+			m_xborderpix = 0;
+			m_yborderpix = 0;
 
 			compute_size_subroutine(finalwidth, finalheight, &finalwidth, &finalheight);
 		}
@@ -2176,10 +2201,10 @@ void texture_info::compute_size(int texwidth, int texheight)
 	}
 
 	// compute the U/V scale factors
-	m_start.c.x = 0.0f;
-	m_start.c.y = 0.0f;
-	m_stop.c.x = float(texwidth) / float(finalwidth);
-	m_stop.c.y = float(texheight) / float(finalheight);
+	m_start.c.x = (float)m_xborderpix / (float)finalwidth;
+	m_start.c.y = (float)m_yborderpix / (float)finalheight;
+	m_stop.c.x = (float)(texwidth + m_xborderpix) / (float)finalwidth;
+	m_stop.c.y = (float)(texheight + m_yborderpix) / (float)finalheight;
 
 	// set the final values
 	m_rawdims.c.x = finalwidth;
@@ -2188,13 +2213,32 @@ void texture_info::compute_size(int texwidth, int texheight)
 
 
 //============================================================
+//  copyline_palette16
+//============================================================
+
+static inline void copyline_palette16(uint32_t *dst, const uint16_t *src, int width, const rgb_t *palette, int xborderpix)
+{
+	if (xborderpix)
+		*dst++ = 0xff000000 | palette[*src];
+	for (int x = 0; x < width; x++)
+		*dst++ = 0xff000000 | palette[*src++];
+	if (xborderpix)
+		*dst++ = 0xff000000 | palette[*--src];
+}
+
+
+//============================================================
 //  copyline_palettea16
 //============================================================
 
-static inline void copyline_palettea16(uint32_t *dst, const uint16_t *src, int width, const rgb_t *palette)
+static inline void copyline_palettea16(uint32_t *dst, const uint16_t *src, int width, const rgb_t *palette, int xborderpix)
 {
+	if (xborderpix)
+		*dst++ = palette[*src];
 	for (int x = 0; x < width; x++)
 		*dst++ = palette[*src++];
+	if (xborderpix)
+		*dst++ = palette[*--src];
 }
 
 
@@ -2202,19 +2246,34 @@ static inline void copyline_palettea16(uint32_t *dst, const uint16_t *src, int w
 //  copyline_rgb32
 //============================================================
 
-static inline void copyline_rgb32(uint32_t *dst, const uint32_t *src, int width, const rgb_t *palette)
+static inline void copyline_rgb32(uint32_t *dst, const uint32_t *src, int width, const rgb_t *palette, int xborderpix)
 {
 	if (palette != nullptr)
 	{
+		if (xborderpix)
+		{
+			rgb_t srcpix = *src;
+			*dst++ = 0xff000000 | palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
+		}
 		for (int x = 0; x < width; x++)
 		{
 			rgb_t srcpix = *src++;
-			*dst++ = palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
+			*dst++ = 0xff000000 | palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
+		}
+		if (xborderpix)
+		{
+			rgb_t srcpix = *--src;
+			*dst++ = 0xff000000 | palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
 		}
 	}
 	else
 	{
-		memcpy(dst, src, sizeof(uint32_t) * width);
+		if (xborderpix)
+			*dst++ = 0xff000000 | *src;
+		for (int x = 0; x < width; x++)
+			*dst++ = 0xff000000 | *src++;
+		if (xborderpix)
+			*dst++ = 0xff000000 | *--src;
 	}
 }
 
@@ -2223,19 +2282,35 @@ static inline void copyline_rgb32(uint32_t *dst, const uint32_t *src, int width,
 //  copyline_argb32
 //============================================================
 
-static inline void copyline_argb32(uint32_t *dst, const uint32_t *src, int width, const rgb_t *palette)
+static inline void copyline_argb32(uint32_t *dst, const uint32_t *src, int width, const rgb_t *palette, int xborderpix)
 {
 	if (palette != nullptr)
 	{
+		if (xborderpix)
+		{
+			rgb_t srcpix = *src;
+			*dst++ = (srcpix & 0xff000000) | palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
+		}
 		for (int x = 0; x < width; x++)
 		{
 			rgb_t srcpix = *src++;
 			*dst++ = (srcpix & 0xff000000) | palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
 		}
+		if (xborderpix)
+		{
+			rgb_t srcpix = *--src;
+			*dst++ = (srcpix & 0xff000000) | palette[0x200 + srcpix.r()] | palette[0x100 + srcpix.g()] | palette[srcpix.b()];
+		}
 	}
 	else
 	{
+		if (xborderpix)
+			*dst++ = *src;
 		memcpy(dst, src, sizeof(uint32_t) * width);
+		dst += width;
+		src += width;
+		if (xborderpix)
+			*dst++ = *--src;
 	}
 }
 
@@ -2357,39 +2432,48 @@ void texture_info::set_data(const render_texinfo *texsource, uint32_t flags)
 
 	// loop over Y
 	int tex_format = PRIMFLAG_GET_TEXFORMAT(flags);
-	if ((tex_format == TEXFORMAT_RGB32 || tex_format == TEXFORMAT_ARGB32) && texsource->palette == nullptr && texsource->width == texsource->rowpixels)
+#if 0
+	if (tex_format == TEXFORMAT_ARGB32 && texsource->palette == nullptr && texsource->width == texsource->rowpixels && m_xborderpix == 0 && m_yborderpix == 0)
 	{
 		memcpy((BYTE *)rect.pBits, texsource->base, sizeof(uint32_t) * texsource->width * texsource->height);
 	}
 	else
+#endif
 	{
-		for (int y = 0; y < texsource->height; y++)
-		{
-			void *dst = (BYTE *)rect.pBits + y * rect.Pitch;
+		int miny = 0 - m_yborderpix;
+		int maxy = texsource->height + m_yborderpix;
 
-			// switch off of the format and
-			switch (PRIMFLAG_GET_TEXFORMAT(flags))
+		for (int dsty = miny; dsty < maxy; dsty++)
+		{
+			int srcy = (dsty < 0) ? 0 : (dsty >= texsource->height) ? texsource->height - 1 : dsty;
+
+			void *dst = (BYTE *)rect.pBits + (dsty + m_yborderpix) * rect.Pitch;
+
+			switch (tex_format)
 			{
 				case TEXFORMAT_PALETTE16:
+					copyline_palette16((uint32_t *)dst, (uint16_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette, m_xborderpix);
+					break;
+
 				case TEXFORMAT_PALETTEA16:
-					copyline_palettea16((uint32_t *)dst, (uint16_t *)texsource->base + y * texsource->rowpixels, texsource->width, texsource->palette);
+					copyline_palettea16((uint32_t *)dst, (uint16_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette, m_xborderpix);
 					break;
 
 				case TEXFORMAT_RGB32:
-					copyline_rgb32((uint32_t *)dst, (uint32_t *)texsource->base + y * texsource->rowpixels, texsource->width, texsource->palette);
+					copyline_rgb32((uint32_t *)dst, (uint32_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette, m_xborderpix);
 					break;
 
 				case TEXFORMAT_ARGB32:
-					copyline_argb32((uint32_t *)dst, (uint32_t *)texsource->base + y * texsource->rowpixels, texsource->width, texsource->palette);
+					copyline_argb32((uint32_t *)dst, (uint32_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette, m_xborderpix);
 					break;
 
 				case TEXFORMAT_YUY16:
 					if (m_texture_manager->get_yuv_format() == D3DFMT_YUY2)
-						copyline_yuy16_to_yuy2((uint16_t *)dst, (uint16_t *)texsource->base + y * texsource->rowpixels, texsource->width, texsource->palette);
+						copyline_yuy16_to_yuy2((uint16_t *)dst, (uint16_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette);
 					else if (m_texture_manager->get_yuv_format() == D3DFMT_UYVY)
-						copyline_yuy16_to_uyvy((uint16_t *)dst, (uint16_t *)texsource->base + y * texsource->rowpixels, texsource->width, texsource->palette);
+						copyline_yuy16_to_uyvy((uint16_t *)dst, (uint16_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette);
 					else
-						copyline_yuy16_to_argb((uint32_t *)dst, (uint16_t *)texsource->base + y * texsource->rowpixels, texsource->width, texsource->palette);
+						copyline_yuy16_to_argb((uint32_t *)dst, (uint16_t *)texsource->base + srcy * texsource->rowpixels, texsource->width, texsource->palette);
 					break;
 
 				default:
@@ -2442,8 +2526,8 @@ void texture_info::prescale()
 		// set the source bounds
 		RECT source;
 		source.left = source.top = 0;
-		source.right = m_texinfo.width;
-		source.bottom = m_texinfo.height;
+		source.right = m_texinfo.width + 2 * m_xborderpix;
+		source.bottom = m_texinfo.height + 2 * m_yborderpix;
 
 		// set the target bounds
 		RECT dest;
@@ -2494,22 +2578,22 @@ void texture_info::prescale()
 		// configure the X/Y coordinates on the target surface
 		lockedbuf[0].x = -0.5f;
 		lockedbuf[0].y = -0.5f;
-		lockedbuf[1].x = (float)((m_texinfo.width) * m_xprescale) - 0.5f;
+		lockedbuf[1].x = (float)((m_texinfo.width + 2 * m_xborderpix) * m_xprescale) - 0.5f;
 		lockedbuf[1].y = -0.5f;
 		lockedbuf[2].x = -0.5f;
-		lockedbuf[2].y = (float)((m_texinfo.height) * m_yprescale) - 0.5f;
-		lockedbuf[3].x = (float)((m_texinfo.width) * m_xprescale) - 0.5f;
-		lockedbuf[3].y = (float)((m_texinfo.height) * m_yprescale) - 0.5f;
+		lockedbuf[2].y = (float)((m_texinfo.height + 2 * m_yborderpix) * m_yprescale) - 0.5f;
+		lockedbuf[3].x = (float)((m_texinfo.width + 2 * m_xborderpix) * m_xprescale) - 0.5f;
+		lockedbuf[3].y = (float)((m_texinfo.height + 2 * m_yborderpix) * m_yprescale) - 0.5f;
 
 		// configure the U/V coordintes on the source texture
 		lockedbuf[0].u0 = 0.0f;
 		lockedbuf[0].v0 = 0.0f;
-		lockedbuf[1].u0 = (float)(m_texinfo.width) / (float)m_rawdims.c.x;
+		lockedbuf[1].u0 = (float)(m_texinfo.width + 2 * m_xborderpix) / (float)m_rawdims.c.x;
 		lockedbuf[1].v0 = 0.0f;
 		lockedbuf[2].u0 = 0.0f;
-		lockedbuf[2].v0 = (float)(m_texinfo.height) / (float)m_rawdims.c.y;
-		lockedbuf[3].u0 = (float)(m_texinfo.width) / (float)m_rawdims.c.x;
-		lockedbuf[3].v0 = (float)(m_texinfo.height) / (float)m_rawdims.c.y;
+		lockedbuf[2].v0 = (float)(m_texinfo.height + 2 * m_yborderpix) / (float)m_rawdims.c.y;
+		lockedbuf[3].u0 = (float)(m_texinfo.width + 2 * m_xborderpix) / (float)m_rawdims.c.x;
+		lockedbuf[3].v0 = (float)(m_texinfo.height + 2 * m_yborderpix) / (float)m_rawdims.c.y;
 
 		// reset the remaining vertex parameters
 		for (i = 0; i < 4; i++)
@@ -2579,6 +2663,12 @@ d3d_render_target::~d3d_render_target()
 		if (target_surface[index] != nullptr)
 			target_surface[index]->Release();
 	}
+
+	if (cache_texture != nullptr)
+		cache_texture->Release();
+
+	if (cache_surface != nullptr)
+		cache_surface->Release();
 }
 
 

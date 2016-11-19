@@ -51,9 +51,9 @@ public:
 	imgtool::image::ptr image;		// the currently loaded image
 	imgtool::partition::ptr partition;	// the currently loaded partition
 
-	char *filename;
+	std::string filename;
 	int open_mode;
-	char *current_directory;
+	std::string current_directory;
 
 	imgtool::windows::extension_icon_provider icon_provider;
 
@@ -64,8 +64,7 @@ public:
 
 	wimgtool_info()
 		: listview(nullptr), statusbar(nullptr), image(nullptr), partition(nullptr)
-		, filename(nullptr), open_mode(0), current_directory(nullptr), readonly_icon(nullptr)
-		, dragimage(nullptr)
+		, open_mode(0), readonly_icon(nullptr), dragimage(nullptr)
 	{
 	}
 };
@@ -146,12 +145,12 @@ static imgtoolerr_t foreach_selected_item(HWND window,
 				entry->next = nullptr;
 
 				// retrieve the directory entry
-				err = info->partition->get_directory_entry(info->current_directory, selected_item, entry->dirent);
+				err = info->partition->get_directory_entry(info->current_directory.c_str(), selected_item, entry->dirent);
 				if (err)
 					return err;
 
 				// if we have a path, prepend the path
-				if (info->current_directory && info->current_directory[0])
+				if (!info->current_directory.empty())
 				{
 					char path_separator = (char)info->partition->get_info_int(IMGTOOLINFO_INT_PATH_SEPARATOR);
 
@@ -161,7 +160,7 @@ static imgtoolerr_t foreach_selected_item(HWND window,
 
 					// copy the full path back in
 					snprintf(entry->dirent.filename, ARRAY_LENGTH(entry->dirent.filename),
-						"%s%c%s", info->current_directory, path_separator, s);
+						"%s%c%s", info->current_directory.c_str(), path_separator, s);
 				}
 
 				// append to list
@@ -357,7 +356,7 @@ static imgtoolerr_t refresh_image(HWND window)
 		features = info->partition->get_features();
 
 		is_root_directory = TRUE;
-		if (info->current_directory)
+		if (!info->current_directory.empty())
 		{
 			for (i = 0; info->current_directory[i]; i++)
 			{
@@ -383,7 +382,7 @@ static imgtoolerr_t refresh_image(HWND window)
 				return err;
 		}
 
-		err = imgtool::directory::open(*info->partition, info->current_directory, imageenum);
+		err = imgtool::directory::open(*info->partition, info->current_directory.c_str(), imageenum);
 		if (err)
 			return err;
 
@@ -443,7 +442,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	else
 		memset(&features, 0, sizeof(features));
 
-	if (info->filename)
+	if (!info->filename.empty())
 	{
 		// get file title from Windows
 		osd::text::tstring t_filename = osd::text::to_tstring(info->filename);
@@ -455,7 +454,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 			imageinfo = info->image->info();
 
 		// combine all of this into a title bar
-		if (info->current_directory && info->current_directory[0])
+		if (!info->current_directory.empty())
 		{
 			// has a current directory
 			if (!imageinfo.empty())
@@ -503,7 +502,7 @@ static imgtoolerr_t full_refresh_image(HWND window)
 	else
 		SendMessage(info->statusbar, SB_SETICON, 0, (LPARAM) 0);
 
-	DragAcceptFiles(window, info->filename != nullptr);
+	DragAcceptFiles(window, !info->filename.empty());
 
 	// create the listview columns
 	col.mask = LVCF_TEXT | LVCF_WIDTH;
@@ -628,14 +627,14 @@ static imgtoolerr_t setup_openfilename_struct(win_open_file_name *ofn, HWND wind
 	ofn->filter_index = filter_index;
 
 	// can we specify an initial directory?
-	if (info->filename)
+	if (!info->filename.empty())
 	{
 		// copy the filename into the filename structure
 		ofn->filename = info->filename;
 
 		// specify an initial directory
-		initial_dir = (char*)alloca((strlen(info->filename) + 1) * sizeof(*info->filename));
-		strcpy(initial_dir, info->filename);
+		initial_dir = (char*)alloca((strlen(info->filename.c_str()) + 1) * sizeof(*info->filename.c_str()));
+		strcpy(initial_dir, info->filename.c_str());
 		dir_char = strrchr(initial_dir, '\\');
 		if (dir_char)
 			dir_char[1] = '\0';
@@ -808,14 +807,7 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 			read_or_write = OSD_FOPEN_READ;
 	}
 
-	if (info->filename)
-		osd_free(info->filename);
-	info->filename = core_strdup(filename.c_str());
-	if (!info->filename)
-	{
-		err = IMGTOOLERR_OUTOFMEMORY;
-		goto done;
-	}
+	info->filename = filename;
 
 	// try to open the image
 	err = imgtool::image::open(module, filename.c_str(), read_or_write, image);
@@ -837,22 +829,13 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	info->image = std::move(image);
 	info->partition = std::move(partition);
 	info->open_mode = read_or_write;
-	if (info->current_directory)
-	{
-		osd_free(info->current_directory);
-		info->current_directory = nullptr;
-	}
+	info->current_directory.clear();
 
 	// do we support directories?
 	if (info->partition->get_features().supports_directories)
 	{
 		root_path = partition->get_root_path();
-		info->current_directory = core_strdup(root_path);
-		if (!info->current_directory)
-		{
-			err = IMGTOOLERR_OUTOFMEMORY;
-			goto done;
-		}
+		info->current_directory.assign(root_path);
 	}
 
 	// refresh the window
@@ -1002,9 +985,9 @@ static void menu_insert(HWND window)
 	strcpy(image_filename, basename.c_str());
 
 	/* append the current directory, if appropriate */
-	if (info->current_directory != nullptr)
+	if (!info->current_directory.empty())
 	{
-		image_filename = (char *)info->partition->path_concatenate(info->current_directory, image_filename);
+		image_filename = (char *)info->partition->path_concatenate(info->current_directory.c_str(), image_filename);
 	}
 
 	err = info->partition->write_file(image_filename, fork, *stream, opts.get(), filter);
@@ -1241,9 +1224,9 @@ static void menu_createdir(HWND window)
 		goto done;
 	utf8_dirname = osd::text::from_tstring(cdi.buf);
 
-	if (info->current_directory)
+	if (!info->current_directory.empty())
 	{
-		s = (char *)info->partition->path_concatenate(info->current_directory, utf8_dirname.c_str());
+		s = (char *)info->partition->path_concatenate(info->current_directory.c_str(), utf8_dirname.c_str());
 		utf8_dirname.assign(s);
 	}
 
@@ -1365,11 +1348,7 @@ static void wimgtool_destroy(HWND window)
 
 	if (info)
 	{
-		if (info->filename)
-			osd_free(info->filename);
 		DestroyIcon(info->readonly_icon);
-		if (info->current_directory)
-			osd_free(info->current_directory);
 		delete info;
 	}
 }
@@ -1394,7 +1373,7 @@ static void drop_files(HWND window, HDROP drop)
 
 		// figure out the file/dir name on the image
 		subpath = string_format("%s%s",
-			info->current_directory ? info->current_directory : "",
+			info->current_directory,
 			core_filename_extract_base(filename));
 
 		if (GetFileAttributes(buffer) & FILE_ATTRIBUTE_DIRECTORY)
@@ -1415,15 +1394,9 @@ done:
 
 static imgtoolerr_t change_directory(HWND window, const char *dir)
 {
-	wimgtool_info *info;
-	char *new_current_dir;
-
-	info = get_wimgtool_info(window);
-
-	new_current_dir = core_strdup(info->partition->path_concatenate(info->current_directory, dir));
-	if (!new_current_dir)
-		return IMGTOOLERR_OUTOFMEMORY;
-	info->current_directory = new_current_dir;
+	wimgtool_info *info = get_wimgtool_info(window);
+	std::string new_current_dir = info->partition->path_concatenate(info->current_directory.c_str(), dir);
+	info->current_directory = std::move(new_current_dir);
 	return full_refresh_image(window);
 }
 
@@ -1469,7 +1442,7 @@ static imgtoolerr_t double_click(HWND window)
 		}
 		else
 		{
-			err = info->partition->get_directory_entry(info->current_directory, selected_item, entry);
+			err = info->partition->get_directory_entry(info->current_directory.c_str(), selected_item, entry);
 			if (err)
 				return err;
 		}
