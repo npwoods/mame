@@ -62,7 +62,7 @@ private:
 	std::unique_ptr<util::option_resolution>	m_option_resolution;
 
 	// methods
-	virtual void populate() override;
+	virtual void populate(float &customtop, float &custombottom) override;
 	void test_create(bool &can_create, bool &need_confirm);
 };
 

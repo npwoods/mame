@@ -54,7 +54,7 @@ ui_menu_bitbanger_control::~ui_menu_bitbanger_control()
 //  populate - populates the main bitbanger control menu
 //-------------------------------------------------
 
-void ui_menu_bitbanger_control::populate()
+void ui_menu_bitbanger_control::populate(float &customtop, float &custombottom)
 {
 	uint32_t flags = 0, mode_flags = 0, baud_flags = 0, tune_flags = 0;
 
@@ -110,8 +110,7 @@ void ui_menu_bitbanger_control::populate()
 void ui_menu_bitbanger_control::handle()
 {
 	// rebuild the menu
-	reset(reset_options::REMEMBER_POSITION);
-	populate();
+	repopulate(reset_options::REMEMBER_POSITION);
 
 	// process the menu
 	const event *event = process(PROCESS_LR_REPEAT);

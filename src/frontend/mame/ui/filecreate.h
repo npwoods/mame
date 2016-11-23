@@ -8,10 +8,10 @@
 
 ***************************************************************************/
 
-#pragma once
-
 #ifndef MAME_FRONTEND_UI_FILECREATE_H
 #define MAME_FRONTEND_UI_FILECREATE_H
+
+#pragma once
 
 #include "ui/menu.h"
 
@@ -27,7 +27,7 @@ public:
 	virtual ~menu_confirm_save_as() override;
 
 private:
-	virtual void populate() override;
+	virtual void populate(float &customtop, float &custombottom) override;
 	virtual void handle() override;
 
 	bool *m_yes;
@@ -50,7 +50,7 @@ protected:
 	virtual void selection_changed() override;
 
 private:
-	virtual void populate() override;
+	virtual void populate(float &customtop, float &custombottom) override;
 	virtual void handle() override;
 
 	// these are passed in
@@ -97,7 +97,7 @@ public:
 	virtual ~menu_select_format() override;
 
 private:
-	virtual void populate() override;
+	virtual void populate(float &customtop, float &custombottom) override;
 	virtual void handle() override;
 
 	// internal state

@@ -23,7 +23,7 @@ class menu_load_save_state_base : public menu
 {
 public:
 	virtual ~menu_load_save_state_base() override;
-	virtual void populate() override;
+	virtual void populate(float &customtop, float &custombottom) override;
 	virtual void handle() override;
 	virtual void custom_render(void *selectedref, float top, float bottom, float x, float y, float x2, float y2) override;
 

@@ -71,7 +71,7 @@ menu_confirm_save_as::~menu_confirm_save_as()
 //  populate
 //-------------------------------------------------
 
-void menu_confirm_save_as::populate()
+void menu_confirm_save_as::populate(float &customtop, float &custombottom)
 {
 	item_append(_("File Already Exists - Override?"), "", FLAG_DISABLE, nullptr);
 	item_append(menu_item_type::SEPARATOR);
@@ -201,7 +201,7 @@ void menu_file_create::selection_changed()
 //  populate - populates the file creator menu
 //-------------------------------------------------
 
-void menu_file_create::populate()
+void menu_file_create::populate(float &customtop, float &custombottom)
 {
 	std::string buffer;
 	const std::string *new_image_name;
@@ -561,7 +561,7 @@ menu_select_format::~menu_select_format()
 //  populate
 //-------------------------------------------------
 
-void menu_select_format::populate()
+void menu_select_format::populate(float &customtop, float &custombottom)
 {
 	item_append(_("Select image format"), "", FLAG_DISABLE, nullptr);
 	for (int i = 0; i < m_total_usable; i++)

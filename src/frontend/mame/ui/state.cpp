@@ -62,7 +62,7 @@ void *menu_load_save_state_base::itemref_from_slot_number(unsigned int slot)
 //  populate
 //-------------------------------------------------
 
-void menu_load_save_state_base::populate()
+void menu_load_save_state_base::populate(float &customtop, float &custombottom)
 {
 	m_enabled_mask = 0;
 

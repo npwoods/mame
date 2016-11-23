@@ -128,7 +128,7 @@ void menu_control_device_image::hook_load(const std::string &name)
 //  populate
 //-------------------------------------------------
 
-void menu_control_device_image::populate()
+void menu_control_device_image::populate(float &customtop, float &custombottom)
 {
 }
 
