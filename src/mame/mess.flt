@@ -3,12 +3,12 @@
 4dpi.cpp
 68ksbc.cpp
 a2600.cpp
-a310.cpp
 a5105.cpp
 a51xx.cpp
 a6809.cpp
 a7150.cpp
 a7800.cpp
+aa310.cpp
 abc1600.cpp
 abc80.cpp
 abc80x.cpp
@@ -309,6 +309,7 @@ lisa.cpp
 llc.cpp
 lola8a.cpp
 lviv.cpp
+lwriter.cpp
 lynx.cpp
 m20.cpp
 m24.cpp

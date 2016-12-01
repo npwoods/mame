@@ -284,6 +284,7 @@ VIDEOS["EF9340_1"] = true
 VIDEOS["EF9345"] = true
 VIDEOS["EF9364"] = true
 VIDEOS["EF9365"] = true
+--VIDEOS["EF9369"] = true
 VIDEOS["GF4500"] = true
 --VIDEOS+= EPIC12"] = true
 --VIDEOS+= FIXFREQ"] = true
@@ -1091,7 +1092,7 @@ function createProjects_mame_mess(_target, _subtarget)
 -- the following files are MAME components and
 -- shared across a number of drivers
 --
--- a310.c (MESS), aristmk5.c, ertictac.c (MAME)
+-- aa310.c (MESS), aristmk5.c, ertictac.c (MAME)
 -- amiga.c (MESS), alg.c, arcadia.c, cubo.c, mquake.c, upscope.c (MAME)
 -- a2600.c (MESS), tourtabl.c (MAME)
 -- atari400.c (MESS), bartop52.c, maxaflex.c (MAME)
@@ -1250,7 +1251,7 @@ files {
 
 createMESSProjects(_target, _subtarget, "acorn")
 files {
-	MAME_DIR .. "src/mame/drivers/a310.cpp",
+	MAME_DIR .. "src/mame/drivers/aa310.cpp",
 	MAME_DIR .. "src/mame/drivers/a6809.cpp",
 	MAME_DIR .. "src/mame/drivers/acrnsys1.cpp",
 	MAME_DIR .. "src/mame/drivers/atom.cpp",
@@ -1383,6 +1384,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/lisa.cpp",
 	MAME_DIR .. "src/mame/includes/lisa.h",
 	MAME_DIR .. "src/mame/machine/lisa.cpp",
+	MAME_DIR .. "src/mame/drivers/lwriter.cpp",
 	MAME_DIR .. "src/mame/drivers/mac128.cpp",
 	MAME_DIR .. "src/mame/drivers/mac.cpp",
 	MAME_DIR .. "src/mame/includes/mac.h",
@@ -1894,6 +1896,8 @@ files {
 	MAME_DIR .. "src/mame/video/fmtowns.cpp",
 	MAME_DIR .. "src/mame/machine/fm_scsi.cpp",
 	MAME_DIR .. "src/mame/machine/fm_scsi.h",
+	MAME_DIR .. "src/mame/machine/fmt_icmem.cpp",
+	MAME_DIR .. "src/mame/machine/fmt_icmem.h",
 	MAME_DIR .. "src/mame/drivers/fm7.cpp",
 	MAME_DIR .. "src/mame/includes/fm7.h",
 	MAME_DIR .. "src/mame/video/fm7.cpp",
@@ -2023,6 +2027,8 @@ files {
 	MAME_DIR .. "src/mame/drivers/isbc8030.cpp",
 	MAME_DIR .. "src/mame/machine/isbc_215g.cpp",
 	MAME_DIR .. "src/mame/machine/isbc_215g.h",
+	MAME_DIR .. "src/mame/machine/isbc_208.cpp",
+	MAME_DIR .. "src/mame/machine/isbc_208.h",
 	MAME_DIR .. "src/mame/drivers/rex6000.cpp",
 	MAME_DIR .. "src/mame/drivers/sdk80.cpp",
 	MAME_DIR .. "src/mame/drivers/sdk85.cpp",
