@@ -509,6 +509,10 @@ image_init_result floppy_image_device::call_create(const image_device_format *cr
 		return image_init_result::FAIL;
 	}
 
+	if (motor_always_on)
+		// When disk is inserted, start motor
+		mon_w(0);
+
 	return image_init_result::PASS;
 }
 
