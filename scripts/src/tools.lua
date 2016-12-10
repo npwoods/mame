@@ -770,6 +770,60 @@ configuration { }
 strip()
 
 --------------------------------------------------
+-- imgtool_test
+--------------------------------------------------
+
+project("imgtool_test")
+uuid ("fa040673-7a02-4c0c-a75c-ac1694d03b3b")
+kind "ConsoleApp"
+
+flags {
+	"Symbols", -- always include minimum symbols for executables
+}
+
+if _OPTIONS["SEPARATE_BIN"]~="1" then
+	targetdir(MAME_DIR)
+end
+
+links {
+	"formats",
+	"emu",
+	"utils",
+	"imgtool_core",
+	"lua",
+	"lualibs",
+	ext_lib("expat"),
+	"7z",
+	"ocore_" .. _OPTIONS["osd"],
+	ext_lib("zlib"),
+	ext_lib("flac"),
+}
+
+configuration { "vs*" }
+	linkoptions { "setargv.obj" }
+
+includedirs {
+	MAME_DIR .. "src/osd",
+	MAME_DIR .. "src/lib",
+	MAME_DIR .. "src/lib/util",
+	ext_includedir("zlib"),
+	ext_includedir("lua"),
+	MAME_DIR .. "src/tools/imgtool",
+	MAME_DIR .. "3rdparty",
+}
+
+files {
+	MAME_DIR .. "src/tools/imgtool/test/imgtool_test.cpp"
+}
+
+configuration { "mingw*" or "vs*" }
+	targetextension ".exe"
+
+configuration { }
+
+strip()
+
+--------------------------------------------------
 -- wimgtool
 --------------------------------------------------
 
