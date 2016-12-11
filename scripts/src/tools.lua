@@ -799,9 +799,6 @@ links {
 	ext_lib("flac"),
 }
 
-configuration { "vs*" }
-	linkoptions { "setargv.obj" }
-
 includedirs {
 	MAME_DIR .. "src/osd",
 	MAME_DIR .. "src/lib",
@@ -815,6 +812,9 @@ includedirs {
 files {
 	MAME_DIR .. "src/tools/imgtool/test/imgtool_test.cpp"
 }
+
+configuration { "vs*" }
+	linkoptions { "setargv.obj" }
 
 configuration { "mingw*" or "vs*" }
 	targetextension ".exe"
