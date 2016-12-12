@@ -382,7 +382,7 @@ static imgtoolerr_t refresh_image(HWND window)
 				return err;
 		}
 
-		err = imgtool::directory::open(*info->partition, info->current_directory.c_str(), imageenum);
+		err = imgtool::directory::open(*info->partition, info->current_directory, imageenum);
 		if (err)
 			return err;
 
@@ -810,12 +810,12 @@ imgtoolerr_t wimgtool_open_image(HWND window, const imgtool_module *module,
 	info->filename = filename;
 
 	// try to open the image
-	err = imgtool::image::open(module, filename.c_str(), read_or_write, image);
+	err = imgtool::image::open(module, filename, read_or_write, image);
 	if ((ERRORCODE(err) == IMGTOOLERR_READONLY) && read_or_write)
 	{
 		// if we failed when open a read/write image, try again
 		read_or_write = OSD_FOPEN_READ;
-		err = imgtool::image::open(module, filename.c_str(), read_or_write, image);
+		err = imgtool::image::open(module, filename, read_or_write, image);
 	}
 	if (err)
 		goto done;

@@ -92,7 +92,7 @@ public:
 	l_directory opendir(const std::string &path)
 	{
 		imgtool::directory::ptr directory;
-		imgtoolerr_t err = imgtool::directory::open(*m_partition.get(), path.c_str(), directory);
+		imgtoolerr_t err = imgtool::directory::open(*m_partition.get(), path, directory);
 		if (err)
 			raise_error(err);
 
@@ -158,7 +158,7 @@ public:
 		imgtoolerr_t err;
 
 		imgtool::image::ptr image;
-		err = imgtool::image::open(modulename, filename.c_str(), OSD_FOPEN_READ, image);
+		err = imgtool::image::open(modulename, filename, OSD_FOPEN_READ, image);
 		if (err)
 			raise_error(err);
 
