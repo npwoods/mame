@@ -44,7 +44,7 @@ public:
 		{
 			sol::table table = m_lua.create_table();
 			table["filename"] = std::string(ent.filename);
-			table["attr"] = std::string(ent.attr);
+			table["attributes"] = std::string(ent.attr);
 			table["filesize"] = ent.filesize;
 			table["creation_time"] = ent.creation_time;
 			table["lastmodified_time"] = ent.lastmodified_time;
