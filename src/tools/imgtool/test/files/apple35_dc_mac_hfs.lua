@@ -9,12 +9,12 @@ assert(dirent.filesize == 512);
 assert(dirent.directory == false);
 
 dirent = directory();
---assert(dirent.filename == "Héllõ", "Expected 'Héllõ' but instead got '" .. dirent.filename .. "'");
+assert(dirent.filename == "H\xC3\xA9ll\xC3\xB5", "Expected 'Héllõ' but instead got '" .. dirent.filename .. "'");
 assert(dirent.directory == true);
 local directory_filename = dirent.filename;
 
 dirent = directory();
---assert(dirent.filename == "Wôrld", "Expected 'Wôrld' but instead got '" .. dirent.filename .. "'");
+assert(dirent.filename == "W\xC3\xB4rld", "Expected 'Wôrld' but instead got '" .. dirent.filename .. "'");
 assert(dirent.filesize == 1024);
 assert(dirent.directory == false);
 
