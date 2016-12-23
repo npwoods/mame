@@ -52,7 +52,7 @@ void imgtool::simple_charconverter::from_utf8(std::ostream &dest, const std::str
 
 		if (ch <= 0x7F)
 		{
-			dest << (char)*iter;
+			dest << (char)ch;
 		}
 		else
 		{
@@ -74,9 +74,19 @@ void imgtool::simple_charconverter::to_utf8(std::ostream &dest, const std::strin
 {
 	for (auto iter = src.begin(); iter != src.end(); iter++)
 	{
-		if (*iter <= 0x7F)
+		if ((*iter & 0x80) == 0)
+		{
+			// low page (0x00 - 0x7F) - pass it on
 			dest << *iter;
+		}
 		else
-			dest << utf8_from_uchar(m_highpage[*iter - 0x80]);
+		{
+			// high page (0x80 - 0xFF) - we need to do a lookup
+			char32_t ch = m_highpage[((unsigned char)(*iter)) - 0x80];
+			if (ch == 0)
+				throw charconverter_exception();
+
+			dest << utf8_from_uchar(ch);
+		}
 	}
 }

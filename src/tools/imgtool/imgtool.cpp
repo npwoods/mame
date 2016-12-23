@@ -117,7 +117,7 @@ char *imgtool::partition::normalize_filename(const char *src)
 	imgtool::charconverter *charconverter = (imgtool::charconverter *) get_info_ptr(IMGTOOLINFO_PTR_CHARCONVERTER);
 
 	// and convert
-	return core_strdup(charconverter ? charconverter->to_utf8(src).c_str() : src);
+	return core_strdup(charconverter ? charconverter->from_utf8(src).c_str() : src);
 }
 
 
@@ -2481,7 +2481,15 @@ imgtoolerr_t imgtool::directory::get_next(imgtool_dirent &ent)
 	imgtool::charconverter *charconverter = (imgtool::charconverter *) m_partition.get_info_ptr(IMGTOOLINFO_PTR_CHARCONVERTER);
 	if (charconverter)
 	{
-		std::string new_fname = charconverter->to_utf8(ent.filename);
+		std::string new_fname;
+		try
+		{
+			new_fname = charconverter->to_utf8(ent.filename);
+		}
+		catch (charconverter_exception)
+		{
+			return (imgtoolerr_t)(IMGTOOLERR_BADFILENAME);
+		}
 		snprintf(ent.filename, ARRAY_LENGTH(ent.filename), "%s", new_fname.c_str());
 	}
 
