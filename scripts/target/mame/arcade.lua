@@ -676,6 +676,7 @@ BUSES["VECTREX"] = true
 --BUSES["VIC20"] = true
 --BUSES["VIDBRAIN"] = true
 --BUSES["VIP"] = true
+--BUSES["VME"] = true
 --BUSES["VTECH_IOEXP"] = true
 --BUSES["VTECH_MEMEXP"] = true
 --BUSES["WANGPC"] = true
@@ -965,6 +966,8 @@ files {
 	MAME_DIR .. "src/mame/video/atarisy2.cpp",
 	MAME_DIR .. "src/mame/drivers/atarisy4.cpp",
 	MAME_DIR .. "src/mame/drivers/atarittl.cpp",
+	MAME_DIR .. "src/mame/machine/nl_stuntcyc.cpp",
+	MAME_DIR .. "src/mame/machine/nl_stuntcyc.h",
 	MAME_DIR .. "src/mame/drivers/atetris.cpp",
 	MAME_DIR .. "src/mame/includes/atetris.h",
 	MAME_DIR .. "src/mame/video/atetris.cpp",
@@ -1096,8 +1099,6 @@ files {
 	MAME_DIR .. "src/mame/machine/nl_pongd.h",
 	MAME_DIR .. "src/mame/machine/nl_breakout.cpp",
 	MAME_DIR .. "src/mame/machine/nl_breakout.h",
-	MAME_DIR .. "src/mame/machine/nl_stuntcyc.cpp",
-	MAME_DIR .. "src/mame/machine/nl_stuntcyc.h",
 	MAME_DIR .. "src/mame/drivers/poolshrk.cpp",
 	MAME_DIR .. "src/mame/includes/poolshrk.h",
 	MAME_DIR .. "src/mame/audio/poolshrk.cpp",
@@ -2691,6 +2692,8 @@ files {
 	MAME_DIR .. "src/mame/machine/namco62.h",
 	MAME_DIR .. "src/mame/machine/namcomcu.cpp",
 	MAME_DIR .. "src/mame/machine/namcomcu.h",
+	MAME_DIR .. "src/mame/machine/namcoio_gearbox.cpp",
+	MAME_DIR .. "src/mame/machine/namcoio_gearbox.h",
 	MAME_DIR .. "src/mame/audio/namco52.cpp",
 	MAME_DIR .. "src/mame/audio/namco52.h",
 	MAME_DIR .. "src/mame/audio/namco54.cpp",
@@ -2935,14 +2938,12 @@ files {
 	MAME_DIR .. "src/mame/drivers/pacman.cpp",
 	MAME_DIR .. "src/mame/includes/pacman.h",
 	MAME_DIR .. "src/mame/video/pacman.cpp",
-	MAME_DIR .. "src/mame/machine/acitya.cpp",
-	MAME_DIR .. "src/mame/machine/acitya.h",
+	MAME_DIR .. "src/mame/machine/epos.cpp",
+	MAME_DIR .. "src/mame/machine/epos.h",
 	MAME_DIR .. "src/mame/machine/jumpshot.cpp",
 	MAME_DIR .. "src/mame/machine/jumpshot.h",
 	MAME_DIR .. "src/mame/machine/pacplus.cpp",
 	MAME_DIR .. "src/mame/machine/pacplus.h",
-	MAME_DIR .. "src/mame/machine/theglobp.cpp",
-	MAME_DIR .. "src/mame/machine/theglobp.h",
 	MAME_DIR .. "src/mame/drivers/pengo.cpp",
 }
 

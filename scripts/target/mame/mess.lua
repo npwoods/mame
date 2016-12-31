@@ -702,6 +702,7 @@ BUSES["VIC10"] = true
 BUSES["VIC20"] = true
 BUSES["VIDBRAIN"] = true
 BUSES["VIP"] = true
+BUSES["VME"] = true
 BUSES["VTECH_IOEXP"] = true
 BUSES["VTECH_MEMEXP"] = true
 BUSES["WANGPC"] = true
@@ -1893,6 +1894,7 @@ files {
 
 createMESSProjects(_target, _subtarget, "force")
 files {
+	MAME_DIR .. "src/mame/drivers/fccpu20.cpp",
 	MAME_DIR .. "src/mame/drivers/fccpu30.cpp",
 	MAME_DIR .. "src/mame/drivers/force68k.cpp",
 }
