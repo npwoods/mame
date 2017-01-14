@@ -81,7 +81,7 @@ protected:
 	devcb = &m68705_new_device::set_port_cb_w<2>(*device, DEVCB_##obj);
 
 
-class m68705_new_device : public m68705_device
+class m68705_new_device : public m68705_device, public device_nvram_interface
 {
 public:
 	// static configuration helpers
@@ -133,13 +133,16 @@ protected:
 	DECLARE_WRITE8_MEMBER(pcr_w);
 
 	TIMER_CALLBACK_MEMBER(timer_68705_increment);
-	
+
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 
 	// device-level overrides
 	virtual void device_start() override;
 	virtual void device_reset() override;
 	virtual void execute_set_input(int inputnum, int state) override;
+	virtual void nvram_default() override;
+	virtual void nvram_read(emu_file &file) override;
+	virtual void nvram_write(emu_file &file) override;
 
 	u8 m_tdr;
 	u8 m_tcr;
@@ -148,19 +151,20 @@ protected:
 	emu_timer *m_68705_timer;
 
 private:
-	required_region_ptr<u8>	m_user_rom;
+	required_region_ptr<u8> m_user_rom;
 
-	bool					m_port_open_drain[PORT_COUNT];
-	u8						m_port_mask[PORT_COUNT];
-	u8						m_port_input[PORT_COUNT];
-	u8						m_port_latch[PORT_COUNT];
-	u8						m_port_ddr[PORT_COUNT];
-	devcb_read8				m_port_cb_r[PORT_COUNT];
-	devcb_write8			m_port_cb_w[PORT_COUNT];
+	bool                    m_port_open_drain[PORT_COUNT];
+	u8                      m_port_mask[PORT_COUNT];
+	u8                      m_port_input[PORT_COUNT];
+	u8                      m_port_latch[PORT_COUNT];
+	u8                      m_port_ddr[PORT_COUNT];
+	devcb_read8             m_port_cb_r[PORT_COUNT];
+	devcb_write8            m_port_cb_w[PORT_COUNT];
 
-	u8						m_pcr;
-	u8						m_pl_data;
-	u16						m_pl_addr;
+	u8                      m_vihtp;
+	u8                      m_pcr;
+	u8                      m_pl_data;
+	u16                     m_pl_addr;
 };
 
 
@@ -185,6 +189,13 @@ protected:
 			char const *name,
 			char const *shortname,
 			char const *source);
+
+	virtual offs_t disasm_disassemble(
+			std::ostream &stream,
+			offs_t pc,
+			const uint8_t *oprom,
+			const uint8_t *opram,
+			uint32_t options) override;
 };
 
 
@@ -228,6 +239,12 @@ protected:
 	DECLARE_ADDRESS_MAP(u_map, 8);
 
 	virtual tiny_rom_entry const *device_rom_region() const override;
+	virtual offs_t disasm_disassemble(
+			std::ostream &stream,
+			offs_t pc,
+			const uint8_t *oprom,
+			const uint8_t *opram,
+			uint32_t options) override;
 };
 
 
@@ -238,6 +255,7 @@ protected:
 #define M68705_INT_MASK             0x03
 #define M68705_IRQ_LINE             (M6805_IRQ_LINE + 0)
 #define M68705_INT_TIMER            (M6805_IRQ_LINE + 1)
-#define M68705_VPP_LINE				(M6805_IRQ_LINE + 2)
+#define M68705_VPP_LINE             (M6805_IRQ_LINE + 2)
+#define M68705_VIHTP_LINE           (M6805_IRQ_LINE + 3)
 
 #endif // MAME_CPU_M6805_M68705_H

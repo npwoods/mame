@@ -115,6 +115,10 @@ const device_type ALPS_3255190x = &device_creator<alps_3255190x>;
 const device_type IBM_6360 = &device_creator<ibm_6360>;
 
 
+template class device_finder<floppy_connector, false>;
+template class device_finder<floppy_connector, true>;
+
+
 const floppy_format_type floppy_image_device::default_floppy_formats[] = {
 	FLOPPY_D88_FORMAT,
 	FLOPPY_DFI_FORMAT,
@@ -633,7 +637,9 @@ bool floppy_image_device::twosid_r()
 void floppy_image_device::stp_w(int state)
 {
 	// Before spin-up is done, ignore step pulses
-	if (ready_counter > 0) return;
+	// TODO: There are reports about drives supporting step operation with
+	// stopped spindle. Need to check that on real drives.
+	// if (ready_counter > 0) return;
 
 	if ( stp != state ) {
 		stp = state;
@@ -756,8 +762,14 @@ attotime floppy_image_device::get_next_index_time(std::vector<uint32_t> &buf, in
 
 attotime floppy_image_device::get_next_transition(const attotime &from_when)
 {
+	if(!image || mon)
+		return attotime::never;
+
 	// If the drive is still spinning up, pretend that no transitions will come
-	if(!image || mon || ready_counter > 0)
+	// TODO: Implement a proper spin-up ramp for transition times, also in order
+	// to cover potential copy protection measures that have direct device
+	// access (mz)
+	if (ready_counter > 0)
 		return attotime::never;
 
 	std::vector<uint32_t> &buf = image->get_buffer(cyl, ss, subcyl);

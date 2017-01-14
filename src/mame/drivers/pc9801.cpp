@@ -8,7 +8,7 @@
 
     TODO:
     - proper 8251 uart hook-up on keyboard
-    - SASI /SCSI support;
+    - SASI/SCSI support;
     - Write a PC80S31K device (also used on PC-8801 and PC-88VA, it's the FDC + Z80 sub-system);
     - Finish DIP-Switches support
     - text scrolling
@@ -17,7 +17,7 @@
     - some later SWs put "Invalid command byte 05" (Absolutely Mahjong on Epson logo)
     - investigate on POR bit
     - test 2dd more
-
+	
     TODO (PC-9801RS):
     - extra features;
     - keyboard shift doesn't seem to disable properly;
@@ -39,7 +39,6 @@
     - No way to exit the initial loop. Code looks broken/bad dump?
 
     floppy issues TODO (* denotes actually fixed)
-    - Unsupported disk types: *.nfd, *.fdd, *.nhd
     - 46 Okunen Monogatari - The Shinkaron
     - AD&D Champions of Krynn
     - AI Shougi (asserts upon loading, 3'5 image?)
@@ -105,10 +104,11 @@
     - Policenauts: CD-ROM drive not found;
 
     Notes:
-	- annivers: ALT key cycles through different color schemes (normal, b&w, legacy);
+	- annivers: GRPH (ALT) key cycles through different color schemes (normal, b&w, legacy);
     - Animahjong V3 makes advantage of the possibility of installing 2 sound boards, where SFX and BGMs are played on separate chips.
     - Apple Club 1/2 needs data disks to load properly;
     - Beast Lord: needs a titan.fnt, in MS-DOS
+	- fhtag2: product key is 001J0283TA 100001
     - To deprotect BASIC modules set 0xcd7 in ram to 0
 
 ========================================================================================
@@ -2295,6 +2295,8 @@ READ16_MEMBER(pc9801_state::timestamp_r)
 }
 
 /* basically a read-back of various registers */
+// bit 1: GDC clock select (port 0x6a, selects with 0x84 & bit 0)
+// bit 0: 
 READ8_MEMBER(pc9801_state::ext2_video_ff_r)
 {
 	uint8_t res;
@@ -2303,9 +2305,12 @@ READ8_MEMBER(pc9801_state::ext2_video_ff_r)
 
 	switch(m_ext2_ff)
 	{
-		case 3: res = m_video_ff[DISPLAY_REG]; break; // display reg
+		case 0x03: res = m_video_ff[DISPLAY_REG]; break; // display reg
+		case 0x0a: res = m_ex_video_ff[ANALOG_256_MODE]; break; // 256 color mode
 		default:
-			logerror("PC-9821: read ext2 f/f with value %02x\n",m_ext2_ff);
+			if(m_ext2_ff < 0x20)
+				popmessage("PC-9821: read ext2 f/f with value %02x",m_ext2_ff);
+			break;
 	}
 
 	return res;

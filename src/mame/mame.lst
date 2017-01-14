@@ -8907,6 +8907,7 @@ hardbodyg                       //
 hvymetap                        //
 ladyluck                        //
 motrdome                        //
+motrdomeg                       //
 prtyanim                        //
 prtyanimg                       //
 specforc                        //
@@ -14099,7 +14100,7 @@ orbit1                          //
 shark                           //
 
 @source:hapyfish.cpp
-hapyfsh2						// bootleg
+hapyfsh2                        // bootleg
 
 @source:harddriv.cpp
 harddriv                        // 136052           (c) 1988
@@ -14264,6 +14265,7 @@ bigtrak                         // Milton Bradley
 bship                           // Milton Bradley
 bshipb                          // Milton Bradley
 cmsport                         // Conic
+cnbaskb                         // Conic
 cnfball                         // Conic
 cnfball2                        // Conic
 cnsector                        // Parker Bros
@@ -14283,6 +14285,7 @@ elecdet                         // Ideal
 esbattle                        // Entex
 esoccer                         // Entex
 fxmcr165                        // Gakken
+ginv1000                        // Gakken
 gjackpot                        // Gakken
 gpoker                          // Gakken
 h2hbaseb                        // Coleco
@@ -17424,6 +17427,11 @@ wilytowr                        // M63 (c) 1984
 
 @source:m6805evs.cpp
 m6805evs                        //
+
+@source:m68705prg.cpp
+705p3prg                        //
+705p5prg                        //
+705u3prg                        //
 
 @source:m72.cpp
 airduel                         // (c) 1990 (World)
@@ -29198,11 +29206,14 @@ raiders5                        // UPL-85004 (c) 1985
 raiders5t                       // UPL-85004 (c) 1985 Taito license
 
 @source:novag6502.cpp
+cforteb                         //
+sexperta                        //
 sexpertb                        //
 sexpertc                        //
+sexpertc1                       //
 sfortea                         //
+sfortea1                        //
 sforteb                         //
-sforteba                        //
 sfortec                         //
 supercon                        //
 
@@ -29593,7 +29604,7 @@ pbaction4                       // (c) 1985 Tehkan
 pbaction5                       // (c) 1985 Tehkan
 
 @source:pc.cpp
-ataripc1						// Atari PC1 
+ataripc1                        // Atari PC1
 ataripc3                        // Atari PC3
 bw230                           // 1985 Bondwell (CGA)
 compc1                          // 1984 Commodore PC-1
@@ -31004,6 +31015,7 @@ poly880                         //
 
 @source:polyplay.cpp
 polyplay                        //
+polyplay2                       //
 
 @source:pong.cpp
 breakout                        // (c) 1976 Atari
@@ -35934,7 +35946,7 @@ tekipaki                        // TP-020 (c) 1991 Toaplan
 truxton2                        // TP-024 (c) 1992 Toaplan
 vfive                           // TP-027 (c) 1993 Toaplan (Japan)
 whoopee                         // TP-025
-enmadaio						// TP-031
+enmadaio                        // TP-031
 
 @source:toki.cpp
 juju                            // (c) 1989 Tad (Japan)

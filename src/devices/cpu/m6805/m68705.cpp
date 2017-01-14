@@ -4,19 +4,35 @@
 
 namespace {
 
+std::pair<u16, char const *> const m68705p_syms[] = {
+	{ 0x0000, "PORTA" }, { 0x0001, "PORTB" }, { 0x0002, "PORTC" },
+	{ 0x0004, "DDRA"  }, { 0x0005, "DDRB"  }, { 0x0006, "DDRC"  },
+	{ 0x0008, "TDR"   }, { 0x0009, "TCR"   },
+	{ 0x000b, "PCR"   },
+	{ 0x0784, "MOR"   } };
+
+std::pair<u16, char const *> const m68705u_syms[] = {
+	{ 0x0000, "PORTA" }, { 0x0001, "PORTB" }, { 0x0002, "PORTC" }, { 0x0003, "PORTD" },
+	{ 0x0004, "DDRA"  }, { 0x0005, "DDRB"  }, { 0x0006, "DDRC"  },
+	{ 0x0008, "TDR"   }, { 0x0009, "TCR"   },
+	{ 0x000a, "MISC"  },
+	{ 0x000b, "PCR"   },
+	{ 0x0f38, "MOR"   } };
+
+
 ROM_START( m68705p3 )
-    ROM_REGION(0x0073, "bootstrap", 0)
-    ROM_LOAD("bootstrap.bin", 0x0000, 0x0073, CRC(696e1383) SHA1(45104fe1dbd683d251ed2b9411b1f4befbb5aff4))
+	ROM_REGION(0x0073, "bootstrap", 0)
+	ROM_LOAD("bootstrap.bin", 0x0000, 0x0073, CRC(696e1383) SHA1(45104fe1dbd683d251ed2b9411b1f4befbb5aff4))
 ROM_END
 
 ROM_START( m68705p5 )
-    ROM_REGION(0x0073, "bootstrap", 0)
-    ROM_LOAD("bootstrap.bin", 0x0000, 0x0073, CRC(f70a8620) SHA1(c154f78c23f10bb903a531cb19e99121d5f7c19c))
+	ROM_REGION(0x0073, "bootstrap", 0)
+	ROM_LOAD("bootstrap.bin", 0x0000, 0x0073, CRC(f70a8620) SHA1(c154f78c23f10bb903a531cb19e99121d5f7c19c))
 ROM_END
 
 ROM_START( m68705u3 )
-    ROM_REGION(0x0078, "bootstrap", 0)
-    ROM_LOAD("bootstrap.bin", 0x0000, 0x0073, CRC(5946479b) SHA1(834ea00aef5de12dbcd6421a6e21d5ea96cfbf37))
+	ROM_REGION(0x0078, "bootstrap", 0)
+	ROM_LOAD("bootstrap.bin", 0x0000, 0x0078, CRC(5946479b) SHA1(834ea00aef5de12dbcd6421a6e21d5ea96cfbf37))
 ROM_END
 
 } // anonymous namespace
@@ -92,12 +108,10 @@ void m68705_device::execute_set_input(int inputnum, int state)
 {
 	if (m_irq_state[inputnum] != state)
 	{
-		m_irq_state[inputnum] = state;
+		m_irq_state[inputnum] = (state == ASSERT_LINE) ? ASSERT_LINE : CLEAR_LINE;
 
 		if (state != CLEAR_LINE)
-		{
 			m_pending_interrupts |= 1 << inputnum;
-		}
 	}
 }
 
@@ -206,6 +220,7 @@ m68705_new_device::m68705_new_device(
 		char const *shortname,
 		char const *source)
 	: m68705_device(mconfig, tag, owner, clock, type, name, addr_width, internal_map, shortname, source)
+	, device_nvram_interface(mconfig, *this)
 	, m_user_rom(*this, DEVICE_SELF, u32(1) << addr_width)
 	, m_port_open_drain{ false, false, false, false }
 	, m_port_mask{ 0x00, 0x00, 0x00, 0x00 }
@@ -214,7 +229,10 @@ m68705_new_device::m68705_new_device(
 	, m_port_ddr{ 0x00, 0x00, 0x00, 0x00 }
 	, m_port_cb_r{ { *this }, { *this }, { *this }, { *this } }
 	, m_port_cb_w{ { *this }, { *this }, { *this }, { *this } }
+	, m_vihtp(CLEAR_LINE)
 	, m_pcr(0xff)
+	, m_pl_data(0xff)
+	, m_pl_addr(0xffff)
 {
 }
 
@@ -279,9 +297,7 @@ template <std::size_t N> WRITE8_MEMBER(m68705_new_device::port_ddr_w)
 
 template <std::size_t N> void m68705_new_device::port_cb_w()
 {
-	u8 const data(m_port_open_drain[N]
-			? m_port_latch[N] | ~m_port_ddr[N]
-			: (m_port_latch[N] & m_port_ddr[N]) | (m_port_input[N] & ~m_port_ddr[N]));
+	u8 const data(m_port_open_drain[N] ? m_port_latch[N] | ~m_port_ddr[N] : m_port_latch[N]);
 	u8 const mask(m_port_open_drain[N] ? (~m_port_latch[N] & m_port_ddr[N]) : m_port_ddr[N]);
 	m_port_cb_w[N](space(AS_PROGRAM), 0, data, mask);
 }
@@ -295,10 +311,7 @@ WRITE8_MEMBER(m68705_new_device::pcr_w)
 {
 	data |= ((data & 0x01) << 1); // lock out /PGE if /PLE is not asserted
 	if (!BIT(m_pcr, 2) && (0x20 & ((m_pcr ^ data) & ~data)))
-	{
-		logerror("warning: unimplemented EPROM write %x |= %x\n", m_pl_addr, m_pl_data);
-		popmessage("%s: EPROM write", tag());
-	}
+		m_user_rom[m_pl_addr] |= m_pl_data;
 	m_pcr = (m_pcr & 0xfc) | (data & 0x03);
 }
 
@@ -390,14 +403,16 @@ void m68705_new_device::device_start()
 	save_item(NAME(m_port_latch));
 	save_item(NAME(m_port_ddr));
 
+	save_item(NAME(m_vihtp));
 	save_item(NAME(m_pcr));
 	save_item(NAME(m_pl_data));
 	save_item(NAME(m_pl_addr));
 
 	for (u8 &input : m_port_input) input = 0xff;
-	for (devcb_read8 &cb : m_port_cb_r) cb.resolve_safe(0xff);
+	for (devcb_read8 &cb : m_port_cb_r) cb.resolve();
 	for (devcb_write8 &cb : m_port_cb_w) cb.resolve_safe();
 
+	m_vihtp = CLEAR_LINE;
 	m_pcr = 0xff;
 	m_pl_data = 0xff;
 	m_pl_addr = 0xffff;
@@ -410,6 +425,9 @@ void m68705_new_device::device_start()
 void m68705_new_device::device_reset()
 {
 	m68705_device::device_reset();
+
+	if (CLEAR_LINE != m_vihtp)
+		RM16(0xfff6, &m_pc);
 
 	port_ddr_w<0>(space(AS_PROGRAM), 0, 0x00, 0xff);
 	port_ddr_w<1>(space(AS_PROGRAM), 0, 0x00, 0xff);
@@ -433,16 +451,34 @@ void m68705_new_device::execute_set_input(int inputnum, int state)
 		if (ASSERT_LINE == state)
 			m_pcr &= 0xfb;
 		else
-			m_pcr |= 0x40;
+			m_pcr |= 0x04;
+		break;
+	case M68705_VIHTP_LINE:
+		// TODO: this is actually the same physical pin as the timer input, so they should be tied up
+		m_vihtp = (ASSERT_LINE == state) ? ASSERT_LINE : CLEAR_LINE;
 		break;
 	default:
 		m68705_device::execute_set_input(inputnum, state);
 	}
 }
 
+void m68705_new_device::nvram_default()
+{
+}
+
+void m68705_new_device::nvram_read(emu_file &file)
+{
+	file.read(&m_user_rom[0], m_user_rom.bytes());
+}
+
+void m68705_new_device::nvram_write(emu_file &file)
+{
+	file.write(&m_user_rom[0], m_user_rom.bytes());
+}
+
 
 /****************************************************************************
- * M68705P3x family
+ * M68705Px family
  ****************************************************************************/
 
 DEVICE_ADDRESS_MAP_START( p_map, 8, m68705p_device )
@@ -479,9 +515,19 @@ m68705p_device::m68705p_device(
 		char const *source)
 	: m68705_new_device(mconfig, tag, owner, clock, type, name, 11, address_map_delegate(FUNC(m68705p_device::p_map), this), shortname, source)
 {
-	set_port_open_drain<0>(true);	// Port A is open drain with internal pull-ups
-	set_port_mask<2>(0xf0);			// Port C is four bits wide
-	set_port_mask<3>(0xff);			// Port D isn't present
+	set_port_open_drain<0>(true);   // Port A is open drain with internal pull-ups
+	set_port_mask<2>(0xf0);         // Port C is four bits wide
+	set_port_mask<3>(0xff);         // Port D isn't present
+}
+
+offs_t m68705p_device::disasm_disassemble(
+		std::ostream &stream,
+		offs_t pc,
+		const uint8_t *oprom,
+		const uint8_t *opram,
+		uint32_t options)
+{
+	return CPU_DISASSEMBLE_NAME(m6805)(this, stream, pc, oprom, opram, options, m68705p_syms);
 }
 
 
@@ -544,12 +590,22 @@ DEVICE_ADDRESS_MAP_START( u_map, 8, m68705u3_device )
 ADDRESS_MAP_END
 
 m68705u3_device::m68705u3_device(machine_config const &mconfig, char const *tag, device_t *owner, uint32_t clock)
-	: m68705_new_device(mconfig, tag, owner, clock, M68705U3, "MC68705U3", 11, address_map_delegate(FUNC(m68705u3_device::u_map), this), "m68705u3", __FILE__)
+	: m68705_new_device(mconfig, tag, owner, clock, M68705U3, "MC68705U3", 12, address_map_delegate(FUNC(m68705u3_device::u_map), this), "m68705u3", __FILE__)
 {
-	set_port_open_drain<0>(true);	// Port A is open drain with internal pull-ups
+	set_port_open_drain<0>(true);   // Port A is open drain with internal pull-ups
 }
 
 tiny_rom_entry const *m68705u3_device::device_rom_region() const
 {
 	return ROM_NAME(m68705u3);
+}
+
+offs_t m68705u3_device::disasm_disassemble(
+		std::ostream &stream,
+		offs_t pc,
+		const uint8_t *oprom,
+		const uint8_t *opram,
+		uint32_t options)
+{
+	return CPU_DISASSEMBLE_NAME(m6805)(this, stream, pc, oprom, opram, options, m68705u_syms);
 }
