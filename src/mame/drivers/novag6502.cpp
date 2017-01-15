@@ -11,10 +11,9 @@
     such as Arena(in editmode).
 
     TODO:
-    - cforteb emulation (was first thought to be an sforteb romset)
+    - cforteb emulation (was initially sforteba romset)
     - verify supercon IRQ and beeper frequency
     - why is sforte H and 1 leds always on?
-    - sforte/sexpert optional ACIA (only works in version C?)
     - printer port
 
 ******************************************************************************
@@ -31,6 +30,10 @@ Super Constellation Chess Computer (model 844):
 Constellation Forte:
 - x
 
+When it was first added to MAME as skeleton driver in mmodular.c, this romset
+was assumed to be Super Forte B, but it definitely isn't. I/O is similar to
+Super Constellation, let's assume for now it's a Constellation Forte B.
+
 
 ******************************************************************************
 
@@ -39,7 +42,7 @@ Super Expert (model 878/887/902):
 - 8KB RAM battery-backed, 3*32KB ROM
 - HD44780 LCD controller (16x1)
 - beeper(32KHz/32), IRQ(32KHz/128) via MC14060
-- optional R65C51P2 ACIA @ 1.8432MHz, for IBM PC interface
+- optional R65C51P2 ACIA @ 1.8432MHz, for IBM PC interface (only works in version C?)
 - printer port, magnetic sensors, 8*8 chessboard leds
 
 I/O via TTL, hardware design was very awkward.
@@ -51,6 +54,8 @@ instead of magnet sensors.
 #include "emu.h"
 #include "cpu/m6502/m6502.h"
 #include "cpu/m6502/m65c02.h"
+#include "bus/rs232/rs232.h"
+#include "machine/mos6551.h"
 #include "machine/nvram.h"
 #include "sound/beep.h"
 #include "video/hd44780.h"
@@ -485,6 +490,7 @@ ADDRESS_MAP_END
 // Constellation Forte
 
 static ADDRESS_MAP_START( cforte_map, AS_PROGRAM, 8, novag6502_state )
+	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0x0fff) AM_RAM
 	AM_RANGE(0x2000, 0xffff) AM_ROM
 ADDRESS_MAP_END
@@ -500,7 +506,7 @@ static ADDRESS_MAP_START( sforte_map, AS_PROGRAM, 8, novag6502_state )
 	AM_RANGE(0x1ff3, 0x1ff3) AM_WRITENOP // printer
 	AM_RANGE(0x1ff6, 0x1ff6) AM_WRITE(sforte_lcd_control_w)
 	AM_RANGE(0x1ff7, 0x1ff7) AM_WRITE(sforte_lcd_data_w)
-	AM_RANGE(0x1ffc, 0x1fff) AM_NOP // ACIA
+	AM_RANGE(0x1ffc, 0x1fff) AM_DEVREADWRITE("acia", mos6551_device, read, write)
 	AM_RANGE(0x2000, 0x7fff) AM_ROM
 	AM_RANGE(0x8000, 0xffff) AM_ROMBANK("bank1")
 ADDRESS_MAP_END
@@ -810,7 +816,7 @@ MACHINE_CONFIG_END
 static MACHINE_CONFIG_START( cforte, novag6502_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M6502, 5000000) // 5MHz
+	MCFG_CPU_ADD("maincpu", M65C02, 5000000) // 5MHz
 	MCFG_CPU_PERIODIC_INT_DRIVER(novag6502_state, irq0_line_hold, 250) // guessed
 	MCFG_CPU_PROGRAM_MAP(cforte_map)
 
@@ -830,9 +836,19 @@ static MACHINE_CONFIG_START( sexpert, novag6502_state )
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M65C02, XTAL_10MHz/2) // or XTAL_12MHz/2
 	MCFG_CPU_PROGRAM_MAP(sexpert_map)
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_on", novag6502_state, irq_on, attotime::from_hz(XTAL_32_768kHz/128))
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_on", novag6502_state, irq_on, attotime::from_hz(XTAL_32_768kHz/128)) // 256Hz
 	MCFG_TIMER_START_DELAY(attotime::from_hz(XTAL_32_768kHz/128) - attotime::from_nsec(21500)) // active for 21.5us
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_off", novag6502_state, irq_off, attotime::from_hz(XTAL_32_768kHz/128))
+
+	MCFG_DEVICE_ADD("acia", MOS6551, 0) // R65C51P2 - RTS to CTS, DCD to GND
+	MCFG_MOS6551_XTAL(XTAL_1_8432MHz)
+	MCFG_MOS6551_IRQ_HANDLER(INPUTLINE("maincpu", M6502_NMI_LINE))
+	MCFG_MOS6551_RTS_HANDLER(DEVWRITELINE("acia", mos6551_device, write_cts))
+	MCFG_MOS6551_TXD_HANDLER(DEVWRITELINE("rs232", rs232_port_device, write_txd))
+	MCFG_MOS6551_DTR_HANDLER(DEVWRITELINE("rs232", rs232_port_device, write_dtr))
+	MCFG_RS232_PORT_ADD("rs232", default_rs232_devices, nullptr)
+	MCFG_RS232_RXD_HANDLER(DEVWRITELINE("acia", mos6551_device, write_rxd))
+	MCFG_RS232_DSR_HANDLER(DEVWRITELINE("acia", mos6551_device, write_dsr))
 	
 	MCFG_NVRAM_ADD_1FILL("nvram")
 
@@ -858,7 +874,7 @@ static MACHINE_CONFIG_START( sexpert, novag6502_state )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("beeper", BEEP, XTAL_32_768kHz/32)
+	MCFG_SOUND_ADD("beeper", BEEP, XTAL_32_768kHz/32) // 1024Hz
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 

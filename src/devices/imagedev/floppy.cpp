@@ -185,6 +185,8 @@ floppy_image_device::floppy_image_device(const machine_config &mconfig, device_t
 		sides(0),
 		form_factor(0),
 		motor_always_on(false),
+		dskchg_writable(false),
+		has_trk00_sensor(true),
 		dir(0), stp(0), wtg(0), mon(0), ss(0), idx(0), wpt(0), rdy(0), dskchg(0),
 		ready(false),
 		rpm(0),
@@ -319,6 +321,8 @@ void floppy_image_device::device_start()
 {
 	rpm = 0;
 	motor_always_on = false;
+	dskchg_writable = false;
+	has_trk00_sensor = true;
 
 	idx = 0;
 
@@ -454,6 +458,9 @@ image_init_result floppy_image_device::call_load()
 		mon_w(0);
 	} else if(!mon)
 		ready_counter = 2;
+
+	if (dskchg_writable)
+		dskchg = 1;
 
 	return image_init_result::PASS;
 }
@@ -658,7 +665,7 @@ void floppy_image_device::stp_w(int state)
 				if (m_make_sound) m_sound_out->step(cyl*5/tracks);
 			}
 			/* Update disk detection if applicable */
-			if (exists())
+			if (exists() && !dskchg_writable)
 			{
 				if (dskchg==0) dskchg = 1;
 			}
@@ -703,7 +710,7 @@ void floppy_image_device::seek_phase_w(int phases)
 		logerror("%s: track %d.%d\n", tag(), cyl, subcyl);
 
 	/* Update disk detection if applicable */
-	if (exists())
+	if (exists() && !dskchg_writable)
 		if (dskchg==0)
 			dskchg = 1;
 }
@@ -2058,6 +2065,7 @@ void sony_oa_d31v::setup_characteristics()
 	form_factor = floppy_image::FF_35;
 	tracks = 70;
 	sides = 1;
+	dskchg_writable = true;
 	set_rpm(600);
 }
 
@@ -2093,6 +2101,7 @@ void sony_oa_d32w::setup_characteristics()
 	form_factor = floppy_image::FF_35;
 	tracks = 80;
 	sides = 2;
+	dskchg_writable = true;
 	set_rpm(600);
 }
 
@@ -2129,6 +2138,7 @@ void sony_oa_d32v::setup_characteristics()
 	form_factor = floppy_image::FF_35;
 	tracks = 80;
 	sides = 1;
+	dskchg_writable = true;
 	set_rpm(600);
 }
 
@@ -2293,14 +2303,13 @@ ibm_6360::~ibm_6360()
 {
 }
 
-//ol ibm_6360::trk00_r() { return true; }
-
 void ibm_6360::setup_characteristics()
 {
 	form_factor = floppy_image::FF_8;
 	tracks = 77;
 	sides = 1;
 	motor_always_on = true;
+	has_trk00_sensor = false;
 	set_rpm(360);
 }
 
