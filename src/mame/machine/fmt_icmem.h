@@ -42,7 +42,7 @@ public:
 
 	virtual image_init_result call_load() override;
 	virtual void call_unload() override;
-	virtual image_init_result call_create(int format_type, util::option_resolution *format_options) override;
+	virtual image_init_result call_create(const image_device_format *create_format, util::option_resolution *format_options) override;
 
 	// device-level overrides
 	virtual void device_start() override;

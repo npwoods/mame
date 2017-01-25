@@ -96,7 +96,7 @@ void fmt_icmem_device::call_unload()
 	m_detect = false;
 }
 
-image_init_result fmt_icmem_device::call_create(int format_type, util::option_resolution *format_options)
+image_init_result fmt_icmem_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
 	memset(m_memcard_ram.get(), 0xff, 0x1000000);
 
