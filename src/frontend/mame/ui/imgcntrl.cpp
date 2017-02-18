@@ -147,6 +147,7 @@ void menu_control_device_image::handle()
 		m_state = SELECT_FILE;
 		break;
 
+
 	case SELECT_FILE:
 		switch(m_submenu_result.filesel)
 		{

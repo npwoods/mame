@@ -8,10 +8,9 @@
 #ifndef PFUNCTION_H_
 #define PFUNCTION_H_
 
-#include <vector>
-
-#include "pconfig.h"
 #include "pstring.h"
+
+#include <vector>
 
 namespace plib {
 

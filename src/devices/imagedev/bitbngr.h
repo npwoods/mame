@@ -8,8 +8,8 @@
 
 *********************************************************************/
 
-#ifndef __BITBNGR_H__
-#define __BITBNGR_H__
+#ifndef MAME_DEVICES_IMAGEDEV_BITBNGR_H
+#define MAME_DEVICES_IMAGEDEV_BITBNGR_H
 
 
 enum
@@ -173,7 +173,10 @@ private:
 	uint8_t                 m_input_buffer[1000];
 };
 
+#define MCFG_BITBANGER_INTERFACE(_interface) \
+	bitbanger_image_device::static_set_interface(*device, _interface);
+
 // device type definition
 extern const device_type BITBANGER;
 
-#endif /* __BITBNGR_H__ */
+#endif // MAME_DEVICES_IMAGEDEV_BITBNGR_H
