@@ -100,8 +100,6 @@ files {
 	MAME_DIR .. "src/frontend/mame/ui/miscmenu.h",
 	MAME_DIR .. "src/frontend/mame/ui/barcode.cpp",
 	MAME_DIR .. "src/frontend/mame/ui/barcode.h",
-	MAME_DIR .. "src/frontend/mame/ui/bbcontrl.cpp",
-	MAME_DIR .. "src/frontend/mame/ui/bbcontrl.h",
 	MAME_DIR .. "src/frontend/mame/ui/cheatopt.cpp",
 	MAME_DIR .. "src/frontend/mame/ui/cheatopt.h",
 	MAME_DIR .. "src/frontend/mame/ui/pluginopt.cpp",

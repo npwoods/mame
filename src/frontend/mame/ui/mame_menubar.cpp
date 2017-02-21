@@ -18,7 +18,6 @@
 #include "ui/miscmenu.h"
 #include "ui/filesel.h"
 #include "ui/tapectrl.h"
-#include "ui/bbcontrl.h"
 #include "ui/swlist.h"
 #include "ui/viewgfx.h"
 #include "ui/barcode.h"
@@ -257,14 +256,6 @@ void mame_menubar::build_images_menu()
 		if (cassette != nullptr)
 		{
 			menu_item &control_menu = menu.append(_("Tape Control..."), &mame_menubar::tape_control, *this, cassette);
-			control_menu.set_enabled(is_loaded);
-		}
-
-		// bitbanger control
-		bitbanger_device *bitbanger = dynamic_cast<bitbanger_device *>(&image);
-		if (bitbanger != nullptr)
-		{
-			menu_item &control_menu = menu.append(_("Bitbanger Control..."), &mame_menubar::bitbanger_control, *this, bitbanger);
 			control_menu.set_enabled(is_loaded);
 		}
 	}
@@ -597,16 +588,6 @@ void mame_menubar::select_from_software_list(device_image_interface *image, soft
 void mame_menubar::tape_control(cassette_image_device *image)
 {
 	start_menu<menu_tape_control>(image);
-}
-
-
-//-------------------------------------------------
-//  bitbanger_control
-//-------------------------------------------------
-
-void mame_menubar::bitbanger_control(bitbanger_device *image)
-{
-	start_menu<ui_menu_bitbanger_control>(image);
 }
 
 
