@@ -831,25 +831,23 @@ void menubar::draw_arrow(float x0, float y0, float x1, float y1, rgb_t fgcolor, 
 //  menu_item::ctor
 //-------------------------------------------------
 
-menubar::menu_item::menu_item(menubar &menubar, const char *text, menubar::menu_item *parent, bool is_invokable, int shortcut)
+menubar::menu_item::menu_item(menubar &menubar, std::string &&text, menubar::menu_item *parent, std::function<void()> &&func, int shortcut)
 	: m_menubar(menubar)
+	, m_text(std::move(text))
+	, m_func(std::move(func))
+	, m_shortcut(shortcut)
+	, m_shortcut_text_width(-1)
+	, m_is_checked(false)
+	, m_is_enabled(true)
+	, m_is_separator(false)
+	, m_parent(parent)
+	, m_first_child(nullptr)
+	, m_last_child(nullptr)
+	, m_previous(nullptr)
+	, m_next(nullptr)
 {
 	// should be the same check in uiinput.cpp
 	assert(shortcut == IPT_INVALID || (shortcut >= IPT_UI_CONFIGURE && shortcut <= IPT_OSD_16));
-
-	if (text != nullptr)
-		m_text.assign(text);
-	m_is_invokable = is_invokable;
-	m_parent = parent;
-	m_first_child = nullptr;
-	m_last_child = nullptr;
-	m_previous = nullptr;
-	m_next = nullptr;
-	m_is_checked = false;
-	m_is_enabled = true;
-	m_is_separator = false;
-	m_shortcut = shortcut;
-	m_shortcut_text_width = -1;
 	clear_area();
 }
 
@@ -928,9 +926,9 @@ void menubar::menu_item::initialize(menubar::menu_item &child)
 //  menu_item::append
 //-------------------------------------------------
 
-menubar::menu_item &menubar::menu_item::append(const char *text)
+menubar::menu_item &menubar::menu_item::append(std::string &&text, std::function<void()> &&func, int shortcut)
 {
-	menu_item *child = new menu_item(m_menubar, text, this);
+	menu_item *child = new menu_item(m_menubar, std::move(text), this, std::move(func), shortcut);
 	initialize(*child);
 	return *child;
 }
@@ -1079,16 +1077,6 @@ bool menubar::menu_item::is_child_of(menubar::menu_item *that) const
 			return true;
 	}
 	return false;
-}
-
-
-//-------------------------------------------------
-//  menu_item::invoke
-//-------------------------------------------------
-
-void menubar::menu_item::invoke()
-{
-	// do nothing
 }
 
 

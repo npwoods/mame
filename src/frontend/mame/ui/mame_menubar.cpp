@@ -288,7 +288,7 @@ void mame_menubar::build_device_slot_menu(menu_item &menu, const device_slot_int
 		slot.device().tag() + 1,
 		current_option ? current_option->name() : "");
 
-	menu_item &dev_menu = menu.append(dev_menu_text);
+	menu_item &dev_menu = menu.append(std::move(dev_menu_text));
 
 	if (slot.has_selectable_options())
 	{

@@ -39,15 +39,14 @@ public:
 	class menu_item
 	{
 	public:
-		menu_item(menubar &menubar, const char *text = nullptr, menu_item *parent = nullptr, bool is_invokable = false, int shortcut = 0);
+		menu_item(menubar &menubar, std::string &&text = "", menu_item *parent = nullptr, std::function<void()> &&func = nullptr, int shortcut = 0);
 		virtual ~menu_item();
 
 		// methods
-		menu_item &append(const char *text);
-		menu_item &append(const std::string &text) { return append(text.c_str()); }
+		menu_item &append(std::string &&text, std::function<void()> &&func = nullptr, int shortcut = 0);
 		void append_separator();
 		bool is_child_of(menu_item *that) const;
-		virtual void invoke();
+		void invoke() { m_func(); }
 		void clear_area_recursive();
 		menu_item *find_point(float x, float y);
 		menu_item &find_child(const char *target);
@@ -56,50 +55,44 @@ public:
 		void sensible_seq_name(std::string &text, const input_seq &seq);
 
 		// template methods; look I tried to use delegate.h but I got humbled...
-		menu_item &append(const char *text, std::function<void()> &&func, int shortcut = 0)
-		{
-			menu_item *child = new invokable_menu_item(m_menubar, text, this, std::forward<std::function<void()>>(func), shortcut);
-			initialize(*child);
-			return *child;
-		}
-		template<class _Target> menu_item &append(const char *text, void (_Target::*callback)(), _Target &obj, int shortcut = 0)
+		template<class _Target> menu_item &append(std::string &&text, void (_Target::*callback)(), _Target &obj, int shortcut = 0)
 		{
 			_Target *pobj = &obj;
 			std::function<void()> func = [=] { ((*pobj).*(callback))(); };
-			return append(text, std::forward<std::function<void()>>(func), shortcut);
+			return append(std::move(text), std::move(func), shortcut);
 		}
-		template<class _Target, typename _Arg> menu_item &append(const char *text, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut = 0)
+		template<class _Target, typename _Arg> menu_item &append(std::string &&text, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut = 0)
 		{
 			_Target *pobj = &obj;
 			std::function<void()> func = [=] { ((*pobj).*(callback))(arg); };
-			return append(text, std::forward<std::function<void()>>(func), shortcut);
+			return append(std::move(text), std::move(func), shortcut);
 		}
-		template<class _Target, typename _Arg1, typename _Arg2> menu_item &append(const char *text, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut = 0)
+		template<class _Target, typename _Arg1, typename _Arg2> menu_item &append(std::string &&text, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut = 0)
 		{
 			_Target *pobj = &obj;
 			std::function<void()> func = [=] { ((*pobj).*(callback))(arg1, arg2); };
-			return append(text, std::forward<std::function<void()>>(func), shortcut);
+			return append(std::move(text), std::move(func), shortcut);
 		}
-		template<class _Target> menu_item &append(const char *text, void (_Target::*set_callback)(bool), bool (_Target::*get_callback)() const, _Target &obj, int shortcut = 0)
+		template<class _Target> menu_item &append(std::string &&text, void (_Target::*set_callback)(bool), bool (_Target::*get_callback)() const, _Target &obj, int shortcut = 0)
 		{
 			// tailored for a toggle
 			bool current_value = ((obj).*(get_callback))();
-			menu_item &menu = append(text, set_callback, obj, !current_value, shortcut);
+			menu_item &menu = append(std::move(text), set_callback, obj, !current_value, shortcut);
 			menu.set_checked(current_value);
 			return menu;
 		}
-		template<class _Target, typename _Arg> menu_item &append(const char *text, void (_Target::*set_callback)(_Arg), _Arg (_Target::*get_callback)() const, _Target &obj, _Arg arg, int shortcut = 0)
+		template<class _Target, typename _Arg> menu_item &append(std::string &&text, void (_Target::*set_callback)(_Arg), _Arg (_Target::*get_callback)() const, _Target &obj, _Arg arg, int shortcut = 0)
 		{
 			// tailored for a set operation
 			_Arg current_value = ((obj).*(get_callback))();
-			menu_item &menu = append(text, set_callback, obj, arg, shortcut);
+			menu_item &menu = append(std::move(text), set_callback, obj, arg, shortcut);
 			menu.set_checked(current_value == arg);
 			return menu;
 		}
 
 		// getters
 		bool is_empty() const { return !m_first_child; }
-		bool is_invokable() const { return m_is_invokable; }
+		bool is_invokable() const { return !!m_func; }
 		bool is_checked() const { return m_is_checked; }
 		bool is_enabled() const { return m_is_enabled; }
 		bool is_separator() const { return m_is_separator; }
@@ -124,25 +117,25 @@ public:
 
 	private:
 		// private variables
-		menubar &	m_menubar;
-		std::string		m_text;
-		int				m_shortcut;
-		std::string		m_shortcut_text;
-		float			m_shortcut_text_width;
-		bool			m_is_invokable;
-		bool			m_is_checked;
-		bool			m_is_enabled;
-		bool			m_is_separator;
-		menu_item *		m_parent;
-		menu_item *		m_first_child;
-		menu_item *		m_last_child;
-		menu_item *		m_previous;
-		menu_item *		m_next;
-		menu_item *		m_next_with_shortcut;
-		float			m_x0;
-		float			m_y0;
-		float			m_x1;
-		float			m_y1;
+		menubar &				m_menubar;
+		std::string				m_text;
+		std::function<void()>	m_func;
+		int						m_shortcut;
+		std::string				m_shortcut_text;
+		float					m_shortcut_text_width;
+		bool					m_is_checked;
+		bool					m_is_enabled;
+		bool					m_is_separator;
+		menu_item *				m_parent;
+		menu_item *				m_first_child;
+		menu_item *				m_last_child;
+		menu_item *				m_previous;
+		menu_item *				m_next;
+		menu_item *				m_next_with_shortcut;
+		float					m_x0;
+		float					m_y0;
+		float					m_x1;
+		float					m_y1;
 
 		// private methods
 		void initialize(menu_item &child);
@@ -170,21 +163,6 @@ protected:
 	render_container &container() { return *m_container; }
 
 private:
-	// classes
-	class invokable_menu_item : public menu_item
-	{
-	public:
-		invokable_menu_item(menubar &menubar, const char *name, menu_item *parent, std::function<void()> &&func, int shortcut)
-			: menu_item(menubar, name, parent, true, shortcut), m_func(func)
-		{
-		}
-
-		virtual void invoke() override	{ m_func(); }
-
-	private:
-		std::function<void()> m_func;
-	};
-
 	// menubar visibility
 	enum menubar_visibility_t
 	{
