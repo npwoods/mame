@@ -148,8 +148,8 @@ void mame_menubar::menubar_build_menus()
 {
 	// build normal menus
 	build_file_menu();
-	if (has_images())
-		build_images_menu();
+	if (has_configurable_devices())
+		build_configurable_devices_menu();
 	build_options_menu();
 	build_settings_menu();
 	build_help_menu();
@@ -216,47 +216,87 @@ void mame_menubar::build_file_menu()
 
 
 //-------------------------------------------------
-//  build_images_menu
+//  build_configurable_devices_menu
 //-------------------------------------------------
 
-void mame_menubar::build_images_menu()
+void mame_menubar::build_configurable_devices_menu()
 {
-	// add the root "Images" menu
-	menu_item &images_menu = root_menu().append(_("Images"));
+	// add the root "Devices" menu
+	menu_item &devices_menu = root_menu().append(_("Devices"));
 
-	// loop through all devices
-	for (device_image_interface &image : image_interface_iterator(machine().root_device()))
+	// cycle through all devices for this system
+	for (device_slot_interface &slot : slot_interface_iterator(machine().root_device()))
 	{
-		bool is_loaded = image.basename() != nullptr;
+		// learn a bit about this slot device
+		bool has_selectable_options = slot.has_selectable_options();
+		bool has_images = image_interface_iterator(slot).first() != nullptr;
 
-		std::string buffer = string_format("%s (%s): \t%s",
-			image.device().name(),
-			image.brief_instance_name(),
-			is_loaded ? image.basename() : "[empty]");
-
-		// append the menu item for this device
-		menu_item &menu = images_menu.append(buffer.c_str());
-
-		// software list
-		if (image.image_interface() != nullptr)
+		if (has_selectable_options || has_images)
 		{
-			if (build_software_list_menus(menu, &image))
-				menu.append_separator();
+			build_device_slot_menu(devices_menu, slot);
+		
+			for (device_image_interface &image : image_interface_iterator(slot))
+			{
+				bool is_loaded = image.basename() != nullptr;
+
+				std::string buffer = string_format("    %s (%s): \t%s",
+					image.device().name(),
+					image.brief_instance_name(),
+					is_loaded ? image.basename() : "[empty]");
+
+				// append the menu item for this device
+				menu_item &menu = devices_menu.append(std::move(buffer));
+
+				// software list
+				if (image.image_interface() != nullptr)
+				{
+					if (build_software_list_menus(menu, &image))
+						menu.append_separator();
+				}
+
+				// load
+				menu.append(_("Load..."), &mame_menubar::load, *this, &image);
+
+				// unload
+				menu_item &unload_menu = menu.append(_("Unload"), &device_image_interface::unload, image);
+				unload_menu.set_enabled(is_loaded);
+
+				// tape control
+				cassette_image_device *cassette = dynamic_cast<cassette_image_device *>(&image);
+				if (cassette != nullptr)
+				{
+					menu_item &control_menu = menu.append(_("Tape Control..."), &mame_menubar::tape_control, *this, cassette);
+					control_menu.set_enabled(is_loaded);
+				}
+			}
 		}
+	}
+}
 
-		// load
-		menu.append(_("Load..."), &mame_menubar::load, *this, &image);
 
-		// unload
-		menu_item &unload_menu = menu.append(_("Unload"), &device_image_interface::unload, image);
-		unload_menu.set_enabled(is_loaded);
+//-------------------------------------------------
+//  build_device_slot_menu
+//-------------------------------------------------
 
-		// tape control
-		cassette_image_device *cassette = dynamic_cast<cassette_image_device *>(&image);
-		if (cassette != nullptr)
+void mame_menubar::build_device_slot_menu(menu_item &menu, const device_slot_interface &slot)
+{
+	// get information about this slot's value
+	std::string current_option_value = machine().options().main_value(slot.device().tag() + 1);
+	device_slot_option *current_option = slot.option(current_option_value.c_str());
+
+	std::string dev_menu_text = string_format(current_option ? "%s: %s" : "%s",
+		slot.device().tag() + 1,
+		current_option ? current_option->name() : "");
+
+	menu_item &dev_menu = menu.append(dev_menu_text);
+
+	if (slot.has_selectable_options())
+	{
+		for (auto &option : slot.option_list())
 		{
-			menu_item &control_menu = menu.append(_("Tape Control..."), &mame_menubar::tape_control, *this, cassette);
-			control_menu.set_enabled(is_loaded);
+			menu_item &opt_menu = dev_menu.append(option.second->name(), [this] { not_yet_implemented(); });
+			opt_menu.set_enabled(option.second->selectable());
+			opt_menu.set_checked(option.second.get() == current_option);
 		}
 	}
 }
@@ -612,11 +652,12 @@ void mame_menubar::load(device_image_interface *image)
 
 
 //-------------------------------------------------
-//  has_images
+//  has_configurable_devices
 //-------------------------------------------------
 
-bool mame_menubar::has_images()
+bool mame_menubar::has_configurable_devices()
 {
+	// TODO - FIXME
 	image_interface_iterator iter(machine().root_device());
 	return iter.first() != nullptr;
 }
@@ -728,5 +769,16 @@ void mame_menubar::view_gfx()
 	// and transfer control
 	ui().set_handler(ui_callback_type::GENERAL, std::bind(&ui_gfx_ui_handler, _1, std::ref(ui()), machine().paused()));
 }
+
+
+//-------------------------------------------------
+//  not_yet_implemented
+//-------------------------------------------------
+
+void mame_menubar::not_yet_implemented()
+{
+	machine().popmessage("Not Yet Implemented");
+}
+
 
 } // namespace ui

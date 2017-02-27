@@ -39,11 +39,12 @@ public:
 	class menu_item
 	{
 	public:
-		menu_item(menubar &menubar, const char *text = NULL, menu_item *parent = NULL, bool is_invokable = false, int shortcut = 0);
+		menu_item(menubar &menubar, const char *text = nullptr, menu_item *parent = nullptr, bool is_invokable = false, int shortcut = 0);
 		virtual ~menu_item();
 
 		// methods
 		menu_item &append(const char *text);
+		menu_item &append(const std::string &text) { return append(text.c_str()); }
 		void append_separator();
 		bool is_child_of(menu_item *that) const;
 		virtual void invoke();
@@ -55,9 +56,9 @@ public:
 		void sensible_seq_name(std::string &text, const input_seq &seq);
 
 		// template methods; look I tried to use delegate.h but I got humbled...
-		template<class _Target> menu_item &append(const char *text, std::function<void()> &&func, int shortcut = 0)
+		menu_item &append(const char *text, std::function<void()> &&func, int shortcut = 0)
 		{
-			menu_item *child = new invokable_menu_item<_Target>(m_menubar, text, this, std::forward<std::function<void()>>(func), shortcut);
+			menu_item *child = new invokable_menu_item(m_menubar, text, this, std::forward<std::function<void()>>(func), shortcut);
 			initialize(*child);
 			return *child;
 		}
@@ -65,19 +66,19 @@ public:
 		{
 			_Target *pobj = &obj;
 			std::function<void()> func = [=] { ((*pobj).*(callback))(); };
-			return append<_Target>(text, std::forward<std::function<void()>>(func), shortcut);
+			return append(text, std::forward<std::function<void()>>(func), shortcut);
 		}
 		template<class _Target, typename _Arg> menu_item &append(const char *text, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut = 0)
 		{
 			_Target *pobj = &obj;
 			std::function<void()> func = [=] { ((*pobj).*(callback))(arg); };
-			return append<_Target>(text, std::forward<std::function<void()>>(func), shortcut);
+			return append(text, std::forward<std::function<void()>>(func), shortcut);
 		}
 		template<class _Target, typename _Arg1, typename _Arg2> menu_item &append(const char *text, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut = 0)
 		{
 			_Target *pobj = &obj;
 			std::function<void()> func = [=] { ((*pobj).*(callback))(arg1, arg2); };
-			return append<_Target>(text, std::forward<std::function<void()>>(func), shortcut);
+			return append(text, std::forward<std::function<void()>>(func), shortcut);
 		}
 		template<class _Target> menu_item &append(const char *text, void (_Target::*set_callback)(bool), bool (_Target::*get_callback)() const, _Target &obj, int shortcut = 0)
 		{
@@ -170,7 +171,6 @@ protected:
 
 private:
 	// classes
-	template<class _Target>
 	class invokable_menu_item : public menu_item
 	{
 	public:

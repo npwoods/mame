@@ -40,7 +40,8 @@ private:
 
 	// menubar building
 	void build_file_menu();
-	void build_images_menu();
+	void build_configurable_devices_menu();
+	void build_device_slot_menu(menu_item &menu, const device_slot_interface &slot);
 	bool build_software_list_menus(menu_item &menu, device_image_interface *image);
 	void build_options_menu();
 	void build_video_target_menu(menu_item &target_menu, render_target &target);
@@ -54,7 +55,7 @@ private:
 	void tape_control(cassette_image_device *image);
 	void barcode_reader_control();
 	void load(device_image_interface *image);
-	bool has_images();
+	bool has_configurable_devices();
 	void show_fps_temp();
 	void set_throttle_rate(float throttle_rate);
 	void increase_speed();
@@ -63,6 +64,7 @@ private:
 	bool warp_mode() const;
 	void view_gfx();
 	void start_menu(std::unique_ptr<menu> &&menu);
+	void not_yet_implemented();
 
 	// template methods
 	template<class T, typename... Params>
