@@ -57,21 +57,24 @@ public:
 		// template methods; look I tried to use delegate.h but I got humbled...
 		template<class _Target> menu_item &append(std::string &&text, void (_Target::*callback)(), _Target &obj, int shortcut = 0)
 		{
-			_Target *pobj = &obj;
-			std::function<void()> func = [=] { ((*pobj).*(callback))(); };
-			return append(std::move(text), std::move(func), shortcut);
+			return append(
+				std::move(text),
+				[&obj, callback] { ((obj).*(callback))(); },
+				shortcut);
 		}
 		template<class _Target, typename _Arg> menu_item &append(std::string &&text, void (_Target::*callback)(_Arg), _Target &obj, _Arg arg, int shortcut = 0)
 		{
-			_Target *pobj = &obj;
-			std::function<void()> func = [=] { ((*pobj).*(callback))(arg); };
-			return append(std::move(text), std::move(func), shortcut);
+			return append(
+				std::move(text),
+				[&obj, callback, arg] { ((obj).*(callback))(arg); },
+				shortcut);
 		}
 		template<class _Target, typename _Arg1, typename _Arg2> menu_item &append(std::string &&text, void (_Target::*callback)(_Arg1, _Arg2), _Target &obj, _Arg1 arg1, _Arg2 arg2, int shortcut = 0)
 		{
-			_Target *pobj = &obj;
-			std::function<void()> func = [=] { ((*pobj).*(callback))(arg1, arg2); };
-			return append(std::move(text), std::move(func), shortcut);
+			return append(
+				std::move(text),
+				[&obj, callback, arg1, arg2] { ((obj).*(callback))(arg1, arg2); },
+				shortcut);
 		}
 		template<class _Target> menu_item &append(std::string &&text, void (_Target::*set_callback)(bool), bool (_Target::*get_callback)() const, _Target &obj, int shortcut = 0)
 		{
