@@ -233,41 +233,13 @@ void mame_menubar::build_configurable_devices_menu()
 
 		if (has_selectable_options || has_images)
 		{
+			// build the menu that pertains to the device slot
 			build_device_slot_menu(devices_menu, slot);
 		
 			for (device_image_interface &image : image_interface_iterator(slot))
 			{
-				bool is_loaded = image.basename() != nullptr;
-
-				std::string buffer = string_format("    %s (%s): \t%s",
-					image.device().name(),
-					image.brief_instance_name(),
-					is_loaded ? image.basename() : "[empty]");
-
-				// append the menu item for this device
-				menu_item &menu = devices_menu.append(std::move(buffer));
-
-				// software list
-				if (image.image_interface() != nullptr)
-				{
-					if (build_software_list_menus(menu, &image))
-						menu.append_separator();
-				}
-
-				// load
-				menu.append(_("Load..."), &mame_menubar::load, *this, &image);
-
-				// unload
-				menu_item &unload_menu = menu.append(_("Unload"), &device_image_interface::unload, image);
-				unload_menu.set_enabled(is_loaded);
-
-				// tape control
-				cassette_image_device *cassette = dynamic_cast<cassette_image_device *>(&image);
-				if (cassette != nullptr)
-				{
-					menu_item &control_menu = menu.append(_("Tape Control..."), &mame_menubar::tape_control, *this, cassette);
-					control_menu.set_enabled(is_loaded);
-				}
+				if (is_exclusive_child(slot, image))
+					build_device_image_menu(devices_menu, image);
 			}
 		}
 	}
@@ -303,14 +275,69 @@ void mame_menubar::build_device_slot_menu(menu_item &menu, const device_slot_int
 
 
 //-------------------------------------------------
+//  is_exclusive_child
+//-------------------------------------------------
+
+bool mame_menubar::is_exclusive_child(const device_slot_interface &slot, const device_image_interface &image) const
+{
+	for (const device_t *dev = &image.device(); dev; dev = dev->owner())
+	{
+		const device_slot_interface *s = dynamic_cast<const device_slot_interface *>(dev);
+		if (s && s->has_selectable_options())
+			return s == &slot;
+	}
+	return false;
+}
+
+
+//-------------------------------------------------
+//  build_device_image_menu
+//-------------------------------------------------
+
+void mame_menubar::build_device_image_menu(menu_item &devices_menu, device_image_interface &image)
+{
+	bool is_loaded = image.basename() != nullptr;
+
+	std::string buffer = string_format("    %s (%s): \t%s",
+		image.device().name(),
+		image.brief_instance_name(),
+		is_loaded ? image.basename() : "[empty]");
+
+	// append the menu item for this device
+	menu_item &menu = devices_menu.append(std::move(buffer));
+
+	// software list
+	if (image.image_interface() != nullptr)
+	{
+		if (build_software_list_menus(menu, image))
+			menu.append_separator();
+	}
+
+	// load
+	menu.append(_("Load..."), &mame_menubar::load, *this, &image);
+
+	// unload
+	menu_item &unload_menu = menu.append(_("Unload"), &device_image_interface::unload, image);
+	unload_menu.set_enabled(is_loaded);
+
+	// tape control
+	cassette_image_device *cassette = dynamic_cast<cassette_image_device *>(&image);
+	if (cassette != nullptr)
+	{
+		menu_item &control_menu = menu.append(_("Tape Control..."), &mame_menubar::tape_control, *this, cassette);
+		control_menu.set_enabled(is_loaded);
+	}
+}
+
+
+//-------------------------------------------------
 //  build_software_list_menus
 //-------------------------------------------------
 
-bool mame_menubar::build_software_list_menus(menu_item &menu, device_image_interface *image)
+bool mame_menubar::build_software_list_menus(menu_item &menu, device_image_interface &image)
 {
 	int item_count = 0;
 	menu_item *last_menu_item = nullptr;
-	std::string description;
 	softlist_type types[] = { SOFTWARE_LIST_ORIGINAL_SYSTEM, SOFTWARE_LIST_COMPATIBLE_SYSTEM };
 	software_list_device_iterator softlist_iter(machine().config().root_device());
 
@@ -319,10 +346,11 @@ bool mame_menubar::build_software_list_menus(menu_item &menu, device_image_inter
 	{
 		for (software_list_device &swlist : software_list_device_iterator(machine().config().root_device()))
 		{
-			if ((swlist.list_type() == types[typenum]) && is_softlist_relevant(&swlist, image->image_interface(), description))
+			std::string description;
+			if ((swlist.list_type() == types[typenum]) && is_softlist_relevant(&swlist, image.image_interface(), description))
 			{
 				// we've found a softlist; append the menu item
-				last_menu_item = &menu.append(description.c_str(), &mame_menubar::select_from_software_list, *this, image, &swlist);
+				last_menu_item = &menu.append(std::move(description), [this, &image, &swlist] { select_from_software_list(image, swlist); });
 				item_count++;
 			}
 		}
@@ -614,10 +642,10 @@ void mame_menubar::select_new_game()
 //  select_from_software_list
 //-------------------------------------------------
 
-void mame_menubar::select_from_software_list(device_image_interface *image, software_list_device *swlist)
+void mame_menubar::select_from_software_list(device_image_interface &image, software_list_device &swlist)
 {
-	s_softlist_image = image;
-	start_menu<menu_software_list>(swlist, image->image_interface(), s_softlist_result);
+	s_softlist_image = &image;
+	start_menu<menu_software_list>(&swlist, image.image_interface(), s_softlist_result);
 }
 
 

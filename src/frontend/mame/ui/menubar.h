@@ -40,7 +40,7 @@ public:
 	{
 	public:
 		menu_item(menubar &menubar, std::string &&text = "", menu_item *parent = nullptr, std::function<void()> &&func = nullptr, int shortcut = 0);
-		virtual ~menu_item();
+		~menu_item();
 
 		// methods
 		menu_item &append(std::string &&text, std::function<void()> &&func = nullptr, int shortcut = 0);
