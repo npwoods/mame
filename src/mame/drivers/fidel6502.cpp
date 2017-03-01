@@ -355,7 +355,7 @@ Ricoh RP65C02G CPU, 3MHz XTAL
 PCB label 510.1129A01
 basically same as (Par) Excellence hardware, reskinned board
 
-Designer 2100 (model 6103): same hardware, XTAL 5MHz?, ROMs unknown
+Designer 2100 (model 6103): exactly same, but running at 5MHz
 
 Designer 2100 Display (model 6106)
 ----------------
@@ -364,7 +364,7 @@ WDC W65C02P-6 CPU, 6MHz XTAL
 4-digit LCD panel
 PCB label 510.1130A01
 
-Designer 2000 Display (model 6105): same hardware, XTAL and ROMs unknown
+Designer 2000 Display (model 6105): same hardware, no bookrom, 3MHz
 
 Designer 1500 is on 80C50 hardware
 
@@ -404,6 +404,7 @@ I/O is via TTL, very similar to Designer Display
 
 #include "emu.h"
 #include "includes/fidelbase.h"
+
 #include "cpu/m6502/m6502.h"
 #include "cpu/m6502/r65c02.h"
 #include "cpu/m6502/m65sc02.h"
@@ -411,6 +412,7 @@ I/O is via TTL, very similar to Designer Display
 #include "machine/i8255.h"
 #include "machine/nvram.h"
 #include "sound/volt_reg.h"
+#include "speaker.h"
 
 // internal artwork
 #include "fidel_chesster.lh" // clickable
@@ -965,7 +967,7 @@ DRIVER_INIT_MEMBER(fidel6502_state, fdesdis)
 
 MACHINE_RESET_MEMBER(fidel6502_state, fphantom)
 {
-	machine_reset();
+	fidelbase_state::machine_reset();
 	membank("bank1")->set_entry(0);
 }
 
@@ -1365,8 +1367,8 @@ static INPUT_PORTS_START( csc )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_R) PORT_NAME("RE")
 
 	PORT_START("IN.9") // hardwired
-	PORT_CONFNAME( 0x01, 0x00, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 	PORT_CONFNAME( 0x02, 0x00, DEF_STR( Unknown ) )
 	PORT_CONFSETTING(    0x00, DEF_STR( Off ) )
@@ -1377,8 +1379,8 @@ static INPUT_PORTS_START( cscg )
 	PORT_INCLUDE( csc )
 
 	PORT_MODIFY("IN.9")
-	PORT_CONFNAME( 0x01, 0x01, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x01, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 INPUT_PORTS_END
 
@@ -1399,8 +1401,8 @@ static INPUT_PORTS_START( su9g )
 	PORT_INCLUDE( su9 )
 
 	PORT_MODIFY("IN.9")
-	PORT_CONFNAME( 0x01, 0x01, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x01, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 INPUT_PORTS_END
 
@@ -1428,8 +1430,8 @@ static INPUT_PORTS_START( eas )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("LV / Pawn")
 
 	PORT_START("IN.9") // hardwired
-	PORT_CONFNAME( 0x01, 0x00, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 	PORT_CONFNAME( 0x02, 0x00, DEF_STR( Unknown ) )
 	PORT_CONFSETTING(    0x00, DEF_STR( Off ) )
@@ -1440,8 +1442,8 @@ static INPUT_PORTS_START( easg )
 	PORT_INCLUDE( eas )
 
 	PORT_MODIFY("IN.9")
-	PORT_CONFNAME( 0x01, 0x01, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x01, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 INPUT_PORTS_END
 
@@ -1469,8 +1471,8 @@ static INPUT_PORTS_START( eag )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("PB / King")
 
 	PORT_START("IN.9") // hardwired
-	PORT_CONFNAME( 0x01, 0x00, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 	PORT_CONFNAME( 0x02, 0x00, DEF_STR( Unknown ) )
 	PORT_CONFSETTING(    0x00, DEF_STR( Off ) )
@@ -1481,8 +1483,8 @@ static INPUT_PORTS_START( eagg )
 	PORT_INCLUDE( eag )
 
 	PORT_MODIFY("IN.9")
-	PORT_CONFNAME( 0x01, 0x01, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x01, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 INPUT_PORTS_END
 
@@ -1528,11 +1530,11 @@ static INPUT_PORTS_START( fexcelv )
 	PORT_INCLUDE( fexcelb )
 
 	PORT_START("IN.9")
-	PORT_CONFNAME( 0x03, 0x00, "Language" ) PORT_CHANGED_MEMBER(DEVICE_SELF, fidel6502_state, fexcelv_bankswitch, 0)
-	PORT_CONFSETTING(    0x00, "English" )
-	PORT_CONFSETTING(    0x01, "German" )
-	PORT_CONFSETTING(    0x02, "French" )
-	PORT_CONFSETTING(    0x03, "Spanish" )
+	PORT_CONFNAME( 0x03, 0x00, DEF_STR( Language ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, fidel6502_state, fexcelv_bankswitch, 0)
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
+	PORT_CONFSETTING(    0x01, DEF_STR( German ) )
+	PORT_CONFSETTING(    0x02, DEF_STR( French ) )
+	PORT_CONFSETTING(    0x03, DEF_STR( Spanish ) )
 	PORT_BIT(0x7c, IP_ACTIVE_HIGH, IPT_UNUSED)
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_SPECIAL) PORT_READ_LINE_DEVICE_MEMBER("speech", s14001a_device, busy_r)
 INPUT_PORTS_END
@@ -1805,11 +1807,11 @@ static MACHINE_CONFIG_DERIVED( fexcelp, fexcel )
 	MCFG_CPU_PROGRAM_MAP(fexcelp_map)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( granits, fexcel )
+static MACHINE_CONFIG_DERIVED( granits, fexcelp )
 
 	/* basic machine hardware */
-	MCFG_CPU_REPLACE("maincpu", R65C02, XTAL_8MHz) // R65C02P4, overclocked
-	MCFG_CPU_PROGRAM_MAP(fexcelp_map)
+	MCFG_CPU_MODIFY("maincpu")
+	MCFG_DEVICE_CLOCK(XTAL_8MHz) // overclocked
 MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( fdes2000, fexcel )
@@ -1826,6 +1828,13 @@ static MACHINE_CONFIG_DERIVED( fdes2000, fexcel )
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_off", fidel6502_state, irq_off, attotime::from_hz(585))
 
 	MCFG_DEFAULT_LAYOUT(layout_fidel_des)
+MACHINE_CONFIG_END
+
+static MACHINE_CONFIG_DERIVED( fdes2100, fdes2000 )
+
+	/* basic machine hardware */
+	MCFG_CPU_MODIFY("maincpu")
+	MCFG_DEVICE_CLOCK(XTAL_5MHz)
 MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( fexcelv, fexcelb )
@@ -2207,7 +2216,7 @@ ROM_START( fscc9ps )
 ROM_END
 
 
-ROM_START( fscc12 ) // PCB label 510-1084B01
+ROM_START( fscc12 ) // model 6086, PCB label 510-1084B01
 	ROM_REGION( 0x10000, "maincpu", 0 )
 	ROM_LOAD("101-1068a01",   0x8000, 0x2000, CRC(63c76cdd) SHA1(e0771c98d4483a6b1620791cb99a7e46b0db95c4) ) // SSS SCM23C65E4
 	ROM_LOAD("tms2732ajl-45", 0xc000, 0x1000, CRC(45070a71) SHA1(8aeecff828f26fb7081902c757559903be272649) ) // TI TMS2732AJL-45
@@ -2262,6 +2271,11 @@ ROM_END
 ROM_START( fdes2000 ) // model 6102, PCB label 510.1129A01
 	ROM_REGION( 0x10000, "maincpu", 0 )
 	ROM_LOAD("101-1077a01.ic5", 0x8000, 0x8000, CRC(62006320) SHA1(1d6370973dbae42c54639b261cc81e32cdfc1d5d) ) // AMI, same label as fexcelp
+ROM_END
+
+ROM_START( fdes2100 ) // model 6103, PCB label 510.1129A01
+	ROM_REGION( 0x10000, "maincpu", 0 )
+	ROM_LOAD("101-1077a01.ic5", 0x8000, 0x8000, CRC(62006320) SHA1(1d6370973dbae42c54639b261cc81e32cdfc1d5d) ) // same as fdes2000
 ROM_END
 
 
@@ -2354,7 +2368,8 @@ CONS( 1985, fexcelb,    fexcel,   0,      fexcel,    fexcel,    driver_device, 0
 CONS( 1986, fexcelp,    0,        0,      fexcelp,   fexcel,    driver_device, 0, "Fidelity Electronics", "The Par Excellence", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
 CONS( 1986, fexcelpb,   fexcelp,  0,      fexcelp,   fexcel,    driver_device, 0, "Fidelity Electronics", "The Par Excellence (rev. B)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
 CONS( 1986, granits,    fexcelp,  0,      granits,   fexcel,    driver_device, 0, "hack (RCS)", "Granit 'S'", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-CONS( 1989, fdes2000,   fexcelp,  0,      fdes2000,  fdes,      driver_device, 0, "Fidelity Electronics", "Designer 2000", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // Excellence series hardware
+CONS( 1988, fdes2000,   fexcelp,  0,      fdes2000,  fdes,      driver_device, 0, "Fidelity Electronics", "Designer 2000", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // Excellence series hardware
+CONS( 1988, fdes2100,   fexcelp,  0,      fdes2100,  fdes,      driver_device, 0, "Fidelity Electronics", "Designer 2100", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // "
 
 CONS( 1988, fdes2100d,  0,        0,      fdes2100d, fdesdis,   fidel6502_state, fdesdis, "Fidelity Electronics", "Designer 2100 Display (rev. B)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
 CONS( 1988, fdes2000d,  fdes2100d,0,      fdes2000d, fdesdis,   fidel6502_state, fdesdis, "Fidelity Electronics", "Designer 2000 Display", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
