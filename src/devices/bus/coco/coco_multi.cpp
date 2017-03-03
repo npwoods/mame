@@ -55,6 +55,7 @@
 #include "coco_multi.h"
 #include "coco_232.h"
 #include "coco_orch90.h"
+#include "coco_ssc.h"
 #include "coco_pak.h"
 #include "coco_fdc.h"
 
@@ -72,6 +73,7 @@
 static SLOT_INTERFACE_START(coco_cart_slot1_3)
 	SLOT_INTERFACE("rs232", COCO_232)
 	SLOT_INTERFACE("orch90", COCO_ORCH90)
+	SLOT_INTERFACE("ssc", COCO_SSC)
 	SLOT_INTERFACE("banked_16k", COCO_PAK_BANKED)
 	SLOT_INTERFACE("pak", COCO_PAK)
 SLOT_INTERFACE_END
@@ -80,6 +82,7 @@ static SLOT_INTERFACE_START(coco_cart_slot4)
 	SLOT_INTERFACE("fdcv11", COCO_FDC_V11)
 	SLOT_INTERFACE("rs232", COCO_232)
 	SLOT_INTERFACE("orch90", COCO_ORCH90)
+	SLOT_INTERFACE("ssc", COCO_SSC)
 	SLOT_INTERFACE("banked_16k", COCO_PAK_BANKED)
 	SLOT_INTERFACE("pak", COCO_PAK)
 SLOT_INTERFACE_END

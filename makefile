@@ -18,7 +18,7 @@
 # IGNORE_GIT = 1
 
 # TARGET = mame
-# SUBTARGET = tiny
+SUBTARGET = mess
 # TOOLS = 1
 # TESTS = 1
 # BENCHMARKS = 1
@@ -46,8 +46,8 @@
 # BIGENDIAN = 1
 # NOASM = 1
 
-# OPTIMIZE = 3
-# SYMBOLS = 1
+OPTIMIZE = 0
+SYMBOLS = 1
 # SYMLEVEL = 2
 # MAP = 1
 # PROFILE = 1
