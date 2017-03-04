@@ -6,6 +6,7 @@
 #define __COCO_SSC_H__
 
 #include "machine/ram.h"
+#include "sound/ay8910.h"
 #include "cococart.h"
 
 //**************************************************************************
@@ -28,6 +29,7 @@ public:
 
 		DECLARE_READ8_MEMBER(ssc_port_a_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_b_w);
+		DECLARE_READ8_MEMBER(ssc_port_c_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_c_w);
 		DECLARE_READ8_MEMBER(ssc_port_d_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_d_w);
@@ -42,8 +44,10 @@ private:
 		uint8_t tms7000_porta;
 		uint8_t tms7000_portb;
 		uint8_t tms7000_portc;
+		uint8_t tms7000_portd;
 		required_device<cpu_device> m_tms7040;
 		required_device<ram_device> m_staticram;
+		required_device<ay8910_device> m_ay;
 };
 
 
