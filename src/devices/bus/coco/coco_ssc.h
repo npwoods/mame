@@ -35,8 +35,8 @@ public:
 protected:
 		// device-level overrides
 		virtual void device_start() override;
-		virtual DECLARE_READ8_MEMBER(read) override;
-		virtual DECLARE_WRITE8_MEMBER(write) override;
+		virtual DECLARE_READ8_MEMBER(ff7d_read);
+		virtual DECLARE_WRITE8_MEMBER(ff7d_write);
 private:
 		uint8_t reset_line;
 		uint8_t tms7000_porta;

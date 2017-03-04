@@ -26,11 +26,11 @@ static ADDRESS_MAP_START( ssc_io_map, AS_IO, 8, coco_ssc_device )
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( ssc_rom, AS_PROGRAM, 8, coco_ssc_device )
-	AM_RANGE(0xf000, 0xffff) AM_REGION("ssc_tms7040", 0)
+	AM_RANGE(0xf000, 0xffff) AM_REGION("pic7040", 0)
 ADDRESS_MAP_END
 
 static MACHINE_CONFIG_FRAGMENT( coco_ssc )
-	MCFG_CPU_ADD("ssc_tms7040", TMS7040, XTAL_3_579545MHz / 2)
+	MCFG_CPU_ADD("pic7040", TMS7040, XTAL_3_579545MHz / 2)
 	MCFG_CPU_PROGRAM_MAP(ssc_rom)
 	MCFG_CPU_IO_MAP(ssc_io_map)
 
@@ -41,7 +41,7 @@ static MACHINE_CONFIG_FRAGMENT( coco_ssc )
 MACHINE_CONFIG_END
 
 ROM_START( coco_ssc )
-	ROM_REGION( 0x1000, "ssc_tms7040", 0 )
+	ROM_REGION( 0x1000, "pic7040", 0 )
 	ROM_LOAD( "cocossp.bin", 0x0000, 0x1000, CRC(a8e2eb98) SHA1(7c17dcbc21757535ce0b3a9e1ce5ca61319d3606) ) // ssc cpu rom
 ROM_END
 
@@ -62,7 +62,7 @@ const device_type COCO_SSC = device_creator<coco_ssc_device>;
 coco_ssc_device::coco_ssc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 		: device_t(mconfig, COCO_SSC, "CoCo S/SC PAK", tag, owner, clock, "coco_ssc", __FILE__),
 		device_cococart_interface(mconfig, *this ),
-		m_tms7040(*this, "ssc_tms7040"),
+		m_tms7040(*this, "pic7040"),
 		m_staticram(*this, "staticram")
 {
 }
@@ -73,6 +73,10 @@ coco_ssc_device::coco_ssc_device(const machine_config &mconfig, const char *tag,
 
 void coco_ssc_device::device_start()
 {
+	// install $FF7D-E handler
+	write8_delegate wh = write8_delegate(FUNC(coco_ssc_device::ff7d_write), this);
+	read8_delegate rh = read8_delegate(FUNC(coco_ssc_device::ff7d_read), this);
+	machine().device(":maincpu")->memory().space(AS_PROGRAM).install_readwrite_handler(0xFF7D, 0xFF7E, rh, wh);
 }
 
 //-------------------------------------------------
@@ -98,16 +102,16 @@ const tiny_rom_entry *coco_ssc_device::device_rom_region() const
     read
 -------------------------------------------------*/
 
-READ8_MEMBER(coco_ssc_device::read)
+READ8_MEMBER(coco_ssc_device::ff7d_read)
 {
 	logerror("coco_ssc_device::read offset: %4.4X\n", offset);
 
 	switch(offset)
 	{
-		case 0x3D:
+		case 0x00:
 			break;
 
-		case 0x3E:
+		case 0x01:
 			return tms7000_portc & 0x80;
 			break;
 	}
@@ -119,13 +123,13 @@ READ8_MEMBER(coco_ssc_device::read)
     write
 -------------------------------------------------*/
 
-WRITE8_MEMBER(coco_ssc_device::write)
+WRITE8_MEMBER(coco_ssc_device::ff7d_write)
 {
 	logerror("coco_ssc_device::write offset: %4.4X, data: %2.2X\n", offset, data);
 
 	switch(offset)
 	{
-		case 0x3D:
+		case 0x00:
 			if( (reset_line & 1) == 1 )
 			{
 				if( (data & 1) == 0 )
@@ -137,9 +141,9 @@ WRITE8_MEMBER(coco_ssc_device::write)
 			reset_line = data;
 			break;
 
-		case 0x3E:
+		case 0x01:
 			tms7000_porta = data;
-			m_tms7040->set_input_line(TMS7000_INT3_LINE, PULSE_LINE);
+			m_tms7040->set_input_line(TMS7000_INT3_LINE, ASSERT_LINE);
 			break;
 	}
 }
