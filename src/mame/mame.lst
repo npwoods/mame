@@ -12834,6 +12834,7 @@ kamikazp                        // bootleg (Potomac Games)
 kingball                        // (c) 1980 Namco
 kingballj                       // (c) 1980 Namco
 kong                            // (c) Taito (Brazil) - rewrite of Donkey Kong
+ladybugg                        // bootleg
 levers                          // (c) 1983 Rock-ola
 losttomb                        // (c) 1982 Stern
 losttombh                       // (c) 1982 Stern
@@ -12967,7 +12968,6 @@ hexpool                         // (c) 1986 Shinkia (Senko Kit)
 hexpoola                        // (c) 1986 Shinkia (Senko Kit)
 hunchbkg                        // (c) 1983 Century
 hustlerb3                       // bootleg
-ladybugg                        // bootleg
 ozon1                           // (c) 1983 Proma
 porter                          // 1982 bootleg (Arcade TV Game List - P.98, Left, 15 from bottom)
 racknrol                        // (c) 1986 Status (Shinkia license) (Senko Kit)
@@ -14340,7 +14340,7 @@ tbaskb                          // Tandy Radio Shack
 touchme                         // Atari
 ttfball                         // Toytronic
 ttfballa                        // Toytronic
-usfball                         // US Games
+us2pfball                       // US Games
 uspbball                        // US Games
 
 @source:hh_sm510.cpp
@@ -14403,6 +14403,7 @@ phpball                         // Tomy
 quizwizc                        // Coleco
 raisedvl                        // Entex
 simon                           // Milton Bradley
+simonf                          // Milton Bradley
 speechp                         // TSI
 splitsec                        // Parker Bros
 ssimon                          // Milton Bradley
@@ -17401,12 +17402,25 @@ mv4in1                          // (c) 1983 Entertainment Enterprises
 
 @source:ltd.cpp
 alcapone                        //
+arizona                         //
 atla_ltd                        //
 bhol_ltd                        //
 columbia                        //
 cowboy                          //
+cowboy2                         //
+discodan                        //
+force                           //
+hhotel                          //
+hustlerp                        //
+hustlerpa                       //
+kkongltd                        //
 pecmen                          //
+tmacltd2                        //
+tmacltd4                        //
+tricksht                        //
+vikngkng                        //
 zephy                           //
+zephya                          //
 
 @source:luckgrln.cpp
 7smash                          // (c) 1993 Sovic
@@ -17600,7 +17614,8 @@ bomblord                        // bootleg
 bombrman                        // (c) 1991 Irem (Japan)
 dynablst                        // (c) 1991 Irem (World)
 dynablstb                       // bootleg
-dynablstb2                      // bootleg (alt)
+dynablstb2                      // bootleg
+dynablstb3                      // bootleg
 gussun                          // (c) 1993 Irem (Japan)
 hasamu                          // (c) 1991 Irem (Japan)
 matchit2                        // (c) 1993 Tamtex
@@ -30711,6 +30726,7 @@ phoenixc2                       // bootleg
 phoenixc3                       // bootleg
 phoenixc4                       // bootleg
 phoenixdal                      // bootleg D&L (No copyright/title)
+phoenixi                        // bootleg IDI
 phoenixj                        // (c) 1980 Taito
 phoenixs                        // bootleg (Sonic)
 phoenixt                        // (c) 1980 Taito
@@ -34402,6 +34418,10 @@ fireone                         // (c) 1979 Exidy
 starfir2                        // (c) 1979 Exidy
 starfire                        // Exidy [1979?]
 starfirea                       // Exidy [1979?]
+
+@source:stargame.cpp
+spcship                         //
+whtforce                        //
 
 @source:starshp1.cpp
 starshp1                        // 007513-007531    1977/07 [6502]
