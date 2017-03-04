@@ -74,9 +74,10 @@ static MACHINE_CONFIG_FRAGMENT( coco_ssc )
 	MCFG_SOUND_ADD(AY_TAG, AY8913, XTAL_3_579545MHz / 4)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.5)
 
-	MCFG_SOUND_ADD(SP0256_TAG, SP0256, 4000000) // ???
+	MCFG_SOUND_ADD(SP0256_TAG, SP0256, XTAL_3_12MHz) // ???
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.5)
-	MCFG_SP0256_DATA_REQUEST_CB(WRITELINE(coco_ssc_device, lrq_cb))
+	MCFG_SP0256_DATA_REQUEST_CB(INPUTLINE(PIC_TAG, TMS7000_INT1_LINE))
+//	MCFG_SP0256_DATA_REQUEST_CB(WRITELINE(coco_ssc_device, lrq_cb))
 
 MACHINE_CONFIG_END
 
@@ -121,6 +122,12 @@ void coco_ssc_device::device_start()
 	write8_delegate wh = write8_delegate(FUNC(coco_ssc_device::ff7d_write), this);
 	read8_delegate rh = read8_delegate(FUNC(coco_ssc_device::ff7d_read), this);
 	machine().device(":maincpu")->memory().space(AS_PROGRAM).install_readwrite_handler(0xFF7D, 0xFF7E, rh, wh);
+
+	save_item(NAME(reset_line));
+	save_item(NAME(tms7000_porta));
+	save_item(NAME(tms7000_portb));
+	save_item(NAME(tms7000_portc));
+	save_item(NAME(tms7000_portd));
 }
 
 //-------------------------------------------------
@@ -213,13 +220,13 @@ READ8_MEMBER(coco_ssc_device::ssc_port_a_r)
 
 WRITE8_MEMBER(coco_ssc_device::ssc_port_b_w)
 {
-	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
-	{
-		if( (tms7000_portc & C_RRW) == 0 ) /* static ram chip write (low) */
-		{
-			m_staticram->write(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + data, tms7000_portd);
-		}
-	}
+// 	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
+// 	{
+// 		if( (tms7000_portc & C_RRW) == 0 ) /* static ram chip write (low) */
+// 		{
+// 			m_staticram->write(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + data, tms7000_portd);
+// 		}
+// 	}
 
 	tms7000_portb = data;
 }
@@ -231,83 +238,156 @@ READ8_MEMBER(coco_ssc_device::ssc_port_c_r)
 
 WRITE8_MEMBER(coco_ssc_device::ssc_port_c_w)
 {
-	if( (data & C_RCS) == 0 && (data & C_RRW) == 0)
-	{
-		m_staticram->write(((data & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb, tms7000_portd);
-	}
+	int ramr_flag = 0,ramw_flag = 0, psg_flag = 0, spo_flag = 0;
+	static uint16_t address;
 
-	if( (data & C_ACS) == 0 ) /* chip select for AY-3-8913 */
+// 	if( (tms7000_portc & C_RCS) == C_RCS) /* edge of ram chip select */
+// 	{
+// 		if( (data & C_RCS) == 0 && (data & C_RRW) == 0) /* static RAM write */
+// 		{
+// 			m_staticram->write(((data & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb, tms7000_portd);
+// 			ram_flag = 1;
+// 		}
+// 	}
+
+	if( (tms7000_portc & C_RCS) == C_RCS )
 	{
-		if( (data & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
+		if( (data & C_RCS) == 0 )
 		{
-			m_ay->address_w(space, 0, tms7000_portd);
-		}
+			address = ((data & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb;
+			logerror( "ram address: %04.4x\n", address );
 
-		if( ((data & C_BDR) == C_BDR) && ((data & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
-		{
-			m_ay->data_w(space, 0, tms7000_portd);
+			if( (data & C_RRW) == 0 )
+			{
+				m_staticram->write(address, tms7000_portd);
+				ramw_flag = 1;
+			}
+			else
+			{
+				tms7000_portd = m_staticram->read(address);
+				ramr_flag = 1;
+			}
 		}
 	}
 
-	if( (data & C_ALD) == 0 )
+	if( (tms7000_portc & C_RRW) == 0) /* edge of ram read */
 	{
-		m_spo->ald_w(space, 0, tms7000_portd);
+		if( (data & C_RCS) == 0 && (data & C_RRW) == C_RRW) /* static RAM read */
+		{
+			tms7000_portd = m_staticram->read(address);
+			ramr_flag = 1;
+		}
 	}
+
+	if( (tms7000_portc & C_RRW) == C_RRW) /* edge of ram write */
+	{
+		if( (data & C_RCS) == 0 && (data & C_RRW) == 0) /* static RAM write */
+		{
+			m_staticram->write(address, tms7000_portd);
+			ramw_flag = 1;
+		}
+	}
+
+	if( (tms7000_portc & C_ACS) == C_ACS )
+	{
+		if( (data & C_ACS) == 0 ) /* chip select for AY-3-8913 */
+		{
+			if( (data & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
+			{
+				m_ay->address_w(space, 0, tms7000_portd);
+				psg_flag = 1;
+			}
+
+			if( ((data & C_BDR) == C_BDR) && ((data & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
+			{
+				m_ay->data_w(space, 0, tms7000_portd);
+				psg_flag = 1;
+			}
+		}
+	}
+
+	if( (tms7000_portc & C_ALD) == C_ALD )
+	{
+		if( (data & C_ALD) == 0 )
+		{
+			m_spo->ald_w(space, 0, tms7000_portd);
+			spo_flag = 1;
+		}
+	}
+
+ 	if( ramr_flag + ramw_flag + psg_flag + spo_flag > 1 )
+ 	{
+		logerror( "ramr:%d, ramw:%d, psg:%d, spo:%d (%02.2x -> %02.2x)!\n", ramr_flag, ramw_flag, psg_flag, spo_flag, tms7000_portc, data );
+ 	}
+ 	else
+ 	{
+		logerror( "ramr:%d, ramw:%d, psg:%d, spo:%d (%02.2x -> %02.2x)\n", ramr_flag, ramw_flag, psg_flag, spo_flag, tms7000_portc, data );
+ 	}
 
 	tms7000_portc = data;
 }
 
 READ8_MEMBER(coco_ssc_device::ssc_port_d_r)
 {
-	uint8_t data = 0x00;
+ 	uint8_t data = 0x00;
+//
+// 	if( ((tms7000_portc & C_RCS) == 0) && ((tms7000_portc & C_ACS) == 0))
+// 		logerror( "Reading RAM and PSG at the same time!\n" );
+//
+// 	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
+// 	{
+// 		if( (tms7000_portc & C_RRW) == C_RRW ) /* static ram chip read (high) */
+// 		{
+// 			data = m_staticram->read(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb);
+// 		}
+// 	}
+//
+// 	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for AY-3-8913 */
+// 	{
+// 		if( ((tms7000_portc & C_BDR) == 0) && ((tms7000_portc & C_BC1) == C_BC1) ) /* read data */
+// 		{
+// 			data = m_ay->data_r(space, 0);
+// 		}
+// 	}
 
-	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
-	{
-		if( (tms7000_portc & C_RRW) == C_RRW ) /* static ram chip read (high) */
-		{
-			data |= m_staticram->read(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb);
-		}
-	}
-
-	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for AY-3-8913 */
-	{
-		if( ((tms7000_portc & C_BDR) == 0) && ((tms7000_portc & C_BC1) == C_BC1) ) /* read data */
-		{
-			data |= m_ay->data_r(space, 0);
-		}
-	}
+	data = tms7000_portd;
+	logerror( " port d read: %02.2x\n", data );
 
 	return data;
 }
 
 WRITE8_MEMBER(coco_ssc_device::ssc_port_d_w)
 {
-	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
-	{
-		if( (tms7000_portc & C_RRW) == 0 ) /* static ram chip write (low) */
-		{
-			m_staticram->write(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb, data);
-		}
-	}
+// 	if( ((tms7000_portc & C_RCS) == 0) && ((tms7000_portc & C_ACS) == 0))
+// 		logerror( "writing RAM and PSG at the same time!\n" );
+//
+// 	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
+// 	{
+// 		if( (tms7000_portc & C_RRW) == 0 ) /* static ram chip write (low) */
+// 		{
+// 			m_staticram->write(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb, data);
+// 		}
+// 	}
+//
+// 	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for the AY-3-8913 */
+// 	{
+// 		if( (tms7000_portc & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
+// 		{
+// 			m_ay->address_w(space, 0, data);
+// 		}
+//
+// 		if( ((tms7000_portc & C_BDR) == C_BDR) && ((tms7000_portc & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
+// 		{
+// 			m_ay->data_w(space, 0, data);
+// 		}
+// 	}
+//
+// 	if( (tms7000_portc & C_ALD) == 0 )
+// 	{
+// 		m_spo->ald_w(space, 0, data);
+// 	}
 
-	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for the AY-3-8913 */
-	{
-		if( (tms7000_portc & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
-		{
-			m_ay->address_w(space, 0, data);
-		}
-
-		if( ((tms7000_portc & C_BDR) == C_BDR) && ((tms7000_portc & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
-		{
-			m_ay->data_w(space, 0, data);
-		}
-	}
-
-	if( (tms7000_portc & C_ALD) == 0 )
-	{
-		m_spo->ald_w(space, 0, data);
-	}
-
+	logerror( "port d write: %02.2x\n", data );
 	tms7000_portd = data;
 }
 
