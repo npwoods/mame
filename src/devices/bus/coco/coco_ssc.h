@@ -7,6 +7,7 @@
 
 #include "machine/ram.h"
 #include "sound/ay8910.h"
+#include "sound/sp0256.h"
 #include "cococart.h"
 
 //**************************************************************************
@@ -34,6 +35,9 @@ public:
 		DECLARE_READ8_MEMBER(ssc_port_d_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_d_w);
 
+		DECLARE_WRITE_LINE_MEMBER(lrq_cb);
+
+
 protected:
 		// device-level overrides
 		virtual void device_start() override;
@@ -48,6 +52,7 @@ private:
 		required_device<cpu_device> m_tms7040;
 		required_device<ram_device> m_staticram;
 		required_device<ay8910_device> m_ay;
+		required_device<sp0256_device> m_spo;
 };
 
 
