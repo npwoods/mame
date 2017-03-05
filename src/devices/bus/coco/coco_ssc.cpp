@@ -35,6 +35,7 @@
 #include "cpu/tms7000/tms7000.h"
 #include "speaker.h"
 
+#define LOG_SSC 0
 #define PIC_TAG "pic7040"
 #define AY_TAG "cocossc_ay"
 #define SP0256_TAG "sp0256"
@@ -74,17 +75,16 @@ static MACHINE_CONFIG_FRAGMENT( coco_ssc )
 	MCFG_SOUND_ADD(AY_TAG, AY8913, XTAL_3_579545MHz / 4)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.5)
 
-	MCFG_SOUND_ADD(SP0256_TAG, SP0256, XTAL_3_12MHz) // ???
+	MCFG_SOUND_ADD(SP0256_TAG, SP0256, XTAL_3_12MHz)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.5)
 	MCFG_SP0256_DATA_REQUEST_CB(INPUTLINE(PIC_TAG, TMS7000_INT1_LINE))
-//	MCFG_SP0256_DATA_REQUEST_CB(WRITELINE(coco_ssc_device, lrq_cb))
-
 MACHINE_CONFIG_END
 
 ROM_START( coco_ssc )
 	ROM_REGION( 0x1000, PIC_TAG, 0 )
-	ROM_LOAD( "cocossp.bin", 0x0000, 0x1000, CRC(a8e2eb98) SHA1(7c17dcbc21757535ce0b3a9e1ce5ca61319d3606) ) // ssc cpu rom
+	ROM_LOAD( "cocossp.bin", 0x0000, 0x1000, CRC(a8e2eb98) SHA1(7c17dcbc21757535ce0b3a9e1ce5ca61319d3606) ) // pic7040 cpu rom
 	ROM_REGION( 0x10000, SP0256_TAG, 0 )
+// 	ROM_LOAD( "al2.bin",        0x1000, 0x0800, CRC(df8de0b0) SHA1(86fb6d9fef955ac0bc76e0c45c66585946d278a1) )
 	ROM_LOAD( "sp0256-al2.bin", 0x1000, 0x0800, CRC(b504ac15) SHA1(e60fcb5fa16ff3f3b69d36c7a6e955744d3feafc) )
 ROM_END
 
@@ -128,6 +128,11 @@ void coco_ssc_device::device_start()
 	save_item(NAME(tms7000_portb));
 	save_item(NAME(tms7000_portc));
 	save_item(NAME(tms7000_portd));
+}
+
+void coco_ssc_device::device_reset()
+{
+	reset_line = 0;
 }
 
 //-------------------------------------------------
@@ -194,7 +199,8 @@ WRITE8_MEMBER(coco_ssc_device::ff7d_write)
 				if( (data & 1) == 0 )
 				{
 					m_tms7040->reset();
-					m_ay->reset_w(space, 0, 0);
+					m_ay->reset();
+ 					m_spo->reset();
 				}
 			}
 
@@ -204,7 +210,6 @@ WRITE8_MEMBER(coco_ssc_device::ff7d_write)
 		case 0x01:
 			tms7000_porta = data;
 			m_tms7040->set_input_line(TMS7000_INT3_LINE, ASSERT_LINE);
-			m_tms7040->set_input_line(TMS7000_INT3_LINE, CLEAR_LINE);
 			break;
 	}
 }
@@ -215,187 +220,119 @@ WRITE8_MEMBER(coco_ssc_device::ff7d_write)
 
 READ8_MEMBER(coco_ssc_device::ssc_port_a_r)
 {
+	if (LOG_SSC)
+	{
+		logerror( "[0x%04x] port a read: %02x\n", space.device().safe_pc(), tms7000_porta );
+	}
+
+ 	m_tms7040->set_input_line(TMS7000_INT3_LINE, CLEAR_LINE);
+
 	return tms7000_porta;
 }
 
 WRITE8_MEMBER(coco_ssc_device::ssc_port_b_w)
 {
-// 	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
-// 	{
-// 		if( (tms7000_portc & C_RRW) == 0 ) /* static ram chip write (low) */
-// 		{
-// 			m_staticram->write(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + data, tms7000_portd);
-// 		}
-// 	}
+	if (LOG_SSC)
+	{
+		logerror( "[0x%04x] port b write: %02x\n", space.device().safe_pc(), data );
+	}
 
 	tms7000_portb = data;
 }
 
 READ8_MEMBER(coco_ssc_device::ssc_port_c_r)
 {
+	if (LOG_SSC)
+	{
+		logerror( "[0x%04x] port c read: %02x\n", space.device().safe_pc(), tms7000_portc );
+	}
+
 	return tms7000_portc;
 }
 
 WRITE8_MEMBER(coco_ssc_device::ssc_port_c_w)
 {
-	int ramr_flag = 0,ramw_flag = 0, psg_flag = 0, spo_flag = 0;
-	static uint16_t address;
-
-// 	if( (tms7000_portc & C_RCS) == C_RCS) /* edge of ram chip select */
-// 	{
-// 		if( (data & C_RCS) == 0 && (data & C_RRW) == 0) /* static RAM write */
-// 		{
-// 			m_staticram->write(((data & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb, tms7000_portd);
-// 			ram_flag = 1;
-// 		}
-// 	}
-
-	if( (tms7000_portc & C_RCS) == C_RCS )
+	if( (data & C_RCS) == 0 && (data & C_RRW) == 0) /* static RAM write */
 	{
-		if( (data & C_RCS) == 0 )
-		{
-			address = ((data & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb;
-			logerror( "ram address: %04.4x\n", address );
+		uint16_t address = (uint16_t)data << 8;
+		address += tms7000_portb;
+		address &= 0x7ff;
 
-			if( (data & C_RRW) == 0 )
-			{
-				m_staticram->write(address, tms7000_portd);
-				ramw_flag = 1;
-			}
-			else
-			{
-				tms7000_portd = m_staticram->read(address);
-				ramr_flag = 1;
-			}
+		m_staticram->write(address, tms7000_portd);
+	}
+
+	if( (data & C_ACS) == 0 ) /* chip select for AY-3-8913 */
+	{
+		if( (data & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
+		{
+			m_ay->address_w(space, 0, tms7000_portd);
+		}
+
+		if( ((data & C_BDR) == C_BDR) && ((data & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
+		{
+			m_ay->data_w(space, 0, tms7000_portd);
 		}
 	}
 
-	if( (tms7000_portc & C_RRW) == 0) /* edge of ram read */
+	if( (data & C_ALD) == 0 )
 	{
-		if( (data & C_RCS) == 0 && (data & C_RRW) == C_RRW) /* static RAM read */
-		{
-			tms7000_portd = m_staticram->read(address);
-			ramr_flag = 1;
-		}
+		m_spo->ald_w(space, 0, tms7000_portd);
 	}
 
-	if( (tms7000_portc & C_RRW) == C_RRW) /* edge of ram write */
+	if (LOG_SSC)
 	{
-		if( (data & C_RCS) == 0 && (data & C_RRW) == 0) /* static RAM write */
-		{
-			m_staticram->write(address, tms7000_portd);
-			ramw_flag = 1;
-		}
+		logerror( "[0x%04x] pord c write: %c%c%c%c %c%c%c%c (%02x)\n",
+			space.device().safe_pc(),
+			data & 0x80 ? '.' : 'B',
+			data & 0x40 ? '.' : 'P',
+			data & 0x20 ? '.' : 'V',
+			data & 0x10 ? '.' : 'R',
+			data & 0x40 ? (data & 0x08 ? 'R' : 'W') : (data & 0x08 ? 'D' : '.'),
+			data & 0x04 ? '1' : '0',
+			data & 0x02 ? '1' : '0',
+			data & 0x40 ? (data & 0x01 ? '1' : '0') : (data & 0x01 ? 'C' : '.'),
+			data );
 	}
-
-	if( (tms7000_portc & C_ACS) == C_ACS )
-	{
-		if( (data & C_ACS) == 0 ) /* chip select for AY-3-8913 */
-		{
-			if( (data & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
-			{
-				m_ay->address_w(space, 0, tms7000_portd);
-				psg_flag = 1;
-			}
-
-			if( ((data & C_BDR) == C_BDR) && ((data & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
-			{
-				m_ay->data_w(space, 0, tms7000_portd);
-				psg_flag = 1;
-			}
-		}
-	}
-
-	if( (tms7000_portc & C_ALD) == C_ALD )
-	{
-		if( (data & C_ALD) == 0 )
-		{
-			m_spo->ald_w(space, 0, tms7000_portd);
-			spo_flag = 1;
-		}
-	}
-
- 	if( ramr_flag + ramw_flag + psg_flag + spo_flag > 1 )
- 	{
-		logerror( "ramr:%d, ramw:%d, psg:%d, spo:%d (%02.2x -> %02.2x)!\n", ramr_flag, ramw_flag, psg_flag, spo_flag, tms7000_portc, data );
- 	}
- 	else
- 	{
-		logerror( "ramr:%d, ramw:%d, psg:%d, spo:%d (%02.2x -> %02.2x)\n", ramr_flag, ramw_flag, psg_flag, spo_flag, tms7000_portc, data );
- 	}
 
 	tms7000_portc = data;
 }
 
 READ8_MEMBER(coco_ssc_device::ssc_port_d_r)
 {
- 	uint8_t data = 0x00;
-//
-// 	if( ((tms7000_portc & C_RCS) == 0) && ((tms7000_portc & C_ACS) == 0))
-// 		logerror( "Reading RAM and PSG at the same time!\n" );
-//
-// 	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
-// 	{
-// 		if( (tms7000_portc & C_RRW) == C_RRW ) /* static ram chip read (high) */
-// 		{
-// 			data = m_staticram->read(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb);
-// 		}
-// 	}
-//
-// 	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for AY-3-8913 */
-// 	{
-// 		if( ((tms7000_portc & C_BDR) == 0) && ((tms7000_portc & C_BC1) == C_BC1) ) /* read data */
-// 		{
-// 			data = m_ay->data_r(space, 0);
-// 		}
-// 	}
+	if( ((tms7000_portc & C_RCS) == 0) && ((tms7000_portc & C_ACS) == 0))
+		logerror( "[0x%04x] Warning: Reading RAM and PSG at the same time!\n", space.device().safe_pc() );
 
-	data = tms7000_portd;
-	logerror( " port d read: %02.2x\n", data );
+	if( ((tms7000_portc & C_RCS) == 0)  && ((tms7000_portc & C_RRW) == C_RRW)) /* static ram chip select (low) and static ram chip read (high) */
+	{
+		uint16_t address = (uint16_t)tms7000_portc << 8;
+		address += tms7000_portb;
+		address &= 0x7ff;
 
-	return data;
+		tms7000_portd = m_staticram->read(address);
+	}
+
+	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for AY-3-8913 */
+	{
+		if( ((tms7000_portc & C_BDR) == 0) && ((tms7000_portc & C_BC1) == C_BC1) ) /* psg read data */
+		{
+			tms7000_portd = m_ay->data_r(space, 0);
+		}
+	}
+
+	if (LOG_SSC)
+	{
+		logerror( "[0x%04x] port d read: %02x\n", space.device().safe_pc(), tms7000_portd );
+	}
+
+	return tms7000_portd;
 }
 
 WRITE8_MEMBER(coco_ssc_device::ssc_port_d_w)
 {
-// 	if( ((tms7000_portc & C_RCS) == 0) && ((tms7000_portc & C_ACS) == 0))
-// 		logerror( "writing RAM and PSG at the same time!\n" );
-//
-// 	if( (tms7000_portc & C_RCS) == 0 ) /* static ram chip select (low) */
-// 	{
-// 		if( (tms7000_portc & C_RRW) == 0 ) /* static ram chip write (low) */
-// 		{
-// 			m_staticram->write(((tms7000_portc & (C_A10|C_A9|C_A8)) << 8) + tms7000_portb, data);
-// 		}
-// 	}
-//
-// 	if( (tms7000_portc & C_ACS) == 0 ) /* chip select for the AY-3-8913 */
-// 	{
-// 		if( (tms7000_portc & (C_BDR|C_BC1)) == (C_BDR|C_BC1) ) /* BDIR = 1, BC1 = 1: latch address */
-// 		{
-// 			m_ay->address_w(space, 0, data);
-// 		}
-//
-// 		if( ((tms7000_portc & C_BDR) == C_BDR) && ((tms7000_portc & C_BC1) == 0) ) /* BDIR = 1, BC1 = 0: write data */
-// 		{
-// 			m_ay->data_w(space, 0, data);
-// 		}
-// 	}
-//
-// 	if( (tms7000_portc & C_ALD) == 0 )
-// 	{
-// 		m_spo->ald_w(space, 0, data);
-// 	}
-
-	logerror( "port d write: %02.2x\n", data );
-	tms7000_portd = data;
-}
-
-WRITE_LINE_MEMBER(coco_ssc_device::lrq_cb)
-{
-	if( state == 0 )
+	if (LOG_SSC)
 	{
-		m_tms7040->set_input_line(TMS7000_INT1_LINE, ASSERT_LINE);
-		m_tms7040->set_input_line(TMS7000_INT1_LINE, CLEAR_LINE);
+		logerror( "[0x%04x] port d write: %02x\n", space.device().safe_pc(), data );
 	}
+
+	tms7000_portd = data;
 }

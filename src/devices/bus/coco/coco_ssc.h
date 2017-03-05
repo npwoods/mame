@@ -28,15 +28,14 @@ public:
 		virtual const tiny_rom_entry *device_rom_region() const override;
 		virtual machine_config_constructor device_mconfig_additions() const override;
 
+		virtual void device_reset() override;
+
 		DECLARE_READ8_MEMBER(ssc_port_a_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_b_w);
 		DECLARE_READ8_MEMBER(ssc_port_c_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_c_w);
 		DECLARE_READ8_MEMBER(ssc_port_d_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_d_w);
-
-		DECLARE_WRITE_LINE_MEMBER(lrq_cb);
-
 
 protected:
 		// device-level overrides
