@@ -27,6 +27,7 @@ public:
 		// optional information overrides
 		virtual const tiny_rom_entry *device_rom_region() const override;
 		virtual machine_config_constructor device_mconfig_additions() const override;
+		void cart_set_line(cococart_slot_device::line which, cococart_slot_device::line_value value);
 
 		virtual void device_reset() override;
 

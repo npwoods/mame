@@ -73,18 +73,17 @@ static MACHINE_CONFIG_FRAGMENT( coco_ssc )
 
 	MCFG_SPEAKER_STANDARD_MONO("sscmono")
 	MCFG_SOUND_ADD(AY_TAG, AY8913, XTAL_3_579545MHz / 4)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.5)
+	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.75)
 
 	MCFG_SOUND_ADD(SP0256_TAG, SP0256, XTAL_3_12MHz)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.5)
+	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "sscmono", 0.75)
 	MCFG_SP0256_DATA_REQUEST_CB(INPUTLINE(PIC_TAG, TMS7000_INT1_LINE))
 MACHINE_CONFIG_END
 
 ROM_START( coco_ssc )
 	ROM_REGION( 0x1000, PIC_TAG, 0 )
-	ROM_LOAD( "cocossp.bin", 0x0000, 0x1000, CRC(a8e2eb98) SHA1(7c17dcbc21757535ce0b3a9e1ce5ca61319d3606) ) // pic7040 cpu rom
+	ROM_LOAD( "pic-7040-510.bin", 0x0000, 0x1000, CRC(a8e2eb98) SHA1(7c17dcbc21757535ce0b3a9e1ce5ca61319d3606) ) // pic7040 cpu rom
 	ROM_REGION( 0x10000, SP0256_TAG, 0 )
-// 	ROM_LOAD( "al2.bin",        0x1000, 0x0800, CRC(df8de0b0) SHA1(86fb6d9fef955ac0bc76e0c45c66585946d278a1) )
 	ROM_LOAD( "sp0256-al2.bin", 0x1000, 0x0800, CRC(b504ac15) SHA1(e60fcb5fa16ff3f3b69d36c7a6e955744d3feafc) )
 ROM_END
 
@@ -103,7 +102,7 @@ const device_type COCO_SSC = device_creator<coco_ssc_device>;
 //-------------------------------------------------
 
 coco_ssc_device::coco_ssc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-		: device_t(mconfig, COCO_SSC, "CoCo S/SC PAK", tag, owner, clock, "coco_ssc", __FILE__),
+		: device_t(mconfig, COCO_SSC, "CoCo S/SC PAK", tag, owner, clock, "cocossc", __FILE__),
 		device_cococart_interface(mconfig, *this ),
 		m_tms7040(*this, PIC_TAG),
 		m_staticram(*this, "staticram"),
@@ -154,20 +153,49 @@ const tiny_rom_entry *coco_ssc_device::device_rom_region() const
 	return ROM_NAME( coco_ssc );
 }
 
+//-------------------------------------------------
+//  coco_cartridge_set_line
+//-------------------------------------------------
+
+void coco_ssc_device::cart_set_line(cococart_slot_device::line which, cococart_slot_device::line_value value)
+{
+
+	switch (which)
+	{
+		case cococart_slot_device::line::SOUND_ENABLE:
+			if( value == cococart_slot_device::line_value::ASSERT )
+			{
+				logerror( "coco_ssc_device::cart_set_line sound enable assert\n" );
+				m_ay->set_volume(ALL_8910_CHANNELS,100);
+			}
+			else
+			{
+				logerror( "coco_ssc_device::cart_set_line sound enable clear\n" );
+				m_ay->set_volume(ALL_8910_CHANNELS,0);
+			}
+			break;
+		default:
+			logerror( "coco_ssc_device::cart_set_line something else\n" );
+			break;
+	}
+}
+
 /*-------------------------------------------------
     read
 -------------------------------------------------*/
 
 READ8_MEMBER(coco_ssc_device::ff7d_read)
 {
-	uint8_t data = 0x00;
+	uint8_t data;
 
 	switch(offset)
 	{
 		case 0x00:
+			data = 0xff;
 			break;
 
 		case 0x01:
+			data = 0x3f;
 
 			if( tms7000_portc & C_BSY )
 			{
