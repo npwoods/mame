@@ -8,6 +8,8 @@
 #include "machine/ram.h"
 #include "sound/ay8910.h"
 #include "sound/sp0256.h"
+#include "machine/netlist.h"
+#include "netlist/devices/net_lib.h"
 #include "cococart.h"
 
 //**************************************************************************
@@ -37,6 +39,8 @@ public:
 		DECLARE_WRITE8_MEMBER(ssc_port_c_w);
 		DECLARE_READ8_MEMBER(ssc_port_d_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_d_w);
+
+		NETDEV_LOGIC_CALLBACK_MEMBER(sac_cb);
 
 protected:
 		// device-level overrides

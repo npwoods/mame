@@ -1085,7 +1085,7 @@ void netlist_mame_sound_device_t::device_start()
 	{
 		int chan = outdevs[i]->m_channel();
 
-		netlist().log().verbose("Output %d on channel %d", i, chan);
+		netlist().log().verbose("Output {1} on channel {2}", i, chan);
 
 		if (chan < 0 || chan >= MAX_OUT || chan >= outdevs.size())
 			fatalerror("illegal channel number");

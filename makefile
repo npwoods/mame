@@ -46,7 +46,7 @@ SUBTARGET = mess
 # BIGENDIAN = 1
 # NOASM = 1
 
-# OPTIMIZE = 0
+# OPTIMIZE = 3
 # SYMBOLS = 1
 # SYMLEVEL = 2
 # MAP = 1
