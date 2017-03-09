@@ -12,6 +12,8 @@
 #include "netlist/devices/net_lib.h"
 #include "cococart.h"
 
+// #define SAC_ON
+
 //**************************************************************************
 //  TYPE DEFINITIONS
 //**************************************************************************
@@ -40,8 +42,9 @@ public:
 		DECLARE_READ8_MEMBER(ssc_port_d_r);
 		DECLARE_WRITE8_MEMBER(ssc_port_d_w);
 
+#ifdef SAC_ON
 		NETDEV_LOGIC_CALLBACK_MEMBER(sac_cb);
-
+#endif
 protected:
 		// device-level overrides
 		virtual void device_start() override;
