@@ -84,8 +84,8 @@ protected:
 	};
 
 	// device-level overrides
-	virtual DECLARE_READ8_MEMBER(read) override;
-	virtual DECLARE_WRITE8_MEMBER(write) override;
+	virtual DECLARE_READ8_MEMBER(scs_read) override;
+	virtual DECLARE_WRITE8_MEMBER(scs_write) override;
 	virtual machine_config_constructor device_mconfig_additions() const override;
 
 	// methods
@@ -304,10 +304,10 @@ void coco_fdc_device_base::dskreg_w(uint8_t data)
 
 
 //-------------------------------------------------
-//  read
+//  scs_read
 //-------------------------------------------------
 
-READ8_MEMBER(coco_fdc_device_base::read)
+READ8_MEMBER(coco_fdc_device_base::scs_read)
 {
 	uint8_t result = 0;
 
@@ -356,10 +356,10 @@ READ8_MEMBER(coco_fdc_device_base::read)
 
 
 //-------------------------------------------------
-//  write
+//  scs_write
 //-------------------------------------------------
 
-WRITE8_MEMBER(coco_fdc_device_base::write)
+WRITE8_MEMBER(coco_fdc_device_base::scs_write)
 {
 	switch(offset & 0x1F)
 	{

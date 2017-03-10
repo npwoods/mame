@@ -39,8 +39,8 @@ public:
 	// driver update handlers
 	DECLARE_INPUT_CHANGED_MEMBER(drivewire_port_changed);
 
-	virtual DECLARE_READ8_MEMBER(read);
-	virtual DECLARE_WRITE8_MEMBER(write);
+	virtual DECLARE_READ8_MEMBER(scs_read);
+	virtual DECLARE_WRITE8_MEMBER(scs_write);
 
 	// types
 	enum dwsock_ports {

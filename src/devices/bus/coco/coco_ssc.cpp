@@ -120,7 +120,7 @@ static ADDRESS_MAP_START( ssc_io_map, AS_IO, 8, coco_ssc_device )
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( ssc_rom, AS_PROGRAM, 8, coco_ssc_device )
-	AM_RANGE(0xf000, 0xffff) AM_REGION(PIC_TAG, 0)
+	AM_RANGE(0xf000, 0xffff) AM_ROM AM_REGION(PIC_TAG, 0)
 ADDRESS_MAP_END
 
 static MACHINE_CONFIG_FRAGMENT( coco_ssc )
@@ -199,10 +199,12 @@ coco_ssc_device::coco_ssc_device(const machine_config &mconfig, const char *tag,
 
 void coco_ssc_device::device_start()
 {
+	cococart_slot_device *slot_owner = dynamic_cast<cococart_slot_device *>(owner());
+
 	// install $FF7D-E handler
 	write8_delegate wh = write8_delegate(FUNC(coco_ssc_device::ff7d_write), this);
 	read8_delegate rh = read8_delegate(FUNC(coco_ssc_device::ff7d_read), this);
-	machine().device(":maincpu")->memory().space(AS_PROGRAM).install_readwrite_handler(0xFF7D, 0xFF7E, rh, wh);
+	slot_owner->install_memory(0xFF7D, 0xFF7E, rh, wh);
 
 	save_item(NAME(reset_line));
 	save_item(NAME(tms7000_porta));

@@ -69,10 +69,10 @@ machine_config_constructor coco_orch90_device::device_mconfig_additions() const
 }
 
 /*-------------------------------------------------
-    write
+    scs_write
 -------------------------------------------------*/
 
-WRITE8_MEMBER(coco_orch90_device::write)
+WRITE8_MEMBER(coco_orch90_device::scs_write)
 {
 	switch(offset)
 	{

@@ -43,8 +43,8 @@ protected:
 	// device-level overrides
 	virtual void device_start() override;
 	virtual void device_reset() override;
-	virtual DECLARE_READ8_MEMBER(read) override;
-	virtual DECLARE_WRITE8_MEMBER(write) override;
+	virtual DECLARE_READ8_MEMBER(scs_read) override;
+	virtual DECLARE_WRITE8_MEMBER(scs_write) override;
 
 private:
 	// device references

@@ -187,10 +187,10 @@ void coco_pak_banked_device::banked_pak_set_bank(uint32_t bank)
 }
 
 /*-------------------------------------------------
-    write
+    scs_write
 -------------------------------------------------*/
 
-WRITE8_MEMBER(coco_pak_banked_device::write)
+WRITE8_MEMBER(coco_pak_banked_device::scs_write)
 {
 	switch(offset)
 	{

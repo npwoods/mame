@@ -1169,10 +1169,10 @@ READ8_MEMBER( coco_state::ff40_read )
 {
 	if (offset >= 1 && offset <= 2 && m_beckerportconfig.read_safe(0) == 1)
 	{
-		return m_beckerport->read(space, offset-1, mem_mask);
+		return m_beckerport->scs_read(space, offset-1, mem_mask);
 	}
 
-	return m_cococart->read(space, offset, mem_mask);
+	return m_cococart->scs_read(space, offset, mem_mask);
 }
 
 
@@ -1185,10 +1185,10 @@ WRITE8_MEMBER( coco_state::ff40_write )
 {
 	if (offset >= 1 && offset <= 2 && m_beckerportconfig.read_safe(0) == 1)
 	{
-		return m_beckerport->write(space, offset-1, data, mem_mask);
+		return m_beckerport->scs_write(space, offset-1, data, mem_mask);
 	}
 
-	m_cococart->write(space, offset, data, mem_mask);
+	m_cococart->scs_write(space, offset, data, mem_mask);
 }
 
 

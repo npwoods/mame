@@ -25,6 +25,11 @@
 
 const device_type COCOCART_SLOT = device_creator<cococart_slot_device>;
 
+void cococart_slot_device::static_set_cputag(device_t &device, const char *tag)
+{
+	cococart_slot_device &cart = downcast<cococart_slot_device &>(device);
+	cart.m_cputag = tag;
+}
 
 
 //**************************************************************************
@@ -86,6 +91,9 @@ void cococart_slot_device::device_start()
 	m_halt_line.callback = &m_halt_callback;
 
 	m_cart = dynamic_cast<device_cococart_interface *>(get_card_device());
+
+	m_maincpu = machine().device<cpu_device>(m_cputag);
+	m_prgspace = &m_maincpu->space(AS_PROGRAM);
 }
 
 
@@ -103,6 +111,23 @@ void cococart_slot_device::device_config_complete()
 }
 
 
+void cococart_slot_device::install_space(address_spacenum spacenum, offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler)
+{
+	if( spacenum == AS_PROGRAM )
+	{
+		if(rhandler.has_object()) m_prgspace->install_read_handler(start, end, rhandler, 0);
+		if(whandler.has_object()) m_prgspace->install_write_handler(start, end, whandler, 0);
+	}
+	else
+	{
+		logerror( "install_space: installing unsupported space\n");
+	}
+}
+
+void cococart_slot_device::install_memory(offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler)
+{
+	install_space(AS_PROGRAM, start, end, rhandler, whandler);
+}
 
 //-------------------------------------------------
 //  device_timer - handle timer callbacks
@@ -132,11 +157,11 @@ void cococart_slot_device::device_timer(emu_timer &timer, device_timer_id id, in
 //  coco_cartridge_r
 //-------------------------------------------------
 
-READ8_MEMBER(cococart_slot_device::read)
+READ8_MEMBER(cococart_slot_device::scs_read)
 {
 	uint8_t result = 0x00;
 	if (m_cart)
-		result = m_cart->read(space, offset);
+		result = m_cart->scs_read(space, offset);
 	return result;
 }
 
@@ -145,10 +170,10 @@ READ8_MEMBER(cococart_slot_device::read)
 //  coco_cartridge_w
 //-------------------------------------------------
 
-WRITE8_MEMBER(cococart_slot_device::write)
+WRITE8_MEMBER(cococart_slot_device::scs_write)
 {
 	if (m_cart)
-		m_cart->write(space, offset, data);
+		m_cart->scs_write(space, offset, data);
 }
 
 
@@ -389,7 +414,7 @@ device_cococart_interface::~device_cococart_interface()
 //  read
 //-------------------------------------------------
 
-READ8_MEMBER(device_cococart_interface::read)
+READ8_MEMBER(device_cococart_interface::scs_read)
 {
 	return 0x00;
 }
@@ -400,7 +425,7 @@ READ8_MEMBER(device_cococart_interface::read)
 //  write
 //-------------------------------------------------
 
-WRITE8_MEMBER(device_cococart_interface::write)
+WRITE8_MEMBER(device_cococart_interface::scs_write)
 {
 }
 

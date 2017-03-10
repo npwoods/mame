@@ -23,6 +23,9 @@
 // direct region update handler
 typedef delegate<void (uint8_t *)> cococart_base_update_delegate;
 
+#define MCFG_COCO_CARTRIDGE_CPU(_cputag) \
+	cococart_slot_device::static_set_cputag(*device, _cputag);
+
 #define MCFG_COCO_CARTRIDGE_CART_CB(_devcb) \
 	devcb = &cococart_slot_device::static_set_cart_callback(*device, DEVCB_##_devcb);
 
@@ -60,6 +63,7 @@ public:
 
 	// construction/destruction
 	cococart_slot_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+	static void static_set_cputag(device_t &device, const char *tag);
 
 	template<class _Object> static devcb_base &static_set_cart_callback(device_t &device, _Object object)  { return downcast<cococart_slot_device &>(device).m_cart_callback.set_callback(object); }
 	template<class _Object> static devcb_base &static_set_nmi_callback(device_t &device, _Object object)  { return downcast<cococart_slot_device &>(device).m_nmi_callback.set_callback(object); }
@@ -84,12 +88,14 @@ public:
 	virtual const char *image_interface() const override { return "coco_cart"; }
 	virtual const char *file_extensions() const override { return "ccc,rom"; }
 
+	void install_memory(offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler);
+
 	// slot interface overrides
 	virtual std::string get_default_card_software() override;
 
-	// reading and writing to $FF40-$FF7F
-	DECLARE_READ8_MEMBER(read);
-	DECLARE_WRITE8_MEMBER(write);
+	// reading and writing to $FF40-$FF5F
+	DECLARE_READ8_MEMBER(scs_read);
+	DECLARE_WRITE8_MEMBER(scs_write);
 
 	// sets a cartridge line
 	void cart_set_line(line line, line_value value);
@@ -131,6 +137,7 @@ public:
 	devcb_write_line        m_cart_callback;
 	devcb_write_line            m_nmi_callback;
 	devcb_write_line            m_halt_callback;
+	const char    *m_cputag;
 private:
 	// cartridge
 	device_cococart_interface   *m_cart;
@@ -140,6 +147,10 @@ private:
 	void set_line_timer(coco_cartridge_line &line, line_value value);
 	void twiddle_line_if_q(coco_cartridge_line &line);
 	static const char *line_value_string(line_value value);
+protected:
+	void install_space(address_spacenum spacenum, offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler);
+	cpu_device   *m_maincpu;
+	address_space 	*m_prgspace;
 };
 
 // device type definition
@@ -154,8 +165,8 @@ public:
 	device_cococart_interface(const machine_config &mconfig, device_t &device);
 	virtual ~device_cococart_interface();
 
-	virtual DECLARE_READ8_MEMBER(read);
-	virtual DECLARE_WRITE8_MEMBER(write);
+	virtual DECLARE_READ8_MEMBER(scs_read);
+	virtual DECLARE_WRITE8_MEMBER(scs_write);
 
 	virtual uint8_t* get_cart_base();
 	void set_cart_base_update(cococart_base_update_delegate update);

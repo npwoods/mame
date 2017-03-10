@@ -125,10 +125,10 @@ void beckerport_device::device_config_complete(void)
 }
 
 /*-------------------------------------------------
-    read
+    scs_read
 -------------------------------------------------*/
 
-READ8_MEMBER(beckerport_device::read)
+READ8_MEMBER(beckerport_device::scs_read)
 {
 	unsigned char data = 0x5a;
 
@@ -167,10 +167,10 @@ READ8_MEMBER(beckerport_device::read)
 }
 
 /*-------------------------------------------------
-    write
+    scs_write
 -------------------------------------------------*/
 
-WRITE8_MEMBER(beckerport_device::write)
+WRITE8_MEMBER(beckerport_device::scs_write)
 {
 	char d = char(data);
 	osd_file::error filerr;

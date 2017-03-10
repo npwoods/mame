@@ -154,16 +154,22 @@ coco_multipak_device::coco_multipak_device(const machine_config &mconfig, const 
 
 void coco_multipak_device::device_start()
 {
+	m_owner = dynamic_cast<cococart_slot_device *>(owner());
+
 	// identify slots
 	m_slots[0] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT1_TAG));
+	cococart_slot_device::static_set_cputag(*(m_slots[0]), m_owner->m_cputag);
 	m_slots[1] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT2_TAG));
+	cococart_slot_device::static_set_cputag(*(m_slots[1]), m_owner->m_cputag);
 	m_slots[2] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT3_TAG));
+	cococart_slot_device::static_set_cputag(*(m_slots[2]), m_owner->m_cputag);
 	m_slots[3] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT4_TAG));
-	m_owner = dynamic_cast<cococart_slot_device *>(owner());
+	cococart_slot_device::static_set_cputag(*(m_slots[3]), m_owner->m_cputag);
 
 	// install $FF7F handler
 	write8_delegate wh = write8_delegate(FUNC(coco_multipak_device::ff7f_write), this);
-	machine().device(":maincpu")->memory().space(AS_PROGRAM).install_write_handler(0xFF7F, 0xFF7F, wh);
+	m_owner->install_memory(0xFF7D, 0xFF7E, read8_delegate(), wh);
+// 	machine().device(":maincpu")->memory().space(AS_PROGRAM).install_write_handler(0xFF7F, 0xFF7F, wh);
 
 	// initial state
 	m_select = 0xFF;
@@ -212,9 +218,9 @@ uint8_t* coco_multipak_device::get_cart_base()
 //  read
 //-------------------------------------------------
 
-READ8_MEMBER(coco_multipak_device::read)
+READ8_MEMBER(coco_multipak_device::scs_read)
 {
-	return active_scs_slot()->read(space,offset);
+	return active_scs_slot()->scs_read(space,offset);
 }
 
 
@@ -223,9 +229,9 @@ READ8_MEMBER(coco_multipak_device::read)
 //  write
 //-------------------------------------------------
 
-WRITE8_MEMBER(coco_multipak_device::write)
+WRITE8_MEMBER(coco_multipak_device::scs_write)
 {
-	active_scs_slot()->write(space,offset,data);
+	active_scs_slot()->scs_write(space,offset,data);
 }
 
 
