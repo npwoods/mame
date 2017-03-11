@@ -294,6 +294,15 @@ void sam6883_device::update_memory(void)
 
 	// update $FFE0-$FFFF
 	m_space_FFE0.point(&m_banks[2], m_banks[2].m_memory_offset + 0x1FE0);
+
+	// reinstall supplementary memory handlers
+	for (const auto &supp : m_supplementary_memory)
+	{
+		if (supp.m_rh.name())
+			m_cpu_space->install_read_handler(supp.m_addrstart, supp.m_addrend, supp.m_rh);
+		if (supp.m_wh.name())
+			m_cpu_space->install_write_handler(supp.m_addrstart, supp.m_addrend, supp.m_wh);
+	}
 }
 
 
@@ -566,4 +575,57 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const 
 				cpu_space().install_read_handler(addrstart, addrend, bank->m_rhandler);
 		}
 	}
+}
+
+
+//-------------------------------------------------
+//  install_supplementary_read_handler
+//-------------------------------------------------
+
+void sam6883_device::install_supplementary_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	find_supplementary_memory(addrstart, addrend).m_rh = rhandler;
+	m_cpu_space->install_read_handler(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  install_supplementary_write_handler
+//-------------------------------------------------
+
+void sam6883_device::install_supplementary_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	find_supplementary_memory(addrstart, addrend).m_wh = whandler;
+	m_cpu_space->install_write_handler(addrstart, addrend, whandler);
+}
+
+
+//-------------------------------------------------
+//  install_supplementary_write_handler
+//-------------------------------------------------
+
+sam6883_device::supplementary_memory &sam6883_device::find_supplementary_memory(uint16_t addrstart, uint16_t addrend)
+{
+	auto iter = std::find_if(
+		m_supplementary_memory.begin(),
+		m_supplementary_memory.end(),
+		[addrstart, addrend](const supplementary_memory &that) { return that.m_addrstart == addrstart && that.m_addrend == addrend; });
+
+	if (iter == m_supplementary_memory.end())
+	{
+		m_supplementary_memory.emplace_back(addrstart, addrend);
+		iter = m_supplementary_memory.end() - 1;
+	}
+	return *iter;
+}
+
+
+//-------------------------------------------------
+//  supplementary_memory ctor
+//-------------------------------------------------
+
+sam6883_device::supplementary_memory::supplementary_memory(uint16_t addrstart, uint16_t addrend)
+{
+	m_addrstart = addrstart;
+	m_addrend = addrend;
 }

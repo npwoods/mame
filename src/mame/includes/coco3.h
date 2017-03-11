@@ -50,6 +50,9 @@ public:
 	DECLARE_WRITE_LINE_MEMBER(gime_firq_w) { recalculate_firq(); }
 	DECLARE_WRITE_LINE_MEMBER(gime_irq_w) { recalculate_irq(); }
 
+	void cart_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
+	void cart_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
+
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
 protected:

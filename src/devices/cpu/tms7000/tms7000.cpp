@@ -81,7 +81,7 @@ static ADDRESS_MAP_START(tms7020_mem, AS_PROGRAM, 8, tms7000_device )
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START(tms7040_mem, AS_PROGRAM, 8, tms7000_device )
-	AM_RANGE(0xf000, 0xffff) AM_ROM // 4kB internal ROM
+	//AM_RANGE(0xf000, 0xffff) AM_ROM // 4kB internal ROM
 	AM_IMPORT_FROM( tms7000_mem )
 ADDRESS_MAP_END
 

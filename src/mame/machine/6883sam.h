@@ -129,6 +129,8 @@ public:
 	// typically called by machine
 	address_space *mpu_address_space(void) const { return m_cpu_space; }
 	void set_bank_offset(int bank, offs_t offset);
+	void install_supplementary_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
+	void install_supplementary_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
 
 protected:
 	// device-level overrides
@@ -168,24 +170,34 @@ private:
 		void point_specific_bank(const sam_bank *bank, uint32_t offset, uint32_t mask, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write);
 	};
 
+	struct supplementary_memory
+	{
+		supplementary_memory(uint16_t addrstart, uint16_t addrend);
+
+		uint16_t		m_addrstart, m_addrend;
+		read8_delegate	m_rh;
+		write8_delegate	m_wh;
+	};
+
 	const char *        m_cpu_tag;
 	address_spacenum    m_cpu_space_ref;
 
 	// incidentals
-	address_space *             m_cpu_space;
-	devcb_read8                m_read_res;
-	sam_bank                    m_banks[8];
-	sam_space<0x0000, 0x7FFF>   m_space_0000;
-	sam_space<0x8000, 0x9FFF>   m_space_8000;
-	sam_space<0xA000, 0xBFFF>   m_space_A000;
-	sam_space<0xC000, 0xFEFF>   m_space_C000;
-	sam_space<0xFF00, 0xFF1F>   m_space_FF00;
-	sam_space<0xFF20, 0xFF3F>   m_space_FF20;
-	sam_space<0xFF40, 0xFF5F>   m_space_FF40;
-	sam_space<0xFF60, 0xFFBF>   m_space_FF60;
-	sam_space<0xFFE0, 0xFFFF>   m_space_FFE0;
-	uint16_t                      m_counter_mask;
-	uint16_t                      m_counter_or;
+	address_space *						m_cpu_space;
+	devcb_read8							m_read_res;
+	sam_bank							m_banks[8];
+	sam_space<0x0000, 0x7FFF>			m_space_0000;
+	sam_space<0x8000, 0x9FFF>			m_space_8000;
+	sam_space<0xA000, 0xBFFF>			m_space_A000;
+	sam_space<0xC000, 0xFEFF>			m_space_C000;
+	sam_space<0xFF00, 0xFF1F>			m_space_FF00;
+	sam_space<0xFF20, 0xFF3F>			m_space_FF20;
+	sam_space<0xFF40, 0xFF5F>			m_space_FF40;
+	sam_space<0xFF60, 0xFFBF>			m_space_FF60;
+	sam_space<0xFFE0, 0xFFFF>			m_space_FFE0;
+	uint16_t							m_counter_mask;
+	uint16_t							m_counter_or;
+	std::vector<supplementary_memory>	m_supplementary_memory;
 
 	// SAM state
 	uint16_t                      m_counter;
@@ -258,6 +270,7 @@ private:
 	void horizontal_sync(void);
 	void update_state(void);
 	void update_memory(void);
+	supplementary_memory &find_supplementary_memory(uint16_t addrstart, uint16_t addrend);
 };
 
 extern const device_type SAM6883;

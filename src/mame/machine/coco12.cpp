@@ -118,3 +118,26 @@ void coco12_state::update_cart_base(uint8_t *cart_base)
 {
 	m_sam->configure_bank(3, cart_base, 0x4000, true);      // $C000-$FEFF
 }
+
+
+//-------------------------------------------------
+//  cart_install_read_handler
+//-------------------------------------------------
+
+void coco12_state::cart_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	// for the CoCo 1/2, the SAM "owns" the address space
+	m_sam->install_supplementary_read_handler(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  cart_install_write_handler
+//-------------------------------------------------
+
+void coco12_state::cart_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	// for the CoCo 1/2, the SAM "owns" the address space
+	m_sam->install_supplementary_write_handler(addrstart, addrend, whandler);
+}
+

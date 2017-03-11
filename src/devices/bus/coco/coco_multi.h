@@ -39,6 +39,10 @@ public:
 	DECLARE_WRITE_LINE_MEMBER(multi_cart_w);
 	DECLARE_WRITE_LINE_MEMBER(multi_nmi_w);
 	DECLARE_WRITE_LINE_MEMBER(multi_halt_w);
+
+	void cart_install_read_handler(int slot, uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
+	void cart_install_write_handler(int slot, uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;

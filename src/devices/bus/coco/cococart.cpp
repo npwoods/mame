@@ -2,9 +2,54 @@
 // copyright-holders:Nathan Woods
 /*********************************************************************
 
-    cococart.c
+    cococart.cpp
 
-    CoCo/Dragon cartridge management
+	CoCo/Dragon cartridge slot - typically used for "Program Paks"
+	(which are simple ROMs) but in practice is the main extensibility
+	mechanism for CoCo hardware
+
+	CoCo Pinout listing (not sure if the Dragon was the same)
+	------  ------
+		 1	-12V
+		 2	+12V
+		 3	HALT
+		 4	NMI
+		 5	RESET
+		 6	EIN
+		 7	QIN
+		 8	CART
+		 9	+5V
+		10	D0
+		11	D1
+		12	D2
+		13	D3
+		14	D4
+		15	D5
+		16	D6
+		17	D7
+		18	R/W
+		19	A0
+		20	A1
+		21	A2
+		22	A3
+		23	A4
+		24	A5
+		25	A6
+		26	A7
+		27	A8
+		28	A9
+		29	A10
+		30	A11
+		31	A12
+		32	CTS
+		33	GND
+		34	GND
+		35	SND
+		36	SCS
+		37	A13
+		38	A14
+		39	A15
+		40	SLENB
 
 *********************************************************************/
 
@@ -24,12 +69,6 @@
 //**************************************************************************
 
 const device_type COCOCART_SLOT = device_creator<cococart_slot_device>;
-
-void cococart_slot_device::static_set_cputag(device_t &device, const char *tag)
-{
-	cococart_slot_device &cart = downcast<cococart_slot_device &>(device);
-	cart.m_cputag = tag;
-}
 
 
 //**************************************************************************
@@ -91,9 +130,6 @@ void cococart_slot_device::device_start()
 	m_halt_line.callback = &m_halt_callback;
 
 	m_cart = dynamic_cast<device_cococart_interface *>(get_card_device());
-
-	m_maincpu = machine().device<cpu_device>(m_cputag);
-	m_prgspace = &m_maincpu->space(AS_PROGRAM);
 }
 
 
@@ -110,24 +146,6 @@ void cococart_slot_device::device_config_complete()
 	update_names();
 }
 
-
-void cococart_slot_device::install_space(address_spacenum spacenum, offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler)
-{
-	if( spacenum == AS_PROGRAM )
-	{
-		if(rhandler.has_object()) m_prgspace->install_read_handler(start, end, rhandler, 0);
-		if(whandler.has_object()) m_prgspace->install_write_handler(start, end, whandler, 0);
-	}
-	else
-	{
-		logerror( "install_space: installing unsupported space\n");
-	}
-}
-
-void cococart_slot_device::install_memory(offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler)
-{
-	install_space(AS_PROGRAM, start, end, rhandler, whandler);
-}
 
 //-------------------------------------------------
 //  device_timer - handle timer callbacks
@@ -154,7 +172,7 @@ void cococart_slot_device::device_timer(emu_timer &timer, device_timer_id id, in
 
 
 //-------------------------------------------------
-//  coco_cartridge_r
+//  read
 //-------------------------------------------------
 
 READ8_MEMBER(cococart_slot_device::scs_read)
@@ -167,7 +185,7 @@ READ8_MEMBER(cococart_slot_device::scs_read)
 
 
 //-------------------------------------------------
-//  coco_cartridge_w
+//  write
 //-------------------------------------------------
 
 WRITE8_MEMBER(cococart_slot_device::scs_write)
@@ -176,6 +194,38 @@ WRITE8_MEMBER(cococart_slot_device::scs_write)
 		m_cart->scs_write(space, offset, data);
 }
 
+
+//-------------------------------------------------
+//  install_read_handler
+//-------------------------------------------------
+
+void cococart_slot_device::install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	if (m_install_rh)
+		m_install_rh(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  install_write_handler
+//-------------------------------------------------
+
+void cococart_slot_device::install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	if (m_install_wh)
+		m_install_wh(addrstart, addrend, whandler);
+}
+
+
+//-------------------------------------------------
+//  install_readwrite_handler
+//-------------------------------------------------
+
+void cococart_slot_device::install_readwrite_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler, write8_delegate whandler)
+{
+	install_read_handler(addrstart, addrend, rhandler);
+	install_write_handler(addrstart, addrend, whandler);
+}
 
 
 //-------------------------------------------------

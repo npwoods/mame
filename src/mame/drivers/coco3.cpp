@@ -278,10 +278,11 @@ static MACHINE_CONFIG_START( coco3, coco3_state )
 	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("printer", printer)
 
 	MCFG_COCO_CARTRIDGE_ADD(CARTRIDGE_TAG, coco_cart, "fdcv11")
-	MCFG_COCO_CARTRIDGE_CPU(MAINCPU_TAG)
 	MCFG_COCO_CARTRIDGE_CART_CB(WRITELINE(coco_state, cart_w))
 	MCFG_COCO_CARTRIDGE_NMI_CB(INPUTLINE(MAINCPU_TAG, INPUT_LINE_NMI))
 	MCFG_COCO_CARTRIDGE_HALT_CB(INPUTLINE(MAINCPU_TAG, INPUT_LINE_HALT))
+	MCFG_COCO_CARTRIDGE_INSTALLRH_CB([owner](uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) { downcast<coco3_state *>(owner)->cart_install_read_handler(addrstart, addrend, rhandler); })
+	MCFG_COCO_CARTRIDGE_INSTALLWH_CB([owner](uint16_t addrstart, uint16_t addrend, write8_delegate whandler) { downcast<coco3_state *>(owner)->cart_install_write_handler(addrstart, addrend, whandler); })
 
 	MCFG_COCO_VHD_ADD(VHD0_TAG)
 	MCFG_COCO_VHD_ADD(VHD1_TAG)
@@ -349,7 +350,8 @@ MACHINE_CONFIG_END
 static MACHINE_CONFIG_DERIVED( coco3dw1, coco3 )
 	MCFG_COCO_CARTRIDGE_REMOVE(CARTRIDGE_TAG)
 	MCFG_COCO_CARTRIDGE_ADD(CARTRIDGE_TAG, coco_cart, "cc3hdb1")
-	MCFG_COCO_CARTRIDGE_CPU(MAINCPU_TAG)
+	MCFG_COCO_CARTRIDGE_INSTALLRH_CB([owner](uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) { downcast<coco3_state *>(owner)->cart_install_read_handler(addrstart, addrend, rhandler); })
+	MCFG_COCO_CARTRIDGE_INSTALLWH_CB([owner](uint16_t addrstart, uint16_t addrend, write8_delegate whandler) { downcast<coco3_state *>(owner)->cart_install_write_handler(addrstart, addrend, whandler); })
 MACHINE_CONFIG_END
 
 //**************************************************************************

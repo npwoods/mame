@@ -110,19 +110,30 @@ static MACHINE_CONFIG_FRAGMENT(coco_multi)
 	MCFG_COCO_CARTRIDGE_CART_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_cart_w))
 	MCFG_COCO_CARTRIDGE_NMI_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_nmi_w))
 	MCFG_COCO_CARTRIDGE_HALT_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_halt_w))
+	MCFG_COCO_CARTRIDGE_INSTALLRH_CB([owner](uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) { downcast<coco_multipak_device *>(owner)->cart_install_read_handler(1, addrstart, addrend, rhandler); })
+	MCFG_COCO_CARTRIDGE_INSTALLWH_CB([owner](uint16_t addrstart, uint16_t addrend, write8_delegate whandler) { downcast<coco_multipak_device *>(owner)->cart_install_write_handler(1, addrstart, addrend, whandler); })
+
 	MCFG_COCO_CARTRIDGE_ADD(SLOT2_TAG, coco_cart_slot1_3, nullptr)
 	MCFG_COCO_CARTRIDGE_CART_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_cart_w))
 	MCFG_COCO_CARTRIDGE_NMI_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_nmi_w))
 	MCFG_COCO_CARTRIDGE_HALT_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_halt_w))
+	MCFG_COCO_CARTRIDGE_INSTALLRH_CB([owner](uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) { downcast<coco_multipak_device *>(owner)->cart_install_read_handler(2, addrstart, addrend, rhandler); })
+	MCFG_COCO_CARTRIDGE_INSTALLWH_CB([owner](uint16_t addrstart, uint16_t addrend, write8_delegate whandler) { downcast<coco_multipak_device *>(owner)->cart_install_write_handler(2, addrstart, addrend, whandler); })
+
 	MCFG_COCO_CARTRIDGE_ADD(SLOT3_TAG, coco_cart_slot1_3, nullptr)
 	MCFG_COCO_CARTRIDGE_CART_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_cart_w))
 	MCFG_COCO_CARTRIDGE_NMI_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_nmi_w))
 	MCFG_COCO_CARTRIDGE_HALT_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_halt_w))
+	MCFG_COCO_CARTRIDGE_INSTALLRH_CB([owner](uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) { downcast<coco_multipak_device *>(owner)->cart_install_read_handler(3, addrstart, addrend, rhandler); })
+	MCFG_COCO_CARTRIDGE_INSTALLWH_CB([owner](uint16_t addrstart, uint16_t addrend, write8_delegate whandler) { downcast<coco_multipak_device *>(owner)->cart_install_write_handler(3, addrstart, addrend, whandler); })
+
 	MCFG_COCO_CARTRIDGE_ADD(SLOT4_TAG, coco_cart_slot4, "fdcv11")
 	MCFG_COCO_CARTRIDGE_CART_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_cart_w))
 	MCFG_COCO_CARTRIDGE_NMI_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_nmi_w))
 	MCFG_COCO_CARTRIDGE_HALT_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_halt_w))
-MACHINE_CONFIG_END
+	MCFG_COCO_CARTRIDGE_INSTALLRH_CB([owner](uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) { downcast<coco_multipak_device *>(owner)->cart_install_read_handler(4, addrstart, addrend, rhandler); })
+	MCFG_COCO_CARTRIDGE_INSTALLWH_CB([owner](uint16_t addrstart, uint16_t addrend, write8_delegate whandler) { downcast<coco_multipak_device *>(owner)->cart_install_write_handler(4, addrstart, addrend, whandler); })
+	MACHINE_CONFIG_END
 
 //**************************************************************************
 //  GLOBAL VARIABLES
@@ -158,18 +169,13 @@ void coco_multipak_device::device_start()
 
 	// identify slots
 	m_slots[0] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT1_TAG));
-	cococart_slot_device::static_set_cputag(*(m_slots[0]), m_owner->m_cputag);
 	m_slots[1] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT2_TAG));
-	cococart_slot_device::static_set_cputag(*(m_slots[1]), m_owner->m_cputag);
 	m_slots[2] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT3_TAG));
-	cococart_slot_device::static_set_cputag(*(m_slots[2]), m_owner->m_cputag);
 	m_slots[3] = dynamic_cast<cococart_slot_device *>(subdevice(SLOT4_TAG));
-	cococart_slot_device::static_set_cputag(*(m_slots[3]), m_owner->m_cputag);
 
 	// install $FF7F handler
 	write8_delegate wh = write8_delegate(FUNC(coco_multipak_device::ff7f_write), this);
-	m_owner->install_memory(0xFF7D, 0xFF7E, read8_delegate(), wh);
-// 	machine().device(":maincpu")->memory().space(AS_PROGRAM).install_write_handler(0xFF7F, 0xFF7F, wh);
+	m_owner->install_write_handler(0xFF7F, 0xFF7F, wh);
 
 	// initial state
 	m_select = 0xFF;
@@ -280,3 +286,24 @@ cococart_slot_device *coco_multipak_device::active_cts_slot(void)
 {
 	return m_slots[(m_select >> 4) & 0x03];
 }
+
+
+//-------------------------------------------------
+//  cart_install_read_handler
+//-------------------------------------------------
+
+void coco_multipak_device::cart_install_read_handler(int slot, uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	m_owner->install_read_handler(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  cart_install_write_handler
+//-------------------------------------------------
+
+void coco_multipak_device::cart_install_write_handler(int slot, uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	m_owner->install_write_handler(addrstart, addrend, whandler);
+}
+

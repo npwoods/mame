@@ -68,7 +68,7 @@ static NETLIST_START(nl_sac)
 // 	PARAM(Solver.SOR_FACTOR, 1.0)
 
 	RES(R20,    820)
-	RES(R6,   10000)
+	RES(R6,   10000)z
 	RES(R7,    9100)
 	RES(R5,  100000)
 	RES(R2,   10000)
@@ -204,7 +204,8 @@ void coco_ssc_device::device_start()
 	// install $FF7D-E handler
 	write8_delegate wh = write8_delegate(FUNC(coco_ssc_device::ff7d_write), this);
 	read8_delegate rh = read8_delegate(FUNC(coco_ssc_device::ff7d_read), this);
-	slot_owner->install_memory(0xFF7D, 0xFF7E, rh, wh);
+	cococart_slot_device *slot = dynamic_cast<cococart_slot_device *>(owner());
+	slot->install_readwrite_handler(0xFF7D, 0xFF7E, rh, wh);
 
 	save_item(NAME(reset_line));
 	save_item(NAME(tms7000_porta));
@@ -270,7 +271,7 @@ void coco_ssc_device::cart_set_line(cococart_slot_device::line which, cococart_s
 
 READ8_MEMBER(coco_ssc_device::ff7d_read)
 {
-	uint8_t data;
+	uint8_t data = 0xff;
 
 	switch(offset)
 	{

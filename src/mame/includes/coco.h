@@ -162,6 +162,7 @@ protected:
 	virtual void update_keyboard_input(uint8_t value, uint8_t z);
 	virtual void cart_w(bool state);
 	virtual void update_cart_base(uint8_t *cart_base) = 0;
+	address_space &cpu_space() { return ((device_t *)m_maincpu)->memory().space(AS_PROGRAM); }
 
 private:
 	// timer constants

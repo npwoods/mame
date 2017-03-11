@@ -4,7 +4,9 @@
 
     cococart.h
 
-    CoCo/Dragon cartridge management
+    CoCo/Dragon cartridge slot - typically used for "Program Paks"
+	(which are simple ROMs) but in practice is the main extensibility
+	mechanism for CoCo hardware
 
 *********************************************************************/
 
@@ -21,10 +23,7 @@
 // ======================> cococart_base_update_delegate
 
 // direct region update handler
-typedef delegate<void (uint8_t *)> cococart_base_update_delegate;
-
-#define MCFG_COCO_CARTRIDGE_CPU(_cputag) \
-	cococart_slot_device::static_set_cputag(*device, _cputag);
+typedef delegate<void(uint8_t *)> cococart_base_update_delegate;
 
 #define MCFG_COCO_CARTRIDGE_CART_CB(_devcb) \
 	devcb = &cococart_slot_device::static_set_cart_callback(*device, DEVCB_##_devcb);
@@ -34,6 +33,12 @@ typedef delegate<void (uint8_t *)> cococart_base_update_delegate;
 
 #define MCFG_COCO_CARTRIDGE_HALT_CB(_devcb) \
 	devcb = &cococart_slot_device::static_set_halt_callback(*device, DEVCB_##_devcb);
+
+#define MCFG_COCO_CARTRIDGE_INSTALLRH_CB(_instrh) \
+	downcast<cococart_slot_device &>(*device).m_install_rh = _instrh;
+
+#define MCFG_COCO_CARTRIDGE_INSTALLWH_CB(_instwh) \
+	downcast<cococart_slot_device &>(*device).m_install_wh = _instwh;
 
 
 // ======================> cococart_slot_device
@@ -63,7 +68,6 @@ public:
 
 	// construction/destruction
 	cococart_slot_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
-	static void static_set_cputag(device_t &device, const char *tag);
 
 	template<class _Object> static devcb_base &static_set_cart_callback(device_t &device, _Object object)  { return downcast<cococart_slot_device &>(device).m_cart_callback.set_callback(object); }
 	template<class _Object> static devcb_base &static_set_nmi_callback(device_t &device, _Object object)  { return downcast<cococart_slot_device &>(device).m_nmi_callback.set_callback(object); }
@@ -93,9 +97,18 @@ public:
 	// slot interface overrides
 	virtual std::string get_default_card_software() override;
 
-	// reading and writing to $FF40-$FF5F
+	// "conventional" reading and writing - in other words, reading when the
+	// SCS pin is selected (typically $FF40-$FF5F)
 	DECLARE_READ8_MEMBER(scs_read);
 	DECLARE_WRITE8_MEMBER(scs_write);
+
+	// many cartridges monitored the address bus directly, and did their own
+	// IO independent of the CTS/SCS lines; these are intended as wrappers
+	// so that this behavior can be emulated in a way that hides details
+	// specific to the various members of the CoCo family
+	void install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
+	void install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
+	void install_readwrite_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler, write8_delegate whandler);
 
 	// sets a cartridge line
 	void cart_set_line(line line, line_value value);
@@ -137,7 +150,9 @@ public:
 	devcb_write_line        m_cart_callback;
 	devcb_write_line            m_nmi_callback;
 	devcb_write_line            m_halt_callback;
-	const char    *m_cputag;
+	std::function<void(uint16_t, uint16_t, read8_delegate)> m_install_rh;
+	std::function<void(uint16_t, uint16_t, write8_delegate)> m_install_wh;
+
 private:
 	// cartridge
 	device_cococart_interface   *m_cart;
@@ -147,10 +162,6 @@ private:
 	void set_line_timer(coco_cartridge_line &line, line_value value);
 	void twiddle_line_if_q(coco_cartridge_line &line);
 	static const char *line_value_string(line_value value);
-protected:
-	void install_space(address_spacenum spacenum, offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler);
-	cpu_device   *m_maincpu;
-	address_space 	*m_prgspace;
 };
 
 // device type definition
@@ -188,5 +199,6 @@ private:
 
 #define MCFG_COCO_CARTRIDGE_REMOVE(_tag)        \
 	MCFG_DEVICE_REMOVE(_tag)
+
 
 #endif // __COCOCART_H__

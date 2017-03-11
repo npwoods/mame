@@ -166,3 +166,29 @@ uint32_t coco3_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap,
 	}
 	return result;
 }
+
+
+//-------------------------------------------------
+//  cart_install_read_handler
+//-------------------------------------------------
+
+void coco3_state::cart_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	// This is used by cartridge slots that monitor the address bus to install handlers.  Hypothetically
+	// a cartridge could try to override memory used by another device.  Such a situation would be unpredictible
+	// because multiple devices would be forcing their data onto the bus, so we are not emulating it.
+	cpu_space().install_read_handler(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  cart_install_write_handler
+//-------------------------------------------------
+
+void coco3_state::cart_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	// This is used by cartridge slots that monitor the address bus to install handlers.  Hypothetically
+	// a cartridge could try to override memory used by another device.  This is not emulated yet.
+	cpu_space().install_write_handler(addrstart, addrend, whandler);
+}
+

@@ -51,6 +51,10 @@ public:
 
 	DECLARE_WRITE_LINE_MEMBER( horizontal_sync );
 	DECLARE_WRITE_LINE_MEMBER( field_sync );
+
+	void cart_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
+	void cart_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
+
 protected:
 	virtual void device_start() override;
 	virtual void update_cart_base(uint8_t *cart_base) override;
