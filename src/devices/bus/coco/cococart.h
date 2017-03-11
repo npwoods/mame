@@ -92,8 +92,6 @@ public:
 	virtual const char *image_interface() const override { return "coco_cart"; }
 	virtual const char *file_extensions() const override { return "ccc,rom"; }
 
-	void install_memory(offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler);
-
 	// slot interface overrides
 	virtual std::string get_default_card_software() override;
 
