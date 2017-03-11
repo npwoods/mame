@@ -361,7 +361,8 @@ void cococart_slot_device::cart_set_line(cococart_slot_device::line which, cococ
 			break;
 
 		case line::SOUND_ENABLE:
-			// do nothing for now
+			if (m_cart)
+				m_cart->set_sound_enable(value != cococart_slot_device::line_value::CLEAR);
 			break;
 	}
 }
@@ -476,6 +477,16 @@ READ8_MEMBER(device_cococart_interface::scs_read)
 //-------------------------------------------------
 
 WRITE8_MEMBER(device_cococart_interface::scs_write)
+{
+}
+
+
+
+//-------------------------------------------------
+//  set_sound_enable
+//-------------------------------------------------
+
+void device_cococart_interface::set_sound_enable(bool sound_enable)
 {
 }
 

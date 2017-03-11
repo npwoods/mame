@@ -49,11 +49,12 @@ protected:
 	virtual void device_reset() override;
 	virtual DECLARE_READ8_MEMBER(scs_read) override;
 	virtual DECLARE_WRITE8_MEMBER(scs_write) override;
+	virtual void set_sound_enable(bool sound_enable) override;
 
 private:
 	// device references
 	cococart_slot_device *m_owner;
-	cococart_slot_device *m_slots[4];
+	std::array<cococart_slot_device *, 4> m_slots;
 
 	// internal state
 	uint8_t m_select;

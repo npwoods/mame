@@ -176,6 +176,7 @@ public:
 
 	virtual DECLARE_READ8_MEMBER(scs_read);
 	virtual DECLARE_WRITE8_MEMBER(scs_write);
+	virtual void set_sound_enable(bool sound_enable);
 
 	virtual uint8_t* get_cart_base();
 	void set_cart_base_update(cococart_base_update_delegate update);
