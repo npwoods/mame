@@ -2,7 +2,7 @@
 // copyright-holders:Nathan Woods
 /***************************************************************************
 
-    6883sam.c
+    6883sam.cpp
 
     Motorola 6883 Synchronous Address Multiplexer
 
@@ -51,6 +51,7 @@
 
 #include "emu.h"
 #include "machine/6883sam.h"
+#include "video/mc6847.h"
 
 
 //**************************************************************************
@@ -361,7 +362,8 @@ bool sam6883_friend_device::is_device_subject_to_clock_changes(const device_t &d
 	// Because the SAM emulation is only used in the CoCo family emulation, this is a
 	// safe technique
 	return device.configured_clock() != 0
-		&& (m_cpu->configured_clock() % device.configured_clock()) <= (m_cpu->configured_clock() / device.configured_clock());
+		&& (m_cpu->configured_clock() % device.configured_clock()) <= (m_cpu->configured_clock() / device.configured_clock())
+		&& !dynamic_cast<const mc6847_friend_device *>(&device);
 }
 
 
