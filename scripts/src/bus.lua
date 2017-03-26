@@ -692,6 +692,8 @@ if (BUSES["ELECTRON"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/bus/electron/exp.cpp",
 		MAME_DIR .. "src/devices/bus/electron/exp.h",
+		MAME_DIR .. "src/devices/bus/electron/fbjoy.cpp",
+		MAME_DIR .. "src/devices/bus/electron/fbjoy.h",
 		MAME_DIR .. "src/devices/bus/electron/plus3.cpp",
 		MAME_DIR .. "src/devices/bus/electron/plus3.h",
 		MAME_DIR .. "src/devices/bus/electron/m2105.cpp",
@@ -1932,6 +1934,8 @@ if (BUSES["NES"]~=null) then
 		MAME_DIR .. "src/devices/bus/nes/sachen.h",
 		MAME_DIR .. "src/devices/bus/nes/somari.cpp",
 		MAME_DIR .. "src/devices/bus/nes/somari.h",
+		MAME_DIR .. "src/devices/bus/nes/subor.cpp",
+		MAME_DIR .. "src/devices/bus/nes/subor.h",
 		MAME_DIR .. "src/devices/bus/nes/sunsoft.cpp",
 		MAME_DIR .. "src/devices/bus/nes/sunsoft.h",
 		MAME_DIR .. "src/devices/bus/nes/sunsoft_dcs.cpp",
