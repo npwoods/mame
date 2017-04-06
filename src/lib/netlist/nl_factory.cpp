@@ -9,6 +9,7 @@
 ****************************************************************************/
 
 #include "nl_factory.h"
+#include "nl_base.h"
 #include "nl_setup.h"
 #include "plib/putil.h"
 #include "nl_errstr.h"
@@ -16,16 +17,37 @@
 namespace netlist { namespace factory
 {
 
+class NETLIB_NAME(wrapper) : public device_t
+{
+public:
+	NETLIB_NAME(wrapper)(netlist_t &anetlist, const pstring &name)
+	: device_t(anetlist, name)
+	{
+	}
+protected:
+	NETLIB_RESETI();
+	NETLIB_UPDATEI();
+};
+
+
+
+element_t::element_t(const pstring &name, const pstring &classname,
+		const pstring &def_param, const pstring &sourcefile)
+	: m_name(name), m_classname(classname), m_def_param(def_param),
+	  m_sourcefile(sourcefile)
+{
+}
+
 element_t::element_t(const pstring &name, const pstring &classname,
 		const pstring &def_param)
-	: m_name(name), m_classname(classname), m_def_param(def_param)
+	: m_name(name), m_classname(classname), m_def_param(def_param),
+	  m_sourcefile("<unknown>")
 {
 }
 
 element_t::~element_t()
 {
 }
-
 
 // ----------------------------------------------------------------------------------------
 // net_device_t_base_factory
@@ -41,7 +63,7 @@ list_t::~list_t()
 	clear();
 }
 
-void list_t::register_device(std::unique_ptr<element_t> factory)
+void list_t::register_device(std::unique_ptr<element_t> &&factory)
 {
 	for (auto & e : *this)
 		if (e->name() == factory->name())

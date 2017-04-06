@@ -16,17 +16,22 @@ Magic Sticks:
 */
 
 #include "emu.h"
+#include "includes/playmark.h"
+
 #include "cpu/m68000/m68000.h"
 #include "machine/eepromser.h"
 #include "sound/okim6295.h"
-#include "includes/playmark.h"
+#include "screen.h"
+#include "speaker.h"
+
 
 class powerbal_state : public playmark_state
 {
 public:
 	powerbal_state(const machine_config &mconfig, device_type type, const char *tag)
-		: playmark_state(mconfig, type, tag),
-			m_eeprom(*this, "eeprom") { }
+		: playmark_state(mconfig, type, tag)
+		, m_eeprom(*this, "eeprom")
+	{ }
 
 	/* powerbal-specific */
 	int         m_tilebank;
@@ -192,7 +197,7 @@ static INPUT_PORTS_START( powerbal )
 	PORT_DIPNAME( 0x02, 0x02, DEF_STR( Unused ) )
 	PORT_DIPSETTING(    0x02, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_DIPNAME( 0x04, 0x04, DEF_STR( Unused ) )
+	PORT_DIPNAME( 0x04, 0x04, DEF_STR( Unused ) ) /* Manual shows this as "Weapon"  Off for Yes and On for No - Meaning is unknown */
 	PORT_DIPSETTING(    0x04, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Language ) )

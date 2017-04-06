@@ -27,6 +27,7 @@
 #include "unicode.h"
 #include "charconv.h"
 #include "pool.h"
+#include "timeconv.h"
 
 namespace imgtool
 {
@@ -61,6 +62,8 @@ namespace imgtool
 	class datetime
 	{
 	public:
+		typedef util::arbitrary_clock<std::int64_t, 1600, 1, 1, 0, 0, 0, std::ratio<1, 1000> > imgtool_clock;
+
 		enum datetime_type
 		{
 			NONE,
@@ -73,14 +76,22 @@ namespace imgtool
 		{
 		}
 
-		datetime(datetime_type type, time_t t)
+
+		template<typename Rep, int Y, int M, int D, int H, int N, int S, typename Ratio>
+		datetime(datetime_type type, std::chrono::time_point<util::arbitrary_clock<Rep, Y, M, D, H, N, S, Ratio> > tp)
 			: m_type(type)
-			, m_clock(std::chrono::system_clock::from_time_t(t))
+			, m_time_point(imgtool_clock::from_arbitrary_time_point(tp))
 		{
 		}
 
-		datetime(datetime_type type, tm *t)
-			: datetime(type, mktime(t))
+		datetime(datetime_type type, std::chrono::time_point<std::chrono::system_clock> tp)
+			: m_type(type)
+			, m_time_point(imgtool_clock::from_system_clock(tp))
+		{
+		}
+
+		datetime(datetime_type type, time_t t)
+			: datetime(type, std::chrono::system_clock::from_time_t(t))
 		{
 		}
 
@@ -90,21 +101,24 @@ namespace imgtool
 		// accessors
 		datetime_type type() const { return m_type; }
 		bool empty() const { return type() == datetime_type::NONE; }
-		time_t to_time_t() const { return std::chrono::system_clock::to_time_t(m_clock); }
+		std::chrono::time_point<imgtool_clock> time_point() const { return m_time_point; }
 
 		// operators
 		datetime &operator =(const datetime &that)
 		{
 			m_type = that.m_type;
-			m_clock = that.m_clock;
+			m_time_point = that.m_time_point;
 			return *this;
 		}
 
-	private:
-		typedef std::chrono::system_clock imgtool_clock;
+		// returns time structures
+		std::tm localtime() const;
+		std::tm gmtime() const;
+		time_t to_time_t() const;
 
+	private:
 		datetime_type							m_type;
-		std::chrono::time_point<imgtool_clock>	m_clock;
+		std::chrono::time_point<imgtool_clock>	m_time_point;
 	};
 
 	struct dirent

@@ -3,10 +3,12 @@
 /* */
 
 /* todo: remove code from header, linker starts throwing silly messages when I try due to the templates.. make sense of them */
+#ifndef MAME_INCLUDES_K053246_K053247_K055673_H
+#define MAME_INCLUDES_K053246_K053247_K055673_H
 
 #pragma once
-#ifndef __K05324x_H__
-#define __K05324x_H__
+
+#include "screen.h"
 
 #define NORMAL_PLANE_ORDER 4
 
@@ -32,7 +34,7 @@ typedef device_delegate<void (int *code, int *color, int *priority_mask)> k05324
 #define K055673_LAYOUT_RNG 4
 #define K055673_LAYOUT_LE2 8
 #define K055673_LAYOUT_GX6 6
-
+#define K055673_LAYOUT_PS  7
 
 /*
 Callback procedures for non-standard shadows:
@@ -81,6 +83,7 @@ public:
 	void clear_all();
 
 	DECLARE_READ16_MEMBER( k055673_rom_word_r );
+	DECLARE_READ16_MEMBER( k055673_ps_rom_word_r );
 	DECLARE_READ16_MEMBER( k055673_5bpp_rom_word_r );
 
 	DECLARE_READ8_MEMBER( k053247_r );
@@ -505,4 +508,4 @@ extern const device_type K055673;
 #define MCFG_K055673_PALETTE MCFG_GFX_PALETTE
 
 
-#endif
+#endif // MAME_INCLUDES_K053246_K053247_K055673_H

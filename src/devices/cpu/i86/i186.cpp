@@ -3,6 +3,7 @@
 // Peripheral code from rmnimbus driver by Phill Harvey-Smith which is
 // based on the Leland sound driver by Aaron Giles and Paul Leaman
 
+#include "emu.h"
 #include "i186.h"
 #include "debugger.h"
 #include "i86inline.h"
@@ -117,8 +118,8 @@ const uint8_t i80186_cpu_device::m_i80186_timing[] =
 	33,             /* (80186) BOUND */
 };
 
-const device_type I80186 = &device_creator<i80186_cpu_device>;
-const device_type I80188 = &device_creator<i80188_cpu_device>;
+const device_type I80186 = device_creator<i80186_cpu_device>;
+const device_type I80188 = device_creator<i80188_cpu_device>;
 
 i80188_cpu_device::i80188_cpu_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: i80186_cpu_device(mconfig, I80188, "I80188", tag, owner, clock, "i80188", __FILE__, 8)
@@ -153,16 +154,28 @@ i80186_cpu_device::i80186_cpu_device(const machine_config &mconfig, device_type 
 {
 }
 
+
+const address_space_config *i80186_cpu_device::memory_space_config(address_spacenum spacenum) const
+{
+	switch(spacenum)
+	{
+	case AS_PROGRAM:           return &m_program_config;
+	case AS_IO:                return &m_io_config;
+	case AS_DECRYPTED_OPCODES: return has_configured_map(AS_DECRYPTED_OPCODES) ? &m_opcodes_config : nullptr;
+	default:                   return nullptr;
+	}
+}
+
 uint8_t i80186_cpu_device::fetch_op()
 {
-	uint8_t data = m_direct->read_byte(pc(), m_fetch_xor);
+	uint8_t data = m_direct_opcodes->read_byte(pc(), m_fetch_xor);
 	m_ip++;
 	return data;
 }
 
 uint8_t i80186_cpu_device::fetch()
 {
-	uint8_t data = m_direct->read_byte(pc(), m_fetch_xor);
+	uint8_t data = m_direct_opcodes->read_byte(pc(), m_fetch_xor);
 	m_ip++;
 	return data;
 }
@@ -270,7 +283,7 @@ void i80186_cpu_device::execute_run()
 					if (tmp<low || tmp>high)
 						interrupt(5);
 					CLK(BOUND);
-					logerror("%s: %06x: bound %04x high %04x low %04x tmp\n", tag(), pc(), high, low, tmp);
+					logerror("%06x: bound %04x high %04x low %04x tmp\n", pc(), high, low, tmp);
 				}
 				break;
 
@@ -341,7 +354,7 @@ void i80186_cpu_device::execute_run()
 					m_sregs[DS] = m_src;
 					break;
 				default:
-					logerror("%s: %06x: Mov Sreg - Invalid register\n", tag(), pc());
+					logerror("%06x: Mov Sreg - Invalid register\n", pc());
 					m_ip = m_prev_ip;
 					interrupt(6);
 					break;
@@ -537,7 +550,7 @@ void i80186_cpu_device::execute_run()
 				if(!common_op(op))
 				{
 					m_icount -= 10; // UD fault timing?
-					logerror("%s: %06x: Invalid Opcode %02x\n", tag(), pc(), op);
+					logerror("%06x: Invalid Opcode %02x\n", pc(), op);
 					m_ip = m_prev_ip;
 					interrupt(6); // 80186 has #UD
 					break;

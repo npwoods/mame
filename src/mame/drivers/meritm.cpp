@@ -172,17 +172,20 @@ Not all regional versions are available for each Megatouch series
  */
 
 #include "emu.h"
+
 #include "cpu/z80/z80.h"
 #include "cpu/z80/z80daisy.h"
-#include "sound/ay8910.h"
-#include "video/v9938.h"
 #include "machine/ds1204.h"
 #include "machine/i8255.h"
-#include "machine/z80pio.h"
 #include "machine/ins8250.h"
 #include "machine/microtch.h"
 #include "machine/nvram.h"
 #include "machine/watchdog.h"
+#include "machine/z80pio.h"
+#include "sound/ay8910.h"
+#include "video/v9938.h"
+
+#include "speaker.h"
 
 
 class meritm_state : public driver_device
@@ -198,7 +201,6 @@ public:
 			m_microtouch(*this, "microtouch") ,
 			m_uart(*this, "ns16550"),
 			m_maincpu(*this, "maincpu"),
-			m_palette(*this, "v9938_0:palette"),
 			m_bank1(*this, "bank1"),
 			m_bank2(*this, "bank2"),
 			m_bank3(*this, "bank3"),
@@ -214,7 +216,6 @@ public:
 	optional_device<microtouch_device> m_microtouch;
 	optional_device<ns16550_device> m_uart;
 	required_device<cpu_device> m_maincpu;
-	required_device<palette_device> m_palette;
 	required_memory_bank m_bank1;
 	optional_memory_bank m_bank2;
 	optional_memory_bank m_bank3;
@@ -344,7 +345,7 @@ uint32_t meritm_state::screen_update_meritm(screen_device &screen, bitmap_ind16 
 		popmessage("Layer 1 %sabled",m_layer1_enabled ? "en" : "dis");
 	}
 
-	bitmap.fill(m_palette->black_pen(), cliprect);
+	bitmap.fill(m_v9938_0->black_pen(), cliprect);
 
 	if ( m_layer0_enabled )
 	{

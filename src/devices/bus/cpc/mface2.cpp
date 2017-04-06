@@ -8,13 +8,13 @@
 
 #include "emu.h"
 #include "mface2.h"
-#include "includes/amstrad.h"
+SLOT_INTERFACE_EXTERN(cpc_exp_cards);
 
 //**************************************************************************
 //  DEVICE DEFINITIONS
 //**************************************************************************
 
-const device_type CPC_MFACE2 = &device_creator<cpc_multiface2_device>;
+const device_type CPC_MFACE2 = device_creator<cpc_multiface2_device>;
 
 // device machine config
 static MACHINE_CONFIG_FRAGMENT( cpc_mface2 )
@@ -26,6 +26,7 @@ static MACHINE_CONFIG_FRAGMENT( cpc_mface2 )
 	MCFG_CPC_EXPANSION_SLOT_OUT_ROMDIS_CB(DEVWRITELINE("^", cpc_expansion_slot_device, romdis_w))  // ROMDIS
 MACHINE_CONFIG_END
 
+#if 0
 DIRECT_UPDATE_MEMBER( cpc_multiface2_device::amstrad_default )
 {
 	return address;
@@ -71,6 +72,7 @@ DIRECT_UPDATE_MEMBER( cpc_multiface2_device::amstrad_multiface_directoverride )
 
 		return pc;
 }
+#endif
 
 int cpc_multiface2_device::multiface_hardware_enabled()
 {
@@ -158,7 +160,7 @@ void cpc_multiface2_device::multiface_stop()
 		m_slot->nmi_w(0);
 
 		/* initialise 0065 override to monitor calls to 0065 */
-		machine().device("maincpu")->memory().space(AS_PROGRAM).set_direct_update_handler(direct_update_delegate(&cpc_multiface2_device::amstrad_multiface_directoverride,this));
+		//		machine().device("maincpu")->memory().space(AS_PROGRAM).set_direct_update_handler(direct_update_delegate(&cpc_multiface2_device::amstrad_multiface_directoverride,this));
 	}
 }
 

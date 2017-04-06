@@ -174,7 +174,7 @@ Rowscroll style:
 #include "video/deco16ic.h"
 #include "render.h"
 
-const device_type DECO16IC = &device_creator<deco16ic_device>;
+const device_type DECO16IC = device_creator<deco16ic_device>;
 
 deco16ic_device::deco16ic_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, DECO16IC, "DECO 55 / 56 / 74 / 141 IC", tag, owner, clock, "deco16ic", __FILE__),
@@ -735,7 +735,7 @@ static int deco16_pf_update(
 		if (tilemap_8x8)
 		{
 			int numrows = rows;
-			
+
 			// wolffang uses a larger 8x8 tilemap for the Japanese intro text, everything else seems to need this logic tho?
 			if (!(tilemapsizes & 4))
 				numrows = rows >> 1;

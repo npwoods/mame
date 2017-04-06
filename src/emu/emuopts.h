@@ -8,10 +8,10 @@
 
 ***************************************************************************/
 
-#pragma once
+#ifndef MAME_EMU_EMUOPTS_H
+#define MAME_EMU_EMUOPTS_H
 
-#ifndef __EMUOPTS_H__
-#define __EMUOPTS_H__
+#pragma once
 
 #include "options.h"
 
@@ -57,9 +57,6 @@
 #define OPTION_EXIT_AFTER_PLAYBACK  "exit_after_playback"
 #define OPTION_MNGWRITE             "mngwrite"
 #define OPTION_AVIWRITE             "aviwrite"
-#ifdef MAME_DEBUG
-#define OPTION_DUMMYWRITE           "dummywrite"
-#endif
 #define OPTION_WAVWRITE             "wavwrite"
 #define OPTION_SNAPNAME             "snapname"
 #define OPTION_SNAPSIZE             "snapsize"
@@ -190,13 +187,49 @@
 
 #define OPTION_LANGUAGE             "language"
 
-#define OPTION_HTTP			        "http"
+#define OPTION_HTTP                 "http"
 #define OPTION_HTTP_PORT            "http_port"
 #define OPTION_HTTP_ROOT            "http_root"
 
 //**************************************************************************
 //  TYPE DEFINITIONS
 //**************************************************************************
+
+class slot_option
+{
+public:
+	slot_option(std::string &&value = "", std::string &&bios = "")
+		: m_value(std::move(value)), m_bios(std::move(bios))
+	{
+	}
+	slot_option(const slot_option &that) = default;
+	slot_option(slot_option &&that) = default;
+
+	const slot_option &operator=(const slot_option &that)
+	{
+		// I thought you got this implicitly by declaring a default copy constructor?
+		m_value = that.m_value;
+		m_default_card_software = that.m_default_card_software;
+		m_bios = that.m_bios;
+		return that;
+	}
+
+	// accessors
+	const std::string &value() const { return m_value.empty() ? m_default_card_software : m_value; }
+	const std::string &bios() const { return m_bios; }
+	const std::string &default_card_software() const { return m_default_card_software; }
+	bool is_default() const { return m_value.empty(); }
+
+	// seters
+	void set_bios(std::string &&s) { m_bios = std::move(s); }
+	void set_default_card_software(std::string &&s) { m_default_card_software = std::move(s); }
+
+private:
+	std::string m_value;
+	std::string m_bios;
+	std::string	m_default_card_software;
+};
+
 
 class emu_options : public core_options
 {
@@ -251,9 +284,6 @@ public:
 	bool exit_after_playback() const { return bool_value(OPTION_EXIT_AFTER_PLAYBACK); }
 	const char *mng_write() const { return value(OPTION_MNGWRITE); }
 	const char *avi_write() const { return value(OPTION_AVIWRITE); }
-#ifdef MAME_DEBUG
-	bool dummy_write() const { return bool_value(OPTION_DUMMYWRITE); }
-#endif
 	const char *wav_write() const { return value(OPTION_WAVWRITE); }
 	const char *snap_name() const { return value(OPTION_SNAPNAME); }
 	const char *snap_size() const { return value(OPTION_SNAPSIZE); }
@@ -390,21 +420,29 @@ public:
 	short http_port() const { return int_value(OPTION_HTTP_PORT); }
 	const char *http_root() const { return value(OPTION_HTTP_ROOT); }
 
-	// cache frequently used options in members
-	void update_cached_options();
+	// slots and devices - the values for these are stored outside of the core_options
+	// structure
+	std::map<std::string, slot_option> &slot_options() { return m_slot_options; }
+	const std::map<std::string, slot_option> &slot_options() const { return m_slot_options; }
+	std::map<std::string, std::string> &image_options() { return m_image_options; }
+	const std::map<std::string, std::string> &image_options() const { return m_image_options; }
 
-	std::string main_value(const char *option) const;
-	std::string sub_value(const char *name, const char *subname) const;
+protected:
+	virtual void value_changed(const std::string &name, const std::string &value) override;
+
 private:
 	static const options_entry s_option_entries[];
 
-	// cached options
-	int m_coin_impulse;
-	bool m_joystick_contradictory;
-	bool m_sleep;
-	bool m_refresh_speed;
-	ui_option m_ui;
+	// slots and devices
+	std::map<std::string, slot_option>	m_slot_options;
+	std::map<std::string, std::string>	m_image_options;
+
+	// cached options, for scenarios where parsing core_options is too slow
+	int									m_coin_impulse;
+	bool								m_joystick_contradictory;
+	bool								m_sleep;
+	bool								m_refresh_speed;
+	ui_option							m_ui;
 };
 
-
-#endif  /* __EMUOPTS_H__ */
+#endif  // MAME_EMU_EMUOPTS_H

@@ -1,4 +1,5 @@
-// license:BSD-3-Clause copyright-holders: Joakim Larsson Edstrom
+// license:BSD-3-Clause
+// copyright-holders: Joakim Larsson Edstrom
 /***************************************************************************
 
     Z80-SCC Serial Communications Controller emulation
@@ -70,43 +71,44 @@ DONE (x) (p=partly)         NMOS         CMOS       ESCC      EMSCC
    x/p = Features that has been implemented  n/a = features that will not
 ***************************************************************************/
 
+#include "emu.h"
 #include "z80scc.h"
+
+
+//**************************************************************************
+//  CONFIGURABLE LOGGING
+//**************************************************************************
+
+#define LOG_GENERAL (1U <<  0)
+#define LOG_SETUP   (1U <<  1)
+#define LOG_PRINTF  (1U <<  2)
+#define LOG_READ    (1U <<  3)
+#define LOG_INT     (1U <<  4)
+#define LOG_CMD     (1U <<  5)
+#define LOG_TX      (1U <<  6)
+#define LOG_RCV     (1U <<  7)
+#define LOG_CTS     (1U <<  8)
+#define LOG_DCD     (1U <<  9)
+#define LOG_SYNC    (1U << 10)
+
+//#define VERBOSE (LOG_GENERAL | LOG_SETUP)
+//#define LOG_OUTPUT_FUNC printf
+#include "logmacro.h"
+
+#define LOGSETUP(...) LOGMASKED(LOG_SETUP,   __VA_ARGS__)
+#define LOGR(...)     LOGMASKED(LOG_READ,    __VA_ARGS__)
+#define LOGINT(...)   LOGMASKED(LOG_INT,     __VA_ARGS__)
+#define LOGCMD(...)   LOGMASKED(LOG_CMD,     __VA_ARGS__)
+#define LOGTX(...)    LOGMASKED(LOG_TX,      __VA_ARGS__)
+#define LOGRCV(...)   LOGMASKED(LOG_RCV,     __VA_ARGS__)
+#define LOGCTS(...)   LOGMASKED(LOG_CTS,     __VA_ARGS__)
+#define LOGDCD(...)   LOGMASKED(LOG_DCD,     __VA_ARGS__)
+#define LOGSYNC(...)  LOGMASKED(LOG_SYNC,    __VA_ARGS__)
+
 
 //**************************************************************************
 //  MACROS / CONSTANTS
 //**************************************************************************
-
-#define LOG_GENERAL 0x001
-#define LOG_SETUP   0x002
-#define LOG_PRINTF  0x004
-#define LOG_READ    0x008
-#define LOG_INT     0x010
-#define LOG_CMD     0x020
-#define LOG_TX      0x040
-#define LOG_RCV     0x080
-#define LOG_CTS     0x100
-#define LOG_DCD     0x200
-#define LOG_SYNC    0x400
-
-#define VERBOSE 0 // (LOG_PRINTF | LOG_SETUP  | LOG_GENERAL)
-
-#define LOGMASK(mask, ...)   do { if (VERBOSE & mask) logerror(__VA_ARGS__); } while (0)
-#define LOGLEVEL(mask, level, ...) do { if ((VERBOSE & mask) >= level) logerror(__VA_ARGS__); } while (0)
-
-#define LOG(...)      LOGMASK(LOG_GENERAL, __VA_ARGS__)
-#define LOGSETUP(...) LOGMASK(LOG_SETUP,   __VA_ARGS__)
-#define LOGR(...)     LOGMASK(LOG_READ,    __VA_ARGS__)
-#define LOGINT(...)   LOGMASK(LOG_INT,     __VA_ARGS__)
-#define LOGCMD(...)   LOGMASK(LOG_CMD,     __VA_ARGS__)
-#define LOGTX(...)    LOGMASK(LOG_TX,      __VA_ARGS__)
-#define LOGRCV(...)   LOGMASK(LOG_RCV,     __VA_ARGS__)
-#define LOGCTS(...)   LOGMASK(LOG_CTS,     __VA_ARGS__)
-#define LOGDCD(...)   LOGMASK(LOG_DCD,     __VA_ARGS__)
-#define LOGSYNC(...)  LOGMASK(LOG_SYNC,    __VA_ARGS__)
-
-#if VERBOSE & LOG_PRINTF
-#define logerror printf
-#endif
 
 #ifdef _MSC_VER
 #define FUNCNAME __func__
@@ -132,16 +134,16 @@ DONE (x) (p=partly)         NMOS         CMOS       ESCC      EMSCC
 //  DEVICE DEFINITIONS
 //**************************************************************************
 // device type definition
-const device_type Z80SCC   = &device_creator<z80scc_device>;
-const device_type Z80SCC_CHANNEL = &device_creator<z80scc_channel>;
-const device_type SCC8030  = &device_creator<scc8030_device>;
-const device_type SCC80C30 = &device_creator<scc80C30_device>;
-const device_type SCC80230 = &device_creator<scc80230_device>;
-const device_type SCC8530N = &device_creator<scc8530_device>;  // remove trailing N when 8530scc.c is fully replaced and removed
-const device_type SCC85C30 = &device_creator<scc85C30_device>;
-const device_type SCC85230 = &device_creator<scc85230_device>;
-const device_type SCC85233 = &device_creator<scc85233_device>;
-const device_type SCC8523L = &device_creator<scc8523L_device>;
+const device_type Z80SCC   = device_creator<z80scc_device>;
+const device_type Z80SCC_CHANNEL = device_creator<z80scc_channel>;
+const device_type SCC8030  = device_creator<scc8030_device>;
+const device_type SCC80C30 = device_creator<scc80C30_device>;
+const device_type SCC80230 = device_creator<scc80230_device>;
+const device_type SCC8530N = device_creator<scc8530_device>;  // remove trailing N when 8530scc.c is fully replaced and removed
+const device_type SCC85C30 = device_creator<scc85C30_device>;
+const device_type SCC85230 = device_creator<scc85230_device>;
+const device_type SCC85233 = device_creator<scc85233_device>;
+const device_type SCC8523L = device_creator<scc8523L_device>;
 
 //-------------------------------------------------
 //  device_mconfig_additions -
@@ -189,32 +191,14 @@ z80scc_device::z80scc_device(const machine_config &mconfig, device_type type, co
 	m_out_rxdrqb_cb(*this),
 	m_out_txdrqb_cb(*this),
 	m_variant(variant),
-	m_wr0_ptrbits(0){
+	m_wr0_ptrbits(0)
+{
 	for (auto & elem : m_int_state)
 		elem = 0;
 }
 
 z80scc_device::z80scc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, Z80SCC, "Z80 SCC", tag, owner, clock, "z80scc", __FILE__),
-		device_z80daisy_interface(mconfig, *this),
-		m_chanA(*this, CHANA_TAG),
-		m_chanB(*this, CHANB_TAG),
-		m_out_txda_cb(*this),
-		m_out_dtra_cb(*this),
-		m_out_rtsa_cb(*this),
-		m_out_wrdya_cb(*this),
-		m_out_synca_cb(*this),
-		m_out_txdb_cb(*this),
-		m_out_dtrb_cb(*this),
-		m_out_rtsb_cb(*this),
-		m_out_wrdyb_cb(*this),
-		m_out_syncb_cb(*this),
-		m_out_int_cb(*this),
-		m_out_rxdrqa_cb(*this),
-		m_out_txdrqa_cb(*this),
-		m_out_rxdrqb_cb(*this),
-		m_out_txdrqb_cb(*this),
-		m_variant(TYPE_Z80SCC)
+	: z80scc_device(mconfig, Z80SCC, "Z80 SCC", tag, owner, clock, TYPE_Z80SCC, "z80scc", __FILE__)
 {
 	for (auto & elem : m_int_state)
 		elem = 0;
@@ -224,7 +208,7 @@ scc8030_device::scc8030_device(const machine_config &mconfig, const char *tag, d
 	: z80scc_device(mconfig, SCC8030, "SCC 8030", tag, owner, clock, TYPE_SCC8030, "scc8030", __FILE__){ }
 
 scc80C30_device::scc80C30_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: z80scc_device(mconfig, SCC80C30, "SCC 80C30", tag, owner, clock, TYPE_SCC80C30, "scc80C30", __FILE__){ }
+	: z80scc_device(mconfig, SCC80C30, "SCC 80C30", tag, owner, clock, TYPE_SCC80C30, "scc80c30", __FILE__){ }
 
 scc80230_device::scc80230_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: z80scc_device(mconfig, SCC80230, "SCC 80230", tag, owner, clock, TYPE_SCC80230, "scc80230", __FILE__){ }
@@ -233,7 +217,7 @@ scc8530_device::scc8530_device(const machine_config &mconfig, const char *tag, d
 	: z80scc_device(mconfig, SCC8530N, "SCC 8530", tag, owner, clock, TYPE_SCC8530, "scc8530", __FILE__){ }
 
 scc85C30_device::scc85C30_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: z80scc_device(mconfig, SCC85C30, "SCC 85C30", tag, owner, clock, TYPE_SCC85C30, "scc85C30", __FILE__){ }
+	: z80scc_device(mconfig, SCC85C30, "SCC 85C30", tag, owner, clock, TYPE_SCC85C30, "scc85c30", __FILE__){ }
 
 scc85230_device::scc85230_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: z80scc_device(mconfig, SCC85230, "SCC 85230", tag, owner, clock, TYPE_SCC85230, "scc85230", __FILE__){ }
@@ -242,7 +226,7 @@ scc85233_device::scc85233_device(const machine_config &mconfig, const char *tag,
 	: z80scc_device(mconfig, SCC85233, "SCC 85233", tag, owner, clock, TYPE_SCC85233, "scc85233", __FILE__){ }
 
 scc8523L_device::scc8523L_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: z80scc_device(mconfig, SCC8523L, "SCC 8523L", tag, owner, clock, TYPE_SCC8523L, "scc8523L", __FILE__){ }
+	: z80scc_device(mconfig, SCC8523L, "SCC 8523L", tag, owner, clock, TYPE_SCC8523L, "scc8523l", __FILE__){ }
 
 //-------------------------------------------------
 //  device_start - device-specific startup

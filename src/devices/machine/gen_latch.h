@@ -11,7 +11,6 @@
 #ifndef MAME_DEVICES_MACHINE_GEN_LATCH_H
 #define MAME_DEVICES_MACHINE_GEN_LATCH_H
 
-#include "emu.h"
 
 
 //**************************************************************************
@@ -63,7 +62,7 @@ protected:
 
 private:
 	bool                    m_latch_written;
-	devcb_write_line        m_data_pending_cb;				
+	devcb_write_line        m_data_pending_cb;
 };
 
 

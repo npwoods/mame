@@ -1,5 +1,6 @@
 // license:BSD-3-Clause
 // copyright-holders:Sergey Svishchev
+#include "emu.h"
 #include "ibm6580_kbd.h"
 
 #define VERBOSE_DBG 0       /* general debug messages */
@@ -15,7 +16,7 @@
 	} while (0)
 
 
-const device_type DW_KEYBOARD = &device_creator<dw_keyboard_device>;
+const device_type DW_KEYBOARD = device_creator<dw_keyboard_device>;
 
 ROM_START( dw_keyboard )
 	ROM_REGION(0x800, "mcu", 0)
@@ -37,7 +38,7 @@ static ADDRESS_MAP_START( dw_keyboard_io, AS_IO, 8, dw_keyboard_device )
 ADDRESS_MAP_END
 
 static MACHINE_CONFIG_FRAGMENT( dw_keyboard )
-	MCFG_CPU_ADD("mcu", I8049, XTAL_6MHz)	// XXX RC oscillator
+	MCFG_CPU_ADD("mcu", I8049, XTAL_6MHz)   // XXX RC oscillator
 	MCFG_CPU_IO_MAP(dw_keyboard_io)
 MACHINE_CONFIG_END
 
@@ -52,7 +53,7 @@ INPUT_PORTS_START( dw_keyboard )
 	 * Keyboard Matrix -- p. 5-6 ('83) and p. 26 ('82)
 	 */
 	PORT_START("DIP")
-	PORT_DIPNAME( 0xff, 1, "Layout" ) 
+	PORT_DIPNAME( 0xff, 1, "Layout" )
 	PORT_DIPSETTING( 1,   "U.S." )
 	PORT_DIPSETTING( 250, "U.S. Dvorak" )
 
@@ -97,7 +98,7 @@ INPUT_PORTS_START( dw_keyboard )
 	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("Enter") PORT_CODE(KEYCODE_ENTER_PAD) PORT_CHAR(UCHAR_MAMEKEY(ENTER_PAD))
 
 	PORT_START("COL.4")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_COMMA) PORT_CHAR(',') 
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_COMMA) PORT_CHAR(',')
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_COLON) PORT_CHAR(';') PORT_CHAR(':')
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_P) PORT_CHAR('p') PORT_CHAR('P')
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_0) PORT_CHAR('0') PORT_CHAR(')')
@@ -270,7 +271,7 @@ WRITE8_MEMBER( dw_keyboard_device::bus_w )
 	*/
 
 	if ((data & 0x72) != 0x72)
-	DBG_LOG(1,"bus",( "<- %02x = send %d strobe %d clock %d | dip clk %d dip load %d\n", 
+	DBG_LOG(1,"bus",( "<- %02x = send %d strobe %d clock %d | dip clk %d dip load %d\n",
 		data, BIT(data, 0), BIT(data, 1), BIT(data, 4), BIT(data, 5), BIT(data, 6)));
 
 	m_bus = data;

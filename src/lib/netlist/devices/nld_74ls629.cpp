@@ -40,7 +40,7 @@
 
 
 #include "nld_74ls629.h"
-#include "analog/nld_twoterm.h"
+#include "../analog/nlid_twoterm.h"
 
 namespace netlist
 {
@@ -108,8 +108,8 @@ namespace netlist
 
 	public:
 		NETLIB_SUB(SN74LS629clk) m_clock;
-		NETLIB_SUB(R_base) m_R_FC;
-		NETLIB_SUB(R_base) m_R_RNG;
+		analog::NETLIB_SUB(R_base) m_R_FC;
+		analog::NETLIB_SUB(R_base) m_R_RNG;
 
 		logic_input_t m_ENQ;
 		analog_input_t m_RNG;

@@ -21,6 +21,7 @@
     matmania.cpp - maniach
     nycaptor.cpp - nycaptor
     renegade.cpp - renegade
+    retofinv.cpp - retofinv
     slapfght.cpp - slapfght
     xain.cpp     - xsleena
 
@@ -37,7 +38,6 @@
     bublbobl.cpp - bub68705 - this is a bootleg, not an official Taito hookup
     changela.cpp - changela - looks like an ancestor of arkanoid without automatic semaphores
     mexico86.cpp - knightb, mexico86 - bootleg 68705s
-    retofinv.cpp - the current MCU dump is a bootleg at least
     sqix.cpp - hotsmash - kaneko hookup, different from Taito ones.
 
     there are other drivers (and games in existing drivers) that could hookup here, but currently lack MCU dumps.
@@ -73,17 +73,17 @@ MACHINE_CONFIG_END
 } // anonymous namespace
 
 
-device_type const TAITO68705_MCU = &device_creator<taito68705_mcu_device>;
-device_type const TAITO68705_MCU_TIGER = &device_creator<taito68705_mcu_tiger_device>;
-device_type const ARKANOID_68705P3 = &device_creator<arkanoid_68705p3_device>;
-device_type const ARKANOID_68705P5 = &device_creator<arkanoid_68705p5_device>;
+device_type const TAITO68705_MCU = device_creator<taito68705_mcu_device>;
+device_type const TAITO68705_MCU_TIGER = device_creator<taito68705_mcu_tiger_device>;
+device_type const ARKANOID_68705P3 = device_creator<arkanoid_68705p3_device>;
+device_type const ARKANOID_68705P5 = device_creator<arkanoid_68705p5_device>;
 
 
 READ8_MEMBER(taito68705_mcu_device_base::data_r)
 {
 	// clear MCU semaphore flag and return data
 	u8 const result(m_mcu_latch);
-	if (!space.debugger_access())
+	if (!machine().side_effect_disabled())
 	{
 		m_mcu_flag = false;
 		m_semaphore_cb(CLEAR_LINE);

@@ -10,7 +10,6 @@ Research Machines RM 380Z
 #ifndef RM380Z_H_
 #define RM380Z_H_
 
-#include "emu.h"
 #include "cpu/z80/z80.h"
 #include "imagedev/cassette.h"
 #include "machine/ram.h"
@@ -125,7 +124,7 @@ public:
 	DECLARE_WRITE8_MEMBER(disk_0_control);
 
 	DECLARE_WRITE8_MEMBER( keyboard_put );
-	
+
 	DECLARE_DRIVER_INIT(rm380z);
 	DECLARE_DRIVER_INIT(rm380z34d);
 	DECLARE_DRIVER_INIT(rm380z34e);

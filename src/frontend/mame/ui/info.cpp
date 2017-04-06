@@ -15,6 +15,7 @@
 
 #include "drivenum.h"
 #include "softlist.h"
+#include "emuopts.h"
 
 namespace ui {
 //-------------------------------------------------
@@ -322,7 +323,7 @@ std::string machine_info::mandatory_images()
 	// make sure that any required image has a mounted file
 	for (device_image_interface &image : image_interface_iterator(m_machine.root_device()))
 	{
-		if (image.filename() == nullptr && image.must_be_loaded())
+		if (image.must_be_loaded() && m_machine.options().image_options().count(image.instance_name()) == 0)
 			buf << "\"" << image.instance_name() << "\", ";
 	}
 	return buf.str();
@@ -411,7 +412,7 @@ void menu_image_info::image_info(device_image_interface *image)
 		item_append(image->brief_instance_name(), image->basename(), 0, nullptr);
 
 		// if image has been loaded through softlist, let's add some more info
-		if (image->software_entry())
+		if (image->loaded_through_softlist())
 		{
 			// display long filename
 			item_append(image->longname(), "", FLAG_DISABLE, nullptr);

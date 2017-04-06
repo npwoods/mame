@@ -9,58 +9,56 @@
 ****************************************************************************/
 
 #include "net_lib.h"
-#include "nld_system.h"
-#include "nl_factory.h"
-#include "solver/nld_solver.h"
+#include "../nl_factory.h"
+#include "../solver/nld_solver.h"
+
 
 #define xstr(s) # s
-#define ENTRY1(nic, name, defparam) factory.register_device<nic>( # name, xstr(nic), defparam );
-#define ENTRY(nic, name, defparam) ENTRY1(NETLIB_NAME(nic), name, defparam)
 
 #define NETLIB_DEVICE_DECL(chip) extern factory::constructor_ptr_t decl_ ## chip;
 
-#define ENTRYX1(nic, name, defparam, decl) factory.register_device( decl (# name, xstr(nic), defparam) );
+#define ENTRYX1(nic, name, defparam, decl) factory.register_device( decl (pstring(# name), pstring(xstr(nic)), pstring(defparam)) );
 #define ENTRYX(nic, name, defparam) { NETLIB_DEVICE_DECL(nic) ENTRYX1(NETLIB_NAME(nic), name, defparam, decl_ ## nic) }
 
 namespace netlist
 {
 	namespace devices
 	{
-static void initialize_factory(factory::list_t &factory)
+	void initialize_factory(factory::list_t &factory)
 {
-	ENTRY(R,                    RES,                    "R")
-	ENTRY(POT,                  POT,                    "R")
-	ENTRY(POT2,                 POT2,                   "R")
-	ENTRY(C,                    CAP,                    "C")
-	ENTRY(L,                    IND,                    "L")
-	ENTRY(D,                    DIODE,                  "MODEL")
-	ENTRY(VCVS,                 VCVS,                   "")
-	ENTRY(VCCS,                 VCCS,                   "")
-	ENTRY(CCCS,                 CCCS,                   "")
-	ENTRY(LVCCS,                LVCCS,                  "")
-	ENTRY(VS,                   VS,                     "V")
-	ENTRY(CS,                   CS,                     "I")
-	ENTRY(OPAMP,                OPAMP,                  "MODEL")
+	ENTRYX(R,                   RES,                    "R")
+	ENTRYX(POT,                 POT,                    "R")
+	ENTRYX(POT2,                POT2,                   "R")
+	ENTRYX(C,                   CAP,                    "C")
+	ENTRYX(L,                   IND,                    "L")
+	ENTRYX(D,                   DIODE,                  "MODEL")
+	ENTRYX(VS,                  VS,                     "V")
+	ENTRYX(CS,                  CS,                     "I")
+	ENTRYX(VCVS,                VCVS,                   "")
+	ENTRYX(VCCS,                VCCS,                   "")
+	ENTRYX(CCCS,                CCCS,                   "")
+	ENTRYX(LVCCS,               LVCCS,                  "")
+	ENTRYX(opamp,               OPAMP,                  "MODEL")
 	ENTRYX(dummy_input,         DUMMY_INPUT,            "")
 	ENTRYX(frontier,            FRONTIER_DEV,           "+I,+G,+Q")   // not intended to be used directly
 	ENTRYX(function,            AFUNC,                  "N,FUNC")   // only for macro devices - NO FEEDBACK loops
-	ENTRY(QBJT_EB,              QBJT_EB,                "MODEL")
-	ENTRY(QBJT_switch,          QBJT_SW,                "MODEL")
+	ENTRYX(QBJT_EB,             QBJT_EB,                "MODEL")
+	ENTRYX(QBJT_switch,         QBJT_SW,                "MODEL")
 	ENTRYX(logic_input,         TTL_INPUT,              "IN")
 	ENTRYX(logic_input,         LOGIC_INPUT,            "IN,FAMILY")
 	ENTRYX(analog_input,        ANALOG_INPUT,           "IN")
 	ENTRYX(log,                 LOG,                    "+I")
 	ENTRYX(logD,                LOGD,                   "+I,+I2")
 	ENTRYX(clock,               CLOCK,                  "FREQ")
-	ENTRYX(extclock,            EXTCLOCK,               "FREQ")
+	ENTRYX(extclock,            EXTCLOCK,               "FREQ,PATTERN")
 	ENTRYX(mainclock,           MAINCLOCK,              "FREQ")
 	ENTRYX(gnd,                 GND,                    "")
 	ENTRYX(netlistparams,       PARAMETER,              "")
-	ENTRY(solver,               SOLVER,                 "FREQ")
+	ENTRYX(solver,              SOLVER,                 "FREQ")
 	ENTRYX(res_sw,              RES_SWITCH,             "+IN,+P1,+P2")
-	ENTRY(switch1,              SWITCH,                 "")
-	ENTRY(switch2,              SWITCH2,                "")
-	ENTRYX(nicRSFF,             NETDEV_RSFF,            "+S,+R")
+	ENTRYX(switch1,             SWITCH,                 "")
+	ENTRYX(switch2,             SWITCH2,                "")
+	ENTRYX(nicRSFF,             NETDEV_RSFF,            "")
 	ENTRYX(nicDelay,            NETDEV_DELAY,           "")
 	ENTRYX(2716,                EPROM_2716,             "+GQ,+EPQ,+A0,+A1,+A2,+A3,+A4,+A5,+A6,+A7,+A8,+A9,+A10")
 	ENTRYX(2102A,               RAM_2102A,              "+CEQ,+A0,+A1,+A2,+A3,+A4,+A5,+A6,+A7,+A8,+A9,+RWQ,+DI")
@@ -80,6 +78,7 @@ static void initialize_factory(factory::list_t &factory)
 	ENTRYX(74123,               TTL_74123,              "")
 	ENTRYX(74153,               TTL_74153,              "+C0,+C1,+C2,+C3,+A,+B,+G")
 	ENTRYX(74161,               TTL_74161,              "+A,+B,+C,+D,+CLRQ,+LOADQ,+CLK,+ENABLEP,+ENABLET")
+	ENTRYX(74164,               TTL_74164,              "+A,+B,+CLRQ,+CLK")
 	ENTRYX(74165,               TTL_74165,              "+CLK,+CLKINH,+SH_LDQ,+SER,+A,+B,+C,+D,+E,+F,+G,+H")
 	ENTRYX(74166,               TTL_74166,              "+CLK,+CLKINH,+SH_LDQ,+SER,+A,+B,+C,+D,+E,+F,+G,+H,+CLRQ")
 	ENTRYX(74174,               TTL_74174,              "+CLK,+D1,+D2,+D3,+D4,+D5,+D6,+CLRQ")
@@ -95,7 +94,6 @@ static void initialize_factory(factory::list_t &factory)
 	ENTRYX(82S123,              PROM_82S123,            "+CEQ,+A0,+A1,+A2,+A3,+A4")
 	ENTRYX(82S126,              PROM_82S126,            "+CE1Q,+CE2Q,+A0,+A1,+A2,+A3,+A4,+A5,+A6,+A7")
 	ENTRYX(9310,                TTL_9310,               "")
-	ENTRYX(9312,                TTL_9312,               "+A,+B,+C,+D0,+D1,+D2,+D3,+D4,+D5,+D6,+D7,+G")
 	ENTRYX(9316,                TTL_9316,               "+CLK,+ENP,+ENT,+CLRQ,+LOADQ,+A,+B,+C,+D")
 	ENTRYX(9322,                TTL_9322,               "+SELECT,+A1,+B1,+A2,+B2,+A3,+B3,+A4,+B4,+STROBE")
 	ENTRYX(9334,                TTL_9334,               "+CQ,+EQ,+D,+A0,+A1,+A2")
@@ -128,6 +126,7 @@ static void initialize_factory(factory::list_t &factory)
 	ENTRYX(74123_dip,           TTL_74123_DIP,          "")
 	ENTRYX(74153_dip,           TTL_74153_DIP,          "")
 	ENTRYX(74161_dip,           TTL_74161_DIP,          "")
+	ENTRYX(74164_dip,           TTL_74164_DIP,          "")
 	ENTRYX(74165_dip,           TTL_74165_DIP,          "")
 	ENTRYX(74166_dip,           TTL_74166_DIP,          "")
 	ENTRYX(74174_dip,           TTL_74174_DIP,          "")
@@ -135,7 +134,6 @@ static void initialize_factory(factory::list_t &factory)
 	ENTRYX(74192_dip,           TTL_74192_DIP,          "")
 	ENTRYX(74193_dip,           TTL_74193_DIP,          "")
 	ENTRYX(74194_dip,           TTL_74194_DIP,          "")
-	ENTRYX(74279_dip,           TTL_74279_DIP,          "")
 	ENTRYX(74365_dip,           TTL_74365_DIP,          "")
 	ENTRYX(82S16_dip,           TTL_82S16_DIP,          "")
 	ENTRYX(82S115_dip,          PROM_82S115_DIP,        "")
@@ -143,7 +141,6 @@ static void initialize_factory(factory::list_t &factory)
 	ENTRYX(82S126_dip,          PROM_82S126_DIP,        "")
 	ENTRYX(9602_dip,            TTL_9602_DIP,           "")
 	ENTRYX(9310_dip,            TTL_9310_DIP,           "")
-	ENTRYX(9312_dip,            TTL_9312_DIP,           "")
 	ENTRYX(9316_dip,            TTL_9316_DIP,           "")
 	ENTRYX(9322_dip,            TTL_9322_DIP,           "")
 	ENTRYX(9334_dip,            TTL_9334_DIP,           "")
@@ -156,10 +153,3 @@ static void initialize_factory(factory::list_t &factory)
 	} //namespace devices
 } // namespace netlist
 
-namespace netlist
-{
-	void initialize_factory(factory::list_t &factory)
-	{
-		devices::initialize_factory(factory);
-	}
-}

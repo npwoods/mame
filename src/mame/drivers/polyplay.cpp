@@ -18,15 +18,12 @@
 
 
 TODO:
-  - check PIO PortB wiring in real machines
-  - write some own code for the ZRE-PP to find the SIO in address space and then do something cool with it :)
   - get other rom versions and games
-  - document the light-organ related stuff
 
-		
-NOTES: 
-  The hardware is based on the K1520 PC system, with video output coming through a standard Colormat TV. 
-	  
+
+NOTES:
+  The hardware is based on the K1520 PC system, with video output coming through a standard Colormat TV.
+
   There are at least two revisions:
 
   - Revision 1 -
@@ -35,14 +32,14 @@ NOTES:
   012-7100     ZRE     CPU-Board K2521 (3KiB ROM, 1KiB RAM)
   012-7040     PFS-1   ROM Board K3820 #1 - Games 1 to 4 (16KiB ROM)
   012-7040     PFS-2   ROM Board K3820 #2 - Games 5 to 8 (16KiB ROM)
-	  
+
   - Revision 2 -
   2319-84-01   FAZ     Graphics card (Color and Sound Logic)
   2319-84-02   ABS     Graphics card (1KiB ROM for Charset)
   02 899-0101  ZRE-PP  CPU-Board (56KiB ROM, 64KiB* RAM)
 
   Basically revision 2 combines the ZRE, PFS-1 and PFS-2 onto a single board.
-  
+
 
 memory map:
   - Revision 1 -
@@ -55,7 +52,7 @@ memory map:
                      Hirschjagd            (1c00 - 27ff)
                      Hase und Wolf         (2800 - 3fff)
                      Schmetterlingsfang    (4000 - 4fff)
-							  
+
   5000 - 8fff PFS-2  Schiessbude           (5000 - 5fff)
                      Autorennen            (6000 - 73ff)
                      opto-akust. Merkspiel (7400 - 7fff)
@@ -87,8 +84,8 @@ i/o ports:
   - Revision 2 -
   80 - 83 ZRE-PP UB857D  (Z80 CTC)
   84 - 87 ZRE-PP UB855D  (Z80 PIO)
-  ?? - ?? ZRE-PP UB8560D (Z80 SIO)
-  
+  88 - 8B ZRE-PP UB8560D (Z80 SIO)
+
   read:
   83        CTC COUNT 3 (IN1)
             used as hardware random number generator
@@ -103,10 +100,10 @@ i/o ports:
             bit 6 = bookkeeping (Summe Spiele)
             bit 7 = coin sensor (+IRQ to make the game acknowledge it)
 
-  85        PIO PORT B 
-            bit 0-4 = light organ (unemulated :)) )
-            bit 5-7 = sound parameter (unemulated, it's very difficult to
-                      figure out how those work)
+  85        PIO PORT B
+            bit 0-2 = light organ
+            bit 3-4 = control panel (not connected)
+            bit 5-7 = sound parameter (not used on production units?)
 
   86        PIO CTRL A
 
@@ -125,16 +122,21 @@ I currently haven't figured out how the I/O port handling for the book-
 mark system works.
 
 Uniquely the Poly-Play has a light organ which totally confuses you whilst
-playing the automaton. Bits 1-5 of PORTB control the organ but it's not
-emulated now. ;) (An external artwork file could be created that simulates
-this.)
+playing the automaton. Bits 0-2 of PORTB control the organ.
 
 ***************************************************************************/
 
 #include "emu.h"
+#include "includes/polyplay.h"
+
 #include "cpu/z80/z80.h"
 #include "cpu/z80/z80daisy.h"
-#include "includes/polyplay.h"
+
+#include "screen.h"
+#include "speaker.h"
+
+#include "polyplay.lh"
+
 
 static const z80_daisy_config daisy_chain_zre[] =
 {
@@ -150,6 +152,11 @@ static const z80_daisy_config daisy_chain_zrepp[] =
 	{ Z80SIO_TAG },
 	{ nullptr }
 };
+
+INTERRUPT_GEN_MEMBER(polyplay_state::nmi_handler)
+{
+	m_maincpu->set_input_line(INPUT_LINE_NMI, PULSE_LINE);
+}
 
 /* I/O Port handling */
 WRITE_LINE_MEMBER(polyplay_state::ctc_zc2_w)
@@ -176,14 +183,47 @@ READ8_MEMBER(polyplay_state::pio_portb_r)
 
 WRITE8_MEMBER(polyplay_state::pio_portb_w)
 {
-	/* ZRE
-pio_portb_w: 78
-	*/
+	uint8_t lightState = data & 0x07;
+	//uint8_t soundState = data & 0xe0;
 
-	/* ZRE-PP
-pio_portb_w: f8
-	*/
-	osd_printf_verbose("pio_portb_w: %02x\n", data);
+	// there is a DS8205D attached to bit 0 and 1
+	switch (lightState)
+	{
+		case 0:
+			output().set_lamp_value(1, 1);
+			output().set_lamp_value(2, 0);
+			output().set_lamp_value(3, 0);
+			output().set_lamp_value(4, 0);
+			break;
+
+		case 1:
+			output().set_lamp_value(1, 0);
+			output().set_lamp_value(2, 1);
+			output().set_lamp_value(3, 0);
+			output().set_lamp_value(4, 0);
+			break;
+
+		case 2:
+			output().set_lamp_value(1, 0);
+			output().set_lamp_value(2, 0);
+			output().set_lamp_value(3, 1);
+			output().set_lamp_value(4, 0);
+			break;
+
+		case 3:
+			output().set_lamp_value(1, 0);
+			output().set_lamp_value(2, 0);
+			output().set_lamp_value(3, 0);
+			output().set_lamp_value(4, 1);
+			break;
+
+		default:
+			output().set_lamp_value(1, 0);
+			output().set_lamp_value(2, 0);
+			output().set_lamp_value(3, 0);
+			output().set_lamp_value(4, 0);
+			break;
+	}
 }
 
 INPUT_CHANGED_MEMBER(polyplay_state::input_changed)
@@ -203,11 +243,11 @@ ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( polyplay_mem_zrepp, AS_PROGRAM, 8, polyplay_state )
 	AM_RANGE(0x0000, 0xbfff) AM_ROM
-	
+
 	AM_RANGE(0xc000, 0xcfff) AM_RAM
-	
+
 	AM_RANGE(0xd000, 0xd7ff) AM_ROM AM_REGION("gfx1", 0)
-	
+
 	AM_RANGE(0xea00, 0xebff) AM_RAM
 	AM_RANGE(0xec00, 0xf7ff) AM_RAM_WRITE(polyplay_characterram_w) AM_SHARE("characterram")
 
@@ -223,7 +263,7 @@ ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( polyplay_io_zrepp, AS_IO, 8, polyplay_state )
 	AM_IMPORT_FROM(polyplay_io_zre)
-	// TODO: add SIO ports here
+	AM_RANGE(0x88, 0x8b) AM_DEVREADWRITE(Z80SIO_TAG, z80sio_device, cd_ba_r, cd_ba_w)
 ADDRESS_MAP_END
 
 static INPUT_PORTS_START( polyplay )
@@ -274,6 +314,7 @@ static MACHINE_CONFIG_START( polyplay_zre, polyplay_state )
 	MCFG_Z80_DAISY_CHAIN(daisy_chain_zre)
 	MCFG_CPU_PROGRAM_MAP(polyplay_mem_zre)
 	MCFG_CPU_IO_MAP(polyplay_io_zre)
+	MCFG_CPU_PERIODIC_INT_DRIVER(polyplay_state, nmi_handler, 100) /* A302 - zero cross detection from AC (50Hz) */
 
 	/* devices */
 	MCFG_DEVICE_ADD(Z80CTC_TAG, Z80CTC, POLYPLAY_MAIN_CLOCK / 4) /* UB857D */
@@ -281,14 +322,14 @@ static MACHINE_CONFIG_START( polyplay_zre, polyplay_state )
 	MCFG_Z80CTC_ZC0_CB(WRITELINE(polyplay_state, ctc_zc0_w))
 	MCFG_Z80CTC_ZC1_CB(WRITELINE(polyplay_state, ctc_zc1_w))
 	//MCFG_Z80CTC_ZC2_CB(WRITELINE(polyplay_state, ctc_zc2_w))
-	
+
 	MCFG_DEVICE_ADD(Z80PIO_TAG, Z80PIO, POLYPLAY_MAIN_CLOCK / 4) /* UB855D */
 	MCFG_Z80PIO_OUT_INT_CB(INPUTLINE(Z80CPU_TAG, INPUT_LINE_IRQ0))
 	MCFG_Z80PIO_IN_PA_CB(READ8(polyplay_state, pio_porta_r))
 	MCFG_Z80PIO_OUT_PA_CB(WRITE8(polyplay_state, pio_porta_w))
 	MCFG_Z80PIO_IN_PB_CB(READ8(polyplay_state, pio_portb_r))
 	MCFG_Z80PIO_OUT_PB_CB(WRITE8(polyplay_state, pio_portb_w))
-	
+
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_REFRESH_RATE(50)
@@ -369,8 +410,20 @@ ROM_END
 
 ROM_START( polyplay2 )
 	ROM_REGION( 0x10000, Z80CPU_TAG, 0 )
+	ROM_LOAD( "2_1.ROM",           0x0000, 0x2000, CRC(d728ca42) SHA1(7359a59ba7f205b3ac95c8a0946093f24bdaa4da) )
+	ROM_LOAD( "2_2.ROM",           0x2000, 0x2000, CRC(52316236) SHA1(88c159621d40953240c5d2f1d6dcebb8f5e1ee81) )
+	ROM_LOAD( "2_3.ROM",           0x4000, 0x2000, CRC(e199d303) SHA1(fea2c3c659222553f36b3e922c6ac017f7111025) )
+	ROM_LOAD( "2_4.ROM",           0x6000, 0x2000, CRC(1324c2e2) SHA1(c0102d5abbb2f4dbb5b8dff5ad515bc3f2af9166) )
+	ROM_LOAD( "2_5.ROM",           0x8000, 0x2000, CRC(2e959fe9) SHA1(1f0a80bb26d0ae332d4a4313ec22ab7eefcf1e34) )
+	ROM_LOAD( "2_6.ROM",           0xA000, 0x2000, CRC(85774542) SHA1(420349a0d812bc0052a77cbc6c5ab84262e58b32) )
+
+	ROM_REGION( 0x800, "gfx1", 0 )
+	ROM_LOAD( "1_1.bin",           0x0000, 0x0800, CRC(4f028af9) SHA1(319537234069b43cfffafe567cc599ae05f24e23) )
+ROM_END
+
+ROM_START( polyplay2c )
+	ROM_REGION( 0x10000, Z80CPU_TAG, 0 )
 	ROM_LOAD( "2_1.bin",           0x0000, 0x2000, CRC(bf22f44f) SHA1(dd412b45f49ceffe336d905043c7af2447c577a0) )
-	
 	ROM_LOAD( "2_2.bin",           0x2000, 0x2000, CRC(e54b8be8) SHA1(23037102eab60fd03c349ad154b2498139e84dd4) )
 	ROM_LOAD( "2_3.bin",           0x4000, 0x2000, CRC(ac43ec6b) SHA1(1662e10d80d47c1e3c54d4ef232c0d671fecce96) )
 	ROM_LOAD( "2_4.bin",           0x6000, 0x2000, CRC(703f3d46) SHA1(5ab571cb63ffdbce86b6e452988402e5c1098009) )
@@ -381,5 +434,6 @@ ROM_START( polyplay2 )
 ROM_END
 
 /* game driver */
-GAME( 1986, polyplay,  0, polyplay_zre,   polyplay, driver_device, 0, ROT0, "VEB Polytechnik Karl-Marx-Stadt", "Poly-Play (ZRE)",            0 )
-GAME( 1989, polyplay2, 0, polyplay_zrepp, polyplay, driver_device, 0, ROT0, "VEB Polytechnik Karl-Marx-Stadt", "Poly-Play (ZRE-PP - Czech)", 0 )
+GAMEL( 1986, polyplay,   0,         polyplay_zre,   polyplay, driver_device, 0, ROT0, "VEB Polytechnik Karl-Marx-Stadt", "Poly-Play (ZRE)",            0, layout_polyplay )
+GAMEL( 1989, polyplay2,  0,         polyplay_zrepp, polyplay, driver_device, 0, ROT0, "VEB Polytechnik Karl-Marx-Stadt", "Poly-Play (ZRE-PP)",         0, layout_polyplay )
+GAMEL( 1989, polyplay2c, polyplay2, polyplay_zrepp, polyplay, driver_device, 0, ROT0, "VEB Polytechnik Karl-Marx-Stadt", "Poly-Play (ZRE-PP - Czech)", 0, layout_polyplay )

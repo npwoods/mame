@@ -35,7 +35,7 @@ static void writeusage(std::wostream &output, bool write_word_usage, const struc
 		L"%s %s %s %s\n",
 		(write_word_usage ? L"Usage:" : L"      "),
 		wstring_from_utf8(cmdname),
-		c->name,
+		wstring_from_utf8(c->name),
 		c->usage ? wstring_from_utf8(c->usage) : std::wstring());
 }
 
@@ -236,8 +236,8 @@ static int cmd_dir(const struct command *c, int argc, char *argv[])
 
 		if (!ent.lastmodified_time.empty())
 		{
-			time_t t = ent.lastmodified_time.to_time_t();
-			strftime(last_modified, sizeof(last_modified), "%d-%b-%y %H:%M:%S", localtime(&t));
+			std::tm t = ent.lastmodified_time.localtime();
+			strftime(last_modified, sizeof(last_modified), "%d-%b-%y %H:%M:%S", &t);
 		}
 
 		if (ent.hardlink)

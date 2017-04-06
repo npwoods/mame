@@ -1,13 +1,15 @@
 // license:BSD-3-Clause
 // copyright-holders:Martin Buchholz
 // thanks-to:James Wallace, Martin Buchholz, Juergen Oppermann, Volker Hann, Jan-Ole Christian
+#ifndef MAME_INCLUDES_POLYPLAY_H
+#define MAME_INCLUDES_POLYPLAY_H
 
 #include "machine/z80ctc.h"
 #include "machine/z80pio.h"
 #include "machine/z80sio.h"
-#include "sound/speaker.h"
+#include "sound/spkrdev.h"
 
-#define POLYPLAY_MAIN_CLOCK XTAL_9_8304MHz 
+#define POLYPLAY_MAIN_CLOCK XTAL_9_8304MHz
 
 #define Z80CPU_TAG     "maincpu"
 #define Z80CTC_TAG     "z80ctc"
@@ -42,6 +44,8 @@ public:
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
 
+	INTERRUPT_GEN_MEMBER(nmi_handler);
+
 	/* devices */
 	DECLARE_WRITE_LINE_MEMBER(ctc_zc0_w);
 	DECLARE_WRITE_LINE_MEMBER(ctc_zc1_w);
@@ -59,10 +63,12 @@ public:
 	uint8_t m_flipflop2;
 	required_device<speaker_sound_device> m_speaker1;
 	required_device<speaker_sound_device> m_speaker2;
-	
+
 	/* video */
 	virtual void video_start() override;
-	DECLARE_WRITE8_MEMBER(polyplay_characterram_w); 
+	DECLARE_WRITE8_MEMBER(polyplay_characterram_w);
 	DECLARE_PALETTE_INIT(polyplay);
 	uint32_t screen_update_polyplay(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 };
+
+#endif // MAME_INCLUDES_POLYPLAY_H

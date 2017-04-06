@@ -76,6 +76,9 @@ Stephh's notes (based on the games Z80 code and some tests) :
 
 #include "sound/2203intf.h"
 
+#include "screen.h"
+#include "speaker.h"
+
 
 class pipeline_state : public driver_device
 {
@@ -88,8 +91,8 @@ public:
 		, m_palette(*this, "palette")
 		, m_vram1(*this, "vram1")
 		, m_vram2(*this, "vram2")
-		{
-		}
+	{
+	}
 
 	DECLARE_WRITE8_MEMBER(vram2_w);
 	DECLARE_WRITE8_MEMBER(vram1_w);
@@ -110,20 +113,20 @@ public:
 	TIMER_CALLBACK_MEMBER(protection_deferred_w);
 
 protected:
-	required_device<cpu_device>			m_maincpu;
-	required_device<m68705r_device>		m_mcu;
-	required_device<gfxdecode_device>	m_gfxdecode;
-	required_device<palette_device>		m_palette;
+	required_device<cpu_device>         m_maincpu;
+	required_device<m68705r_device>     m_mcu;
+	required_device<gfxdecode_device>   m_gfxdecode;
+	required_device<palette_device>     m_palette;
 
-	required_shared_ptr<u8>	m_vram1;
-	required_shared_ptr<u8>	m_vram2;
+	required_shared_ptr<u8> m_vram1;
+	required_shared_ptr<u8> m_vram2;
 
 	tilemap_t *m_tilemap1;
 	tilemap_t *m_tilemap2;
 
-	u8						m_vidctrl;
-	std::unique_ptr<u8[]>	m_palram;
-	u8						m_fromMCU;
+	u8                      m_vidctrl;
+	std::unique_ptr<u8[]>   m_palram;
+	u8                      m_fromMCU;
 };
 
 

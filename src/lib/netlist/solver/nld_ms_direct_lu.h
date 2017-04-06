@@ -4,7 +4,7 @@
  * nld_ms_direct.h
  *
  */
-
+#if 0
 #ifndef NLD_MS_DIRECT_H_
 #define NLD_MS_DIRECT_H_
 
@@ -345,10 +345,10 @@ void matrix_solver_direct_t<m_N, storage_N>::vsetup(analog_net_t::list_t &nets)
 	if(0)
 		for (unsigned k = 0; k < N(); k++)
 		{
-			netlist().log("{1:3}: ", k);
+			log("{1:3}: ", k);
 			for (unsigned j = 0; j < m_terms[k]->m_nzrd.size(); j++)
-				netlist().log(" {1:3}", m_terms[k]->m_nzrd[j]);
-			netlist().log("\n");
+				log(" {1:3}", m_terms[k]->m_nzrd[j]);
+			log("\n");
 		}
 
 	/*
@@ -634,3 +634,4 @@ matrix_solver_direct_t<m_N, storage_N>::matrix_solver_direct_t(const eSolverType
 } // namespace netlist
 
 #endif /* NLD_MS_DIRECT_H_ */
+#endif

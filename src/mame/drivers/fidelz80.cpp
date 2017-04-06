@@ -20,6 +20,7 @@
     - VBRC card scanner
     - VBRC MCU T1 is unknown
     - Z80 WAIT pin is not fully emulated, affecting VBRC speech busy state
+    - DSC: what controls the 2 middle leds? or unused?
 
     Read the official manual(s) on how to play.
 
@@ -490,7 +491,8 @@ expect that the software reads these once on startup only.
 ******************************************************************************/
 
 #include "emu.h"
-#include "includes/fidelz80.h"
+#include "includes/fidelbase.h"
+
 #include "cpu/z80/z80.h"
 #include "cpu/mcs48/mcs48.h"
 #include "machine/i8255.h"
@@ -498,20 +500,22 @@ expect that the software reads these once on startup only.
 #include "machine/z80pio.h"
 #include "sound/beep.h"
 #include "sound/volt_reg.h"
+#include "speaker.h"
 
 // internal artwork
 #include "fidel_cc.lh" // clickable
 #include "fidel_bcc.lh" // clickable
+#include "fidel_dsc.lh" // clickable
 #include "fidel_vcc.lh" // clickable
 #include "fidel_vbrc.lh"
 #include "fidel_vsc.lh" // clickable
 
 
-class fidelz80_state : public fidelz80base_state
+class fidelz80_state : public fidelbase_state
 {
 public:
 	fidelz80_state(const machine_config &mconfig, device_type type, const char *tag)
-		: fidelz80base_state(mconfig, type, tag),
+		: fidelbase_state(mconfig, type, tag),
 		m_mcu(*this, "mcu"),
 		m_z80pio(*this, "z80pio"),
 		m_ppi8255(*this, "ppi8255"),
@@ -527,6 +531,9 @@ public:
 	optional_device<i8243_device> m_i8243;
 	optional_device<timer_device> m_beeper_off;
 	optional_device<beep_device> m_beeper;
+
+	TIMER_DEVICE_CALLBACK_MEMBER(irq_on) { m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE); }
+	TIMER_DEVICE_CALLBACK_MEMBER(irq_off) { m_maincpu->set_input_line(INPUT_LINE_IRQ0, CLEAR_LINE); }
 
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
@@ -565,12 +572,18 @@ public:
 	DECLARE_READ8_MEMBER(vbrc_mcu_t1_r);
 	DECLARE_READ8_MEMBER(vbrc_mcu_p2_r);
 	DECLARE_WRITE8_MEMBER(vbrc_ioexp_port_w);
+
+	// DSC
+	void dsc_prepare_display();
+	DECLARE_WRITE8_MEMBER(dsc_control_w);
+	DECLARE_WRITE8_MEMBER(dsc_select_w);
+	DECLARE_READ8_MEMBER(dsc_input_r);
 };
 
 
 // machine start/reset
 
-void fidelz80base_state::machine_start()
+void fidelbase_state::machine_start()
 {
 	// zerofill
 	memset(m_display_state, 0, sizeof(m_display_state));
@@ -603,7 +616,7 @@ void fidelz80base_state::machine_start()
 	save_item(NAME(m_speech_bank));
 }
 
-void fidelz80base_state::machine_reset()
+void fidelbase_state::machine_reset()
 {
 }
 
@@ -618,9 +631,9 @@ void fidelz80base_state::machine_reset()
 // The device may strobe the outputs very fast, it is unnoticeable to the user.
 // To prevent flickering here, we need to simulate a decay.
 
-void fidelz80base_state::display_update()
+void fidelbase_state::display_update()
 {
-	uint32_t active_state[0x20];
+	u32 active_state[0x20];
 
 	for (int y = 0; y < m_display_maxy; y++)
 	{
@@ -633,7 +646,7 @@ void fidelz80base_state::display_update()
 				m_display_decay[y][x] = m_display_wait;
 
 			// determine active state
-			uint32_t ds = (m_display_decay[y][x] != 0) ? 1 : 0;
+			u32 ds = (m_display_decay[y][x] != 0) ? 1 : 0;
 			active_state[y] |= (ds << x);
 		}
 	}
@@ -671,7 +684,7 @@ void fidelz80base_state::display_update()
 	memcpy(m_display_cache, active_state, sizeof(m_display_cache));
 }
 
-TIMER_DEVICE_CALLBACK_MEMBER(fidelz80base_state::display_decay_tick)
+TIMER_DEVICE_CALLBACK_MEMBER(fidelbase_state::display_decay_tick)
 {
 	// slowly turn off unpowered segments
 	for (int y = 0; y < m_display_maxy; y++)
@@ -682,13 +695,13 @@ TIMER_DEVICE_CALLBACK_MEMBER(fidelz80base_state::display_decay_tick)
 	display_update();
 }
 
-void fidelz80base_state::set_display_size(int maxx, int maxy)
+void fidelbase_state::set_display_size(int maxx, int maxy)
 {
 	m_display_maxx = maxx;
 	m_display_maxy = maxy;
 }
 
-void fidelz80base_state::set_display_segmask(uint32_t digits, uint32_t mask)
+void fidelbase_state::set_display_segmask(u32 digits, u32 mask)
 {
 	// set a segment mask per selected digit, but leave unselected ones alone
 	for (int i = 0; i < 0x20; i++)
@@ -699,12 +712,12 @@ void fidelz80base_state::set_display_segmask(uint32_t digits, uint32_t mask)
 	}
 }
 
-void fidelz80base_state::display_matrix(int maxx, int maxy, uint32_t setx, uint32_t sety, bool update)
+void fidelbase_state::display_matrix(int maxx, int maxy, u32 setx, u32 sety, bool update)
 {
 	set_display_size(maxx, maxy);
 
 	// update current state
-	uint32_t mask = (1 << maxx) - 1;
+	u32 mask = (1 << maxx) - 1;
 	for (int y = 0; y < maxy; y++)
 		m_display_state[y] = (sety >> y & 1) ? ((setx & mask) | (1 << maxx)) : 0;
 
@@ -715,9 +728,9 @@ void fidelz80base_state::display_matrix(int maxx, int maxy, uint32_t setx, uint3
 
 // generic input handlers
 
-uint16_t fidelz80base_state::read_inputs(int columns)
+u16 fidelbase_state::read_inputs(int columns)
 {
-	uint16_t ret = 0;
+	u16 ret = 0;
 
 	// read selected input rows
 	for (int i = 0; i < columns; i++)
@@ -739,9 +752,9 @@ INPUT_CHANGED_MEMBER(fidelz80_state::reset_button)
 
 // cartridge
 
-DEVICE_IMAGE_LOAD_MEMBER(fidelz80base_state, scc_cartridge)
+DEVICE_IMAGE_LOAD_MEMBER(fidelbase_state, scc_cartridge)
 {
-	uint32_t size = m_cart->common_get_size("rom");
+	u32 size = m_cart->common_get_size("rom");
 
 	// max size is 16KB?
 	if (size > 0x4000)
@@ -769,7 +782,7 @@ DEVICE_IMAGE_LOAD_MEMBER(fidelz80base_state, scc_cartridge)
 void fidelz80_state::vcc_prepare_display()
 {
 	// 4 7seg leds (note: sel d0 for extra leds)
-	uint8_t outdata = (m_7seg_data & 0x7f) | (m_led_select << 7 & 0x80);
+	u8 outdata = (m_7seg_data & 0x7f) | (m_led_select << 7 & 0x80);
 	set_display_segmask(0xf, 0x7f);
 	display_matrix(8, 4, outdata, m_led_select >> 2 & 0xf);
 }
@@ -836,7 +849,7 @@ WRITE8_MEMBER(fidelz80_state::vcc_ppi_portb_w)
 READ8_MEMBER(fidelz80_state::vcc_ppi_portc_r)
 {
 	// d0-d3: multiplexed inputs (active low), also language switches
-	uint8_t lan = (~m_led_select & 0x40) ? m_inp_matrix[4]->read() : 0;
+	u8 lan = (~m_led_select & 0x40) ? m_inp_matrix[4]->read() : 0;
 	return ~(lan | read_inputs(4)) & 0xf;
 }
 
@@ -879,7 +892,7 @@ WRITE8_MEMBER(fidelz80_state::cc10_ppi_porta_w)
 WRITE8_MEMBER(fidelz80_state::bcc_control_w)
 {
 	// a0-a2,d7: digit segment data via NE591, Q7 is speaker out
-	uint8_t mask = 1 << (offset & 7);
+	u8 mask = 1 << (offset & 7);
 	m_7seg_data = (m_7seg_data & ~mask) | ((data & 0x80) ? mask : 0);
 	m_dac->write(BIT(m_7seg_data, 7));
 
@@ -951,7 +964,7 @@ READ8_MEMBER(fidelz80_state::vsc_pio_porta_r)
 
 READ8_MEMBER(fidelz80_state::vsc_pio_portb_r)
 {
-	uint8_t data = 0;
+	u8 data = 0;
 
 	// d4: TSI BUSY line
 	data |= (m_speech->busy_r()) ? 0 : 0x10;
@@ -987,7 +1000,7 @@ WRITE8_MEMBER(fidelz80_state::vsc_pio_portb_w)
 void fidelz80_state::vbrc_prepare_display()
 {
 	// 14seg led segments, d15 is extra led, d14 is unused (tone on prototype?)
-	uint16_t outdata = BITSWAP16(m_7seg_data,12,13,1,6,5,2,0,7,15,11,10,14,4,3,9,8);
+	u16 outdata = BITSWAP16(m_7seg_data,12,13,1,6,5,2,0,7,15,11,10,14,4,3,9,8);
 	set_display_segmask(0xff, 0x3fff);
 	display_matrix(16, 8, outdata, m_led_select);
 }
@@ -1036,6 +1049,45 @@ READ8_MEMBER(fidelz80_state::vbrc_mcu_t1_r)
 {
 	// T1: ? (locks up on const 0 or 1)
 	return rand() & 1;
+}
+
+
+
+/******************************************************************************
+    DSC
+******************************************************************************/
+
+// TTL
+
+void fidelz80_state::dsc_prepare_display()
+{
+	// 4 7seg leds
+	set_display_segmask(0xf, 0x7f);
+	display_matrix(8, 4, m_7seg_data, m_led_select);
+}
+
+WRITE8_MEMBER(fidelz80_state::dsc_control_w)
+{
+	// d0-d7: input mux, 7seg data
+	m_inp_mux = ~data;
+	m_7seg_data = data;
+	dsc_prepare_display();
+}
+
+WRITE8_MEMBER(fidelz80_state::dsc_select_w)
+{
+	// d4: speaker out
+	m_dac->write(BIT(~data, 4));
+	
+	// d0-d3: digit select
+	m_led_select = data & 0xf;
+	dsc_prepare_display();
+}
+
+READ8_MEMBER(fidelz80_state::dsc_input_r)
+{
+	// d0-d7: multiplexed inputs (active low)
+	return ~read_inputs(8);
 }
 
 
@@ -1093,7 +1145,7 @@ ADDRESS_MAP_END
 // VSC io: A2 is 8255 _CE, A3 is Z80 PIO _CE - in theory, both chips can be accessed simultaneously
 READ8_MEMBER(fidelz80_state::vsc_io_trampoline_r)
 {
-	uint8_t data = 0xff; // open bus
+	u8 data = 0xff; // open bus
 	if (~offset & 4)
 		data &= m_ppi8255->read(space, offset & 3);
 	if (~offset & 8)
@@ -1137,6 +1189,18 @@ static ADDRESS_MAP_START( vbrc_mcu_map, AS_IO, 8, fidelz80_state )
 	AM_RANGE(MCS48_PORT_PROG, MCS48_PORT_PROG) AM_DEVWRITE("i8243", i8243_device, i8243_prog_w)
 	AM_RANGE(MCS48_PORT_T0, MCS48_PORT_T0) AM_READ(vbrc_mcu_t0_r)
 	AM_RANGE(MCS48_PORT_T1, MCS48_PORT_T1) AM_READ(vbrc_mcu_t1_r)
+ADDRESS_MAP_END
+
+
+// DSC
+
+static ADDRESS_MAP_START( dsc_map, AS_PROGRAM, 8, fidelz80_state )
+	ADDRESS_MAP_UNMAP_HIGH
+	AM_RANGE(0x0000, 0x1fff) AM_ROM
+	AM_RANGE(0x4000, 0x4000) AM_MIRROR(0x1fff) AM_WRITE(dsc_control_w)
+	AM_RANGE(0x6000, 0x6000) AM_MIRROR(0x1fff) AM_WRITE(dsc_select_w)
+	AM_RANGE(0x8000, 0x8000) AM_MIRROR(0x1fff) AM_READ(dsc_input_r)
+	AM_RANGE(0xa000, 0xa3ff) AM_MIRROR(0x1c00) AM_RAM
 ADDRESS_MAP_END
 
 
@@ -1422,8 +1486,8 @@ static INPUT_PORTS_START( vsc )
 	PORT_BIT(0xc0, IP_ACTIVE_HIGH, IPT_UNUSED)
 
 	PORT_START("IN.10") // hardwired (2 diodes)
-	PORT_CONFNAME( 0x01, 0x00, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
 	PORT_CONFNAME( 0x02, 0x00, DEF_STR( Unknown ) )
 	PORT_CONFSETTING(    0x00, DEF_STR( Off ) )
@@ -1434,9 +1498,30 @@ static INPUT_PORTS_START( vscg )
 	PORT_INCLUDE( vsc )
 
 	PORT_MODIFY("IN.10")
-	PORT_CONFNAME( 0x01, 0x01, "Language" )
-	PORT_CONFSETTING(    0x00, "English" )
+	PORT_CONFNAME( 0x01, 0x01, DEF_STR( Language ) )
+	PORT_CONFSETTING(    0x00, DEF_STR( English ) )
 	PORT_CONFSETTING(    0x01, "Other" )
+INPUT_PORTS_END
+
+
+static INPUT_PORTS_START( dsc )
+	PORT_INCLUDE( cb_buttons )
+
+	PORT_MODIFY("IN.4")
+	PORT_BIT(0x8f, IP_ACTIVE_HIGH, IPT_UNUSED)
+
+	PORT_MODIFY("IN.6")
+	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("Black King")
+
+	PORT_MODIFY("IN.7")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("Black")
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_NAME("White King")
+	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("White")
+	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("RV")
+	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("RE")
+	PORT_BIT(0x20, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("PB")
+	PORT_BIT(0x40, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("LV")
+	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("CL")
 INPUT_PORTS_END
 
 
@@ -1452,7 +1537,7 @@ static MACHINE_CONFIG_START( bcc, fidelz80_state )
 	MCFG_CPU_PROGRAM_MAP(bcc_map)
 	MCFG_CPU_IO_MAP(bcc_io)
 
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelz80base_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_DEFAULT_LAYOUT(layout_fidel_bcc)
 
 	/* sound hardware */
@@ -1476,7 +1561,7 @@ static MACHINE_CONFIG_START( cc10, fidelz80_state )
 	MCFG_I8255_IN_PORTC_CB(READ8(fidelz80_state, vcc_ppi_portc_r))
 	MCFG_I8255_OUT_PORTC_CB(WRITE8(fidelz80_state, vcc_ppi_portc_w))
 
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelz80base_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_DEFAULT_LAYOUT(layout_fidel_cc)
 
 	/* sound hardware */
@@ -1500,7 +1585,7 @@ static MACHINE_CONFIG_START( vcc, fidelz80_state )
 	MCFG_I8255_IN_PORTC_CB(READ8(fidelz80_state, vcc_ppi_portc_r))
 	MCFG_I8255_OUT_PORTC_CB(WRITE8(fidelz80_state, vcc_ppi_portc_w))
 
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelz80base_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_DEFAULT_LAYOUT(layout_fidel_vcc)
 
 	MCFG_MACHINE_START_OVERRIDE(fidelz80_state,vcc)
@@ -1515,22 +1600,22 @@ MACHINE_CONFIG_END
 static MACHINE_CONFIG_START( vsc, fidelz80_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, 3900000) // 3.9MHz resonator
+	MCFG_CPU_ADD("maincpu", Z80, XTAL_3_9MHz) // 3.9MHz resonator
 	MCFG_CPU_PROGRAM_MAP(vsc_map)
 	MCFG_CPU_IO_MAP(vsc_io)
-	MCFG_CPU_PERIODIC_INT_DRIVER(fidelz80base_state, nmi_line_pulse, 600) // 555 timer, approx 600hz
+	MCFG_CPU_PERIODIC_INT_DRIVER(fidelz80_state, nmi_line_pulse, 587) // 555 timer, measured
 
 	MCFG_DEVICE_ADD("ppi8255", I8255, 0)
 	MCFG_I8255_OUT_PORTA_CB(WRITE8(fidelz80_state, vsc_ppi_porta_w))
 	MCFG_I8255_OUT_PORTB_CB(WRITE8(fidelz80_state, vsc_ppi_portb_w))
 	MCFG_I8255_OUT_PORTC_CB(WRITE8(fidelz80_state, vsc_ppi_portc_w))
 
-	MCFG_DEVICE_ADD("z80pio", Z80PIO, XTAL_4MHz)
+	MCFG_DEVICE_ADD("z80pio", Z80PIO, XTAL_3_9MHz)
 	MCFG_Z80PIO_IN_PA_CB(READ8(fidelz80_state, vsc_pio_porta_r))
 	MCFG_Z80PIO_IN_PB_CB(READ8(fidelz80_state, vsc_pio_portb_r))
 	MCFG_Z80PIO_OUT_PB_CB(WRITE8(fidelz80_state, vsc_pio_portb_w))
 
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelz80base_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_DEFAULT_LAYOUT(layout_fidel_vsc)
 
 	/* sound hardware */
@@ -1553,7 +1638,7 @@ static MACHINE_CONFIG_START( vbrc, fidelz80_state )
 
 	MCFG_I8243_ADD("i8243", NOOP, WRITE8(fidelz80_state, vbrc_ioexp_port_w))
 
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelz80base_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_DEFAULT_LAYOUT(layout_fidel_vbrc)
 
 	/* sound hardware */
@@ -1561,6 +1646,25 @@ static MACHINE_CONFIG_START( vbrc, fidelz80_state )
 	MCFG_SOUND_ADD("speech", S14001A, 25000) // R/C circuit, around 25khz
 	MCFG_S14001A_BSY_HANDLER(INPUTLINE("maincpu", Z80_INPUT_LINE_WAIT))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.75)
+MACHINE_CONFIG_END
+
+static MACHINE_CONFIG_START( dsc, fidelz80_state )
+
+	/* basic machine hardware */
+	MCFG_CPU_ADD("maincpu", Z80, XTAL_3_9MHz) // 3.9MHz resonator
+	MCFG_CPU_PROGRAM_MAP(dsc_map)
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_on", fidelz80_state, irq_on, attotime::from_hz(523)) // from 555 timer (22nF, 120K, 2.7K)
+	MCFG_TIMER_START_DELAY(attotime::from_hz(523) - attotime::from_usec(41)) // active for 41us
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_off", fidelz80_state, irq_off, attotime::from_hz(523))
+
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_DEFAULT_LAYOUT(layout_fidel_dsc)
+
+	/* sound hardware */
+	MCFG_SPEAKER_STANDARD_MONO("speaker")
+	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25)
+	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
+	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 MACHINE_CONFIG_END
 
 
@@ -1731,6 +1835,12 @@ ROM_START( bridgec3 ) // 510-1016 Rev.1 PCB has neither locations nor ic labels,
 ROM_END
 
 
+ROM_START( damesc ) // model DSC, PCB label 510-1030A01
+	ROM_REGION( 0x10000, "maincpu", 0 )
+	ROM_LOAD( "101-1027a01", 0x0000, 0x2000, CRC(d86c985c) SHA1(20f923a24420050fd16e1172f5e889f144d17ac9) ) // MOS 2364
+ROM_END
+
+
 
 /******************************************************************************
     Drivers
@@ -1757,3 +1867,5 @@ CONS( 1980, vscfr,    vsc,    0,      vsc,     vscg,   driver_device, 0, "Fideli
 
 CONS( 1979, vbrc,     0,      0,      vbrc,    vbrc,   driver_device, 0, "Fidelity Electronics", "Voice Bridge Challenger", MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING )
 CONS( 1980, bridgec3, vbrc,   0,      vbrc,    vbrc,   driver_device, 0, "Fidelity Electronics", "Bridge Challenger III", MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING )
+
+CONS( 1981, damesc,   0,      0,      dsc,     dsc,    driver_device, 0, "Fidelity Electronics", "Dame Sensory Challenger", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )

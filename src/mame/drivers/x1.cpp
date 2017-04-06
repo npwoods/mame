@@ -206,9 +206,15 @@
 
 ************************************************************************************************/
 
+#include "emu.h"
 #include "includes/x1.h"
-#include "formats/2d_dsk.h"
+
+#include "screen.h"
 #include "softlist.h"
+#include "speaker.h"
+
+#include "formats/2d_dsk.h"
+
 
 #define MAIN_CLOCK XTAL_16MHz
 #define VDP_CLOCK  XTAL_42_9545MHz
@@ -644,7 +650,7 @@ uint16_t x1_state::check_keyboard_press()
 						if (scancode >= 0x2c && scancode <= 0x5f)
 							scancode = kanatable[scancode - 0x2c][1];
 					}
-					
+
 					if (scancode >= 0x41 && scancode < 0x5a)
 						scancode += 0x20;  // lowercase
 				}
@@ -658,7 +664,7 @@ uint16_t x1_state::check_keyboard_press()
 								scancode = kanatable[scancode - 0x2c][2];
 						}
 					}
-					
+
 					if(scancode >= 0x31 && scancode < 0x3a)
 						scancode -= 0x10;
 					if(scancode == 0x30)

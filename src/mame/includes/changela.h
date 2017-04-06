@@ -2,6 +2,7 @@
 // copyright-holders:Jarek Burczynski, Phil Stroffolino, Tomasz Slanina
 
 #include "cpu/m6805/m68705.h"
+#include "screen.h"
 
 
 class changela_state : public driver_device
@@ -85,14 +86,14 @@ public:
 
 protected:
 	// memory pointers
-	required_shared_ptr<u8>			m_spriteram;
-	required_shared_ptr<u8>			m_videoram;
-	required_shared_ptr<u8>			m_colorram;
+	required_shared_ptr<u8>         m_spriteram;
+	required_shared_ptr<u8>         m_videoram;
+	required_shared_ptr<u8>         m_colorram;
 
 	// devices
-	required_device<m68705p_device>	m_mcu;
-	required_device<cpu_device>		m_maincpu;
-	required_device<screen_device>	m_screen;
+	required_device<m68705p_device> m_mcu;
+	required_device<cpu_device>     m_maincpu;
+	required_device<screen_device>  m_screen;
 	required_device<palette_device> m_palette;
 
 	// mcu-related

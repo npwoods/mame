@@ -110,18 +110,22 @@ public:
 	static void static_set_option_device_input_defaults(device_t &device, const char *option, const input_device_default *default_input) { static_option(device, option)->m_input_device_defaults = default_input; }
 	static void static_set_option_clock(device_t &device, const char *option, u32 default_clock) { static_option(device, option)->m_clock = default_clock; }
 	bool fixed() const { return m_fixed; }
+	bool has_selectable_options() const;
 	const char *default_option() const { return m_default_option; }
 	const std::unordered_map<std::string, std::unique_ptr<device_slot_option>> &option_list() const { return m_options; }
-	device_slot_option *option(const char *name) const { if (name) { auto search = m_options.find(name); if (search != m_options.end()) return search->second.get(); else return nullptr; } else return nullptr; }
+	device_slot_option *option(const char *name) const;
 	virtual std::string get_default_card_software() { return std::string(); }
-	device_t *get_card_device();
+	device_t *get_card_device() { return m_card_device; }
+	void set_card_device(device_t *dev) { m_card_device = dev; }
 
 private:
 	// internal state
-	static device_slot_option *static_option(device_t &device, const char *option);
 	std::unordered_map<std::string,std::unique_ptr<device_slot_option>> m_options;
 	const char *m_default_option;
 	bool m_fixed;
+	device_t *m_card_device;
+
+	static device_slot_option *static_option(device_t &device, const char *option);
 };
 
 // iterator

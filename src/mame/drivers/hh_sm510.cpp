@@ -12,7 +12,8 @@
 #include "emu.h"
 #include "cpu/sm510/sm510.h"
 #include "cpu/sm510/kb1013vk1-2.h"
-#include "sound/speaker.h"
+#include "sound/spkrdev.h"
+#include "speaker.h"
 
 #include "hh_sm510_test.lh" // common test-layout - use external artwork
 
@@ -34,11 +35,11 @@ public:
 	optional_device<speaker_sound_device> m_speaker;
 
 	// misc common
-	uint16_t m_inp_mux;                 // multiplexed inputs mask
-	int m_inp_lines;                    // number of input mux columns
-	uint8_t m_lcd_output_cache[0x100];
+	u16 m_inp_mux;                 // multiplexed inputs mask
+	int m_inp_lines;               // number of input mux columns
+	u8 m_lcd_output_cache[0x100];
 
-	uint8_t read_inputs(int columns);
+	u8 read_inputs(int columns);
 
 	virtual void update_k_line();
 	virtual DECLARE_INPUT_CHANGED_MEMBER(input_changed);
@@ -87,7 +88,7 @@ WRITE16_MEMBER(hh_sm510_state::lcd_segment_w)
 	for (int seg = 0; seg < 0x10; seg++)
 	{
 		int index = offset << 4 | seg;
-		uint8_t state = data >> seg & 1;
+		u8 state = data >> seg & 1;
 
 		if (state != m_lcd_output_cache[index])
 		{
@@ -107,9 +108,9 @@ WRITE16_MEMBER(hh_sm510_state::lcd_segment_w)
 
 // generic input handlers - usually S output is input mux, and K input for buttons
 
-uint8_t hh_sm510_state::read_inputs(int columns)
+u8 hh_sm510_state::read_inputs(int columns)
 {
-	uint8_t ret = 0;
+	u8 ret = 0;
 
 	// read selected input rows
 	for (int i = 0; i < columns; i++)
