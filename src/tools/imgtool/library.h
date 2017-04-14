@@ -84,17 +84,9 @@ namespace imgtool
 		{
 		}
 
-		datetime(datetime_type type, std::chrono::time_point<std::chrono::system_clock> tp)
-			: m_type(type)
-			, m_time_point(imgtool_clock::from_system_clock(tp))
-		{
-		}
-
-		datetime(datetime_type type, time_t t)
-			: datetime(type, std::chrono::system_clock::from_time_t(t))
-		{
-		}
-
+		datetime(datetime_type type, std::chrono::time_point<std::chrono::system_clock> tp);
+		datetime(datetime_type type, time_t t);
+		datetime(datetime_type type, tm &t);
 		datetime(const datetime &that) = default;
 		datetime(datetime &&that) = default;
 
@@ -110,6 +102,9 @@ namespace imgtool
 			m_time_point = that.m_time_point;
 			return *this;
 		}
+
+		// returns the current time
+		static datetime now(datetime_type type);
 
 		// returns time structures
 		std::tm localtime() const;

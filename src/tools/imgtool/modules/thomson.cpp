@@ -502,7 +502,7 @@ static imgtool::datetime thom_crack_time(thom_dirent* d)
 	t.tm_mday = d->day;
 	t.tm_mon = d->month - 1;
 	t.tm_year = (d->year < 65 ) ? d->year + 100 : d->year;
-	return imgtool::datetime(imgtool::datetime::datetime_type::LOCAL, &t);
+	return imgtool::datetime(imgtool::datetime::datetime_type::LOCAL, t);
 }
 
 static void thom_make_time(thom_dirent* d, time_t time)

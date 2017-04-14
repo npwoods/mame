@@ -324,7 +324,7 @@ static imgtool::datetime amiga_crack_time(amiga_date *date)
 	t.tm_min  = date->mins % 60;
 	t.tm_sec  = date->ticks / 50;
 
-	return imgtool::datetime(imgtool::datetime::datetime_type::LOCAL, &t);
+	return imgtool::datetime(imgtool::datetime::datetime_type::LOCAL, t);
 }
 
 

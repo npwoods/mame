@@ -203,7 +203,7 @@ static imgtool::datetime prodos_crack_time(uint32_t prodos_time)
 
 	if (t.tm_year <= 49)
 		t.tm_year += 100;
-	return imgtool::datetime(imgtool::datetime::datetime_type::LOCAL, &t);
+	return imgtool::datetime(imgtool::datetime::datetime_type::LOCAL, t);
 }
 
 

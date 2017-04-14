@@ -15,6 +15,10 @@
 
 typedef util::arbitrary_clock<std::uint32_t, 1904, 1, 1, 0, 0, 0, std::ratio<1, 1> > classic_mac_clock;
 
+//-------------------------------------------------
+//  mac_crack_time
+//-------------------------------------------------
+
 imgtool::datetime mac_crack_time(uint32_t t)
 {
 	classic_mac_clock::duration d(t);
@@ -23,6 +27,9 @@ imgtool::datetime mac_crack_time(uint32_t t)
 }
 
 
+//-------------------------------------------------
+//  mac_setup_time
+//-------------------------------------------------
 
 uint32_t mac_setup_time(const imgtool::datetime &t)
 {
@@ -31,15 +38,31 @@ uint32_t mac_setup_time(const imgtool::datetime &t)
 }
 
 
+//-------------------------------------------------
+//  mac_setup_time
+//-------------------------------------------------
 
-uint32_t mac_time_now(void)
+uint32_t mac_setup_time(time_t t)
 {
-	auto now = std::chrono::system_clock::now();
-	imgtool::datetime dt(imgtool::datetime::datetime_type::LOCAL, now);
+	imgtool::datetime dt(imgtool::datetime::datetime_type::LOCAL, t);
 	return mac_setup_time(dt);
 }
 
 
+//-------------------------------------------------
+//  mac_time_now
+//-------------------------------------------------
+
+uint32_t mac_time_now(void)
+{
+	imgtool::datetime dt = imgtool::datetime::now(imgtool::datetime::datetime_type::LOCAL);
+	return mac_setup_time(dt);
+}
+
+
+//-------------------------------------------------
+//  mac_identify_fork
+//-------------------------------------------------
 
 imgtoolerr_t mac_identify_fork(const char *fork_string, mac_fork_t *fork_num)
 {

@@ -20,6 +20,82 @@ namespace imgtool {
 
 
 //-------------------------------------------------
+//  datetime ctor
+//-------------------------------------------------
+
+datetime::datetime(datetime_type type, std::chrono::time_point<std::chrono::system_clock> tp)
+	: m_type(type)
+	, m_time_point(imgtool_clock::from_system_clock(tp))
+{
+}
+
+
+//-------------------------------------------------
+//  datetime ctor
+//-------------------------------------------------
+
+datetime::datetime(datetime_type type, time_t t)
+	: datetime(type, std::chrono::system_clock::from_time_t(t))
+{
+}
+
+
+//-------------------------------------------------
+//  datetime ctor
+//-------------------------------------------------
+
+datetime::datetime(datetime_type type, tm &t)
+	: datetime(type, mktime(&t))
+{
+}
+
+
+//-------------------------------------------------
+//  datetime::now
+//-------------------------------------------------
+
+datetime datetime::now(datetime_type type)
+{
+	return imgtool::datetime(
+		type,
+		std::chrono::system_clock::now());
+}
+
+
+//-------------------------------------------------
+//  datetime::localtime
+//-------------------------------------------------
+
+std::tm datetime::localtime() const
+{
+	// TODO
+	throw false;
+}
+
+
+//-------------------------------------------------
+//  datetime::gmtime
+//-------------------------------------------------
+
+std::tm datetime::gmtime() const
+{
+	// TODO
+	throw false;
+}
+
+
+//-------------------------------------------------
+//  datetime::to_time_t
+//-------------------------------------------------
+
+time_t datetime::to_time_t() const
+{
+	// TODO
+	throw false;
+}
+
+
+//-------------------------------------------------
 //  ctor
 //-------------------------------------------------
 
