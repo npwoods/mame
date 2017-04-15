@@ -407,6 +407,7 @@ MACHINES["CXD1095"] = true
 --MACHINES["DM9334"] = true
 MACHINES["DP8390"] = true
 MACHINES["DS1204"] = true
+MACHINES["DS1205"] = true
 MACHINES["DS1302"] = true
 --MACHINES["DS1315"] = true
 --MACHINES["DS1386"] = true
@@ -499,6 +500,7 @@ MACHINES["MPU401"] = true
 MACHINES["MSM5832"] = true
 MACHINES["MSM58321"] = true
 MACHINES["MSM6242"] = true
+MACHINES["MSM6253"] = true
 --MACHINES["NCR5380"] = true
 --MACHINES["NCR5380N"] = true
 --MACHINES["NCR5390"] = true
@@ -4124,6 +4126,8 @@ files {
 
 createMAMEProjects(_target, _subtarget, "vsystem")
 files {
+	MAME_DIR .. "src/mame/machine/vs9209.cpp",
+	MAME_DIR .. "src/mame/machine/vs9209.h",
 	MAME_DIR .. "src/mame/video/vsystem_gga.cpp",
 	MAME_DIR .. "src/mame/video/vsystem_gga.h",
 	MAME_DIR .. "src/mame/video/vsystem_spr.cpp",
