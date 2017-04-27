@@ -253,7 +253,7 @@ void mame_menubar::build_configurable_devices_menu()
 void mame_menubar::build_device_slot_menu(menu_item &menu, const device_slot_interface &slot)
 {
 	// get information about this slot's value
-	std::string current_option_value = machine().options().main_value(slot.device().tag() + 1);
+	const std::string &current_option_value = machine().options().slot_options()[slot.device().tag() + 1].value();
 	device_slot_option *current_option = slot.option(current_option_value.c_str());
 
 	std::string dev_menu_text = string_format(current_option ? "%s: %s" : "%s",
