@@ -602,6 +602,7 @@ MACHINES["GENPC"] = true
 MACHINES["GEN_LATCH"] = true
 MACHINES["WATCHDOG"] = true
 MACHINES["INPUT_MERGER"] = true
+MACHINES["K054321"] = true
 
 --------------------------------------------------
 -- specify available bus cores
@@ -2930,6 +2931,7 @@ files {
 
 createMAMEProjects(_target, _subtarget, "nmk")
 files {
+	MAME_DIR .. "src/mame/drivers/acchi.cpp",
 	MAME_DIR .. "src/mame/drivers/acommand.cpp",
 	MAME_DIR .. "src/mame/drivers/cultures.cpp",
 	MAME_DIR .. "src/mame/drivers/ddealer.cpp",
@@ -3735,6 +3737,7 @@ files {
 	MAME_DIR .. "src/mame/includes/rollrace.h",
 	MAME_DIR .. "src/mame/video/rollrace.cpp",
 	MAME_DIR .. "src/mame/drivers/sbowling.cpp",
+	MAME_DIR .. "src/mame/drivers/scyclone.cpp",
 	MAME_DIR .. "src/mame/drivers/slapshot.cpp",
 	MAME_DIR .. "src/mame/includes/slapshot.h",
 	MAME_DIR .. "src/mame/video/slapshot.cpp",
@@ -4309,6 +4312,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/st_mp100.cpp",
 	MAME_DIR .. "src/mame/drivers/st_mp200.cpp",
 	MAME_DIR .. "src/mame/drivers/stargame.cpp",
+	MAME_DIR .. "src/mame/drivers/supstarf.cpp",
 	MAME_DIR .. "src/mame/drivers/taito.cpp",
 	MAME_DIR .. "src/mame/drivers/techno.cpp",
 	MAME_DIR .. "src/mame/drivers/vd.cpp",
@@ -4698,6 +4702,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/ice_tbd.cpp",
 	MAME_DIR .. "src/mame/drivers/umipoker.cpp",
 	MAME_DIR .. "src/mame/drivers/unkhorse.cpp",
+	MAME_DIR .. "src/mame/drivers/usbilliards.cpp",
 	MAME_DIR .. "src/mame/drivers/usgames.cpp",
 	MAME_DIR .. "src/mame/includes/usgames.h",
 	MAME_DIR .. "src/mame/video/usgames.cpp",

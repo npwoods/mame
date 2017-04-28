@@ -250,6 +250,7 @@ public:
 	}
 
 	bool user_loadable() const { return m_user_loadable; }
+	const std::string &full_software_name() const { return m_full_software_name; }
 
 protected:
 	// interface-level overrides
@@ -293,6 +294,7 @@ protected:
 	image_error_t m_err;
 	std::string m_err_message;
 
+private:
 	// variables that are only non-zero when an image is mounted
 	util::core_file::ptr m_file;
 	std::unique_ptr<emu_file> m_mame_file;
@@ -306,7 +308,6 @@ protected:
 	const software_part *m_software_part_ptr;
 	std::string m_software_list_name;
 
-private:
 	static image_error_t image_error_from_file_error(osd_file::error filerr);
 	std::vector<u32> determine_open_plan(bool is_create);
 	void update_names();
@@ -333,7 +334,7 @@ private:
 	// flags
 	bool m_readonly;
 	bool m_created;
-	
+
 	// special - used when creating
 	int m_create_format;
 	util::option_resolution *m_create_args;

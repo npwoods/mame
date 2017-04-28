@@ -57,20 +57,14 @@ bool mame_options::add_slot_options(emu_options &options, value_specifier_func v
 
 			// add the option
 			options.add_entry(name, nullptr, OPTION_STRING | OPTION_FLAG_DEVICE, slot.default_option(), true);
-			options.slot_options()[name] = slot_option();
+			options.slot_options()[name] = slot_option(slot.default_option());
 
 			// allow opportunity to specify this value
 			if (value_specifier)
 			{
-				std::string value = value_specifier(name);
-				if (value != value_specifier_invalid_value())
-				{
-					const device_slot_option *option = slot.option(value.c_str());
-					if (option)
-					{
-						options.slot_options()[name] = emu_options::parse_slot_option(std::move(value), option->selectable());
-					}
-				}
+				std::string specified_value = value_specifier(name);
+				if (specified_value != value_specifier_invalid_value())
+					options.slot_options()[name].specify(std::move(specified_value));
 			}
 		}
 	}
@@ -121,7 +115,7 @@ void mame_options::update_slot_options(emu_options &options, const software_part
 
 
 //-------------------------------------------------
-//	get_default_card_software
+//  get_default_card_software
 //-------------------------------------------------
 
 std::string mame_options::get_default_card_software(device_slot_interface &slot, const emu_options &options)
@@ -136,7 +130,7 @@ std::string mame_options::get_default_card_software(device_slot_interface &slot,
 		auto iter = options.image_options().find(image->instance_name());
 		if (iter != options.image_options().end())
 			image_path = iter->second;
-		
+
 		get_hashfile_extrainfo = [image, &options](util::core_file &file, std::string &extrainfo)
 		{
 			util::hash_collection hashes = image->calculate_hash_on_file(file);
@@ -307,13 +301,6 @@ bool mame_options::reevaluate_slot_options(emu_options &options)
 				if (options.slot_options()[name].default_card_software() != default_card_software)
 				{
 					options.slot_options()[name].set_default_card_software(std::move(default_card_software));
-
-					// the value of this slot option has changed.  we may need to change is_selectable(); this
-					// should really be encapsulated within emu_options
-					const device_slot_option *option = slot.option(options.slot_options()[name].value().c_str());
-					if (option)
-						options.slot_options()[name].set_is_selectable(option->selectable());
-
 					result = true;
 				}
 			}
