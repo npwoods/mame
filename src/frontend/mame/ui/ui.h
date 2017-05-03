@@ -260,7 +260,7 @@ private:
 	static slider_state     *slider_current;
 
 	// UI menubar
-	ui::menubar				*m_menubar;
+	std::unique_ptr<ui::menubar> m_menubar;
 
 	// UI handlers
 	uint32_t handler_messagebox(render_container &container);

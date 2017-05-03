@@ -1288,8 +1288,8 @@ uint32_t mame_ui_manager::handler_ingame_old(render_container &container)
 uint32_t mame_ui_manager::handler_ingame_menus(render_container &container)
 {
 	// no menubar? create it
-	if (m_menubar == nullptr)
-		m_menubar = auto_alloc(machine(), ui::mame_menubar(*this));
+	if (!m_menubar)
+		m_menubar = std::make_unique<ui::mame_menubar>(*this);
 
 	// call image display
 	image_handler_ingame();
@@ -1301,8 +1301,7 @@ uint32_t mame_ui_manager::handler_ingame_menus(render_container &container)
 	if (m_menubar->has_been_invoked())
 	{
 		// if so, flush the menubar
-		auto_free(machine(), m_menubar);
-		m_menubar = nullptr;
+		m_menubar.reset();
 	}
 
 	return 0;
