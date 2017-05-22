@@ -57,6 +57,7 @@
 #include "coco_multi.h"
 #include "coco_232.h"
 #include "coco_orch90.h"
+#include "coco_gmc.h"
 #include "coco_pak.h"
 #include "coco_fdc.h"
 
@@ -74,6 +75,7 @@
 static SLOT_INTERFACE_START(coco_cart_slot1_3)
 	SLOT_INTERFACE("rs232", COCO_232)
 	SLOT_INTERFACE("orch90", COCO_ORCH90)
+	SLOT_INTERFACE("games_master", COCO_PAK_GMC)
 	SLOT_INTERFACE("banked_16k", COCO_PAK_BANKED)
 	SLOT_INTERFACE("pak", COCO_PAK)
 SLOT_INTERFACE_END
@@ -82,12 +84,13 @@ static SLOT_INTERFACE_START(coco_cart_slot4)
 	SLOT_INTERFACE("fdcv11", COCO_FDC_V11)
 	SLOT_INTERFACE("rs232", COCO_232)
 	SLOT_INTERFACE("orch90", COCO_ORCH90)
+	SLOT_INTERFACE("games_master", COCO_PAK_GMC)
 	SLOT_INTERFACE("banked_16k", COCO_PAK_BANKED)
 	SLOT_INTERFACE("pak", COCO_PAK)
 SLOT_INTERFACE_END
 
 
-static MACHINE_CONFIG_FRAGMENT(coco_multi)
+static MACHINE_CONFIG_START(coco_multi)
 	MCFG_COCO_CARTRIDGE_ADD(SLOT1_TAG, coco_cart_slot1_3, nullptr)
 	MCFG_COCO_CARTRIDGE_CART_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_slot1_cart_w))
 	MCFG_COCO_CARTRIDGE_NMI_CB(DEVWRITELINE(DEVICE_SELF, coco_multipak_device, multi_slot1_nmi_w))

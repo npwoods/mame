@@ -18,7 +18,7 @@
 //  DEVICE DEFINITIONS
 //**************************************************************************
 
-DEFINE_DEVICE_TYPE(EPSON_PF10, epson_pf10_device, "epson_pf10_device", "EPSON PF-10 Portable Floppy Unit")
+DEFINE_DEVICE_TYPE(EPSON_PF10, epson_pf10_device, "epson_pf10", "EPSON PF-10 Portable Floppy Unit")
 
 
 //-------------------------------------------------
@@ -64,7 +64,7 @@ static SLOT_INTERFACE_START( pf10_floppies )
 	SLOT_INTERFACE( "smd165", EPSON_SMD_165 )
 SLOT_INTERFACE_END
 
-static MACHINE_CONFIG_FRAGMENT( pf10 )
+static MACHINE_CONFIG_START( pf10 )
 	MCFG_CPU_ADD("maincpu", HD6303Y, XTAL_4_9152MHz) // HD63A03XF
 	MCFG_CPU_PROGRAM_MAP(cpu_mem)
 	MCFG_CPU_IO_MAP(cpu_io)

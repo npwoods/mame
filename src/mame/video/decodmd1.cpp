@@ -204,7 +204,7 @@ static ADDRESS_MAP_START( decodmd1_io_map, AS_IO, 8, decodmd_type1_device )
 	AM_RANGE(0x00, 0xff) AM_READWRITE(dmd_port_r, dmd_port_w)
 ADDRESS_MAP_END
 
-static MACHINE_CONFIG_FRAGMENT( decodmd1 )
+static MACHINE_CONFIG_START( decodmd1 )
 	/* basic machine hardware */
 	MCFG_CPU_ADD("dmdcpu", Z80, XTAL_8MHz / 2)
 	MCFG_CPU_PROGRAM_MAP(decodmd1_map)
@@ -252,7 +252,7 @@ void decodmd_type1_device::device_reset()
 	m_rom = memregion(m_gfxtag);
 
 	memset(RAM,0,0x2000);
-	memset(m_pixels,0,0x200);
+	memset(m_pixels,0,0x200*sizeof(uint32_t));
 
 	ROM = m_rom->base();
 	m_rombank1->configure_entries(0, 8, &ROM[0x0000], 0x4000);

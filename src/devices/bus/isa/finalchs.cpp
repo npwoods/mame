@@ -46,7 +46,7 @@ static ADDRESS_MAP_START(finalchs_mem , AS_PROGRAM, 8, isa8_finalchs_device)
 	AM_RANGE( 0x8000, 0xffff ) AM_ROM
 ADDRESS_MAP_END
 
-static MACHINE_CONFIG_FRAGMENT( finalchs_config )
+static MACHINE_CONFIG_START( finalchs_config )
 	MCFG_CPU_ADD("maincpu",M65C02,5000000)
 	MCFG_CPU_PROGRAM_MAP(finalchs_mem)
 MACHINE_CONFIG_END
@@ -106,7 +106,6 @@ void isa8_finalchs_device::device_start()
 	//the included setup program allows any port from 0x100 to 0x1F0 to be selected, at increments of 0x10
 	//picked the following at random until we get dips hooked up
 	m_isa->install_device(0x160, 0x0161, read8_delegate(FUNC(isa8_finalchs_device::finalchs_r), this), write8_delegate(FUNC(isa8_finalchs_device::finalchs_w), this));
-//  timer_pulse(machine, ATTOTIME_IN_HZ(1), nullptr, 0, cause_M6502_irq);
 }
 
 //-------------------------------------------------

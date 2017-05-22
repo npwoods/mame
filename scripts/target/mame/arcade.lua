@@ -371,6 +371,7 @@ MACHINES["TTL74153"] = true
 MACHINES["TTL74157"] = true
 --MACHINES["TTL74161"] = true
 --MACHINES["TTL74164"] = true
+MACHINES["TTL74166"] = true
 --MACHINES["TTL74175"] = true
 MACHINES["TTL74181"] = true
 MACHINES["TTL7474"] = true
@@ -1294,13 +1295,13 @@ files {
 	MAME_DIR .. "src/mame/drivers/bfm_sc4.cpp",
 	MAME_DIR .. "src/mame/drivers/bfm_sc5.cpp",
 	MAME_DIR .. "src/mame/includes/bfm_sc5.h",
-	MAME_DIR .. "src/mame/drivers/bfm_sc5.hxx",
+	MAME_DIR .. "src/mame/drivers/bfm_sc5sw.hxx",
 	MAME_DIR .. "src/mame/drivers/bfm_ad5.cpp",
 	MAME_DIR .. "src/mame/includes/bfm_ad5.h",
-	MAME_DIR .. "src/mame/drivers/bfm_ad5.hxx",
+	MAME_DIR .. "src/mame/drivers/bfm_ad5sw.hxx",
 	MAME_DIR .. "src/mame/machine/bfm_sc45_helper.cpp",
 	MAME_DIR .. "src/mame/machine/bfm_sc45_helper.h",
-	MAME_DIR .. "src/mame/includes/bfm_sc45.h",
+	MAME_DIR .. "src/mame/includes/bfm_sc4.h",
 	MAME_DIR .. "src/mame/drivers/bfm_swp.cpp",
 	MAME_DIR .. "src/mame/drivers/bfmsys83.cpp",
 	MAME_DIR .. "src/mame/drivers/bfmsys85.cpp",

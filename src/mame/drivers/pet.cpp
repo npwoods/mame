@@ -1683,7 +1683,7 @@ MACHINE_RESET_MEMBER( cbm8296_state, cbm8296 )
 //  MACHINE_CONFIG( 4k )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_FRAGMENT( 4k )
+static MACHINE_CONFIG_START( 4k )
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("4K")
 	MCFG_RAM_EXTRA_OPTIONS("8K,16K,32K")
@@ -1694,7 +1694,7 @@ MACHINE_CONFIG_END
 //  MACHINE_CONFIG( 8k )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_FRAGMENT( 8k )
+static MACHINE_CONFIG_START( 8k )
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("8K")
 	MCFG_RAM_EXTRA_OPTIONS("16K,32K")
@@ -1705,7 +1705,7 @@ MACHINE_CONFIG_END
 //  MACHINE_CONFIG( 8k )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_FRAGMENT( 16k )
+static MACHINE_CONFIG_START( 16k )
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("16K")
 	MCFG_RAM_EXTRA_OPTIONS("32K")
@@ -1716,7 +1716,7 @@ MACHINE_CONFIG_END
 //  MACHINE_CONFIG( 8k )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_FRAGMENT( 32k )
+static MACHINE_CONFIG_START( 32k )
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("32K")
 MACHINE_CONFIG_END
@@ -2857,7 +2857,7 @@ COMP( 1980, cbm4016,      pet4016,    0,      cbm4016,    pet,        pet_state,
 COMP( 1980, cbm4032,      pet4016,    0,      cbm4032,    pet,        pet_state,       0,  "Commodore Business Machines",  "CBM 4032",     MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 COMP( 1980, cbm4032f,     pet4016,    0,      cbm4032f,   pet,        pet_state,       0,  "Commodore Business Machines",  "CBM 4032 (Fat 40)",     MACHINE_SUPPORTS_SAVE )
 COMP( 1980, pet4032b,     0,          0,      pet4032b,   petb,       pet2001b_state,  0,  "Commodore Business Machines",  "PET 4032B",    MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
-COMP( 1980, cbm4032b,     pet4032b,   0,      cbm4032b,   petb,       pet_state,       0,  "Commodore Business Machines",  "CBM 4032B",    MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+COMP( 1980, cbm4032b,     pet4032b,   0,      cbm4032b,   petb,       pet2001b_state,  0,  "Commodore Business Machines",  "CBM 4032B",    MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 COMP( 1980, pet8032,      0,          0,      pet8032,    petb,       pet80_state,     0,  "Commodore Business Machines",  "PET 8032",     MACHINE_SUPPORTS_SAVE )
 COMP( 1981, cbm8032,      pet8032,    0,      pet8032,    petb,       pet80_state,     0,  "Commodore Business Machines",  "CBM 8032",     MACHINE_SUPPORTS_SAVE )
 COMP( 1981, cbm8032_de,   pet8032,    0,      pet8032,    petb_de,    pet80_state,     0,  "Commodore Business Machines",  "CBM 8032 (Germany)",           MACHINE_SUPPORTS_SAVE )

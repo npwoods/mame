@@ -800,6 +800,7 @@ FORMATS["GTP_CAS"] = true
 FORMATS["HECTOR_MINIDISC"] = true
 FORMATS["HECT_DSK"] = true
 FORMATS["HECT_TAP"] = true
+FORMATS["HPI_DSK"] = true
 FORMATS["HP_IPC_DSK"] = true
 FORMATS["IQ151_DSK"] = true
 FORMATS["ITT3030_DSK"] = true
@@ -1315,7 +1316,7 @@ files {
 	MAME_DIR .. "src/mame/machine/apricotkb.cpp",
 	MAME_DIR .. "src/mame/machine/apricotkb.h",
 	MAME_DIR .. "src/mame/drivers/victor9k.cpp",
-	MAME_DIR .. "src/mame/includes/victor9k.h",
+--	MAME_DIR .. "src/mame/includes/victor9k.h",
 	MAME_DIR .. "src/mame/machine/victor9k_kb.cpp",
 	MAME_DIR .. "src/mame/machine/victor9k_kb.h",
 	MAME_DIR .. "src/mame/machine/victor9k_fdc.cpp",
@@ -2441,7 +2442,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/mk1.cpp",
 	MAME_DIR .. "src/mame/drivers/mk2.cpp",
 	MAME_DIR .. "src/mame/drivers/novag6502.cpp",
-	MAME_DIR .. "src/mame/drivers/novagbase.h",
+	MAME_DIR .. "src/mame/includes/novagbase.h",
 	MAME_DIR .. "src/mame/drivers/novag68k.cpp",
 	MAME_DIR .. "src/mame/drivers/novagmcs48.cpp",
 	MAME_DIR .. "src/mame/drivers/ssystem3.cpp",
@@ -3252,7 +3253,7 @@ files {
 createMESSProjects(_target, _subtarget, "wang")
 files {
 	MAME_DIR .. "src/mame/drivers/wangpc.cpp",
-	MAME_DIR .. "src/mame/includes/wangpc.h",
+	MAME_DIR .. "src/devices/bus/wangpc/wangpc.h",
 	MAME_DIR .. "src/mame/machine/wangpckb.cpp",
 	MAME_DIR .. "src/mame/machine/wangpckb.h",
 }

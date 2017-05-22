@@ -112,7 +112,7 @@ static const char *const hdc_command_names[] =
 	nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  /* 0xF8-0xFF */
 };
 
-static MACHINE_CONFIG_FRAGMENT( xt_hdc_config )
+static MACHINE_CONFIG_START( xt_hdc_config )
 	MCFG_DEVICE_ADD("hdc",XT_HDC,0)
 	MCFG_XTHDC_IRQ_HANDLER(WRITELINE(isa8_hdc_device,irq_w))
 	MCFG_XTHDC_DRQ_HANDLER(WRITELINE(isa8_hdc_device,drq_w))
@@ -120,7 +120,7 @@ static MACHINE_CONFIG_FRAGMENT( xt_hdc_config )
 	MCFG_HARDDISK_ADD("hdc:slave")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_FRAGMENT( ec1841_hdc_config )
+static MACHINE_CONFIG_START( ec1841_hdc_config )
 	MCFG_DEVICE_ADD("hdc",EC1841_HDC,0)
 	MCFG_XTHDC_IRQ_HANDLER(WRITELINE(isa8_hdc_ec1841_device,irq_w))
 	MCFG_XTHDC_DRQ_HANDLER(WRITELINE(isa8_hdc_ec1841_device,drq_w))
@@ -884,7 +884,7 @@ uint8_t xt_hdc_device::data_r()
 			data_cnt = 0;
 		}
 		data = buffer[data_cnt++];
-		if(data_cnt >= ((sector_cnt[drv] * 512) ? (sector_cnt[drv] * 512) : (256 * 512)))
+		if(data_cnt >= ((sector_cnt[drv]!=0) ? (sector_cnt[drv] * 512) : (256 * 512)))
 		{
 			data_cnt = 0;
 			pc_hdc_result(1);

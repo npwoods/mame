@@ -31,6 +31,7 @@
 #include "bus/coco/coco_fdc.h"
 #include "bus/coco/coco_multi.h"
 #include "bus/coco/coco_orch90.h"
+#include "bus/coco/coco_gmc.h"
 #include "bus/coco/coco_pak.h"
 #include "bus/coco/coco_t4426.h"
 
@@ -252,6 +253,7 @@ SLOT_INTERFACE_START( coco_cart )
 	SLOT_INTERFACE("cp400_fdc", CP400_FDC)
 	SLOT_INTERFACE("rs232", COCO_232)
 	SLOT_INTERFACE("orch90", COCO_ORCH90)
+	SLOT_INTERFACE("games_master", COCO_PAK_GMC)
 	SLOT_INTERFACE("banked_16k", COCO_PAK_BANKED)
 	SLOT_INTERFACE("pak", COCO_PAK)
 	SLOT_INTERFACE("multi", COCO_MULTIPAK) MCFG_SLOT_OPTION_CLOCK("multi", DERIVED_CLOCK(1, 1))
@@ -266,10 +268,10 @@ SLOT_INTERFACE_START( t4426_cart )
 SLOT_INTERFACE_END
 
 //-------------------------------------------------
-//  MACHINE_CONFIG_FRAGMENT( coco_sound )
+//  MACHINE_CONFIG_START( coco_sound )
 //-------------------------------------------------
 
-MACHINE_CONFIG_FRAGMENT( coco_sound )
+MACHINE_CONFIG_START( coco_sound )
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 
 	// 6-bit D/A: R10-15 = 10K, 20K, 40.2K, 80.6K, 162K, 324K (according to parts list); output also controls joysticks

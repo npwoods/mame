@@ -363,7 +363,7 @@ int psxgpu_device::DebugTextureDisplay( bitmap_ind16 &bitmap )
 				}
 				p_n_interleave[ n_x ] = p_p_vram[ n_yi ][ n_xi ];
 			}
-			draw_scanline16( bitmap, 0, n_y, width, p_n_interleave, m_screen->palette()->pens() );
+			draw_scanline16( bitmap, 0, n_y, width, p_n_interleave, m_screen->palette().pens() );
 		}
 	}
 	return m_debug.b_texture;
@@ -3799,7 +3799,7 @@ PALETTE_INIT_MEMBER( psxgpu_device, psx )
 	}
 }
 
-MACHINE_CONFIG_FRAGMENT( psxgpu )
+MACHINE_CONFIG_START( psxgpu )
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_REFRESH_RATE( 60 )
 	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(2500) /* not accurate */)
