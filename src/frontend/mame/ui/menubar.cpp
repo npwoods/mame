@@ -167,7 +167,7 @@ void menubar::handle(render_container &current_container)
 	}
 
 	// is the natural keyboard enabled?
-	if (machine().ioport().natkeyboard().in_use() && (ui().machine().phase() == MACHINE_PHASE_RUNNING))
+	if (machine().ioport().natkeyboard().in_use() && (ui().machine().phase() == machine_phase::RUNNING))
 		 ui().process_natural_keyboard();
 
 	// loop while we have interesting events
