@@ -121,9 +121,10 @@ public:
 	int                                    m_lastclickx;
 	int                                    m_lastclicky;
 
+	int complete_create();
+
 private:
 	void draw_video_contents(HDC dc, int update);
-	int complete_create();
 	void set_starting_view(int index, const char *defview, const char *view);
 	int wnd_extra_width();
 	int wnd_extra_height();
@@ -170,9 +171,11 @@ void winwindow_toggle_fsfx(void);
 void winwindow_process_events_periodic(running_machine &machine);
 void winwindow_process_events(running_machine &machine, bool ingame, bool nodispatch);
 
-void winwindow_ui_pause(running_machine &machine, int pause);
+void winwindow_ui_pause_from_window_thread(running_machine &machine, int pause);
+void winwindow_ui_pause_from_main_thread(running_machine &machine, int pause);
 int winwindow_ui_is_paused(running_machine &machine);
 
+void winwindow_ui_exec_on_main_thread(void (*func)(void *), void *param);
 void winwindow_dispatch_message(running_machine &machine, MSG *message);
 
 extern int win_create_menu(running_machine &machine, HMENU *menus);

@@ -20,6 +20,8 @@
 
 // performance options
 #define WINOPTION_PRIORITY              "priority"
+#define WINOPTION_MULTITHREADING        "multithreading"
+#define WINOPTION_NUMPROCESSORS         "numprocessors"
 #define WINOPTION_PROFILE               "profile"
 
 // video options
@@ -121,6 +123,8 @@ public:
 
 	// performance options
 	int priority() const { return int_value(WINOPTION_PRIORITY); }
+	bool multithreading() const { return bool_value(WINOPTION_MULTITHREADING); }
+	const char *numprocessors() const { return value(WINOPTION_NUMPROCESSORS); }
 	int profile() const { return int_value(WINOPTION_PROFILE); }
 
 	// video options

@@ -6,6 +6,7 @@
 //
 //============================================================
 
+#define LOG_THREADS         0
 #define LOG_TEMP_PAUSE      0
 
 // Needed for RAW Input
@@ -73,10 +74,14 @@ using namespace Windows::UI::Core;
 #define MIN_WINDOW_DIM                  200
 
 // custom window messages
+#define WM_USER_FINISH_CREATE_WINDOW    (WM_USER + 0)
+#define WM_USER_SELF_TERMINATE          (WM_USER + 1)
 #define WM_USER_REDRAW                  (WM_USER + 2)
 #define WM_USER_SET_FULLSCREEN          (WM_USER + 3)
 #define WM_USER_SET_MAXSIZE             (WM_USER + 4)
 #define WM_USER_SET_MINSIZE             (WM_USER + 5)
+#define WM_USER_UI_TEMP_PAUSE           (WM_USER + 6)
+#define WM_USER_EXEC_FUNC               (WM_USER + 7)
 
 
 
@@ -105,12 +110,15 @@ static int in_background;
 static int ui_temp_pause;
 static int ui_temp_was_paused;
 
+static int multithreading_enabled;
+
 static HANDLE window_thread;
 static DWORD window_threadid;
 
 static DWORD last_update_time;
 
 static HANDLE ui_pause_event;
+static HANDLE window_thread_ready_event;
 
 
 
@@ -118,8 +126,52 @@ static HANDLE ui_pause_event;
 //  PROTOTYPES
 //============================================================
 
-
+static unsigned __stdcall thread_entry(void *param);
 static void create_window_class(void);
+
+
+// temporary hacks
+#if LOG_THREADS
+struct mtlog
+{
+	osd_ticks_t timestamp;
+	const char *event;
+};
+
+static mtlog mtlog[100000];
+static volatile LONG mtlogindex;
+
+void mtlog_add(const char *event)
+{
+	int index = atomic_increment32((LONG *) &mtlogindex) - 1;
+	if (index < ARRAY_LENGTH(mtlog))
+	{
+		mtlog[index].timestamp = osd_ticks();
+		mtlog[index].event = event;
+	}
+}
+
+static void mtlog_dump(void)
+{
+	osd_ticks_t cps = osd_ticks_per_second();
+	osd_ticks_t last = mtlog[0].timestamp * 1000000 / cps;
+	int i;
+
+	FILE *f = fopen("mt.log", "w");
+	for (i = 0; i < mtlogindex; i++)
+	{
+		osd_ticks_t curr = mtlog[i].timestamp * 1000000 / cps;
+		fprintf(f, "%20I64d %10I64d %s\n", curr, curr - last, mtlog[i].event);
+		last = curr;
+	}
+	fclose(f);
+}
+#else
+void mtlog_add(const char *event) { }
+static void mtlog_dump(void) { }
+#endif
+
+
 
 //============================================================
 //  window_init
@@ -128,6 +180,9 @@ static void create_window_class(void);
 
 bool windows_osd_interface::window_init()
 {
+	// determine if we are using multithreading or not
+	multithreading_enabled = downcast<windows_options &>(machine().options()).multithreading();
+
 	// get the main thread ID before anything else
 	main_threadid = GetCurrentThreadId();
 
@@ -139,8 +194,30 @@ bool windows_osd_interface::window_init()
 	if (!ui_pause_event)
 		fatalerror("Failed to create pause event\n");
 
-	window_thread = GetCurrentThread();
-	window_threadid = main_threadid;
+	// if multithreading, create a thread to run the windows
+	if (multithreading_enabled)
+	{
+		// create an event to signal when the window thread is ready
+		window_thread_ready_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+		if (!window_thread_ready_event)
+			fatalerror("Failed to create window thread ready event\n");
+
+		// create a thread to run the windows from
+		uintptr_t temp = _beginthreadex(NULL, 0, thread_entry, &machine(), 0, (unsigned *)&window_threadid);
+		window_thread = (HANDLE)temp;
+		if (window_thread == NULL)
+			fatalerror("Failed to create window thread\n");
+
+		// set the thread priority equal to the main MAME thread
+		SetThreadPriority(window_thread, GetThreadPriority(GetCurrentThread()));
+	}
+
+	// otherwise, treat the window thread as the main thread
+	else
+	{
+		window_thread = GetCurrentThread();
+		window_threadid = main_threadid;
+	}
 
 	const int fallbacks[VIDEO_MODE_COUNT] = {
 		-1,                 // NONE -> no fallback
@@ -290,6 +367,15 @@ void windows_osd_interface::window_exit()
 			break;
 		default:
 			break;
+	}
+
+	// if we're multithreaded, clean up the window thread
+	if (multithreading_enabled)
+	{
+		PostThreadMessage(window_threadid, WM_USER_SELF_TERMINATE, 0, 0);
+		WaitForSingleObject(window_thread, INFINITE);
+
+		mtlog_dump();
 	}
 
 	// kill the UI pause event
@@ -777,7 +863,18 @@ void win_window_info::create(running_machine &machine, int index, std::shared_pt
 	// set the initial maximized state
 	window->m_startmaximized = options.maximize();
 
-	window->m_init_state = window->complete_create() ? -1 : 1;
+	// finish the window creation on the window thread
+	if (multithreading_enabled)
+	{
+		// wait until the window thread is ready to respond to events
+		WaitForSingleObject(window_thread_ready_event, INFINITE);
+
+		PostThreadMessage(window_threadid, WM_USER_FINISH_CREATE_WINDOW, 0, (LPARAM)&*window);
+		while (window->m_init_state == 0)
+			Sleep(1);
+	}
+	else
+		window->m_init_state = window->complete_create() ? -1 : 1;
 
 	// handle error conditions
 	if (window->m_init_state == -1)
@@ -886,7 +983,12 @@ void win_window_info::update()
 			// post a redraw request with the primitive list as a parameter
 			last_update_time = timeGetTime();
 
-			SendMessage(platform_window(), WM_USER_REDRAW, 0, (LPARAM)primlist);
+			mtlog_add("winwindow_video_window_update: PostMessage start");
+			if (multithreading_enabled)
+				PostMessage(platform_window(), WM_USER_REDRAW, 0, (LPARAM)primlist);
+			else
+				SendMessage(platform_window(), WM_USER_REDRAW, 0, (LPARAM)primlist);
+			mtlog_add("winwindow_video_window_update: PostMessage end");
 		}
 	}
 }
@@ -948,11 +1050,11 @@ void win_window_info::set_starting_view(int index, const char *defview, const ch
 
 
 //============================================================
-//  winwindow_ui_pause
+//  winwindow_ui_pause_from_main_thread
 //  (main thread)
 //============================================================
 
-void winwindow_ui_pause(running_machine &machine, int pause)
+void winwindow_ui_pause_from_main_thread(running_machine &machine, int pause)
 {
 	int old_temp_pause = ui_temp_pause;
 
@@ -988,7 +1090,57 @@ void winwindow_ui_pause(running_machine &machine, int pause)
 	}
 
 	if (LOG_TEMP_PAUSE)
-		osd_printf_verbose("winwindow_ui_pause(): %d --> %d\n", old_temp_pause, ui_temp_pause);
+		machine.logerror("winwindow_ui_pause_from_main_thread(): %d --> %d\n", old_temp_pause, ui_temp_pause);
+}
+
+
+
+//============================================================
+//  winwindow_ui_pause_from_window_thread
+//  (window thread)
+//============================================================
+
+void winwindow_ui_pause_from_window_thread(running_machine &machine, int pause)
+{
+	assert(GetCurrentThreadId() == window_threadid);
+
+	// if we're multithreaded, we have to request a pause on the main thread
+	if (multithreading_enabled)
+	{
+		// request a pause from the main thread
+		PostThreadMessage(main_threadid, WM_USER_UI_TEMP_PAUSE, pause, 0);
+
+		// if we're pausing, block until it happens
+		if (pause)
+			WaitForSingleObject(ui_pause_event, INFINITE);
+	}
+
+	// otherwise, we just do it directly
+	else
+		winwindow_ui_pause_from_main_thread(machine, pause);
+}
+
+
+
+//============================================================
+//  winwindow_ui_exec_on_main_thread
+//  (window thread)
+//============================================================
+
+void winwindow_ui_exec_on_main_thread(void (*func)(void *), void *param)
+{
+	assert(GetCurrentThreadId() == window_threadid);
+
+	// if we're multithreaded, we have to request a pause on the main thread
+	if (multithreading_enabled)
+	{
+		// request a pause from the main thread
+		PostThreadMessage(main_threadid, WM_USER_EXEC_FUNC, (WPARAM) func, (LPARAM) param);
+	}
+
+	// otherwise, we just do it directly
+	else
+		(*func)(param);
 }
 
 
@@ -1033,6 +1185,104 @@ int win_window_info::wnd_extra_height()
 	AdjustWindowRectEx(&temprect, WINDOW_STYLE, win_has_menu(), WINDOW_STYLE_EX);
 	return rect_height(&temprect) - 100;
 }
+
+
+
+//============================================================
+//  thread_entry
+//  (window thread)
+//============================================================
+
+static unsigned __stdcall thread_entry(void *param)
+{
+	running_machine &machine(*((running_machine *)param));
+	MSG message;
+
+	// make a bogus user call to make us a message thread
+	PeekMessage(&message, NULL, 0, 0, PM_NOREMOVE);
+
+	// attach our input to the main thread
+	AttachThreadInput(main_threadid, window_threadid, TRUE);
+
+	// signal to the main thread that we are ready to receive events
+	SetEvent(window_thread_ready_event);
+
+	// run the message pump
+	while (GetMessage(&message, NULL, 0, 0))
+	{
+		int dispatch = TRUE;
+
+		if ((message.hwnd == NULL) || is_mame_window(message.hwnd))
+		{
+			switch (message.message)
+			{
+				// ignore input messages here
+				case WM_SYSKEYUP:
+				case WM_SYSKEYDOWN:
+					dispatch = FALSE;
+					break;
+
+				// forward mouse button downs to the input system
+				case WM_LBUTTONDOWN:
+					dispatch = !handle_mouse_button(WINOSD(machine), 0, TRUE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				case WM_RBUTTONDOWN:
+					dispatch = !handle_mouse_button(WINOSD(machine), 1, TRUE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				case WM_MBUTTONDOWN:
+					dispatch = !handle_mouse_button(WINOSD(machine), 2, TRUE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				case WM_XBUTTONDOWN:
+					dispatch = !handle_mouse_button(WINOSD(machine), 3, TRUE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				// forward mouse button ups to the input system
+				case WM_LBUTTONUP:
+					dispatch = !handle_mouse_button(WINOSD(machine), 0, FALSE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				case WM_RBUTTONUP:
+					dispatch = !handle_mouse_button(WINOSD(machine), 1, FALSE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				case WM_MBUTTONUP:
+					dispatch = !handle_mouse_button(WINOSD(machine), 2, FALSE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				case WM_XBUTTONUP:
+					dispatch = !handle_mouse_button(WINOSD(machine), 3, FALSE, GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam));
+					break;
+
+				// a terminate message to the thread posts a quit
+				case WM_USER_SELF_TERMINATE:
+					PostQuitMessage(0);
+					dispatch = FALSE;
+					break;
+
+				// handle the "complete create" message
+				case WM_USER_FINISH_CREATE_WINDOW:
+				{
+					win_window_info *window = (win_window_info *)message.lParam;
+					window->m_init_state = window->complete_create() ? -1 : 1;
+					dispatch = FALSE;
+					break;
+				}
+			}
+		}
+
+		// dispatch if necessary
+		if (dispatch)
+		{
+			TranslateMessage(&message);
+			DispatchMessage(&message);
+		}
+	}
+	return 0;
+}
+
 
 
 //============================================================
@@ -1230,14 +1480,14 @@ LRESULT CALLBACK win_window_info::video_window_proc(HWND wnd, UINT message, WPAR
 		case WM_ENTERSIZEMOVE:
 			window->m_resize_state = RESIZE_STATE_RESIZING;
 		case WM_ENTERMENULOOP:
-			winwindow_ui_pause(window->machine(), TRUE);
+			winwindow_ui_pause_from_window_thread(window->machine(), TRUE);
 			break;
 
 		// unpause the system when we stop a menu or resize and force a redraw
 		case WM_EXITSIZEMOVE:
 			window->m_resize_state = RESIZE_STATE_PENDING;
 		case WM_EXITMENULOOP:
-			winwindow_ui_pause(window->machine(), FALSE);
+			winwindow_ui_pause_from_window_thread(window->machine(), FALSE);
 			InvalidateRect(wnd, nullptr, FALSE);
 			break;
 
@@ -1298,7 +1548,10 @@ LRESULT CALLBACK win_window_info::video_window_proc(HWND wnd, UINT message, WPAR
 
 		// close: cause MAME to exit
 		case WM_CLOSE:
-			window->machine().schedule_exit();
+			if (multithreading_enabled)
+				PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
+			else
+				window->machine().schedule_exit();
 			break;
 
 		// destroy: clean up all attached rendering bits and nullptr out our hwnd

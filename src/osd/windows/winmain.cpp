@@ -162,6 +162,8 @@ const options_entry windows_options::s_option_entries[] =
 	// performance options
 	{ nullptr,                                        nullptr,    OPTION_HEADER,     "WINDOWS PERFORMANCE OPTIONS" },
 	{ WINOPTION_PRIORITY "(-15-1)",                   "0",        OPTION_INTEGER,    "thread priority for the main game thread; range from -15 to 1" },
+	{ WINOPTION_MULTITHREADING ";mt",                 "1",        OPTION_BOOLEAN,    "enable multithreading; this enables rendering and blitting on a separate thread" },
+	{ WINOPTION_NUMPROCESSORS ";np",                  "auto",     OPTION_STRING,     "number of processors; this overrides the number the system reports" },
 	{ WINOPTION_PROFILE,                              "0",        OPTION_INTEGER,    "enables profiling, specifying the stack depth to track" },
 
 	// video options
