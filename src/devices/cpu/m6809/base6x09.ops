@@ -365,6 +365,7 @@ BRANCH:
 	eat(1);
 	if (branch_taken())
 	{
+		try_branch_acceleration();
 		m_pc.w += (int8_t) m_temp.b.l;
 	}
 	return;

@@ -277,6 +277,26 @@ protected:
 	uint16_t get_pending_interrupt();
 	void log_illegal();
 
+	inline void try_branch_acceleration()
+	{
+		// recognize the following sequence of instructions:
+		//		LEAX	-$1,X
+		//		BNE		*-2
+		if ((m_temp.b.l == 0xFC) && (m_opcode == 0x26))
+		{
+			auto begin = (const uint8_t *)m_mintf->m_direct->read_ptr(m_pc.w - 4);
+			auto end = (const uint8_t *)m_mintf->m_direct->read_ptr(m_pc.w);
+			if (begin && end && end == begin + 4
+				&& begin[0] == 0x30 && begin[1] == 0x1F
+				&& m_lic_func.isnull())
+			{
+				int loops_to_burn = std::min(m_icount / 8, (int) (m_x.w - 1));
+				m_icount -= loops_to_burn * 8;
+				m_x.w -= loops_to_burn;
+			}
+		}
+	}
+
 private:
 	// address spaces
 	const address_space_config  m_program_config;

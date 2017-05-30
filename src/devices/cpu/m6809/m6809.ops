@@ -14,9 +14,11 @@ MAIN:
 	debugger_instruction_hook(this, m_pc.w);
 
 	// opcode fetch
-	m_lic_func(ASSERT_LINE);
+	if (!m_lic_func.isnull())
+		m_lic_func(ASSERT_LINE);
 	@m_opcode = read_opcode();
-	m_lic_func(CLEAR_LINE);
+	if (!m_lic_func.isnull())
+		m_lic_func(CLEAR_LINE);
 
 	// dispatch opcode
 	switch(m_opcode)

@@ -136,7 +136,7 @@ void m6809_base_device::device_start()
 	m_mintf->m_direct  = &m_mintf->m_program->direct();
 	m_mintf->m_sdirect = &m_mintf->m_sprogram->direct();
 
-	m_lic_func.resolve_safe();
+	m_lic_func.resolve();
 
 	// register our state for the debugger
 	state_add(STATE_GENPCBASE, "CURPC",     m_ppc.w).callimport().noshow();
@@ -534,6 +534,11 @@ void m6809_base_device::write_exgtfr_register(uint8_t reg, m6809_base_device::ex
 	}
 }
 
+
+//-------------------------------------------------
+//  try_branch_acceleration - identify critical
+//	branches and accelerate them
+//-------------------------------------------------
 
 //-------------------------------------------------
 //  log_illegal - used to log hits to illegal
