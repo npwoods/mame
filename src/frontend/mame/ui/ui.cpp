@@ -44,8 +44,6 @@ enum
 	LOADSAVE_SAVE
 };
 
-#define MAX_SAVED_STATE_JOYSTICK   4
-
 
 /***************************************************************************
     LOCAL VARIABLES
@@ -185,9 +183,7 @@ mame_ui_manager::mame_ui_manager(running_machine &machine)
 	, m_show_profiler(false)
 	, m_popup_text_end(0)
 	, m_mouse_arrow_texture(nullptr)
-	, m_mouse_show(false)
-{
-}
+	, m_mouse_show(false) {}
 
 mame_ui_manager::~mame_ui_manager()
 {

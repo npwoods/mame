@@ -28,21 +28,41 @@ public:
 	virtual void custom_render(void *selectedref, float top, float bottom, float x, float y, float x2, float y2) override;
 
 protected:
-	menu_load_save_state_base(mame_ui_manager &mui, render_container &container, const char *header, bool disable_not_found_items);
-	virtual void process_file(const std::string &file_name) = 0;
+	menu_load_save_state_base(mame_ui_manager &mui, render_container &container, const char *header, const char *footer, bool must_exist);
+	virtual void process_file(std::string &&file_name) = 0;
 
 private:
-	const int SLOT_COUNT = 10;
-	static int s_last_slot_selected;
+	class file_entry
+	{
+	public:
+		file_entry() = delete;
+		file_entry(const file_entry &) = delete;
+		file_entry(file_entry &&) = default;
+		file_entry(std::string &&name, const std::chrono::system_clock::time_point &last_modified);
 
-	const char *m_header;
-	bool m_disable_not_found_items;
-	bool m_was_paused;
-	uint32_t m_enabled_mask;
+		const std::string &name() const { return m_name; }
+		const std::chrono::system_clock::time_point &last_modified() const { return m_last_modified; }
 
-	void slot_selected(int slot);
-	static void *itemref_from_slot_number(unsigned int slot);
-	std::unique_ptr<osd::directory::entry> stat_searchpath(std::string const &path, const char *searchpath);
+	private:
+		std::string								m_name;
+		std::chrono::system_clock::time_point   m_last_modified;
+	};
+
+	static std::string							s_last_file_selected;
+
+	std::unordered_map<std::string, file_entry>	m_file_entries;
+	const char *								m_header;
+	const char *								m_footer;
+	bool										m_must_exist;
+	bool										m_was_paused;
+
+	static void *itemref_from_file_entry(const file_entry &entry);
+	static const file_entry &file_entry_from_itemref(void *itemref);
+	void try_select_slot(std::string &&name);
+	void slot_selected(std::string &&name);
+	std::string state_directory() const;
+	bool is_present(const std::string &name) const;
+	std::string poll_joystick();
 };
 
 // ======================> menu_load_state
@@ -53,7 +73,7 @@ public:
 	menu_load_state(mame_ui_manager &mui, render_container &container);
 
 protected:
-	virtual void process_file(const std::string &file_name) override;
+	virtual void process_file(std::string &&file_name) override;
 };
 
 // ======================> menu_save_state
@@ -64,9 +84,9 @@ public:
 	menu_save_state(mame_ui_manager &mui, render_container &container);
 
 protected:
-	virtual void process_file(const std::string &file_name) override;
+	virtual void process_file(std::string &&file_name) override;
 };
 
-}
+};
 
 #endif // MAME_FRONTEND_UI_STATE_H

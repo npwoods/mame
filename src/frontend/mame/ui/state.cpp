@@ -2,9 +2,9 @@
 // copyright-holders:Nathan Woods
 /***************************************************************************
 
-	ui/state.cpp
+    ui/state.cpp
 
-	Menus for saving and loading state
+    Menus for saving and loading state
 
 ***************************************************************************/
 
@@ -14,23 +14,59 @@
 #include "ui/state.h"
 
 
+/***************************************************************************
+    ANONYMOUS NAMESPACE
+***************************************************************************/
+
+namespace {
+
+const int MAX_SAVED_STATE_JOYSTICK = 4;
+
+//-------------------------------------------------
+//  is_valid_state_char - is the specified character
+//  a valid state filename character?
+//-------------------------------------------------
+
+bool is_valid_state_char(char32_t ch)
+{
+	return uchar_is_printable(ch) && osd_is_valid_filename_char(ch);
+}
+
+};
+
 namespace ui {
 
 /***************************************************************************
-	BASE CLASS FOR LOAD AND SAVE
+    FILE ENTRY
 ***************************************************************************/
 
-int menu_load_save_state_base::s_last_slot_selected;
+std::string menu_load_save_state_base::s_last_file_selected;
+
+//-------------------------------------------------
+//  file_entry ctor
+//-------------------------------------------------
+
+menu_load_save_state_base::file_entry::file_entry(std::string &&name, const std::chrono::system_clock::time_point &last_modified)
+	: m_name(std::move(name))
+	, m_last_modified(last_modified)
+{
+}
+
+
+/***************************************************************************
+    BASE CLASS FOR LOAD AND SAVE
+***************************************************************************/
 
 //-------------------------------------------------
 //  ctor
 //-------------------------------------------------
 
-menu_load_save_state_base::menu_load_save_state_base(mame_ui_manager &mui, render_container &container, const char *header, bool disable_not_found_items)
-	: menu(mui, container),
-		m_header(header),
-		m_disable_not_found_items(disable_not_found_items),
-		m_enabled_mask(0)
+menu_load_save_state_base::menu_load_save_state_base(mame_ui_manager &mui, render_container &container, const char *header, const char *footer, bool must_exist)
+	: menu(mui, container)
+	, m_header(header)
+	, m_footer(footer)
+	, m_must_exist(must_exist)
+	, m_was_paused(false)
 {
 }
 
@@ -49,76 +85,69 @@ menu_load_save_state_base::~menu_load_save_state_base()
 
 
 //-------------------------------------------------
-//  itemref_from_slot_number
-//-------------------------------------------------
-
-void *menu_load_save_state_base::itemref_from_slot_number(unsigned int slot)
-{
-	return (void *)(std::uintptr_t(slot));
-}
-
-
-//-------------------------------------------------
 //  populate
 //-------------------------------------------------
 
 void menu_load_save_state_base::populate(float &customtop, float &custombottom)
 {
-	m_enabled_mask = 0;
+	// open the state directory
+	std::string statedir = state_directory();
+	osd::directory::ptr dir = osd::directory::open(statedir);
 
-	// populate all slots
-	for (unsigned int i = 0; i < SLOT_COUNT; i++)
+	// create a separate vector, so we can add sorted entries to the menu
+	std::vector<const file_entry *> m_entries_vec;
+
+	// populate all file entries
+	m_file_entries.clear();
+	if (dir)
 	{
-		// name the save state
-		std::string name = string_format("%d", i);
-
-		// compose the filename
-		std::string file_name = machine().compose_saveload_filename(name.c_str());
-
-		// stat the resulting file
-		auto entry = stat_searchpath(file_name, machine().options().state_directory());
-
-		// get the time as a local time string
-		char time_string[128];
-		if (entry != nullptr)
+		const osd::directory::entry *entry;
+		while ((entry = dir->read()) != nullptr)
 		{
-			auto last_modified = std::chrono::system_clock::to_time_t(entry->last_modified);
-			std::strftime(time_string, sizeof(time_string), "%#c", std::localtime(&last_modified));
+			if (core_filename_ends_with(entry->name, ".sta"))
+			{
+				std::string basename = core_filename_extract_base(entry->name, true);
+				file_entry fileent(std::string(basename), entry->last_modified);
+				auto iter = m_file_entries.emplace(std::make_pair(std::move(basename), std::move(fileent))).first;
+				m_entries_vec.push_back(&iter->second);
+			}
 		}
-		else
-		{
-			snprintf(time_string, ARRAY_LENGTH(time_string), "---");
-		}
-
-		// create the menu text and flags
-		std::string text = string_format("%s: %s", name, time_string);
-
-		// is this item enabled?
-		bool enabled = (entry != nullptr) || !m_disable_not_found_items;
-
-		// if enabled, set the bit field
-		if (enabled)
-			m_enabled_mask |= 1 << i;
-
-		// append the menu item
-		item_append(
-			text,
-			std::string(),
-			enabled ? 0 : FLAG_DISABLE,
-			itemref_from_slot_number(i));
 	}
 
-	// select the most recently used slot
-	if (s_last_slot_selected >= 0
-		&& s_last_slot_selected < SLOT_COUNT
-		&& ((m_enabled_mask & (1 << s_last_slot_selected)) != 0))
+	// sort the vector; put recently modified state files at the top
+	std::sort(
+		m_entries_vec.begin(),
+		m_entries_vec.end(),
+		[this](const file_entry *a, const file_entry *b)
+		{
+			return a->last_modified() > b->last_modified();
+		});
+
+	// add the entries
+	for (const file_entry *entry : m_entries_vec)
 	{
-		auto itemref = itemref_from_slot_number(s_last_slot_selected);
-		set_selection(itemref);
+		// get the time as a local time string
+		char time_string[128];
+		auto last_modified_time_t = std::chrono::system_clock::to_time_t(entry->last_modified());
+		std::strftime(time_string, sizeof(time_string), "%c", std::localtime(&last_modified_time_t));
+
+		// format the text
+		std::string text = util::string_format("%s: %s",
+			entry->name(),
+			time_string);
+
+		// append the menu item
+		void *itemref = itemref_from_file_entry(*entry);
+		item_append(std::move(text), std::string(), 0, itemref);
+
+		// is this item selected?
+		if (entry->name() == s_last_file_selected)
+			set_selection(itemref);
 	}
 
 	// set up custom render proc
 	customtop = ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
+	custombottom = ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
 
 	// pause if appropriate
 	m_was_paused = machine().paused();
@@ -137,19 +166,54 @@ void menu_load_save_state_base::handle()
 	const event *event = process(0);
 
 	// process the event
-	if ((event != nullptr) && (event->iptkey == IPT_UI_SELECT))
+	if (event && (event->iptkey == IPT_UI_SELECT))
 	{
 		// user selected one of the entries
-		slot_selected((int)(size_t)event->itemref);
+		const file_entry &entry = file_entry_from_itemref(event->itemref);
+		slot_selected(std::string(entry.name()));
 	}
-	else if ((event != nullptr) && (event->iptkey == IPT_SPECIAL)
-		&& (event->unichar >= '0') && (event->unichar < '0' + SLOT_COUNT))
+	else if (event && (event->iptkey == IPT_SPECIAL) && is_valid_state_char(event->unichar))
 	{
 		// user pressed a shortcut key
-		int slot = event->unichar - '0';
-		if (m_enabled_mask && 1 << slot)
-			slot_selected(slot);
+		std::string name = utf8_from_uchar(event->unichar);
+		try_select_slot(std::move(name));
 	}
+	else if (!event)
+	{
+		// null event - poll the joystick
+		std::string name = poll_joystick();
+		if (!name.empty())
+			try_select_slot(std::move(name));
+	}
+}
+
+
+//-------------------------------------------------
+//  poll_joystick
+//-------------------------------------------------
+
+std::string menu_load_save_state_base::poll_joystick()
+{
+	for (int joy_index = 0; joy_index <= MAX_SAVED_STATE_JOYSTICK; joy_index++)
+	{
+		for (input_item_id id = ITEM_ID_BUTTON1; id <= ITEM_ID_BUTTON32; ++id)
+		{
+			if (machine().input().code_pressed_once(input_code(DEVICE_CLASS_JOYSTICK, joy_index, ITEM_CLASS_SWITCH, ITEM_MODIFIER_NONE, id)))
+				return util::string_format("joy%i-%i", joy_index, id - ITEM_ID_BUTTON1 + 1);
+		}
+	}
+	return "";
+}
+
+
+//-------------------------------------------------
+//  try_select_slot
+//-------------------------------------------------
+
+void menu_load_save_state_base::try_select_slot(std::string &&name)
+{
+	if (!m_must_exist || is_present(name))
+		slot_selected(std::move(name));
 }
 
 
@@ -157,16 +221,13 @@ void menu_load_save_state_base::handle()
 //  slot_selected
 //-------------------------------------------------
 
-void menu_load_save_state_base::slot_selected(int slot)
+void menu_load_save_state_base::slot_selected(std::string &&name)
 {
-	// name the save state
-	std::string name = string_format("%d", slot);
-
 	// handle it
-	process_file(name);
+	process_file(std::string(name));
 
 	// record the last slot touched
-	s_last_slot_selected = slot;
+	s_last_file_selected = std::move(name);
 
 	// no matter what, pop out
 	menu::stack_pop(machine());
@@ -181,32 +242,55 @@ void menu_load_save_state_base::custom_render(void *selectedref, float top, floa
 {
 	extra_text_render(top, bottom, origx1, origy1, origx2, origy2,
 		m_header,
-		nullptr);
+		m_footer);
 }
 
 
 //-------------------------------------------------
-//  stat_searchpath
+//  itemref_from_file_entry
 //-------------------------------------------------
 
-std::unique_ptr<osd::directory::entry> menu_load_save_state_base::stat_searchpath(std::string const &path, const char *searchpath)
+void *menu_load_save_state_base::itemref_from_file_entry(const menu_load_save_state_base::file_entry &entry)
 {
-	path_iterator iter(searchpath);
-	
-	std::string fullpath;
-	std::unique_ptr<osd::directory::entry> result;
-	while (iter.next(fullpath, path.c_str()))
-	{
-		result = osd_stat(fullpath);
-		if (result != nullptr)
-			break;
-	}
-	return result;
+	return (void *)&entry;
+}
+
+
+//-------------------------------------------------
+//  file_entry_from_itemref
+//-------------------------------------------------
+
+const menu_load_save_state_base::file_entry &menu_load_save_state_base::file_entry_from_itemref(void *itemref)
+{
+	return *((const file_entry *)itemref);
+}
+
+
+//-------------------------------------------------
+//  is_present
+//-------------------------------------------------
+
+std::string menu_load_save_state_base::state_directory() const
+{
+	return util::string_format("%s%s%s",
+		machine().options().state_directory(),
+		PATH_SEPARATOR,
+		machine().system().name);
+}
+
+
+//-------------------------------------------------
+//  is_present
+//-------------------------------------------------
+
+bool menu_load_save_state_base::is_present(const std::string &name) const
+{
+	return m_file_entries.find(name) != m_file_entries.end();
 }
 
 
 /***************************************************************************
-	LOAD STATE
+    LOAD STATE
 ***************************************************************************/
 
 //-------------------------------------------------
@@ -214,7 +298,7 @@ std::unique_ptr<osd::directory::entry> menu_load_save_state_base::stat_searchpat
 //-------------------------------------------------
 
 menu_load_state::menu_load_state(mame_ui_manager &mui, render_container &container)
-	: menu_load_save_state_base(mui, container, _("Load State"), true)
+	: menu_load_save_state_base(mui, container, _("Load State"), _("Select position to load from"), true)
 {
 }
 
@@ -223,14 +307,14 @@ menu_load_state::menu_load_state(mame_ui_manager &mui, render_container &contain
 //  process_file
 //-------------------------------------------------
 
-void menu_load_state::process_file(const std::string &file_name)
+void menu_load_state::process_file(std::string &&file_name)
 {
-	machine().schedule_load(file_name.c_str());
+	machine().schedule_load(std::move(file_name));
 }
 
 
 /***************************************************************************
-	SAVE STATE
+    SAVE STATE
 ***************************************************************************/
 
 //-------------------------------------------------
@@ -238,7 +322,7 @@ void menu_load_state::process_file(const std::string &file_name)
 //-------------------------------------------------
 
 menu_save_state::menu_save_state(mame_ui_manager &mui, render_container &container)
-	: menu_load_save_state_base(mui, container, _("Save State"), false)
+	: menu_load_save_state_base(mui, container, _("Save State"), _("Select position to save to"), false)
 {
 }
 
@@ -247,9 +331,9 @@ menu_save_state::menu_save_state(mame_ui_manager &mui, render_container &contain
 //  process_file
 //-------------------------------------------------
 
-void menu_save_state::process_file(const std::string &file_name)
+void menu_save_state::process_file(std::string &&file_name)
 {
-	machine().schedule_save(file_name.c_str());
+	machine().schedule_save(std::move(file_name));
 }
 
 
