@@ -64,10 +64,11 @@ public:
 	// output lines on the CoCo cartridge slot
 	enum class line
 	{
-		CART,             // connects to PIA1 CB1
-		NMI,              // connects to NMI line on CPU
-		HALT,             // connects to HALT line on CPU
-		SOUND_ENABLE      // sound enable
+		CART,				// connects to PIA1 CB1
+		NMI,				// connects to NMI line on CPU
+		HALT,				// connects to HALT line on CPU
+		SLENB,				// SLENB; disables SAM memory access	
+		SOUND_ENABLE		// sound enable
 	};
 
 	// since we have a special value "Q" - we have to use a special enum here
@@ -126,13 +127,6 @@ private:
 	// TIMER_POOL: Must be power of two
 	static constexpr int TIMER_POOL = 2;
 
-	enum
-	{
-		TIMER_CART,
-		TIMER_NMI,
-		TIMER_HALT
-	};
-
 	struct coco_cartridge_line
 	{
 		emu_timer                   *timer[TIMER_POOL];
@@ -148,8 +142,10 @@ private:
 	coco_cartridge_line         m_cart_line;
 	coco_cartridge_line         m_nmi_line;
 	coco_cartridge_line         m_halt_line;
+	coco_cartridge_line			m_slenb_line;
+
 public:
-	devcb_write_line        m_cart_callback;
+	devcb_write_line			m_cart_callback;
 	devcb_write_line            m_nmi_callback;
 	devcb_write_line            m_halt_callback;
 private:
@@ -216,6 +212,9 @@ protected:
 	// setting line values
 	void set_line_value(cococart_slot_device::line line, cococart_slot_device::line_value value);
 
+	typedef cococart_slot_device::line line;
+	typedef cococart_slot_device::line_value line_value;
+
 private:
 	cococart_base_update_delegate		m_update;
 	cococart_slot_device *				m_owning_slot;
@@ -254,6 +253,7 @@ extern const device_type COCO_ORCH90;
 extern const device_type COCO_MULTIPAK;
 extern const device_type COCO_RS232;
 extern const device_type COCO_DCMODEM;
+extern const device_type COCO_SPINX512;
 extern const device_type COCO_SSC;
 extern const device_type COCO_PAK;
 extern const device_type COCO_PAK_BANKED;

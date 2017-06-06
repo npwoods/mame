@@ -49,6 +49,19 @@
 
 
 //**************************************************************************
+//  CONSTANTS
+//**************************************************************************
+
+enum
+{
+	TIMER_CART,
+	TIMER_NMI,
+	TIMER_HALT,
+	TIMER_SLENB
+};
+
+
+//**************************************************************************
 //  GLOBAL VARIABLES
 //**************************************************************************
 
@@ -85,6 +98,7 @@ void cococart_slot_device::device_start()
 		m_cart_line.timer[i]    = timer_alloc(TIMER_CART);
 		m_nmi_line.timer[i]     = timer_alloc(TIMER_NMI);
 		m_halt_line.timer[i]    = timer_alloc(TIMER_HALT);
+		m_slenb_line.timer[i]	= timer_alloc(TIMER_SLENB);
 	}
 
 	m_cart_line.timer_index     = 0;
@@ -111,6 +125,12 @@ void cococart_slot_device::device_start()
 	m_halt_callback.resolve();
 	m_halt_line.callback = &m_halt_callback;
 
+	m_slenb_line.timer_index	= 0;
+	m_slenb_line.delay			= 0;
+	m_slenb_line.value			= line_value::CLEAR;
+	m_slenb_line.line			= 0;
+	m_slenb_line.q_count		= 0;
+
 	m_cart = dynamic_cast<device_cococart_interface *>(get_card_device());
 }
 
@@ -134,6 +154,10 @@ void cococart_slot_device::device_timer(emu_timer &timer, device_timer_id id, in
 
 		case TIMER_HALT:
 			set_line("HALT", m_halt_line, (line_value) param);
+			break;
+
+		case TIMER_SLENB:
+			set_line("SLENB", m_slenb_line, (line_value)param);
 			break;
 	}
 }
@@ -292,6 +316,10 @@ void cococart_slot_device::set_line_value(cococart_slot_device::line which, coco
 		set_line_timer(m_halt_line, value);
 		break;
 
+	case cococart_slot_device::line::SLENB:
+		set_line_timer(m_slenb_line, value);
+		break;
+
 	case cococart_slot_device::line::SOUND_ENABLE:
 		if (m_cart)
 			m_cart->set_sound_enable(value != cococart_slot_device::line_value::CLEAR);
@@ -318,6 +346,10 @@ void cococart_slot_device::set_line_delay(cococart_slot_device::line which, int 
 
 	case cococart_slot_device::line::HALT:
 		m_halt_line.delay = cycles;
+		break;
+
+	case cococart_slot_device::line::SLENB:
+		m_slenb_line.delay = cycles;
 		break;
 
 	default:
