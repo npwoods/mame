@@ -649,6 +649,20 @@ void winwindow_dispatch_message(running_machine &machine, MSG *message)
 			machine.schedule_exit();
 			break;
 
+		// temporary pause from the window thread
+		case WM_USER_UI_TEMP_PAUSE:
+			winwindow_ui_pause_from_main_thread(machine, message->wParam);
+			break;
+
+		// execute arbitrary function
+		case WM_USER_EXEC_FUNC:
+			{
+				void (*func)(void *) = (void (*)(void *)) message->wParam;
+				void *param = (void *) message->lParam;
+				func(param);
+			}
+			break;
+
 		// everything else dispatches normally
 		default:
 			TranslateMessage(message);
@@ -1206,6 +1220,9 @@ static unsigned __stdcall thread_entry(void *param)
 
 	// signal to the main thread that we are ready to receive events
 	SetEvent(window_thread_ready_event);
+
+	// set the thread's name
+	SetThreadName((DWORD)-1, "Window Thread");
 
 	// run the message pump
 	while (GetMessage(&message, NULL, 0, 0))
