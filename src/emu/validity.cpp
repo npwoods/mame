@@ -301,7 +301,7 @@ void validity_checker::validate_one(const game_driver &driver)
 		machine_config config(driver, m_blank_options);
 		m_current_config = &config;
 		validate_driver();
-		validate_roms();
+		validate_roms(m_current_config->root_device());
 		validate_inputs();
 		validate_devices();
 		m_current_config = nullptr;
@@ -1441,10 +1441,10 @@ void validity_checker::validate_driver()
 //  validate_roms - validate ROM definitions
 //-------------------------------------------------
 
-void validity_checker::validate_roms()
+void validity_checker::validate_roms(device_t &root)
 {
 	// iterate, starting with the driver's ROMs and continuing with device ROMs
-	for (device_t &device : device_iterator(m_current_config->root_device()))
+	for (device_t &device : device_iterator(root))
 	{
 		// track the current device
 		m_current_device = &device;
@@ -1831,6 +1831,40 @@ void validity_checker::validate_devices()
 
 		// done with this device
 		m_current_device = nullptr;
+
+		// if it's a slot, iterate over possible cards (don't recurse, or you'll stack infinite tee connectors)
+		device_slot_interface *const slot = dynamic_cast<device_slot_interface *>(&device);
+		if (slot && !slot->fixed())
+		{
+			for (auto &option : slot->option_list())
+			{
+				if (option.second->selectable())
+				{
+					std::string const card_tag(util::string_format("_%s", option.second->name()));
+					device_t *const card = m_current_config->device_add(&slot->device(), card_tag.c_str(), option.second->devtype(), 0);
+
+					const char *const def_bios = option.second->default_bios();
+					if (def_bios)
+						device_t::static_set_default_bios_tag(*card, def_bios);
+					machine_config_constructor const additions = option.second->machine_config();
+					if (additions != nullptr)
+						(*additions)(*m_current_config, card, card);
+					for (device_t &card_dev : device_iterator(*card))
+						card_dev.config_complete();
+					validate_roms(*card);
+
+					for (device_t &card_dev : device_iterator(*card))
+					{
+						m_current_device = &card_dev;
+						card_dev.findit(true);
+						card_dev.validity_check(*this);
+						m_current_device = nullptr;
+					}
+
+					m_current_config->device_remove(&slot->device(), card_tag.c_str());
+				}
+			}
+		}
 	}
 }
 
