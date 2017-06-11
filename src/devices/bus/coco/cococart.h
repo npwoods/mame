@@ -56,7 +56,7 @@ typedef delegate<void (uint8_t *)> cococart_base_update_delegate;
 // ======================> cococart_slot_device
 class device_cococart_interface;
 
-class cococart_slot_device : public device_t,
+class cococart_slot_device final : public device_t,
 								public device_slot_interface,
 								public device_image_interface
 {
@@ -211,6 +211,10 @@ protected:
 
 	// setting line values
 	void set_line_value(cococart_slot_device::line line, cococart_slot_device::line_value value);
+	void set_line_value(cococart_slot_device::line line, bool value) { set_line_value(line, value ? cococart_slot_device::line_value::ASSERT : cococart_slot_device::line_value::CLEAR); }
+
+	typedef cococart_slot_device::line line;
+	typedef cococart_slot_device::line_value line_value;
 
 	typedef cococart_slot_device::line line;
 	typedef cococart_slot_device::line_value line_value;
