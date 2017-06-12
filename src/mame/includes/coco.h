@@ -10,8 +10,8 @@
 
 #pragma once
 
-#ifndef __COCO__
-#define __COCO__
+#ifndef MAME_INCLUDES_COCO_H
+#define MAME_INCLUDES_COCO_H
 
 
 #include "imagedev/cassette.h"
@@ -156,6 +156,13 @@ protected:
 	virtual void pia1_pa_changed(uint8_t data);
 	virtual void pia1_pb_changed(uint8_t data);
 
+	// accessors
+	cpu_device &maincpu() { return *m_maincpu; }
+	pia6821_device &pia_0() { return *m_pia_0; }
+	pia6821_device &pia_1() { return *m_pia_1; }
+	cococart_slot_device &cococart() { return *m_cococart; }
+	ram_device &ram() { return *m_ram; }
+
 	// miscellaneous
 	virtual void update_keyboard_input(uint8_t value, uint8_t z);
 	virtual void cart_w(bool state);
@@ -163,23 +170,6 @@ protected:
 
 	// accessors
 	address_space &extended_address_space() { assert(m_extended_address_space); return *m_extended_address_space; }
-
-	// devices
-	required_device<cpu_device> m_maincpu;
-	required_device<pia6821_device> m_pia_0;
-	required_device<pia6821_device> m_pia_1;
-	required_device<dac_byte_interface> m_dac;
-	required_device<dac_1bit_device> m_sbs;
-	required_device<wave_device> m_wave;
-	required_device<cococart_slot_device> m_cococart;
-	required_device<ram_device> m_ram;
-	required_device<cassette_image_device> m_cassette;
-	required_device<address_map_bank_device> m_extended_address_map;
-	optional_device<rs232_port_device> m_rs232;
-	optional_device<coco_vhd_image_device> m_vhd_0;
-	optional_device<coco_vhd_image_device> m_vhd_1;
-	optional_device<beckerport_device> m_beckerport;
-	optional_ioport                    m_beckerportconfig;
 
 private:
 	// timer constants
@@ -248,7 +238,24 @@ private:
 	WRITE8_MEMBER(vhd_w);
 
 	// floating bus
-	uint8_t floating_bus_read(void);
+	uint8_t floating_bus_read();
+
+	// devices
+	required_device<cpu_device> m_maincpu;
+	required_device<pia6821_device> m_pia_0;
+	required_device<pia6821_device> m_pia_1;
+	required_device<dac_byte_interface> m_dac;
+	required_device<dac_1bit_device> m_sbs;
+	required_device<wave_device> m_wave;
+	required_device<cococart_slot_device> m_cococart;
+	required_device<ram_device> m_ram;
+	required_device<cassette_image_device> m_cassette;
+	required_device<address_map_bank_device> m_extended_address_map;
+	optional_device<rs232_port_device> m_rs232;
+	optional_device<coco_vhd_image_device> m_vhd_0;
+	optional_device<coco_vhd_image_device> m_vhd_1;
+	optional_device<beckerport_device> m_beckerport;
+	optional_ioport                    m_beckerportconfig;
 
 	// input ports
 	required_ioport_array<7> m_keyboard;
@@ -287,4 +294,4 @@ private:
 	bool m_in_floating_bus_read;
 };
 
-#endif // __COCO__
+#endif // MAME_INCLUDES_COCO_H

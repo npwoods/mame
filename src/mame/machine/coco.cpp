@@ -313,7 +313,7 @@ void coco_state::extspace_unmap(uint16_t addrstart, uint16_t addrend)
 // CoCo 1/2 you should get $F627 instead.
 //-------------------------------------------------
 
-uint8_t coco_state::floating_bus_read(void)
+uint8_t coco_state::floating_bus_read()
 {
 	uint8_t result;
 
