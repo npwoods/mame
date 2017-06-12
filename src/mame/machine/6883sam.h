@@ -98,6 +98,7 @@ public:
 	}
 
 	// called to configure banks
+	void set_shadow_address_space(address_space &space) { m_shadow_space = &space; }
 	void configure_bank(int bank, uint8_t *memory, uint32_t memory_size, bool is_read_only);
 	void configure_bank(int bank, read8_delegate rhandler, write8_delegate whandler);
 
@@ -156,7 +157,7 @@ private:
 	{
 	public:
 		sam_space(sam6883_device &owner);
-		void point(const sam_bank *bank, uint16_t offset, uint32_t length = ~0);
+		void point(const sam_bank &bank, uint16_t offset, uint32_t length = ~0);
 
 	private:
 		sam6883_device &    m_owner;
@@ -165,7 +166,7 @@ private:
 		uint32_t              m_length;
 
 		address_space &cpu_space() const;
-		void point_specific_bank(const sam_bank *bank, uint32_t offset, uint32_t mask, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write);
+		void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write);
 	};
 
 	const char *        m_cpu_tag;
@@ -173,6 +174,7 @@ private:
 
 	// incidentals
 	address_space *             m_cpu_space;
+	address_space *				m_shadow_space;
 	devcb_read8                 m_read_res;
 	sam_bank                    m_banks[8];
 	sam_space<0x0000, 0x7FFF>   m_space_0000;
@@ -258,6 +260,8 @@ private:
 	void horizontal_sync(void);
 	void update_state(void);
 	void update_memory(void);
+	template<uint16_t addrstart> READ8_MEMBER(shadow_r);
+	template<uint16_t addrstart> WRITE8_MEMBER(shadow_w);
 };
 
 DECLARE_DEVICE_TYPE(SAM6883, sam6883_device)

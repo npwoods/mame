@@ -161,6 +161,9 @@ protected:
 	virtual void cart_w(bool state);
 	virtual void update_cart_base(uint8_t *cart_base) = 0;
 
+	// accessors
+	address_space &extended_address_space() { assert(m_extended_address_space); return *m_extended_address_space; }
+
 	// devices
 	required_device<cpu_device> m_maincpu;
 	required_device<pia6821_device> m_pia_0;
@@ -278,7 +281,7 @@ private:
 	uint8_t m_vhd_select;
 
 	// address space for "extended space" (or floating space)
-	address_space &m_extended_address_space;
+	address_space *m_extended_address_space;
 
 	// safety to prevent stack overflow when reading floating bus
 	bool m_in_floating_bus_read;

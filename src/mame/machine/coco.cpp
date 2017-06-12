@@ -96,7 +96,7 @@ coco_state::coco_state(const machine_config &mconfig, device_type type, const ch
 	m_rs232(*this, RS232_TAG),
 	m_vhd_0(*this, VHD0_TAG),
 	m_vhd_1(*this, VHD1_TAG),
-	m_extended_address_space(m_extended_address_map->space(address_spacenum::AS_0)),
+	m_extended_address_space(nullptr),
 	m_beckerport(*this, DWSOCK_TAG),
 	m_beckerportconfig(*this, BECKERPORT_TAG),
 	m_keyboard(*this, "row%u", 0),
@@ -148,6 +148,9 @@ void coco_state::device_start()
 	m_cococart->set_cart_base_update(cococart_base_update_delegate(&coco_state::update_cart_base, this));
 	m_cococart->set_line_delay(cococart_slot_device::line::NMI, 12);	// 12 allowed one more instruction to finished after the line is pulled
 	m_cococart->set_line_delay(cococart_slot_device::line::HALT, 6);	// 6 allowed one more instruction to finished after the line is pulled
+
+	// extended address space
+	m_extended_address_space = &m_extended_address_map->space(address_spacenum::AS_0);
 
 	// VHD setup
 	extspace_install_read_handler(0xFF80, 0xFF85, read8_delegate(FUNC(coco_state::vhd_r), this));
@@ -229,7 +232,7 @@ device_cococart_extspace_interface &coco_state::extspace()
 
 void coco_state::extspace_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
 {
-	m_extended_address_space.install_read_handler(addrstart, addrend, rhandler);
+	extended_address_space().install_read_handler(addrstart, addrend, rhandler);
 }
 
 
@@ -239,7 +242,7 @@ void coco_state::extspace_install_read_handler(uint16_t addrstart, uint16_t addr
 
 void coco_state::extspace_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
 {
-	m_extended_address_space.install_write_handler(addrstart, addrend, whandler);
+	extended_address_space().install_write_handler(addrstart, addrend, whandler);
 }
 
 
@@ -249,7 +252,7 @@ void coco_state::extspace_install_write_handler(uint16_t addrstart, uint16_t add
 
 void coco_state::extspace_install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr)
 {
-	m_extended_address_space.install_ram(addrstart, addrend, baseptr);
+	extended_address_space().install_ram(addrstart, addrend, baseptr);
 }
 
 
@@ -259,8 +262,8 @@ void coco_state::extspace_install_ram(uint16_t addrstart, uint16_t addrend, void
 
 void coco_state::extspace_unmap(uint16_t addrstart, uint16_t addrend)
 {
-	m_extended_address_space.install_read_handler(addrstart, addrend, read8_delegate(FUNC(coco_state::floating_bus_read), this));
-	m_extended_address_space.unmap_write(addrstart, addrend);
+	extended_address_space().install_read_handler(addrstart, addrend, read8_delegate(FUNC(coco_state::floating_bus_read), this));
+	extended_address_space().unmap_write(addrstart, addrend);
 }
 
 
