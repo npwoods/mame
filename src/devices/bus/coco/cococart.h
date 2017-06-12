@@ -67,7 +67,6 @@ public:
 		CART,				// connects to PIA1 CB1
 		NMI,				// connects to NMI line on CPU
 		HALT,				// connects to HALT line on CPU
-		SLENB,				// SLENB; disables SAM memory access	
 		SOUND_ENABLE		// sound enable
 	};
 
@@ -142,7 +141,6 @@ private:
 	coco_cartridge_line         m_cart_line;
 	coco_cartridge_line         m_nmi_line;
 	coco_cartridge_line         m_halt_line;
-	coco_cartridge_line			m_slenb_line;
 
 public:
 	devcb_write_line			m_cart_callback;
@@ -164,13 +162,26 @@ extern const device_type COCOCART_SLOT;
 DECLARE_DEVICE_TYPE(COCOCART_SLOT, cococart_slot_device)
 
 
+// ======================> device_cococart_extspace_interface
+
+// this is implemented by the CoCo root device itself
+class device_cococart_extspace_interface
+{
+public:
+	virtual void extspace_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) = 0;
+	virtual void extspace_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler) = 0;
+	virtual void extspace_install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr) = 0;
+	virtual void extspace_unmap(uint16_t addrstart, uint16_t addrend) = 0;
+};
+
+
 // ======================> device_cococart_host_interface
 
 // this is implemented by the CoCo root device itself and the Multi-Pak interface
 class device_cococart_host_interface
 {
 public:
-	virtual address_space &cartridge_space() = 0;
+	virtual device_cococart_extspace_interface &extspace() = 0;
 };
 
 
@@ -198,16 +209,21 @@ protected:
 	void cart_base_changed(void);
 
 	// accessors for containers
-	cococart_slot_device &owning_slot()		{ assert(m_owning_slot); return *m_owning_slot; }
-	device_cococart_host_interface &host()	{ assert(m_host); return *m_host; }
+	cococart_slot_device &owning_slot()				{ assert(m_owning_slot); return *m_owning_slot; }
+	device_cococart_host_interface &host()			{ assert(m_host); return *m_host; }
+	device_cococart_extspace_interface &extspace()	{ assert(m_extspace); return *m_extspace; }
 
 	// CoCo cartridges can read directly from the address bus.  This is used by a number of
 	// cartridges (e.g. - Orch-90, Multi-Pak interface) for their control registers, independently
 	// of the SCS or CTS lines
-	address_space &cartridge_space();
+	//
+	// When these install_* functions are used to access normally used memory, the assumption is that the cartridge
+	// is using SLENB to disable the core CoCo hardware
 	void install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
 	void install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
 	void install_readwrite_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler, write8_delegate whandler);
+	void install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr = nullptr);
+	void unmap(uint16_t addrstart, uint16_t addrend);
 
 	// setting line values
 	void set_line_value(cococart_slot_device::line line, cococart_slot_device::line_value value);
@@ -216,13 +232,11 @@ protected:
 	typedef cococart_slot_device::line line;
 	typedef cococart_slot_device::line_value line_value;
 
-	typedef cococart_slot_device::line line;
-	typedef cococart_slot_device::line_value line_value;
-
 private:
-	cococart_base_update_delegate		m_update;
-	cococart_slot_device *				m_owning_slot;
-	device_cococart_host_interface *	m_host;
+	cococart_base_update_delegate			m_update;
+	cococart_slot_device *					m_owning_slot;
+	device_cococart_host_interface *		m_host;
+	device_cococart_extspace_interface *	m_extspace;
 };
 
 

@@ -48,9 +48,6 @@ void coco12_state::configure_sam()
 
 	// $FF40-$FF5F
 	m_sam->configure_bank(6, read8_delegate(FUNC(coco12_state::ff40_read), this), write8_delegate(FUNC(coco12_state::ff40_write), this));
-
-	// $FF60-$FFBF
-	m_sam->configure_bank(7, read8_delegate(FUNC(coco12_state::ff60_read), this), write8_delegate(FUNC(coco12_state::ff60_write), this));
 }
 
 

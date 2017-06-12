@@ -56,8 +56,7 @@ enum
 {
 	TIMER_CART,
 	TIMER_NMI,
-	TIMER_HALT,
-	TIMER_SLENB
+	TIMER_HALT
 };
 
 
@@ -98,7 +97,6 @@ void cococart_slot_device::device_start()
 		m_cart_line.timer[i]    = timer_alloc(TIMER_CART);
 		m_nmi_line.timer[i]     = timer_alloc(TIMER_NMI);
 		m_halt_line.timer[i]    = timer_alloc(TIMER_HALT);
-		m_slenb_line.timer[i]	= timer_alloc(TIMER_SLENB);
 	}
 
 	m_cart_line.timer_index     = 0;
@@ -125,12 +123,6 @@ void cococart_slot_device::device_start()
 	m_halt_callback.resolve();
 	m_halt_line.callback = &m_halt_callback;
 
-	m_slenb_line.timer_index	= 0;
-	m_slenb_line.delay			= 0;
-	m_slenb_line.value			= line_value::CLEAR;
-	m_slenb_line.line			= 0;
-	m_slenb_line.q_count		= 0;
-
 	m_cart = dynamic_cast<device_cococart_interface *>(get_card_device());
 }
 
@@ -154,10 +146,6 @@ void cococart_slot_device::device_timer(emu_timer &timer, device_timer_id id, in
 
 		case TIMER_HALT:
 			set_line("HALT", m_halt_line, (line_value) param);
-			break;
-
-		case TIMER_SLENB:
-			set_line("SLENB", m_slenb_line, (line_value)param);
 			break;
 	}
 }
@@ -316,10 +304,6 @@ void cococart_slot_device::set_line_value(cococart_slot_device::line which, coco
 		set_line_timer(m_halt_line, value);
 		break;
 
-	case cococart_slot_device::line::SLENB:
-		set_line_timer(m_slenb_line, value);
-		break;
-
 	case cococart_slot_device::line::SOUND_ENABLE:
 		if (m_cart)
 			m_cart->set_sound_enable(value != cococart_slot_device::line_value::CLEAR);
@@ -346,10 +330,6 @@ void cococart_slot_device::set_line_delay(cococart_slot_device::line which, int 
 
 	case cococart_slot_device::line::HALT:
 		m_halt_line.delay = cycles;
-		break;
-
-	case cococart_slot_device::line::SLENB:
-		m_slenb_line.delay = cycles;
 		break;
 
 	default:
@@ -463,6 +443,7 @@ device_cococart_interface::device_cococart_interface(const machine_config &mconf
 	: device_slot_card_interface(mconfig, device)
 	, m_owning_slot(nullptr)
 	, m_host(nullptr)
+	, m_extspace(nullptr)
 {
 }
 
@@ -486,6 +467,7 @@ void device_cococart_interface::interface_config_complete()
 	m_host = m_owning_slot
 		? dynamic_cast<device_cococart_host_interface *>(m_owning_slot->owner())
 		: nullptr;
+	m_extspace = m_host ? &m_host->extspace() : nullptr;
 }
 
 
@@ -564,23 +546,12 @@ void device_cococart_interface::cart_base_changed(void)
 
 
 //-------------------------------------------------
-//	cartridge_space
-//-------------------------------------------------
-
-address_space &device_cococart_interface::cartridge_space()
-{
-	return host().cartridge_space();
-}
-
-
-//-------------------------------------------------
 //	install_read_handler
 //-------------------------------------------------
 
 void device_cococart_interface::install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
 {
-	address_space &space(cartridge_space());
-	space.install_read_handler(addrstart, addrend, rhandler);
+	extspace().extspace_install_read_handler(addrstart, addrend, rhandler);
 }
 
 
@@ -590,8 +561,7 @@ void device_cococart_interface::install_read_handler(uint16_t addrstart, uint16_
 
 void device_cococart_interface::install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
 {
-	address_space &space(cartridge_space());
-	space.install_write_handler(addrstart, addrend, whandler);
+	extspace().extspace_install_write_handler(addrstart, addrend, whandler);
 }
 
 
@@ -601,9 +571,28 @@ void device_cococart_interface::install_write_handler(uint16_t addrstart, uint16
 
 void device_cococart_interface::install_readwrite_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler, write8_delegate whandler)
 {
-	address_space &space(cartridge_space());
-	space.install_read_handler(addrstart, addrend, rhandler);
-	space.install_write_handler(addrstart, addrend, whandler);
+	extspace().extspace_install_read_handler(addrstart, addrend, rhandler);
+	extspace().extspace_install_write_handler(addrstart, addrend, whandler);
+}
+
+
+//-------------------------------------------------
+//	install_ram
+//-------------------------------------------------
+
+void device_cococart_interface::install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr)
+{
+	extspace().extspace_install_ram(addrstart, addrend, baseptr);
+}
+
+
+//-------------------------------------------------
+//	unmap
+//-------------------------------------------------
+
+void device_cococart_interface::unmap(uint16_t addrstart, uint16_t addrend)
+{
+	extspace().extspace_unmap(addrstart, addrend);
 }
 
 

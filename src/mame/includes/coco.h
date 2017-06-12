@@ -54,7 +54,7 @@ SLOT_INTERFACE_EXTERN( coco_cart );
 #define DWSOCK_TAG                  "dwsock"
 #define VHD0_TAG                    "vhd0"
 #define VHD1_TAG                    "vhd1"
-#define FLOATING_TAG				"floating"
+#define EXTENDED_ADDRESS_MAP_TAG	"extended_address_map"
 
 // inputs
 #define CTRL_SEL_TAG                "ctrl_sel"
@@ -85,26 +85,13 @@ MACHINE_CONFIG_EXTERN( coco_floating );
 //  TYPE DEFINITIONS
 //**************************************************************************
 
-class coco_state : public driver_device, public device_cococart_host_interface
+class coco_state :
+	public driver_device,
+	public device_cococart_extspace_interface,
+	public device_cococart_host_interface
 {
 public:
 	coco_state(const machine_config &mconfig, device_type type, const char *tag);
-
-	required_device<cpu_device> m_maincpu;
-	required_device<pia6821_device> m_pia_0;
-	required_device<pia6821_device> m_pia_1;
-	required_device<dac_byte_interface> m_dac;
-	required_device<dac_1bit_device> m_sbs;
-	required_device<wave_device> m_wave;
-	required_device<cococart_slot_device> m_cococart;
-	required_device<ram_device> m_ram;
-	required_device<cassette_image_device> m_cassette;
-	required_device<address_map_bank_device> m_floating;
-	optional_device<rs232_port_device> m_rs232;
-	optional_device<coco_vhd_image_device> m_vhd_0;
-	optional_device<coco_vhd_image_device> m_vhd_1;
-	optional_device<beckerport_device> m_beckerport;
-	optional_ioport                    m_beckerportconfig;
 
 	// driver update handlers
 	DECLARE_INPUT_CHANGED_MEMBER(keyboard_changed);
@@ -117,8 +104,6 @@ public:
 	virtual DECLARE_WRITE8_MEMBER( ff20_write );
 	virtual DECLARE_READ8_MEMBER( ff40_read );
 	virtual DECLARE_WRITE8_MEMBER( ff40_write );
-	DECLARE_READ8_MEMBER( ff60_read );
-	DECLARE_WRITE8_MEMBER( ff60_write );
 
 	// PIA0
 	DECLARE_WRITE8_MEMBER( pia0_pa_w );
@@ -138,14 +123,18 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( pia1_firq_a );
 	DECLARE_WRITE_LINE_MEMBER( pia1_firq_b );
 
+	// extended address space
+	virtual device_cococart_extspace_interface &extspace() override final;
+	virtual void extspace_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler) override final;
+	virtual void extspace_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler) override final;
+	virtual void extspace_install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr) override final;
+	virtual void extspace_unmap(uint16_t addrstart, uint16_t addrend) override final;
+
 	// floating bus & "space"
 	DECLARE_READ8_MEMBER( floating_bus_read )   { return floating_bus_read(); }
-	uint8_t floating_space_read(offs_t offset);
-	void floating_space_write(offs_t offset, uint8_t data);
 
 	// cartridge stuff
 	DECLARE_WRITE_LINE_MEMBER( cart_w ) { cart_w((bool) state); }
-	virtual address_space &cartridge_space() override;
 
 	// disassembly override
 	static offs_t os9_dasm_override(device_t &device, std::ostream &stream, offs_t pc, const uint8_t *oprom, const uint8_t *opram, int options);
@@ -171,6 +160,23 @@ protected:
 	virtual void update_keyboard_input(uint8_t value, uint8_t z);
 	virtual void cart_w(bool state);
 	virtual void update_cart_base(uint8_t *cart_base) = 0;
+
+	// devices
+	required_device<cpu_device> m_maincpu;
+	required_device<pia6821_device> m_pia_0;
+	required_device<pia6821_device> m_pia_1;
+	required_device<dac_byte_interface> m_dac;
+	required_device<dac_1bit_device> m_sbs;
+	required_device<wave_device> m_wave;
+	required_device<cococart_slot_device> m_cococart;
+	required_device<ram_device> m_ram;
+	required_device<cassette_image_device> m_cassette;
+	required_device<address_map_bank_device> m_extended_address_map;
+	optional_device<rs232_port_device> m_rs232;
+	optional_device<coco_vhd_image_device> m_vhd_0;
+	optional_device<coco_vhd_image_device> m_vhd_1;
+	optional_device<beckerport_device> m_beckerport;
+	optional_ioport                    m_beckerportconfig;
 
 private:
 	// timer constants
@@ -233,8 +239,10 @@ private:
 	bool sel2(void)         { return m_pia_0->cb2_output() ? true : false; }
 	bool snden(void)        { return m_pia_1->cb2_output() ? true : false; }
 
-	// VHD selection
-	coco_vhd_image_device *current_vhd(void);
+	// VHD support
+	coco_vhd_image_device *current_vhd();
+	READ8_MEMBER(vhd_r);
+	WRITE8_MEMBER(vhd_w);
 
 	// floating bus
 	uint8_t floating_bus_read(void);
@@ -269,8 +277,8 @@ private:
 	// VHD selection
 	uint8_t m_vhd_select;
 
-	// address space for "floating access"
-	//address_space m_floating_space;
+	// address space for "extended space" (or floating space)
+	address_space &m_extended_address_space;
 
 	// safety to prevent stack overflow when reading floating bus
 	bool m_in_floating_bus_read;

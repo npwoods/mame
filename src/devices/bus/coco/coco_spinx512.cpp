@@ -27,7 +27,7 @@ namespace
 	public:
 		// construction/destruction
 		coco_spinx512_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-			: device_t(mconfig, COCO_DCMODEM, tag, owner, clock)
+			: device_t(mconfig, COCO_SPINX512, tag, owner, clock)
 			, device_cococart_interface(mconfig, *this)
 		{
 		}
@@ -36,29 +36,72 @@ namespace
 		// device-level overrides
 		virtual void device_start() override
 		{
-			install_write_handler(0xFFBE, 0xFFBF, write8_delegate(FUNC(coco_spinx512_device::control_w), this));
+			install_write_handler(0xFFA8, 0xFFAF, write8_delegate(FUNC(coco_spinx512_device::ffax_w), this));
+			install_write_handler(0xFFBE, 0xFFBF, write8_delegate(FUNC(coco_spinx512_device::ffbx_w), this));
+			install_write_handler(0xFFDE, 0xFFDF, write8_delegate(FUNC(coco_spinx512_device::ty_w), this));
 
 			save_item(NAME(m_map));
+			save_item(NAME(m_ty));
 			save_item(NAME(m_bank));
 			save_item(NAME(m_memory));
 		}
 
-	private:
-		WRITE8_MEMBER(control_w)
+		virtual void device_reset() override
 		{
-			m_map = (offset & 1) ? true : false;
+			for (int i = 0; i < ARRAY_LENGTH(m_map); i++)
+				m_map[i] = false;
+			m_ty = false;
+			m_bank = 0;
+			update();
+		}
+
+		virtual void device_post_load() override
+		{
+			update();
+		}
+
+	private:
+		WRITE8_MEMBER(ffax_w)	// FFA8-F
+		{
+			m_map[offset / 2 % ARRAY_LENGTH(m_map)] = (offset & 1) ? true : false;
+			update();
+		}
+
+		WRITE8_MEMBER(ffbx_w)	// FFBE-F
+		{
+			for (int i = 0; i < ARRAY_LENGTH(m_map); i++)
+				m_map[i] = (offset & 1) ? true : false;
 			m_bank = data;
+			update();
+		}
+
+		WRITE8_MEMBER(ty_w)
+		{
+			m_ty = (offset & 1) ? true : false;
+			update();
 		}
 
 		void update()
 		{
-			set_line_value(line::SLENB, m_map ? line_value::ASSERT : line_value::CLEAR);
+			// The Spinx-512 uses the SLENB signal to disable normal CoCo memory
+			// operations.  This is presumed by the use of install_ram() into
+			// normally handled areas.
+			for (int i = 0; i < ARRAY_LENGTH(m_map); i++)
+			{
+				uint16_t addrstart = 0x8000 + i * 0x2000;
+				uint16_t addrend = std::min(addrstart + 0x1FFF, 0xFEFF);
+				if (!m_ty && m_map[i])
+					install_ram(addrstart, addrend, &m_memory[m_bank % ARRAY_LENGTH(m_memory)][i * 0x2000]);
+				else
+					unmap(addrstart, addrend);
+			}
 		}
 
 		// internal state
-		bool			m_map;
+		bool			m_map[4];
+		bool			m_ty;
 		uint8_t			m_bank;
-		uint8_t			m_memory[0x8000][16];
+		uint8_t			m_memory[16][0x8000];
 	};
 };
 

@@ -99,7 +99,10 @@ namespace
 		DECLARE_WRITE_LINE_MEMBER(multi_slot4_nmi_w);
 		DECLARE_WRITE_LINE_MEMBER(multi_slot4_halt_w);
 
-		virtual address_space &cartridge_space() override;
+		virtual device_cococart_extspace_interface &extspace() override
+		{
+			return host().extspace();
+		}
 
 	protected:
 		// device-level overrides
@@ -416,13 +419,3 @@ WRITE_LINE_MEMBER(coco_multipak_device::multi_slot3_halt_w) { update_line(3, lin
 WRITE_LINE_MEMBER(coco_multipak_device::multi_slot4_cart_w) { update_line(4, line::CART); }
 WRITE_LINE_MEMBER(coco_multipak_device::multi_slot4_nmi_w)  { update_line(4, line::NMI); }
 WRITE_LINE_MEMBER(coco_multipak_device::multi_slot4_halt_w) { update_line(4, line::HALT); }
-
-
-//-------------------------------------------------
-//  cartridge_space
-//-------------------------------------------------
-
-address_space &coco_multipak_device::cartridge_space()
-{
-	return device_cococart_interface::cartridge_space();
-}

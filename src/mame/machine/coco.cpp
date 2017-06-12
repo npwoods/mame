@@ -92,10 +92,11 @@ coco_state::coco_state(const machine_config &mconfig, device_type type, const ch
 	m_cococart(*this, CARTRIDGE_TAG),
 	m_ram(*this, RAM_TAG),
 	m_cassette(*this, "cassette"),
-	m_floating(*this, FLOATING_TAG),
+	m_extended_address_map(*this, EXTENDED_ADDRESS_MAP_TAG),
 	m_rs232(*this, RS232_TAG),
 	m_vhd_0(*this, VHD0_TAG),
 	m_vhd_1(*this, VHD1_TAG),
+	m_extended_address_space(m_extended_address_map->space(address_spacenum::AS_0)),
 	m_beckerport(*this, DWSOCK_TAG),
 	m_beckerportconfig(*this, BECKERPORT_TAG),
 	m_keyboard(*this, "row%u", 0),
@@ -147,6 +148,10 @@ void coco_state::device_start()
 	m_cococart->set_cart_base_update(cococart_base_update_delegate(&coco_state::update_cart_base, this));
 	m_cococart->set_line_delay(cococart_slot_device::line::NMI, 12);	// 12 allowed one more instruction to finished after the line is pulled
 	m_cococart->set_line_delay(cococart_slot_device::line::HALT, 6);	// 6 allowed one more instruction to finished after the line is pulled
+
+	// VHD setup
+	extspace_install_read_handler(0xFF80, 0xFF85, read8_delegate(FUNC(coco_state::vhd_r), this));
+	extspace_install_write_handler(0xFF80, 0xFF86, write8_delegate(FUNC(coco_state::vhd_w), this));
 
 	// save state support
 	save_item(NAME(m_dac_output));
@@ -203,6 +208,60 @@ void coco_state::device_timer(emu_timer &timer, device_timer_id id, int param, v
 	}
 }
 
+
+/***************************************************************************
+	EXTENDED ADDRESS SPACE & FLOATING BUS
+***************************************************************************/
+
+//-------------------------------------------------
+//  extspace
+//-------------------------------------------------
+
+device_cococart_extspace_interface &coco_state::extspace()
+{
+	return *this;
+}
+
+
+//-------------------------------------------------
+//  extspace_install_read_handler
+//-------------------------------------------------
+
+void coco_state::extspace_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	m_extended_address_space.install_read_handler(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  extspace_install_write_handler
+//-------------------------------------------------
+
+void coco_state::extspace_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	m_extended_address_space.install_write_handler(addrstart, addrend, whandler);
+}
+
+
+//-------------------------------------------------
+//  extspace_install_ram
+//-------------------------------------------------
+
+void coco_state::extspace_install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr)
+{
+	m_extended_address_space.install_ram(addrstart, addrend, baseptr);
+}
+
+
+//-------------------------------------------------
+//  extspace_unmap
+//-------------------------------------------------
+
+void coco_state::extspace_unmap(uint16_t addrstart, uint16_t addrend)
+{
+	m_extended_address_space.install_read_handler(addrstart, addrend, read8_delegate(FUNC(coco_state::floating_bus_read), this));
+	m_extended_address_space.unmap_write(addrstart, addrend);
+}
 
 
 //-------------------------------------------------
@@ -292,32 +351,6 @@ uint8_t coco_state::floating_bus_read(void)
 		m_in_floating_bus_read = false;
 	}
 	return result;
-}
-
-
-//-------------------------------------------------
-//  floating_space_read
-//-------------------------------------------------
-
-uint8_t coco_state::floating_space_read(offs_t offset)
-{
-	// The "floating space" is intended to be a catch all for address space
-	// not handled by the normal CoCo infrastructure, but may be read directly
-	// by cartridge hardware and other miscellany
-	//
-	// Most of the time, the read below will result in floating_bus_read() being
-	// invoked
-	return m_floating->read8(m_floating->space(address_spacenum::AS_0), offset);
-}
-
-
-//-------------------------------------------------
-//  floating_space_write
-//-------------------------------------------------
-
-void coco_state::floating_space_write(offs_t offset, uint8_t data)
-{
-	m_floating->write8(m_floating->space(address_spacenum::AS_0), offset, data);
 }
 
 
@@ -1133,61 +1166,49 @@ void coco_state::poll_hires_joystick(void)
 //  current_vhd
 //-------------------------------------------------
 
-coco_vhd_image_device *coco_state::current_vhd(void)
+coco_vhd_image_device *coco_state::current_vhd()
 {
 	switch(m_vhd_select)
 	{
-		case 0:     return m_vhd_0;
-		case 1:     return m_vhd_1;
-		default:    return nullptr;
+	case 0:     return m_vhd_0;
+	case 1:     return m_vhd_1;
+	default:    return nullptr;
 	}
 }
 
 
-
 //-------------------------------------------------
-//  ff60_read
+//  vhd_r
 //-------------------------------------------------
 
-READ8_MEMBER( coco_state::ff60_read )
+READ8_MEMBER( coco_state::vhd_r )
 {
-	uint8_t result;
-
-	if ((current_vhd() != nullptr) && (offset >= 32) && (offset <= 37))
-	{
-		result = current_vhd()->read(offset - 32);
-	}
-	else
-	{
-		result = floating_space_read(0xFF60 + offset);
-	}
-
-	return result;
+	return current_vhd()
+			? current_vhd()->read(offset)
+			: floating_bus_read();
 }
 
 
-
 //-------------------------------------------------
-//  ff60_write
+//  vhd_w
 //-------------------------------------------------
 
-WRITE8_MEMBER( coco_state::ff60_write )
+WRITE8_MEMBER( coco_state::vhd_w )
 {
-	if ((current_vhd() != nullptr) && (offset >= 32) && (offset <= 37))
+	switch (offset)
 	{
-		current_vhd()->write(offset - 32, data);
-	}
-	else if (offset == 38)
-	{
-		/* writes to $FF86 will switch the VHD */
+	case 0: case 1:	case 2:
+	case 3: case 4: case 5:
+		if (current_vhd())
+			current_vhd()->write(offset, data);
+		break;
+
+	case 6:
+		// writes to $FF86 will switch the VHD 
 		m_vhd_select = data;
-	}
-	else
-	{
-		floating_space_write(0xFF60 + offset, data);
+		break;
 	}
 }
-
 
 
 /***************************************************************************
@@ -1231,16 +1252,6 @@ WRITE8_MEMBER( coco_state::ff40_write )
 void coco_state::cart_w(bool state)
 {
 	m_pia_1->cb1_w(state);
-}
-
-
-//-------------------------------------------------
-//  cartridge_space
-//-------------------------------------------------
-
-address_space &coco_state::cartridge_space()
-{
-	return m_floating->space(address_spacenum::AS_0);
 }
 
 
