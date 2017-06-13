@@ -102,6 +102,9 @@ public:
 	void configure_bank(int bank, uint8_t *memory, uint32_t memory_size, bool is_read_only);
 	void configure_bank(int bank, read8_delegate rhandler, write8_delegate whandler);
 
+	// turns shadowing on or off for a range
+	void shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow);
+
 	// typically called by VDG
 	ATTR_FORCE_INLINE DECLARE_READ8_MEMBER( display_read )
 	{
@@ -158,12 +161,15 @@ private:
 	public:
 		sam_space(sam6883_device &owner);
 		void point(const sam_bank &bank, uint16_t offset, uint32_t length = ~0);
+		void shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow);
 
 	private:
 		sam6883_device &    m_owner;
 		memory_bank *       m_read_bank;
 		memory_bank *       m_write_bank;
-		uint32_t              m_length;
+		uint32_t            m_length;
+		uint16_t			m_shadow_addrstart;
+		uint16_t			m_shadow_addrend;
 
 		address_space &cpu_space() const;
 		void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write);
@@ -260,8 +266,10 @@ private:
 	void horizontal_sync(void);
 	void update_state(void);
 	void update_memory(void);
-	read8_delegate shadow_space_read_delegate(offs_t addrstart);
-	write8_delegate shadow_space_write_delegate(offs_t addrstart);
+	uint8_t read_shadow(uint16_t address);
+	void write_shadow(uint16_t address, uint8_t data);
+	read8_delegate shadow_space_read_delegate(uint16_t addrstart);
+	write8_delegate shadow_space_write_delegate(uint16_t addrstart);
 };
 
 DECLARE_DEVICE_TYPE(SAM6883, sam6883_device)

@@ -116,3 +116,13 @@ void coco12_state::update_cart_base(uint8_t *cart_base)
 {
 	m_sam->configure_bank(3, cart_base, 0x4000, true);      // $C000-$FEFF
 }
+
+
+//-------------------------------------------------
+//  sam_shadow_range
+//-------------------------------------------------
+
+void coco12_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+{
+	m_sam->shadow_range(addrstart, addrend, shadow);
+}

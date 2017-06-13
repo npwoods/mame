@@ -46,6 +46,9 @@
     All parts of the SAM are fully emulated except R1/R0 (the changes in the
     MPU rate are approximated) and M1/M0
 
+	This code goes through sommersaults to get the MAME memory manager to
+	do its bidding
+
 ***************************************************************************/
 
 
@@ -347,16 +350,14 @@ void sam6883_device::set_bank_offset(int bank, offs_t offset)
 }
 
 
-
 //-------------------------------------------------
 //  read
 //-------------------------------------------------
 
 READ8_MEMBER( sam6883_device::read )
 {
-	return 0;
+	return read_shadow(0xFFC0 + offset);
 }
-
 
 
 //-------------------------------------------------
@@ -365,16 +366,18 @@ READ8_MEMBER( sam6883_device::read )
 
 WRITE8_MEMBER( sam6883_device::write )
 {
-	/* alter the SAM state */
+	// alter the SAM state
 	uint16_t xorval = alter_sam_state(offset);
 
-	/* based on the mask, apply effects */
+	// based on the mask, apply effects
 	if (xorval & (SAM_STATE_TY|SAM_STATE_M1|SAM_STATE_M0|SAM_STATE_P1))
 		update_memory();
 	if (xorval & (SAM_STATE_R1|SAM_STATE_R0))
 		update_cpu_clock();
-}
 
+	// also write to the shadow space
+	write_shadow(0xFFC0 + offset, data);
+}
 
 
 //-------------------------------------------------
@@ -440,15 +443,53 @@ WRITE_LINE_MEMBER( sam6883_device::hs_w )
 
 
 //-------------------------------------------------
+//  shadow_range
+//-------------------------------------------------
+
+void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+{
+	m_space_0000.shadow_range(addrstart, addrend, shadow);
+	m_space_8000.shadow_range(addrstart, addrend, shadow);
+	m_space_A000.shadow_range(addrstart, addrend, shadow);
+	m_space_C000.shadow_range(addrstart, addrend, shadow);
+	m_space_FF00.shadow_range(addrstart, addrend, shadow);
+	m_space_FF20.shadow_range(addrstart, addrend, shadow);
+	m_space_FF40.shadow_range(addrstart, addrend, shadow);
+	m_space_FF60.shadow_range(addrstart, addrend, shadow);
+	m_space_FFE0.shadow_range(addrstart, addrend, shadow);
+}
+
+
+//-------------------------------------------------
+//  read_shadow
+//-------------------------------------------------
+
+uint8_t sam6883_device::read_shadow(uint16_t address)
+{
+	return m_shadow_space->read_byte(address);
+}
+
+
+//-------------------------------------------------
+//  write_shadow
+//-------------------------------------------------
+
+void sam6883_device::write_shadow(uint16_t address, uint8_t data)
+{
+	m_shadow_space->write_byte(address, data);
+}
+
+
+//-------------------------------------------------
 //  shadow_space_read_delegate
 //-------------------------------------------------
 
-read8_delegate sam6883_device::shadow_space_read_delegate(offs_t addrstart)
+read8_delegate sam6883_device::shadow_space_read_delegate(uint16_t addrstart)
 {
 	return read8_delegate(
 		[this, addrstart](address_space &, offs_t offset, u8) -> u8
 		{
-			return m_shadow_space->read_byte(offset + addrstart);
+			return read_shadow(offset + addrstart);
 		},
 		"shadow-read-delegate"
 	);
@@ -459,12 +500,12 @@ read8_delegate sam6883_device::shadow_space_read_delegate(offs_t addrstart)
 //  shadow_space_write_delegate
 //-------------------------------------------------
 
-write8_delegate sam6883_device::shadow_space_write_delegate(offs_t addrstart)
+write8_delegate sam6883_device::shadow_space_write_delegate(uint16_t addrstart)
 {
 	return write8_delegate(
 		[this, addrstart](address_space &, offs_t offset, u8 data, u8)
 		{
-			m_shadow_space->write_byte(offset + addrstart, data);
+			write_shadow(offset + addrstart, data);
 		},
 		"shadow-write-delegate"
 	);
@@ -478,10 +519,12 @@ write8_delegate sam6883_device::shadow_space_write_delegate(offs_t addrstart)
 template<uint16_t _addrstart, uint16_t _addrend>
 sam6883_device::sam_space<_addrstart, _addrend>::sam_space(sam6883_device &owner)
 	: m_owner(owner)
+	, m_read_bank(nullptr)
+	, m_write_bank(nullptr)
+	, m_length(0)
+	, m_shadow_addrstart(0)
+	, m_shadow_addrend(0)
 {
-	m_read_bank = nullptr;
-	m_write_bank = nullptr;
-	m_length = 0;
 }
 
 
@@ -598,5 +641,22 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const 
 				: m_owner.shadow_space_read_delegate(_addrstart);
 			cpu_space().install_read_handler(addrstart, addrend, rh);
 		}
+	}
+}
+
+
+//-------------------------------------------------
+//  sam_space::shadow_range
+//-------------------------------------------------
+
+template<uint16_t _addrstart, uint16_t _addrend>
+void sam6883_device::sam_space<_addrstart, _addrend>::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+{
+	addrstart = std::max(addrstart, _addrstart);
+	addrend = std::min(addrend, _addrend);
+	if (addrstart <= addrend && shadow)
+	{
+		// NYI
+		//throw false;
 	}
 }

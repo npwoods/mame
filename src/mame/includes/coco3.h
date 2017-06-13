@@ -54,6 +54,7 @@ public:
 
 protected:
 	virtual void update_cart_base(uint8_t *cart_base) override;
+	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow) override final;
 
 	/* interrupts */
 	virtual bool firq_get_line(void) override;

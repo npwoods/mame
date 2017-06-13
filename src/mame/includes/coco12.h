@@ -51,9 +51,11 @@ public:
 
 	DECLARE_WRITE_LINE_MEMBER( horizontal_sync );
 	DECLARE_WRITE_LINE_MEMBER( field_sync );
+
 protected:
 	virtual void device_start() override;
 	virtual void update_cart_base(uint8_t *cart_base) override;
+	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow) override final;
 
 	/* PIA1 */
 	virtual void pia1_pb_changed(uint8_t data) override;
