@@ -260,8 +260,8 @@ private:
 	void horizontal_sync(void);
 	void update_state(void);
 	void update_memory(void);
-	template<uint16_t addrstart> READ8_MEMBER(shadow_r);
-	template<uint16_t addrstart> WRITE8_MEMBER(shadow_w);
+	read8_delegate shadow_space_read_delegate(offs_t addrstart);
+	write8_delegate shadow_space_write_delegate(offs_t addrstart);
 };
 
 DECLARE_DEVICE_TYPE(SAM6883, sam6883_device)

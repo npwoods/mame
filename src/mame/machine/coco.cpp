@@ -96,12 +96,12 @@ coco_state::coco_state(const machine_config &mconfig, device_type type, const ch
 	m_rs232(*this, RS232_TAG),
 	m_vhd_0(*this, VHD0_TAG),
 	m_vhd_1(*this, VHD1_TAG),
-	m_extended_address_space(nullptr),
 	m_beckerport(*this, DWSOCK_TAG),
 	m_beckerportconfig(*this, BECKERPORT_TAG),
 	m_keyboard(*this, "row%u", 0),
 	m_joystick_type_control(*this, CTRL_SEL_TAG),
 	m_joystick_hires_control(*this, HIRES_INTF_TAG),
+	m_extended_address_space(nullptr),
 	m_in_floating_bus_read(false)
 {
 }

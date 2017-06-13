@@ -440,24 +440,34 @@ WRITE_LINE_MEMBER( sam6883_device::hs_w )
 
 
 //-------------------------------------------------
-//  shadow_r
+//  shadow_space_read_delegate
 //-------------------------------------------------
 
-template<uint16_t addrstart>
-READ8_MEMBER( sam6883_device::shadow_r )
+read8_delegate sam6883_device::shadow_space_read_delegate(offs_t addrstart)
 {
-	return m_shadow_space->read_byte(addrstart + offset);
+	return read8_delegate(
+		[this, addrstart](address_space &, offs_t offset, u8) -> u8
+		{
+			return m_shadow_space->read_byte(offset + addrstart);
+		},
+		"shadow-read-delegate"
+	);
 }
 
 
 //-------------------------------------------------
-//  shadow_w
+//  shadow_space_write_delegate
 //-------------------------------------------------
 
-template<uint16_t addrstart>
-WRITE8_MEMBER( sam6883_device::shadow_w )
+write8_delegate sam6883_device::shadow_space_write_delegate(offs_t addrstart)
 {
-	m_shadow_space->write_byte(addrstart + offset, data);
+	return write8_delegate(
+		[this, addrstart](address_space &, offs_t offset, u8 data, u8)
+		{
+			m_shadow_space->write_byte(offset + addrstart, data);
+		},
+		"shadow-write-delegate"
+	);
 }
 
 
@@ -512,10 +522,10 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point(const sam_bank &bank
 }
 
 
-
 //-------------------------------------------------
 //  sam_space::point_specific_bank
 //-------------------------------------------------
+
 template<uint16_t _addrstart, uint16_t _addrend>
 void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t length, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write)
 {
@@ -578,17 +588,14 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const 
 		{
 			write8_delegate wh = !bank.m_whandler.isnull()
 				? bank.m_whandler
-				: write8_delegate(FUNC(sam6883_device::shadow_w<_addrstart>), &m_owner);
+				: m_owner.shadow_space_write_delegate(_addrstart);
 			cpu_space().install_write_handler(addrstart, addrend, wh);
 		}
 		else
 		{
-			auto lambda = [this](address_space &, offs_t offset, u8) { return m_owner.m_shadow_space->read_byte(offset + _addrstart); };
-			auto deleg = read8_delegate(lambda, "lambda-delegate");
-
 			read8_delegate rh = !bank.m_rhandler.isnull()
 				? bank.m_rhandler
-				: read8_delegate(FUNC(sam6883_device::shadow_r<_addrstart>), &m_owner);
+				: m_owner.shadow_space_read_delegate(_addrstart);
 			cpu_space().install_read_handler(addrstart, addrend, rh);
 		}
 	}
