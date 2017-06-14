@@ -28571,6 +28571,7 @@ alienfnta                       // 2001.09 Alien Front (Rev A)
 alpilota                        // 1999.03 Airline Pilots (Rev A)
 alpiltdx                        // 1999.?? Airline Pilots Deluxe (Rev B)
 anmlbskt                        // 2005.01 Animal Basket (date is inside of ROM, probably earlier than release)
+anmlbskta                       // 2005.01 Animal Basket (date is inside of ROM, probably earlier than release)
 asndynmt                        // 2007.07 Dynamite Deka EX - Asian dynamite
 ausfache                        // 2008.02.20 Akatsuki Blitzkampf Ausf. Achse
 awbios                          // 2002.?? Atomiswave BIOS
@@ -29487,6 +29488,7 @@ hotbubla                        // (c) 1998 Pandora (Korea)
 macross                         // (c) 1992 Banpresto
 macross2                        // (c) 1993 Banpresto
 macross2g                       // review build
+macross2k                       // (c) 1993 Banpresto (Korea)
 mangchi                         // (c) 2000
 manybloc                        // (c) 1991 Bee-Oh
 mustang                         // UPL-90058 (c) 1990 UPL
@@ -35876,6 +35878,7 @@ teedoff                         // 6102 - (c) 1986 Tecmo
 tehkanwc                        // (c) 1985 Tehkan
 tehkanwcb                       // bootleg
 tehkanwcc                       // bootleg
+tehkanwcd                       // (c) 1985 Tehkan
 
 @source:tek405x.cpp
 tek4051                         //
