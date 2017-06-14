@@ -161,7 +161,7 @@ private:
 	public:
 		sam_space(sam6883_device &owner);
 		void point(const sam_bank &bank, uint16_t offset, uint32_t length = ~0);
-		void shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow);
+		bool shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow);
 
 	private:
 		sam6883_device &    m_owner;
@@ -169,7 +169,7 @@ private:
 		memory_bank *       m_write_bank;
 		uint32_t            m_length;
 		uint16_t			m_shadow_addrstart;
-		uint16_t			m_shadow_addrend;
+		uint16_t			m_shadow_length;
 
 		address_space &cpu_space() const;
 		void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write);

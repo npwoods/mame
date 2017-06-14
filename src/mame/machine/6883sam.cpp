@@ -448,15 +448,19 @@ WRITE_LINE_MEMBER( sam6883_device::hs_w )
 
 void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
 {
-	m_space_0000.shadow_range(addrstart, addrend, shadow);
-	m_space_8000.shadow_range(addrstart, addrend, shadow);
-	m_space_A000.shadow_range(addrstart, addrend, shadow);
-	m_space_C000.shadow_range(addrstart, addrend, shadow);
-	m_space_FF00.shadow_range(addrstart, addrend, shadow);
-	m_space_FF20.shadow_range(addrstart, addrend, shadow);
-	m_space_FF40.shadow_range(addrstart, addrend, shadow);
-	m_space_FF60.shadow_range(addrstart, addrend, shadow);
-	m_space_FFE0.shadow_range(addrstart, addrend, shadow);
+	bool changed = false;
+	changed = m_space_0000.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_8000.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_A000.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_C000.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_FF00.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_FF20.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_FF40.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_FF60.shadow_range(addrstart, addrend, shadow) || changed;
+	changed = m_space_FFE0.shadow_range(addrstart, addrend, shadow) || changed;
+
+	if (changed)
+		update_memory();
 }
 
 
@@ -522,8 +526,8 @@ sam6883_device::sam_space<_addrstart, _addrend>::sam_space(sam6883_device &owner
 	, m_read_bank(nullptr)
 	, m_write_bank(nullptr)
 	, m_length(0)
-	, m_shadow_addrstart(0)
-	, m_shadow_addrend(0)
+	, m_shadow_addrstart(_addrstart)
+	, m_shadow_length(_addrend - _addrstart + 1)
 {
 }
 
@@ -650,13 +654,43 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const 
 //-------------------------------------------------
 
 template<uint16_t _addrstart, uint16_t _addrend>
-void sam6883_device::sam_space<_addrstart, _addrend>::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+bool sam6883_device::sam_space<_addrstart, _addrend>::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
 {
+	// normalize addrstart/addrend according to which space we're in
 	addrstart = std::max(addrstart, _addrstart);
 	addrend = std::min(addrend, _addrend);
-	if (addrstart <= addrend && shadow)
+
+	// figure out the length of this new area
+	uint16_t length = addrend > addrstart ? addrend - addrstart + 1 : 0;
+
+	uint16_t new_shadow_addrstart = m_shadow_addrstart;
+	uint16_t new_shadow_length = m_shadow_length;
+	if (shadow && length > 0)
 	{
-		// NYI
-		//throw false;
+		// we don't support completely "freeform" shadow areas; ensure that if there is a shadow
+		// area, it is contiguous with the new one we're adding
+		assert(m_shadow_length == 0 || (addrstart == m_shadow_addrstart && length == m_shadow_length));
+
+		// persist it
+		new_shadow_addrstart = length > 0 ? addrstart : 0;
+		new_shadow_length = length;
+
 	}
+	else if (!shadow && length > 0)
+	{
+		// we don't support completely "freeform" shadow areas; ensure that if there is a shadow
+		// area, it is contiguous with the new one we're adding
+		assert(m_shadow_length == 0 || (addrstart == m_shadow_addrstart && length == m_shadow_length));
+
+		new_shadow_addrstart = 0;
+		new_shadow_length = 0;
+	}
+
+	bool changed = new_shadow_addrstart != m_shadow_addrstart || new_shadow_length != m_shadow_length;
+	if (changed)
+	{
+		m_shadow_addrstart = new_shadow_addrstart;
+		m_shadow_length = new_shadow_length;
+	}
+	return changed;
 }
