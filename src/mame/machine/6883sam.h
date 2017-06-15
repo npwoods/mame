@@ -187,7 +187,6 @@ private:
 		uint16_t			m_shadow_length;
 
 		address_space &cpu_space() const;
-		void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write);
 	};
 
 	const char *        m_cpu_tag;
@@ -282,6 +281,7 @@ private:
 	void write_shadow(uint16_t address, uint8_t data);
 	read8_delegate shadow_space_read_delegate(uint16_t addrstart);
 	write8_delegate shadow_space_write_delegate(uint16_t addrstart);
+	void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write);
 };
 
 DECLARE_DEVICE_TYPE(SAM6883, sam6883_device)

@@ -519,6 +519,75 @@ write8_delegate sam6883_device::shadow_space_write_delegate(uint16_t addrstart)
 
 
 //-------------------------------------------------
+//  point_specific_bank
+//-------------------------------------------------
+
+void sam6883_device::point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t length, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write)
+{
+	if (bank.m_memory != nullptr)
+	{
+		// this bank is a memory bank - first lets adjust the length as per the offset; as
+		// passed to this method, the length is from offset zero
+		if (length != ~0)
+			length -= std::min(offset, length);
+
+		// determine "nop_addrstart" - where the bank ends, and above which is AM_NOP
+		uint32_t nop_addrstart = (length != ~0)
+			? std::min(addrend + 1, addrstart + length)
+			: addrend + 1;
+
+		// for writes, we may have to honor read only memory
+		if (is_write && bank.m_memory_read_only)
+			nop_addrstart = addrstart;
+
+		// did the state change?
+		bank_state new_state(addrstart, nop_addrstart, addrend, length);
+		if (new_state != state)
+		{
+			// install the bank
+			if (is_write)
+			{
+				if (addrstart < nop_addrstart)
+					m_cpu_space->install_writeonly(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
+				if (nop_addrstart <= addrend)
+					m_cpu_space->nop_write(nop_addrstart, addrend);
+			}
+			else
+			{
+				if (addrstart < nop_addrstart)
+					m_cpu_space->install_rom(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
+				if (nop_addrstart <= addrend)
+					m_cpu_space->nop_read(nop_addrstart, addrend);
+			}
+
+			state = new_state;
+		}
+	}
+	else
+	{
+		// this bank uses handlers - first thing's first, assert that we are not doing
+		// any weird stuff with offfsets and lengths - that isn't supported in this path
+		assert((offset == 0) && (length == (uint32_t)~0));
+
+		if (is_write)
+		{
+			write8_delegate wh = !bank.m_whandler.isnull()
+				? bank.m_whandler
+				: shadow_space_write_delegate(addrstart);
+			m_cpu_space->install_write_handler(addrstart, addrend, wh);
+		}
+		else
+		{
+			read8_delegate rh = !bank.m_rhandler.isnull()
+				? bank.m_rhandler
+				: shadow_space_read_delegate(addrstart);
+			m_cpu_space->install_read_handler(addrstart, addrend, rh);
+		}
+	}
+}
+
+
+//-------------------------------------------------
 //  bank_state::ctor
 //-------------------------------------------------
 
@@ -600,78 +669,8 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point(const sam_bank &bank
 			bank.m_memory_read_only ? "true" : "false");
 	}
 
-	point_specific_bank(bank, offset, length, m_read_bank, _addrstart, _addrend, false);
-	point_specific_bank(bank, offset, length, m_write_bank, _addrstart, _addrend, true);
-}
-
-
-//-------------------------------------------------
-//  sam_space::point_specific_bank
-//-------------------------------------------------
-
-template<uint16_t _addrstart, uint16_t _addrend>
-void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t length, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write)
-{
-	if (bank.m_memory != nullptr)
-	{
-		// this bank is a memory bank - first lets adjust the length as per the offset; as
-		// passed to this method, the length is from offset zero
-		if (length != ~0)
-			length -= std::min(offset, length);
-
-		// determine "nop_addrstart" - where the bank ends, and above which is AM_NOP
-		uint32_t nop_addrstart = (length != ~0)
-			? std::min(addrend + 1, addrstart + length)
-			: addrend + 1;
-
-		// for writes, we may have to honor read only memory
-		if (is_write && bank.m_memory_read_only)
-			nop_addrstart = addrstart;
-
-		// did the state change?
-		sam6883_device::bank_state new_state(addrstart, nop_addrstart, addrend, length);
-		if (new_state != state)
-		{
-			// install the bank
-			if (is_write)
-			{
-				if (addrstart < nop_addrstart)
-					cpu_space().install_writeonly(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
-				if (nop_addrstart <= addrend)
-					cpu_space().nop_write(nop_addrstart, addrend);
-			}
-			else
-			{
-				if (addrstart < nop_addrstart)
-					cpu_space().install_rom(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
-				if (nop_addrstart <= addrend)
-					cpu_space().nop_read(nop_addrstart, addrend);
-			}
-
-			state = new_state;
-		}
-	}
-	else
-	{
-		// this bank uses handlers - first thing's first, assert that we are not doing
-		// any weird stuff with offfsets and lengths - that isn't supported in this path
-		assert((offset == 0) && (length == (uint32_t)~0));
-
-		if (is_write)
-		{
-			write8_delegate wh = !bank.m_whandler.isnull()
-				? bank.m_whandler
-				: m_owner.shadow_space_write_delegate(_addrstart);
-			cpu_space().install_write_handler(addrstart, addrend, wh);
-		}
-		else
-		{
-			read8_delegate rh = !bank.m_rhandler.isnull()
-				? bank.m_rhandler
-				: m_owner.shadow_space_read_delegate(_addrstart);
-			cpu_space().install_read_handler(addrstart, addrend, rh);
-		}
-	}
+	m_owner.point_specific_bank(bank, offset, length, m_read_bank, _addrstart, _addrend, false);
+	m_owner.point_specific_bank(bank, offset, length, m_write_bank, _addrstart, _addrend, true);
 }
 
 
