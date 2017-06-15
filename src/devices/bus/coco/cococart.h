@@ -121,7 +121,7 @@ public:
 	// cart base
 	uint8_t* get_cart_base();
 	void set_cart_base_update(cococart_base_update_delegate update);
-		
+
 private:
 	// TIMER_POOL: Must be power of two
 	static constexpr int TIMER_POOL = 2;
@@ -277,5 +277,6 @@ extern const device_type COCO_PAK;
 extern const device_type COCO_PAK_BANKED;
 extern const device_type COCO_PAK_GMC;
 extern const device_type COCO_T4426;
+extern const device_type DRAGON_JCBSND;
 
 #endif // MAME_BUS_COCO_COCOCART_H
