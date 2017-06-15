@@ -448,6 +448,7 @@ WRITE_LINE_MEMBER( sam6883_device::hs_w )
 
 void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
 {
+#if 0
 	bool changed = false;
 	changed = m_space_0000.shadow_range(addrstart, addrend, shadow) || changed;
 	changed = m_space_8000.shadow_range(addrstart, addrend, shadow) || changed;
@@ -461,6 +462,7 @@ void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, bool sha
 
 	if (changed)
 		update_memory();
+#endif
 }
 
 
@@ -517,14 +519,48 @@ write8_delegate sam6883_device::shadow_space_write_delegate(uint16_t addrstart)
 
 
 //-------------------------------------------------
+//  bank_state::ctor
+//-------------------------------------------------
+
+sam6883_device::bank_state::bank_state()
+	: bank_state(0, 0, 0, 0)
+{
+}
+
+
+//-------------------------------------------------
+//  bank_state::ctor
+//-------------------------------------------------
+
+sam6883_device::bank_state::bank_state(uint32_t addrstart, uint32_t nop_addr_start, uint32_t addrend, uint32_t length)
+	: m_addrstart(addrstart)
+	, m_nop_addrstart(nop_addr_start)
+	, m_addrend(addrend)
+	, m_length(length)
+{
+}
+
+
+//-------------------------------------------------
+//  bank_state::operator!=
+//-------------------------------------------------
+
+bool sam6883_device::bank_state::operator!=(const sam6883_device::bank_state &that) const
+{
+	return m_addrstart != that.m_addrstart
+		|| m_nop_addrstart != that.m_nop_addrstart
+		|| m_addrend != that.m_addrend
+		|| m_length != that.m_length;
+}
+
+
+//-------------------------------------------------
 //  sam_space::ctor
 //-------------------------------------------------
 
 template<uint16_t _addrstart, uint16_t _addrend>
 sam6883_device::sam_space<_addrstart, _addrend>::sam_space(sam6883_device &owner)
 	: m_owner(owner)
-	, m_read_bank(nullptr)
-	, m_write_bank(nullptr)
 	, m_length(0)
 	, m_shadow_addrstart(_addrstart)
 	, m_shadow_length(_addrend - _addrstart + 1)
@@ -574,7 +610,7 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point(const sam_bank &bank
 //-------------------------------------------------
 
 template<uint16_t _addrstart, uint16_t _addrend>
-void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t length, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write)
+void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t length, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write)
 {
 	if (bank.m_memory != nullptr)
 	{
@@ -583,46 +619,36 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point_specific_bank(const 
 		if (length != ~0)
 			length -= std::min(offset, length);
 
-		// do we even have a bank?  and if so, have legit changes occured?
-		if (!memory_bank || !memory_bank->matches_exactly(addrstart, addrend) || (length != m_length))
+		// determine "nop_addrstart" - where the bank ends, and above which is AM_NOP
+		uint32_t nop_addrstart = (length != ~0)
+			? std::min(addrend + 1, addrstart + length)
+			: addrend + 1;
+
+		// for writes, we may have to honor read only memory
+		if (is_write && bank.m_memory_read_only)
+			nop_addrstart = addrstart;
+
+		// did the state change?
+		sam6883_device::bank_state new_state(addrstart, nop_addrstart, addrend, length);
+		if (new_state != state)
 		{
-			// name the bank
-			auto tag = string_format("bank%04X_%c", addrstart, is_write ? 'w' : 'r');
-
-			// determine "nop_addrstart" - where the bank ends, and above which is AM_NOP
-			uint32_t nop_addrstart = (length != ~0)
-				? std::min(addrend + 1, addrstart + length)
-				: addrend + 1;
-
 			// install the bank
 			if (is_write)
 			{
 				if (addrstart < nop_addrstart)
-					cpu_space().install_write_bank(addrstart, nop_addrstart - 1, 0, tag.c_str());
+					cpu_space().install_writeonly(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
 				if (nop_addrstart <= addrend)
 					cpu_space().nop_write(nop_addrstart, addrend);
 			}
 			else
 			{
 				if (addrstart < nop_addrstart)
-					cpu_space().install_read_bank(addrstart, nop_addrstart - 1, 0, tag.c_str());
+					cpu_space().install_rom(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
 				if (nop_addrstart <= addrend)
 					cpu_space().nop_read(nop_addrstart, addrend);
 			}
 
-			m_length = length;
-
-			// and get it
-			memory_bank = cpu_space().device().owner()->membank(tag.c_str());
-		}
-
-		// point the bank
-		if (memory_bank != nullptr)
-		{
-			if (is_write && bank.m_memory_read_only)
-				memory_bank->set_base(m_owner.m_dummy);
-			else
-				memory_bank->set_base(bank.m_memory + offset);
+			state = new_state;
 		}
 	}
 	else
@@ -669,7 +695,7 @@ bool sam6883_device::sam_space<_addrstart, _addrend>::shadow_range(uint16_t addr
 	{
 		// we don't support completely "freeform" shadow areas; ensure that if there is a shadow
 		// area, it is contiguous with the new one we're adding
-		assert(m_shadow_length == 0 || (addrstart == m_shadow_addrstart && length == m_shadow_length));
+		//assert(m_shadow_length == 0 || (addrstart == m_shadow_addrstart && length == m_shadow_length));
 
 		// persist it
 		new_shadow_addrstart = length > 0 ? addrstart : 0;

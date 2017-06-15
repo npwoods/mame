@@ -153,6 +153,21 @@ private:
 		write8_delegate     m_whandler;
 	};
 
+	class bank_state
+	{
+	public:
+		bank_state();
+		bank_state(uint32_t addrstart, uint32_t nop_addr_start, uint32_t addrend, uint32_t length);
+		bank_state(const bank_state &that) = default;
+		bool operator!=(const bank_state &that) const;
+
+	private:
+		uint32_t	m_addrstart;
+		uint32_t	m_nop_addrstart;
+		uint32_t	m_addrend;
+		uint32_t	m_length;
+	};
+
 	// represents one of the memory "spaces" (e.g. - $8000-$9FFF) that
 	// can ultimately point to a bank
 	template <uint16_t _addrstart, uint16_t _addrend>
@@ -165,14 +180,14 @@ private:
 
 	private:
 		sam6883_device &    m_owner;
-		memory_bank *       m_read_bank;
-		memory_bank *       m_write_bank;
+		bank_state          m_read_bank;
+		bank_state          m_write_bank;
 		uint32_t            m_length;
 		uint16_t			m_shadow_addrstart;
 		uint16_t			m_shadow_length;
 
 		address_space &cpu_space() const;
-		void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, memory_bank *&memory_bank, uint32_t addrstart, uint32_t addrend, bool is_write);
+		void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write);
 	};
 
 	const char *        m_cpu_tag;
@@ -199,9 +214,6 @@ private:
 	uint16_t                      m_counter;
 	uint8_t                       m_counter_xdiv;
 	uint8_t                       m_counter_ydiv;
-
-	// dummy scratch memory
-	uint8_t                       m_dummy[0x8000];
 
 	// typically called by CPU
 	DECLARE_READ8_MEMBER( read );
