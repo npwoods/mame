@@ -43,7 +43,7 @@ static ADDRESS_MAP_START( coco3_mem, AS_PROGRAM, 8, coco3_state )
 	AM_RANGE(0xFF00, 0xFF1F) AM_READWRITE(ff00_read, ff00_write)
 	AM_RANGE(0xFF20, 0xFF3F) AM_READWRITE(ff20_read, ff20_write)
 	AM_RANGE(0xFF40, 0xFF5F) AM_READWRITE(ff40_read, ff40_write)
-	AM_RANGE(0xFF90, 0xFFDF) AM_DEVREADWRITE(GIME_TAG, gime_base_device, read, write)
+	AM_RANGE(0xFF90, 0xFFDF) AM_DEVREADWRITE(GIME_TAG, gime_device, read, write)
 
 	// While Tepolt and other sources say that the interrupt vectors are mapped to
 	// the same memory accessed at $BFFx, William Astle offered evidence that this
