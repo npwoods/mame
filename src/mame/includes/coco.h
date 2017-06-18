@@ -167,7 +167,7 @@ protected:
 	virtual void update_keyboard_input(uint8_t value, uint8_t z);
 	virtual void cart_w(bool state);
 	virtual void update_cart_base(uint8_t *cart_base) = 0;
-	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow) = 0;
+	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow) = 0;
 
 	// accessors
 	address_space &extended_address_space();

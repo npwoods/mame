@@ -172,7 +172,7 @@ uint32_t coco3_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap,
 //  screen_update
 //-------------------------------------------------
 
-void coco3_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+void coco3_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
 {
 	// NYI
 	throw false;

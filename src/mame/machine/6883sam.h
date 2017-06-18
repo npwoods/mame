@@ -103,7 +103,7 @@ public:
 	void configure_bank(int bank, read8_delegate rhandler, write8_delegate whandler);
 
 	// turns shadowing on or off for a range
-	void shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow);
+	void shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow);
 
 	// typically called by VDG
 	ATTR_FORCE_INLINE DECLARE_READ8_MEMBER( display_read )
@@ -176,7 +176,7 @@ private:
 	public:
 		sam_space(sam6883_device &owner);
 		void point(const sam_bank &bank, uint16_t offset, uint32_t length = ~0);
-		bool shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow);
+		void invalidate_range(uint16_t addrstart, uint16_t addrend, read_or_write row);
 
 	private:
 		sam6883_device &    m_owner;
@@ -185,8 +185,6 @@ private:
 		uint32_t            m_length;
 		uint16_t			m_shadow_addrstart;
 		uint16_t			m_shadow_length;
-
-		address_space &cpu_space() const;
 	};
 
 	const char *        m_cpu_tag;
@@ -213,6 +211,7 @@ private:
 	uint16_t                      m_counter;
 	uint8_t                       m_counter_xdiv;
 	uint8_t                       m_counter_ydiv;
+	std::array<uint64_t, 65536 / 64>	m_shadow[2];
 
 	// typically called by CPU
 	DECLARE_READ8_MEMBER( read );
@@ -281,7 +280,15 @@ private:
 	void write_shadow(uint16_t address, uint8_t data);
 	read8_delegate shadow_space_read_delegate(uint16_t addrstart);
 	write8_delegate shadow_space_write_delegate(uint16_t addrstart);
+	address_space &cpu_space();
+	void install_read_memory(uint16_t addrstart, uint16_t addrend, void *memory);
+	void install_write_memory(uint16_t addrstart, uint16_t addrend, void *memory);
+	void install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
+	void install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
 	void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write);
+	std::array<uint64_t, 65536 / 64> &shadow_bitmap(read_or_write row);
+	bool internal_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow);
+	void update_shadow(uint16_t addrstart, uint16_t addrend, read_or_write row);
 };
 
 DECLARE_DEVICE_TYPE(SAM6883, sam6883_device)

@@ -242,7 +242,7 @@ address_space &coco_state::extended_address_space()
 void coco_state::extspace_install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
 {
 	extended_address_space().install_read_handler(addrstart, addrend, rhandler);
-	sam_shadow_range(addrstart, addrend, true);
+	sam_shadow_range(addrstart, addrend, ROW_READ, true);
 }
 
 
@@ -253,7 +253,7 @@ void coco_state::extspace_install_read_handler(uint16_t addrstart, uint16_t addr
 void coco_state::extspace_install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
 {
 	extended_address_space().install_write_handler(addrstart, addrend, whandler);
-	sam_shadow_range(addrstart, addrend, true);
+	sam_shadow_range(addrstart, addrend, ROW_WRITE, true);
 }
 
 
@@ -264,7 +264,7 @@ void coco_state::extspace_install_write_handler(uint16_t addrstart, uint16_t add
 void coco_state::extspace_install_ram(uint16_t addrstart, uint16_t addrend, void *baseptr)
 {
 	extended_address_space().install_ram(addrstart, addrend, baseptr);
-	sam_shadow_range(addrstart, addrend, true);
+	sam_shadow_range(addrstart, addrend, ROW_READWRITE, true);
 }
 
 
@@ -276,7 +276,7 @@ void coco_state::extspace_unmap(uint16_t addrstart, uint16_t addrend)
 {
 	extended_address_space().install_read_handler(addrstart, addrend, read8_delegate(FUNC(coco_state::floating_bus_read), this));
 	extended_address_space().unmap_write(addrstart, addrend);
-	sam_shadow_range(addrstart, addrend, false);
+	sam_shadow_range(addrstart, addrend, ROW_READWRITE, false);
 }
 
 

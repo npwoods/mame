@@ -122,7 +122,7 @@ void coco12_state::update_cart_base(uint8_t *cart_base)
 //  sam_shadow_range
 //-------------------------------------------------
 
-void coco12_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+void coco12_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
 {
-	m_sam->shadow_range(addrstart, addrend, shadow);
+	m_sam->shadow_range(addrstart, addrend, row, shadow);
 }

@@ -107,6 +107,9 @@ void sam6883_device::device_start()
 	// resolve callbacks
 	m_read_res.resolve_safe(0);
 
+	// clear shadow
+	memset(m_shadow, 0, sizeof(m_shadow));
+
 	// install SAM handlers
 	m_cpu_space->install_read_handler(0xFFC0, 0xFFDF, read8_delegate(FUNC(sam6883_device::read), this));
 	m_cpu_space->install_write_handler(0xFFC0, 0xFFDF, write8_delegate(FUNC(sam6883_device::write), this));
@@ -443,26 +446,89 @@ WRITE_LINE_MEMBER( sam6883_device::hs_w )
 
 
 //-------------------------------------------------
+//  shadow_bitmap
+//-------------------------------------------------
+
+std::array<uint64_t, 65536 / 64> &sam6883_device::shadow_bitmap(read_or_write row)
+{
+	switch (row)
+	{
+	case ROW_READ:
+		return m_shadow[0];
+	case ROW_WRITE:
+		return m_shadow[1];
+	default:
+		throw false;
+	}
+}
+
+
+//-------------------------------------------------
 //  shadow_range
 //-------------------------------------------------
 
-void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
 {
-#if 0
 	bool changed = false;
-	changed = m_space_0000.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_8000.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_A000.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_C000.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_FF00.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_FF20.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_FF40.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_FF60.shadow_range(addrstart, addrend, shadow) || changed;
-	changed = m_space_FFE0.shadow_range(addrstart, addrend, shadow) || changed;
+	if (row == ROW_READWRITE)
+	{
+		if (internal_shadow_range(addrstart, addrend, ROW_READ, shadow))
+			changed = true;
+		if (internal_shadow_range(addrstart, addrend, ROW_WRITE, shadow))
+			changed = true;
+	}
+	else
+	{
+		if (internal_shadow_range(addrstart, addrend, row, shadow))
+			changed = true;
+	}
 
-	if (changed)
+	// if we're at runtime, update memory
+	if (changed && machine().phase() == machine_phase::RUNNING)
 		update_memory();
-#endif
+}
+
+
+//-------------------------------------------------
+//  internal_shadow_range
+//-------------------------------------------------
+
+bool sam6883_device::internal_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
+{
+	// identify the proper shadow
+	auto &bitmap(shadow_bitmap(row));
+
+	bool changed = false;
+	for (uint16_t i = addrstart; i <= addrend; i++)
+	{
+		auto &ptr(bitmap[i / sizeof(bitmap[0]) / 8]);
+		auto mask = 1LL << (i % (sizeof(bitmap[0]) * 8));
+
+		auto new_value = shadow
+			? ptr | mask
+			: ptr & ~mask;
+
+		if (new_value != ptr)
+		{
+			ptr = new_value;
+			changed = true;
+		}
+	}
+
+	// invalidate banks if something changed
+	if (changed)
+	{
+		m_space_0000.invalidate_range(addrstart, addrend, row);
+		m_space_8000.invalidate_range(addrstart, addrend, row);
+		m_space_A000.invalidate_range(addrstart, addrend, row);
+		m_space_C000.invalidate_range(addrstart, addrend, row);
+		m_space_FF00.invalidate_range(addrstart, addrend, row);
+		m_space_FF20.invalidate_range(addrstart, addrend, row);
+		m_space_FF60.invalidate_range(addrstart, addrend, row);
+		m_space_FF40.invalidate_range(addrstart, addrend, row);
+		m_space_FFE0.invalidate_range(addrstart, addrend, row);
+	}
+	return changed;
 }
 
 
@@ -519,6 +585,63 @@ write8_delegate sam6883_device::shadow_space_write_delegate(uint16_t addrstart)
 
 
 //-------------------------------------------------
+//  cpu_space
+//-------------------------------------------------
+
+address_space &sam6883_device::cpu_space()
+{
+	assert(m_cpu_space);
+	return *m_cpu_space;
+}
+
+
+//-------------------------------------------------
+//  install_read_memory
+//-------------------------------------------------
+
+void sam6883_device::install_read_memory(uint16_t addrstart, uint16_t addrend, void *memory)
+{
+	if (memory)
+		cpu_space().install_rom(addrstart, addrend, memory);
+	else
+		cpu_space().nop_read(addrstart, addrend);
+}
+
+
+//-------------------------------------------------
+//  install_write_memory
+//-------------------------------------------------
+
+void sam6883_device::install_write_memory(uint16_t addrstart, uint16_t addrend, void *memory)
+{
+	if (memory)
+		cpu_space().install_writeonly(addrstart, addrend, memory);
+	else
+		cpu_space().nop_write(addrstart, addrend);
+}
+
+
+//-------------------------------------------------
+//  install_read_handler
+//-------------------------------------------------
+
+void sam6883_device::install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler)
+{
+	cpu_space().install_read_handler(addrstart, addrend, rhandler);
+}
+
+
+//-------------------------------------------------
+//  install_write_handler
+//-------------------------------------------------
+
+void sam6883_device::install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler)
+{
+	cpu_space().install_write_handler(addrstart, addrend, whandler);
+}
+
+
+//-------------------------------------------------
 //  point_specific_bank
 //-------------------------------------------------
 
@@ -548,16 +671,16 @@ void sam6883_device::point_specific_bank(const sam_bank &bank, uint32_t offset, 
 			if (is_write)
 			{
 				if (addrstart < nop_addrstart)
-					m_cpu_space->install_writeonly(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
+					install_write_memory(addrstart, nop_addrstart - 1, bank.m_memory + offset);
 				if (nop_addrstart <= addrend)
-					m_cpu_space->nop_write(nop_addrstart, addrend);
+					install_write_memory(nop_addrstart, addrend, nullptr);
 			}
 			else
 			{
 				if (addrstart < nop_addrstart)
-					m_cpu_space->install_rom(addrstart, nop_addrstart - 1, 0, bank.m_memory + offset);
+					install_read_memory(addrstart, nop_addrstart - 1, bank.m_memory + offset);
 				if (nop_addrstart <= addrend)
-					m_cpu_space->nop_read(nop_addrstart, addrend);
+					install_read_memory(nop_addrstart, addrend, nullptr);
 			}
 
 			state = new_state;
@@ -574,15 +697,53 @@ void sam6883_device::point_specific_bank(const sam_bank &bank, uint32_t offset, 
 			write8_delegate wh = !bank.m_whandler.isnull()
 				? bank.m_whandler
 				: shadow_space_write_delegate(addrstart);
-			m_cpu_space->install_write_handler(addrstart, addrend, wh);
+			install_write_handler(addrstart, addrend, wh);
 		}
 		else
 		{
 			read8_delegate rh = !bank.m_rhandler.isnull()
 				? bank.m_rhandler
 				: shadow_space_read_delegate(addrstart);
-			m_cpu_space->install_read_handler(addrstart, addrend, rh);
+			install_read_handler(addrstart, addrend, rh);
 		}
+	}
+}
+
+
+//-------------------------------------------------
+//  update_shadow
+//-------------------------------------------------
+
+void sam6883_device::update_shadow(uint16_t addrstart, uint16_t addrend, read_or_write row)
+{
+	auto &bitmap(shadow_bitmap(row));
+
+	for (uint32_t i = addrstart; i <= addrend; i++)
+	{
+		// figure out if we're in a "shadow block", and if so, how long it is
+		uint32_t j;
+		for (j = 0; (i + j) < 0x10000 && (bitmap[(i + j) / 64] & ((uint64_t)1) << ((i + j) % 64)); j++)
+			j++;
+
+		if (j > 0)
+		{
+			uint16_t shadow_addrstart = i;
+			uint16_t shadow_addrend = i + j - 1;
+
+			switch (row)
+			{
+			case ROW_READ:
+				install_read_handler(shadow_addrstart, shadow_addrend, shadow_space_read_delegate(shadow_addrstart));
+				break;
+			case ROW_WRITE:
+				install_write_handler(shadow_addrstart, shadow_addrend, shadow_space_write_delegate(shadow_addrstart));
+				break;
+			default:
+				throw false;
+			}
+		}
+
+		i += j;
 	}
 }
 
@@ -637,20 +798,6 @@ sam6883_device::sam_space<_addrstart, _addrend>::sam_space(sam6883_device &owner
 }
 
 
-
-//-------------------------------------------------
-//  sam_space::cpu_space
-//-------------------------------------------------
-
-template<uint16_t _addrstart, uint16_t _addrend>
-address_space &sam6883_device::sam_space<_addrstart, _addrend>::cpu_space() const
-{
-	assert(m_owner.m_cpu_space != nullptr);
-	return *m_owner.m_cpu_space;
-}
-
-
-
 //-------------------------------------------------
 //  sam_space::point
 //-------------------------------------------------
@@ -671,51 +818,30 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point(const sam_bank &bank
 
 	m_owner.point_specific_bank(bank, offset, length, m_read_bank, _addrstart, _addrend, false);
 	m_owner.point_specific_bank(bank, offset, length, m_write_bank, _addrstart, _addrend, true);
+	m_owner.update_shadow(_addrstart, _addrend, ROW_READ);
+	m_owner.update_shadow(_addrstart, _addrend, ROW_WRITE);
 }
 
 
-//-------------------------------------------------
-//  sam_space::shadow_range
+//------------------------------------------------
+//  sam_space::invalidate_range
 //-------------------------------------------------
 
 template<uint16_t _addrstart, uint16_t _addrend>
-bool sam6883_device::sam_space<_addrstart, _addrend>::shadow_range(uint16_t addrstart, uint16_t addrend, bool shadow)
+void sam6883_device::sam_space<_addrstart, _addrend>::invalidate_range(uint16_t addrstart, uint16_t addrend, read_or_write row)
 {
-	// normalize addrstart/addrend according to which space we're in
-	addrstart = std::max(addrstart, _addrstart);
-	addrend = std::min(addrend, _addrend);
-
-	// figure out the length of this new area
-	uint16_t length = addrend > addrstart ? addrend - addrstart + 1 : 0;
-
-	uint16_t new_shadow_addrstart = m_shadow_addrstart;
-	uint16_t new_shadow_length = m_shadow_length;
-	if (shadow && length > 0)
+	if (addrstart <= _addrend && addrend >= _addrstart)
 	{
-		// we don't support completely "freeform" shadow areas; ensure that if there is a shadow
-		// area, it is contiguous with the new one we're adding
-		//assert(m_shadow_length == 0 || (addrstart == m_shadow_addrstart && length == m_shadow_length));
-
-		// persist it
-		new_shadow_addrstart = length > 0 ? addrstart : 0;
-		new_shadow_length = length;
-
+		switch (row)
+		{
+		case ROW_READ:
+			m_read_bank = bank_state();
+			break;
+		case ROW_WRITE:
+			m_write_bank = bank_state();
+			break;
+		default:
+			throw false;
+		}
 	}
-	else if (!shadow && length > 0)
-	{
-		// we don't support completely "freeform" shadow areas; ensure that if there is a shadow
-		// area, it is contiguous with the new one we're adding
-		assert(m_shadow_length == 0 || (addrstart == m_shadow_addrstart && length == m_shadow_length));
-
-		new_shadow_addrstart = 0;
-		new_shadow_length = 0;
-	}
-
-	bool changed = new_shadow_addrstart != m_shadow_addrstart || new_shadow_length != m_shadow_length;
-	if (changed)
-	{
-		m_shadow_addrstart = new_shadow_addrstart;
-		m_shadow_length = new_shadow_length;
-	}
-	return changed;
 }
