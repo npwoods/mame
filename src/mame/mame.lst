@@ -13976,6 +13976,7 @@ thehand                         // (c) 1981 T.I.C.
 
 @source:goupil.cpp
 goupilg1                        //
+goupilg2                        //
 
 @source:gp_1.cpp
 blvelvet                        //
@@ -17264,6 +17265,7 @@ mamboagg                        // 2001 - Mambo A Go-Go (GQA40 VER. JAB)
 mamboagga                       // 2001 - Mambo A Go-Go e-Amusement (GQA40 VER. JRB)
 mrtlbeat                        // 2002 - Martial Beat (Martial Beat (G*B47 VER. JBA)
 pcnfrk3m                        // 2000 - Percussion Freaks 3rd Mix (G*A23 VER. KAA)
+pcnfrk5m                        // 2001 - Percussion Freaks 5th Mix (G*B05 VER. KAA)
 pnchmn                          // 2000 - Punch Mania: Hokuto No Ken (GQ918 VER. JAB)
 pnchmn2                         // 2000 - Punch Mania 2: Hokuto No Ken (GQA09 JAA)
 pnchmna                         // 2000 - Punch Mania: Hokuto No Ken (GQ918 VER. JAB, ALT CD)
@@ -30300,6 +30302,7 @@ pepk0873a                       // (c) 1987 IGT - International Game Technology
 pepk0885                        // (c) 1987 IGT - International Game Technology
 pepk0930                        // (c) 1987 IGT - International Game Technology
 pepk0930a                       // (c) 1987 IGT - International Game Technology
+pepk1002                        // (c) 1987 IGT - International Game Technology
 pepk1004                        // (c) 1987 IGT - International Game Technology
 pepk1013                        // (c) 1987 IGT - International Game Technology
 pepk1020                        // (c) 1987 IGT - International Game Technology
