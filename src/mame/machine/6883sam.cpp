@@ -453,9 +453,9 @@ std::array<uint64_t, 65536 / 64> &sam6883_device::shadow_bitmap(read_or_write ro
 {
 	switch (row)
 	{
-	case ROW_READ:
+	case read_or_write::READ:
 		return m_shadow[0];
-	case ROW_WRITE:
+	case read_or_write::WRITE:
 		return m_shadow[1];
 	default:
 		throw false;
@@ -470,11 +470,11 @@ std::array<uint64_t, 65536 / 64> &sam6883_device::shadow_bitmap(read_or_write ro
 void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
 {
 	bool changed = false;
-	if (row == ROW_READWRITE)
+	if (row == read_or_write::READWRITE)
 	{
-		if (internal_shadow_range(addrstart, addrend, ROW_READ, shadow))
+		if (internal_shadow_range(addrstart, addrend, read_or_write::READ, shadow))
 			changed = true;
-		if (internal_shadow_range(addrstart, addrend, ROW_WRITE, shadow))
+		if (internal_shadow_range(addrstart, addrend, read_or_write::WRITE, shadow))
 			changed = true;
 	}
 	else
@@ -732,10 +732,10 @@ void sam6883_device::update_shadow(uint16_t addrstart, uint16_t addrend, read_or
 
 			switch (row)
 			{
-			case ROW_READ:
+			case read_or_write::READ:
 				install_read_handler(shadow_addrstart, shadow_addrend, shadow_space_read_delegate(shadow_addrstart));
 				break;
-			case ROW_WRITE:
+			case read_or_write::WRITE:
 				install_write_handler(shadow_addrstart, shadow_addrend, shadow_space_write_delegate(shadow_addrstart));
 				break;
 			default:
@@ -818,8 +818,8 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point(const sam_bank &bank
 
 	m_owner.point_specific_bank(bank, offset, length, m_read_bank, _addrstart, _addrend, false);
 	m_owner.point_specific_bank(bank, offset, length, m_write_bank, _addrstart, _addrend, true);
-	m_owner.update_shadow(_addrstart, _addrend, ROW_READ);
-	m_owner.update_shadow(_addrstart, _addrend, ROW_WRITE);
+	m_owner.update_shadow(_addrstart, _addrend, read_or_write::READ);
+	m_owner.update_shadow(_addrstart, _addrend, read_or_write::WRITE);
 }
 
 
@@ -834,10 +834,10 @@ void sam6883_device::sam_space<_addrstart, _addrend>::invalidate_range(uint16_t 
 	{
 		switch (row)
 		{
-		case ROW_READ:
+		case read_or_write::READ:
 			m_read_bank = bank_state();
 			break;
-		case ROW_WRITE:
+		case read_or_write::WRITE:
 			m_write_bank = bank_state();
 			break;
 		default:
