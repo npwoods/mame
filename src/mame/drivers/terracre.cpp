@@ -100,7 +100,7 @@ AT-2
 0000 3000 414e 4b41 4b45 5544 4f4e
 0000 2000 0e0e 4b49 5455 4e45 0e0e
 0000 1000 0e4b 414b 4553 4f42 410e
-2079 0001 0004 4ed0 2079 0001 0008 
+2079 0001 0004 4ed0 2079 0001 0008
 4ed0 7c
 */
 
@@ -120,7 +120,7 @@ static const uint16_t mAmazonProtData[] =
 };
 
 /*
-0000 5000 5341 4b45 5349 4755 5245 
+0000 5000 5341 4b45 5349 4755 5245
 0000 4000 0e4b 4154 5544 4f4e 0e0e
 0000 3000 414e 4b41 4b45 5544 4f4e
 0000 2000 0e0e 4b49 5455 4e45 0e0e
@@ -176,7 +176,7 @@ READ8_MEMBER(terracre_state::soundlatch_clear_r)
 	return 0;
 }
 
-// 1412M2 
+// 1412M2
 READ16_MEMBER(terracre_state::amazon_protection_r)
 {
 	if(m_mAmazonProtCmd == 0x37)
@@ -185,14 +185,14 @@ READ16_MEMBER(terracre_state::amazon_protection_r)
 		//its usage is more variable in mightguy for whatever reason.
 		uint16_t prot_offset = (m_mAmazonProtReg[1]<<8)|(m_mAmazonProtReg[2]);
 		uint8_t *prot_rom = memregion("prot_data")->base();
-		
+
 		//printf("Mode %02x:%04x %04x R -> %02x (fixed %02x)\n",m_mAmazonProtReg[0],prot_offset,(m_mAmazonProtReg[3]<<8)|(m_mAmazonProtReg[4]),prot_rom[prot_offset],(prot_rom[prot_offset] - 0x44) & 0xff);
-		
+
 		return prot_rom[prot_offset & 0x1fff] - 0x44;
 	}
 
 	popmessage("unknown prot cmd R %02x",m_mAmazonProtCmd);
-	
+
 	return 0;
 }
 
@@ -209,13 +209,13 @@ WRITE16_MEMBER(terracre_state::amazon_protection_w)
 			if( m_mAmazonProtCmd>=0x32 && m_mAmazonProtCmd<=0x37 )
 			{
 				m_mAmazonProtReg[m_mAmazonProtCmd-0x32] = data;
-				
+
 				#if 0
 				if(m_mAmazonProtCmd == 0x32)
 				{
 					for(int i=0;i<6;i++)
 						printf("%02x ",m_mAmazonProtReg[i]);
-					
+
 					printf("\n");
 				}
 				#endif
@@ -243,9 +243,11 @@ static ADDRESS_MAP_START( terracre_map, AS_PROGRAM, 16, terracre_state )
 	AM_RANGE(0x024006, 0x024007) AM_READ_PORT("DSW")
 	AM_RANGE(0x026000, 0x026001) AM_WRITE(amazon_flipscreen_w)  /* flip screen & coin counters */
 	AM_RANGE(0x026002, 0x026003) AM_WRITE(amazon_scrollx_w)
-	AM_RANGE(0x026004, 0x026005) AM_WRITE(amazon_scrolly_w)
+	AM_RANGE(0x026004, 0x026005) AM_READNOP AM_WRITE(amazon_scrolly_w)
+	AM_RANGE(0x02600a, 0x02600b) AM_NOP // video related
 	AM_RANGE(0x02600c, 0x02600d) AM_WRITE(amazon_sound_w)
-	AM_RANGE(0x028000, 0x0287ff) AM_WRITE(amazon_foreground_w) AM_SHARE("fg_videoram")
+	AM_RANGE(0x02600e, 0x02600f) AM_NOP // video related
+	AM_RANGE(0x028000, 0x0287ff) AM_RAM_WRITE(amazon_foreground_w) AM_SHARE("fg_videoram")
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( amazon_base_map, AS_PROGRAM, 16, terracre_state )
@@ -259,14 +261,17 @@ static ADDRESS_MAP_START( amazon_base_map, AS_PROGRAM, 16, terracre_state )
 	AM_RANGE(0x044006, 0x044007) AM_READ_PORT("IN3")
 	AM_RANGE(0x046000, 0x046001) AM_WRITE(amazon_flipscreen_w)  /* flip screen & coin counters */
 	AM_RANGE(0x046002, 0x046003) AM_WRITE(amazon_scrollx_w)
-	AM_RANGE(0x046004, 0x046005) AM_WRITE(amazon_scrolly_w)
+	AM_RANGE(0x046004, 0x046005) AM_READNOP AM_WRITE(amazon_scrolly_w)
+	AM_RANGE(0x04600a, 0x04600b) AM_NOP // video related
 	AM_RANGE(0x04600c, 0x04600d) AM_WRITE(amazon_sound_w)
-	AM_RANGE(0x050000, 0x050fff) AM_WRITE(amazon_foreground_w) AM_SHARE("fg_videoram")
+	AM_RANGE(0x04600e, 0x04600f) AM_NOP // video related
+	AM_RANGE(0x050000, 0x050fff) AM_RAM_WRITE(amazon_foreground_w) AM_SHARE("fg_videoram")
+	AM_RANGE(0x070000, 0x070003) AM_NOP // protection (nop for bootlegs)
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( amazon_1412m2_map, AS_PROGRAM, 16, terracre_state)
-	AM_IMPORT_FROM( amazon_base_map )
 	AM_RANGE(0x070000, 0x070003) AM_READWRITE(amazon_protection_r, amazon_protection_w)
+	AM_IMPORT_FROM( amazon_base_map )
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( sound_map, AS_PROGRAM, 8, terracre_state )
@@ -631,7 +636,7 @@ MACHINE_CONFIG_END
 static MACHINE_CONFIG_DERIVED( amazon_1412m2, amazon_base )
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(amazon_1412m2_map)
-	
+
 	// TODO: install 1412m2 here
 MACHINE_CONFIG_END
 
@@ -1013,7 +1018,7 @@ GAME( 1985, terracren,terracre, ym2203,  terracre, terracre_state, 0,        ROT
 GAME( 1986, amazon,   0,        amazon_1412m2,  amazon,   terracre_state, 0,   ROT270,  "Nichibutsu", "Soldier Girl Amazon", MACHINE_SUPPORTS_SAVE )
 GAME( 1986, amatelas, amazon,   amazon_1412m2,  amazon,   terracre_state, 0, ROT270,  "Nichibutsu", "Sei Senshi Amatelass", MACHINE_SUPPORTS_SAVE )
 GAME( 1987, horekid,  0,        amazon_1412m2,  horekid,  terracre_state, 0,  ROT270,  "Nichibutsu", "Kid no Hore Hore Daisakusen", MACHINE_SUPPORTS_SAVE )
-GAME( 1987, horekidb, horekid,  amazon_1412m2,  horekid,  terracre_state, 0,  ROT270,  "bootleg",    "Kid no Hore Hore Daisakusen (bootleg)", MACHINE_SUPPORTS_SAVE )
 
 // bootlegs
+GAME( 1987, horekidb, horekid,  amazon_base,  horekid,  terracre_state, 0,  ROT270,  "bootleg",    "Kid no Hore Hore Daisakusen (bootleg)", MACHINE_SUPPORTS_SAVE )
 GAME( 1987, boobhack, horekid,  amazon_base,    horekid,  terracre_state, 0,  ROT270,  "bootleg",    "Booby Kids (Italian manufactured graphic hack / bootleg of Kid no Hore Hore Daisakusen (bootleg))", MACHINE_SUPPORTS_SAVE )

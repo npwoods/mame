@@ -31,9 +31,9 @@
         19  A0                  39  A15
         20  A1                  40  SLENB
 
-	Notes:
-		CTS - ROM read $C000-$FEFF ($FDFF on CoCo 3)
-		SCS - Spare Chip Select:  IO space between $FF40-5F
+    Notes:
+        CTS - ROM read $C000-$FEFF ($FDFF on CoCo 3)
+        SCS - Spare Chip Select:  IO space between $FF40-5F
 
 *********************************************************************/
 
@@ -49,7 +49,7 @@
 
 
 /***************************************************************************
-	CONSTANTS
+    CONSTANTS
 ***************************************************************************/
 
 enum
@@ -486,7 +486,7 @@ void device_cococart_interface::interface_pre_start()
 
 //-------------------------------------------------
 //  scs_read - Signifies a read where the SCS pin
-//	on the cartridge slot was asserted ($FF40-5F)
+//  on the cartridge slot was asserted ($FF40-5F)
 //-------------------------------------------------
 
 READ8_MEMBER(device_cococart_interface::scs_read)
@@ -497,7 +497,7 @@ READ8_MEMBER(device_cococart_interface::scs_read)
 
 //-------------------------------------------------
 //  scs_write - Signifies a write where the SCS pin
-//	on the cartridge slot was asserted ($FF40-5F)
+//  on the cartridge slot was asserted ($FF40-5F)
 //-------------------------------------------------
 
 WRITE8_MEMBER(device_cococart_interface::scs_write)
@@ -597,7 +597,7 @@ void device_cococart_interface::unmap(uint16_t addrstart, uint16_t addrend)
 
 
 //-------------------------------------------------
-//	set_line_value
+//  set_line_value
 //-------------------------------------------------
 
 void device_cococart_interface::set_line_value(cococart_slot_device::line line, cococart_slot_device::line_value value)

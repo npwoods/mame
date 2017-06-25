@@ -575,6 +575,7 @@ MACHINES["X2212"] = true
 MACHINES["X76F041"] = true
 MACHINES["X76F100"] = true
 MACHINES["YM2148"] = true
+MACHINES["YM3802"] = true
 MACHINES["Z80CTC"] = true
 MACHINES["Z80DART"] = true
 MACHINES["Z80SIO"] = true
@@ -657,6 +658,7 @@ BUSES["GAMEGEAR"] = true
 BUSES["GBA"] = true
 BUSES["GENERIC"] = true
 BUSES["HPHIL"] = true
+BUSES["HPDIO"] = true
 BUSES["IEEE488"] = true
 BUSES["IMI7000"] = true
 BUSES["INTV"] = true
@@ -2764,7 +2766,6 @@ files {
 
 createMESSProjects(_target, _subtarget, "sharp")
 files {
-	MAME_DIR .. "src/mame/drivers/hh_sm500.cpp",
 	MAME_DIR .. "src/mame/drivers/hh_sm510.cpp",
 	MAME_DIR .. "src/mame/video/mz700.cpp",
 	MAME_DIR .. "src/mame/drivers/mz700.cpp",
