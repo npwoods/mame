@@ -90,6 +90,9 @@ public:
 	void set_il1(bool value) { set_interrupt_value(INTERRUPT_EI1, value); }
 	void set_il2(bool value) { set_interrupt_value(INTERRUPT_EI2, value); }
 
+	// turns shadowing on or off for a range (used to support SLENB)
+	void shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow);
+
 protected:
 	gime_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, const uint8_t *fontdata);
 

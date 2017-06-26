@@ -102,8 +102,14 @@ public:
 	void configure_bank(int bank, uint8_t *memory, uint32_t memory_size, bool is_read_only);
 	void configure_bank(int bank, read8_delegate rhandler, write8_delegate whandler);
 
-	// turns shadowing on or off for a range
+	// turns shadowing on or off for a range (used to support SLENB)
 	void shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow);
+
+	// configuring shadow
+	void set_update_shadow(std::function<void (uint16_t, uint16_t, read_or_write)> &&update_shadow)
+	{
+		m_update_shadow = std::move(update_shadow);
+	}
 
 	// typically called by VDG
 	ATTR_FORCE_INLINE DECLARE_READ8_MEMBER( display_read )
@@ -133,6 +139,7 @@ public:
 	// typically called by machine
 	address_space *mpu_address_space(void) const { return m_cpu_space; }
 	void set_bank_offset(int bank, offs_t offset);
+	void shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed);
 
 protected:
 	// device-level overrides
@@ -176,7 +183,7 @@ private:
 	public:
 		sam_space(sam6883_device &owner);
 		void point(const sam_bank &bank, uint16_t offset, uint32_t length = ~0);
-		void invalidate_range(uint16_t addrstart, uint16_t addrend, read_or_write row);
+		void invalidate_range(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed);
 
 	private:
 		sam6883_device &    m_owner;
@@ -206,12 +213,12 @@ private:
 	sam_space<0xFFE0, 0xFFFF>   m_space_FFE0;
 	uint16_t                      m_counter_mask;
 	uint16_t                      m_counter_or;
+	std::function<void(uint16_t, uint16_t, read_or_write)> m_update_shadow;
 
 	// SAM state
 	uint16_t                      m_counter;
 	uint8_t                       m_counter_xdiv;
 	uint8_t                       m_counter_ydiv;
-	std::array<uint64_t, 65536 / 64>	m_shadow[2];
 
 	// typically called by CPU
 	DECLARE_READ8_MEMBER( read );
@@ -286,8 +293,6 @@ private:
 	void install_read_handler(uint16_t addrstart, uint16_t addrend, read8_delegate rhandler);
 	void install_write_handler(uint16_t addrstart, uint16_t addrend, write8_delegate whandler);
 	void point_specific_bank(const sam_bank &bank, uint32_t offset, uint32_t mask, bank_state &state, uint32_t addrstart, uint32_t addrend, bool is_write);
-	std::array<uint64_t, 65536 / 64> &shadow_bitmap(read_or_write row);
-	bool internal_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow);
 	void update_shadow(uint16_t addrstart, uint16_t addrend, read_or_write row);
 };
 

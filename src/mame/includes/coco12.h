@@ -51,7 +51,7 @@ public:
 protected:
 	virtual void device_start() override;
 	virtual void update_cart_base(uint8_t *cart_base) override;
-	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow) override final;
+	virtual void shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed) override;
 
 	// PIA1
 	virtual void pia1_pb_changed(uint8_t data) override;

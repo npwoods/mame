@@ -72,6 +72,39 @@ DAC and bitbanger values written should be reflected in the read.
 #define LOG_INTERRUPTS      0
 
 
+//**************************************************************************
+//  ANONYMOUS NAMESPACE
+//**************************************************************************
+
+namespace {
+
+//-------------------------------------------------
+//  update_shadow_bitmap
+//-------------------------------------------------
+
+static bool update_shadow_bitmap(uint16_t addrstart, uint16_t addrend, std::array<uint64_t, 65536 / 64> &bitmap, bool shadow)
+{
+	bool changed = false;
+	for (uint16_t i = addrstart; i <= addrend; i++)
+	{
+		auto &ptr(bitmap[i / sizeof(bitmap[0]) / 8]);
+		auto mask = 1LL << (i % (sizeof(bitmap[0]) * 8));
+
+		auto new_value = shadow
+			? ptr | mask
+			: ptr & ~mask;
+
+		if (new_value != ptr)
+		{
+			ptr = new_value;
+			changed = true;
+		}
+	}
+	return changed;
+}
+
+};
+
 
 //**************************************************************************
 //  BODY
@@ -152,6 +185,9 @@ void coco_state::device_start()
 	// VHD setup
 	extspace_install_read_handler(0xFF80, 0xFF85, read8_delegate(FUNC(coco_state::vhd_r), this));
 	extspace_install_write_handler(0xFF80, 0xFF86, write8_delegate(FUNC(coco_state::vhd_w), this));
+
+	// clear shadow
+	memset(m_shadow, 0, sizeof(m_shadow));
 
 	// save state support
 	save_item(NAME(m_dac_output));
@@ -277,6 +313,105 @@ void coco_state::extspace_unmap(uint16_t addrstart, uint16_t addrend)
 	extended_address_space().install_read_handler(addrstart, addrend, read8_delegate(FUNC(coco_state::floating_bus_read), this));
 	extended_address_space().unmap_write(addrstart, addrend);
 	sam_shadow_range(addrstart, addrend, read_or_write::READWRITE, false);
+}
+
+
+//-------------------------------------------------
+//  sam_shadow_range
+//-------------------------------------------------
+
+void coco_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
+{
+	// update and check for change on the read bitmap
+	bool read_changed = (row == read_or_write::READ || row == read_or_write::READWRITE)
+		? update_shadow_bitmap(addrstart, addrend, shadow_bitmap(read_or_write::READ), shadow)
+		: false;
+
+	// update and check for change on the write bitmap
+	bool write_changed = (row == read_or_write::WRITE || row == read_or_write::READWRITE)
+		? update_shadow_bitmap(addrstart, addrend, shadow_bitmap(read_or_write::WRITE), shadow)
+		: false;
+
+	// did anything change?
+	if (read_changed || write_changed)
+		shadow_changed(addrstart, addrend, read_changed, write_changed);
+}
+
+
+//-------------------------------------------------
+//  shadow_bitmap
+//-------------------------------------------------
+
+std::array<uint64_t, 65536 / 64> &coco_state::shadow_bitmap(read_or_write row)
+{
+	switch (row)
+	{
+	case read_or_write::READ:
+		return m_shadow[0];
+	case read_or_write::WRITE:
+		return m_shadow[1];
+	default:
+		throw false;
+	}
+}
+
+
+//-------------------------------------------------
+//  update_shadow
+//-------------------------------------------------
+
+void coco_state::update_shadow(uint16_t addrstart, uint16_t addrend, read_or_write row)
+{
+	auto shadow_space_read_delegate = [this](uint16_t addrstart)
+	{
+		return read8_delegate(
+			[this, addrstart](address_space &, offs_t offset, u8) -> u8
+			{
+				return extended_address_space().read_byte(offset + addrstart);
+			},
+			"shadow-read-delegate"
+		);
+	};
+	auto shadow_space_write_delegate = [this](uint16_t addrstart)
+	{
+		return write8_delegate(
+			[this, addrstart](address_space &, offs_t offset, u8 data, u8)
+			{
+				extended_address_space().write_byte(offset + addrstart, data);
+			},
+			"shadow-write-delegate"
+		);
+	};
+
+	auto &bitmap(shadow_bitmap(row));
+
+	for (uint32_t i = addrstart; i <= addrend; i++)
+	{
+		// figure out if we're in a "shadow block", and if so, how long it is
+		uint32_t j;
+		for (j = 0; (i + j) < 0x10000 && (bitmap[(i + j) / 64] & ((uint64_t)1) << ((i + j) % 64)); j++)
+			j++;
+
+		if (j > 0)
+		{
+			uint16_t shadow_addrstart = i;
+			uint16_t shadow_addrend = i + j - 1;
+
+			switch (row)
+			{
+			case read_or_write::READ:
+				m_maincpu->space(AS_PROGRAM).install_read_handler(shadow_addrstart, shadow_addrend, shadow_space_read_delegate(shadow_addrstart));
+				break;
+			case read_or_write::WRITE:
+				m_maincpu->space(AS_PROGRAM).install_write_handler(shadow_addrstart, shadow_addrend, shadow_space_write_delegate(shadow_addrstart));
+				break;
+			default:
+				throw false;
+			}
+		}
+
+		i += j;
+	}
 }
 
 

@@ -51,7 +51,6 @@ public:
 
 protected:
 	virtual void update_cart_base(uint8_t *cart_base) override;
-	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow) override final;
 
 	// interrupts
 	virtual bool firq_get_line(void) override;
@@ -60,6 +59,7 @@ protected:
 	// miscellaneous
 	virtual void update_keyboard_input(uint8_t value, uint8_t z) override;
 	virtual void cart_w(bool line) override;
+	virtual void shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed) override;
 
 private:
 	required_device<gime_device> m_gime;

@@ -107,9 +107,6 @@ void sam6883_device::device_start()
 	// resolve callbacks
 	m_read_res.resolve_safe(0);
 
-	// clear shadow
-	memset(m_shadow, 0, sizeof(m_shadow));
-
 	// install SAM handlers
 	m_cpu_space->install_read_handler(0xFFC0, 0xFFDF, read8_delegate(FUNC(sam6883_device::read), this));
 	m_cpu_space->install_write_handler(0xFFC0, 0xFFDF, write8_delegate(FUNC(sam6883_device::write), this));
@@ -446,89 +443,25 @@ WRITE_LINE_MEMBER( sam6883_device::hs_w )
 
 
 //-------------------------------------------------
-//  shadow_bitmap
+//  shadow_changed
 //-------------------------------------------------
 
-std::array<uint64_t, 65536 / 64> &sam6883_device::shadow_bitmap(read_or_write row)
+void sam6883_device::shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed)
 {
-	switch (row)
-	{
-	case read_or_write::READ:
-		return m_shadow[0];
-	case read_or_write::WRITE:
-		return m_shadow[1];
-	default:
-		throw false;
-	}
-}
-
-
-//-------------------------------------------------
-//  shadow_range
-//-------------------------------------------------
-
-void sam6883_device::shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
-{
-	bool changed = false;
-	if (row == read_or_write::READWRITE)
-	{
-		if (internal_shadow_range(addrstart, addrend, read_or_write::READ, shadow))
-			changed = true;
-		if (internal_shadow_range(addrstart, addrend, read_or_write::WRITE, shadow))
-			changed = true;
-	}
-	else
-	{
-		if (internal_shadow_range(addrstart, addrend, row, shadow))
-			changed = true;
-	}
+	// invalidate ranges
+	m_space_0000.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_8000.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_A000.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_C000.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_FF00.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_FF20.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_FF60.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_FF40.invalidate_range(addrstart, addrend, read_changed, write_changed);
+	m_space_FFE0.invalidate_range(addrstart, addrend, read_changed, write_changed);
 
 	// if we're at runtime, update memory
-	if (changed && machine().phase() == machine_phase::RUNNING)
+	if (machine().phase() == machine_phase::RUNNING)
 		update_memory();
-}
-
-
-//-------------------------------------------------
-//  internal_shadow_range
-//-------------------------------------------------
-
-bool sam6883_device::internal_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
-{
-	// identify the proper shadow
-	auto &bitmap(shadow_bitmap(row));
-
-	bool changed = false;
-	for (uint16_t i = addrstart; i <= addrend; i++)
-	{
-		auto &ptr(bitmap[i / sizeof(bitmap[0]) / 8]);
-		auto mask = 1LL << (i % (sizeof(bitmap[0]) * 8));
-
-		auto new_value = shadow
-			? ptr | mask
-			: ptr & ~mask;
-
-		if (new_value != ptr)
-		{
-			ptr = new_value;
-			changed = true;
-		}
-	}
-
-	// invalidate banks if something changed
-	if (changed)
-	{
-		m_space_0000.invalidate_range(addrstart, addrend, row);
-		m_space_8000.invalidate_range(addrstart, addrend, row);
-		m_space_A000.invalidate_range(addrstart, addrend, row);
-		m_space_C000.invalidate_range(addrstart, addrend, row);
-		m_space_FF00.invalidate_range(addrstart, addrend, row);
-		m_space_FF20.invalidate_range(addrstart, addrend, row);
-		m_space_FF60.invalidate_range(addrstart, addrend, row);
-		m_space_FF40.invalidate_range(addrstart, addrend, row);
-		m_space_FFE0.invalidate_range(addrstart, addrend, row);
-	}
-	return changed;
 }
 
 
@@ -716,35 +649,8 @@ void sam6883_device::point_specific_bank(const sam_bank &bank, uint32_t offset, 
 
 void sam6883_device::update_shadow(uint16_t addrstart, uint16_t addrend, read_or_write row)
 {
-	auto &bitmap(shadow_bitmap(row));
-
-	for (uint32_t i = addrstart; i <= addrend; i++)
-	{
-		// figure out if we're in a "shadow block", and if so, how long it is
-		uint32_t j;
-		for (j = 0; (i + j) < 0x10000 && (bitmap[(i + j) / 64] & ((uint64_t)1) << ((i + j) % 64)); j++)
-			j++;
-
-		if (j > 0)
-		{
-			uint16_t shadow_addrstart = i;
-			uint16_t shadow_addrend = i + j - 1;
-
-			switch (row)
-			{
-			case read_or_write::READ:
-				install_read_handler(shadow_addrstart, shadow_addrend, shadow_space_read_delegate(shadow_addrstart));
-				break;
-			case read_or_write::WRITE:
-				install_write_handler(shadow_addrstart, shadow_addrend, shadow_space_write_delegate(shadow_addrstart));
-				break;
-			default:
-				throw false;
-			}
-		}
-
-		i += j;
-	}
+	if (m_update_shadow)
+		m_update_shadow(addrstart, addrend, row);
 }
 
 
@@ -828,20 +734,13 @@ void sam6883_device::sam_space<_addrstart, _addrend>::point(const sam_bank &bank
 //-------------------------------------------------
 
 template<uint16_t _addrstart, uint16_t _addrend>
-void sam6883_device::sam_space<_addrstart, _addrend>::invalidate_range(uint16_t addrstart, uint16_t addrend, read_or_write row)
+void sam6883_device::sam_space<_addrstart, _addrend>::invalidate_range(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed)
 {
 	if (addrstart <= _addrend && addrend >= _addrstart)
 	{
-		switch (row)
-		{
-		case read_or_write::READ:
+		if (read_changed)
 			m_read_bank = bank_state();
-			break;
-		case read_or_write::WRITE:
+		if (write_changed)
 			m_write_bank = bank_state();
-			break;
-		default:
-			throw false;
-		}
 	}
 }

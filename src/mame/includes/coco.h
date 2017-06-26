@@ -167,10 +167,13 @@ protected:
 	virtual void update_keyboard_input(uint8_t value, uint8_t z);
 	virtual void cart_w(bool state);
 	virtual void update_cart_base(uint8_t *cart_base) = 0;
-	virtual void sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow) = 0;
+	virtual void shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed) = 0;
 
 	// accessors
 	address_space &extended_address_space();
+
+	// shadowing and floating bus
+	void update_shadow(uint16_t addrstart, uint16_t addrend, read_or_write row);
 
 private:
 	// timer constants
@@ -238,8 +241,11 @@ private:
 	READ8_MEMBER(vhd_r);
 	WRITE8_MEMBER(vhd_w);
 
-	// floating bus
+	// shadowing & floating bus
+	void sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow);
+	std::array<uint64_t, 65536 / 64> &shadow_bitmap(read_or_write row);
 	uint8_t floating_bus_read();
+	void install_shadow_handlers(uint16_t addrstart, uint16_t addrend, read_or_write row);
 
 	// devices
 	required_device<cpu_device> m_maincpu;
@@ -293,6 +299,9 @@ private:
 
 	// safety to prevent stack overflow when reading floating bus
 	bool m_in_floating_bus_read;
+
+	// shadowing
+	std::array<uint64_t, 65536 / 64> m_shadow[2];
 };
 
 #endif // MAME_INCLUDES_COCO_H

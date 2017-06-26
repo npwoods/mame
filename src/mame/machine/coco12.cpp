@@ -19,6 +19,7 @@ void coco12_state::device_start()
 {
 	coco_state::device_start();
 	configure_sam();
+	m_sam->set_update_shadow([this](uint16_t addrbegin, uint16_t addrend, read_or_write row) { update_shadow(addrbegin, addrend, row); });
 }
 
 
@@ -119,10 +120,10 @@ void coco12_state::update_cart_base(uint8_t *cart_base)
 
 
 //-------------------------------------------------
-//  sam_shadow_range
+//  shadow_changed
 //-------------------------------------------------
 
-void coco12_state::sam_shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
+void coco12_state::shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed)
 {
-	m_sam->shadow_range(addrstart, addrend, row, shadow);
+	m_sam->shadow_changed(addrstart, addrend, read_changed, write_changed);
 }

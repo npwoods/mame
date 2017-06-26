@@ -1897,6 +1897,15 @@ bool gime_device::update_rgb(bitmap_rgb32 &bitmap, const rectangle &cliprect)
 }
 
 
+//-------------------------------------------------
+//  shadow_range
+//-------------------------------------------------
+
+void gime_device::shadow_range(uint16_t addrstart, uint16_t addrend, read_or_write row, bool shadow)
+{
+	throw false;
+}
+
 
 //**************************************************************************
 //  PALETTE RESOLVER MEMBER CLASS
