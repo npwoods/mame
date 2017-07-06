@@ -266,7 +266,7 @@ device_cococart_extspace_interface &coco_state::extspace()
 address_space &coco_state::extended_address_space()
 {
 	if (!m_extended_address_space)
-		m_extended_address_space = &m_extended_address_map->space(address_spacenum::AS_0);
+		m_extended_address_space = &m_extended_address_map->space(AS_PROGRAM);
 	return *m_extended_address_space;
 }
 
