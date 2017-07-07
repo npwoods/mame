@@ -62,6 +62,11 @@ protected:
 	virtual void shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed) override;
 
 private:
+	void conditionally_reinstall_bank(uint16_t changed_addrstart, uint16_t changed_addrend, bool read_changed, bool write_changed,
+		uint16_t bank_addrstart, uint16_t bank_addrend, const char *rbank, const char *wbank);
+	void conditionally_reinstall_handler(uint16_t changed_addrstart, uint16_t changed_addrend, bool read_changed, bool write_changed,
+		uint16_t handler_addrstart, uint16_t handler_addrend, read8_delegate rh, write8_delegate wh);
+
 	required_device<gime_device> m_gime;
 };
 

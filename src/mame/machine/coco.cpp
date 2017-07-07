@@ -400,10 +400,10 @@ void coco_state::update_shadow(uint16_t addrstart, uint16_t addrend, read_or_wri
 			switch (row)
 			{
 			case read_or_write::READ:
-				m_maincpu->space(AS_PROGRAM).install_read_handler(shadow_addrstart, shadow_addrend, shadow_space_read_delegate(shadow_addrstart));
+				cpu_address_space().install_read_handler(shadow_addrstart, shadow_addrend, shadow_space_read_delegate(shadow_addrstart));
 				break;
 			case read_or_write::WRITE:
-				m_maincpu->space(AS_PROGRAM).install_write_handler(shadow_addrstart, shadow_addrend, shadow_space_write_delegate(shadow_addrstart));
+				cpu_address_space().install_write_handler(shadow_addrstart, shadow_addrend, shadow_space_write_delegate(shadow_addrstart));
 				break;
 			default:
 				throw false;
@@ -478,25 +478,22 @@ uint8_t coco_state::floating_bus_read()
 		// prevent stack overflows
 		m_in_floating_bus_read = true;
 
-		// set up the ability to read address spaces
-		address_space &program = m_maincpu->space(AS_PROGRAM);
-
 		// get the previous and current PC
 		uint16_t prev_pc = m_maincpu->pcbase();
 		uint16_t pc = m_maincpu->pc();
 
 		// get the byte; and skip over header bytes
-		uint8_t byte = program.read_byte(prev_pc);
+		uint8_t byte = cpu_address_space().read_byte(prev_pc);
 		if ((byte == 0x10) || (byte == 0x11))
-			byte = program.read_byte(++prev_pc);
+			byte = cpu_address_space().read_byte(++prev_pc);
 
 		// check to see if the opcode specifies the indexed addressing mode, and the secondary byte
 		// specifies no-offset
 		bool is_nooffset_indexed = (((byte & 0xF0) == 0x60) || ((byte & 0xF0) == 0xA0) || ((byte & 0xF0) == 0xE0))
-			&& ((program.read_byte(prev_pc + 1) & 0xBF) == 0x84);
+			&& ((cpu_address_space().read_byte(prev_pc + 1) & 0xBF) == 0x84);
 
 		// finally read the byte
-		result = program.read_byte(is_nooffset_indexed ? pc : 0xFFFF);
+		result = cpu_address_space().read_byte(is_nooffset_indexed ? pc : 0xFFFF);
 
 		// we're done reading
 		m_in_floating_bus_read = false;
@@ -522,6 +519,7 @@ uint8_t coco_state::floating_bus_read()
 
 READ8_MEMBER( coco_state::ff00_read )
 {
+	// TODO - eliminate trampoline?
 	return m_pia_0->read(space, offset, mem_mask);
 }
 
@@ -533,6 +531,7 @@ READ8_MEMBER( coco_state::ff00_read )
 
 WRITE8_MEMBER( coco_state::ff00_write )
 {
+	// TODO - eliminate trampoline?
 	m_pia_0->write(space, offset, data, mem_mask);
 }
 
@@ -632,6 +631,7 @@ WRITE_LINE_MEMBER( coco_state::pia0_irq_b )
 
 READ8_MEMBER( coco_state::ff20_read )
 {
+	// TODO - eliminate trampoline?
 	return m_pia_1->read(space, offset, mem_mask);
 }
 
@@ -643,6 +643,7 @@ READ8_MEMBER( coco_state::ff20_read )
 
 WRITE8_MEMBER( coco_state::ff20_write )
 {
+	// TODO - eliminate trampoline?
 	/* write to the PIA */
 	m_pia_1->write(space, offset, data, mem_mask);
 

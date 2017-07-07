@@ -169,10 +169,68 @@ uint32_t coco3_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap,
 
 
 //-------------------------------------------------
+//  conditionally_reinstall_bank
+//-------------------------------------------------
+
+void coco3_state::conditionally_reinstall_bank(uint16_t changed_addrstart, uint16_t changed_addrend, bool read_changed, bool write_changed,
+	uint16_t bank_addrstart, uint16_t bank_addrend, const char *rbank, const char *wbank)
+{
+	if (changed_addrend >= bank_addrstart && changed_addrstart <= bank_addrend)
+	{
+		if (read_changed)
+		{
+			cpu_address_space().install_read_bank(bank_addrstart, bank_addrend, rbank);
+			update_shadow(bank_addrstart, bank_addrend, read_or_write::READ);
+		}
+		if (write_changed)
+		{
+			cpu_address_space().install_write_bank(bank_addrstart, bank_addrend, wbank);
+			update_shadow(bank_addrstart, bank_addrend, read_or_write::WRITE);
+		}
+	}
+}
+
+
+//-------------------------------------------------
+//  conditionally_reinstall_handler
+//-------------------------------------------------
+
+void coco3_state::conditionally_reinstall_handler(uint16_t changed_addrstart, uint16_t changed_addrend, bool read_changed, bool write_changed,
+	uint16_t handler_addrstart, uint16_t handler_addrend, read8_delegate rh, write8_delegate wh)
+{
+	if (changed_addrend >= handler_addrstart && changed_addrstart <= handler_addrend)
+	{
+		if (read_changed)
+		{
+			cpu_address_space().install_read_handler(handler_addrstart, handler_addrend, rh);
+			update_shadow(handler_addrstart, handler_addrend, read_or_write::READ);
+		}
+		if (write_changed)
+		{
+			cpu_address_space().install_write_handler(handler_addrstart, handler_addrend, wh);
+			update_shadow(handler_addrstart, handler_addrend, read_or_write::WRITE);
+		}
+	}
+}
+
+
+//-------------------------------------------------
 //  shadow_changed
 //-------------------------------------------------
 
 void coco3_state::shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed)
 {
-	throw false;
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0x0000, 0x1FFF, "rbank0", "wbank0");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0x2000, 0x3FFF, "rbank1", "wbank1");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0x4000, 0x5FFF, "rbank2", "wbank2");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0x6000, 0x7FFF, "rbank3", "wbank3");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0x8000, 0x9FFF, "rbank4", "wbank4");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0xA000, 0xAFFF, "rbank5", "wbank5");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0xC000, 0xDFFF, "rbank6", "wbank6");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0xE000, 0xFDFF, "rbank7", "wbank7");
+	conditionally_reinstall_bank(addrstart, addrend, read_changed, write_changed, 0xFE00, 0xFEFF, "rbank8", "wbank8");
+	conditionally_reinstall_handler(addrstart, addrend, read_changed, write_changed, 0xFF00, 0xFF1F, read8_delegate(FUNC(coco_state::ff00_read), this), write8_delegate(FUNC(coco_state::ff00_write), this));
+	conditionally_reinstall_handler(addrstart, addrend, read_changed, write_changed, 0xFF20, 0xFF3F, read8_delegate(FUNC(coco_state::ff20_read), this), write8_delegate(FUNC(coco_state::ff20_write), this));
+	conditionally_reinstall_handler(addrstart, addrend, read_changed, write_changed, 0xFF40, 0xFF5F, read8_delegate(FUNC(coco_state::ff40_read), this), write8_delegate(FUNC(coco_state::ff40_write), this));
+	conditionally_reinstall_handler(addrstart, addrend, read_changed, write_changed, 0xFF90, 0xFFDF, read8_delegate(FUNC(gime_device::read), &*m_gime), write8_delegate(FUNC(gime_device::write), &*m_gime));
 }

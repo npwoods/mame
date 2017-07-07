@@ -170,6 +170,7 @@ protected:
 	virtual void shadow_changed(uint16_t addrstart, uint16_t addrend, bool read_changed, bool write_changed) = 0;
 
 	// accessors
+	address_space &cpu_address_space() { return maincpu().space(); }
 	address_space &extended_address_space();
 
 	// shadowing and floating bus
