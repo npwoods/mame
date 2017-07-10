@@ -57,17 +57,21 @@ TODO:
 
     Chip                RAM     NVRAM   ROM     SCI     r15-f   ports
     -----------------------------------------------------------------
-    MC6800              -       -       -       no      no      4
-    MC6802              128     32      -       no      no      4
-    MC6802NS            128     -       -       no      no      4
-    MC6808              -       -       -       no      no      4
+    MC6800              -       -       -       no      no      -
+    MC6802              128     32      -       no      no      -
+    MC6802NS            128     -       -       no      no      -
+    MC6808              -       -       -       no      no      -
 
     MC6801              128     64      2K      yes     no      4
-    MC68701             128     64      -       yes     no      4
+    MC68701             128     64      2K      yes     no      4
     MC6803              128     64      -       yes     no      4
+    MC6803NR            -       -       -       yes     no      4
 
     MC6801U4            192     32      4K      yes     yes     4
     MC6803U4            192     32      -       yes     yes     4
+
+    MC68120             128(DP) -       2K      yes     IPC     3
+    MC68121             128(DP) -       -       yes     IPC     3
 
     HD6801              128     64      2K      yes     no      4
     HD6301V             128     -       4K      yes     no      4
@@ -358,15 +362,15 @@ nsc8105_cpu_device::nsc8105_cpu_device(const machine_config &mconfig, const char
 {
 }
 
-std::vector<std::pair<int, const address_space_config *>> m6800_cpu_device::memory_space_config() const
+device_memory_interface::space_config_vector m6800_cpu_device::memory_space_config() const
 {
 	if(has_configured_map(AS_OPCODES))
-		return std::vector<std::pair<int, const address_space_config *>> {
+		return space_config_vector {
 			std::make_pair(AS_PROGRAM, &m_program_config),
 			std::make_pair(AS_OPCODES, &m_decrypted_opcodes_config)
 		};
 	else
-		return std::vector<std::pair<int, const address_space_config *>> {
+		return space_config_vector {
 			std::make_pair(AS_PROGRAM, &m_program_config)
 		};
 }

@@ -64,18 +64,18 @@ CLK is supplied with a 12MHZ oscillator on operation wolf
 (move below MODE notes to upd7811.cpp?)
 
 The four Mode0/Mode1 combinations are:
-	LOW/LOW		78c11 mem map is 4k external rom (i.e. the eprom inside the c-chip) from 0x0000-0x0FFF;
-				the low 4 bits of port F are used, to provide the high 4 address bits.
-				speculation: likely the eprom can be banked so the low or high half is visible here, 
-				or possibly one fixed window and 3 variable windows, managed by the asic?
-	LOW/HIGH	78c11 mem map boots to internal rom (mask rom inside the 78c11 inside the c-chip) from
-				0x0000-0x0fff but the memory map is under full mcu control and can select any of the
-				four modes (internal only, 4k external, 16k external, 64k external)
+    LOW/LOW     78c11 mem map is 4k external rom (i.e. the eprom inside the c-chip) from 0x0000-0x0FFF;
+                the low 4 bits of port F are used, to provide the high 4 address bits.
+                speculation: likely the eprom can be banked so the low or high half is visible here,
+                or possibly one fixed window and 3 variable windows, managed by the asic?
+    LOW/HIGH    78c11 mem map boots to internal rom (mask rom inside the 78c11 inside the c-chip) from
+                0x0000-0x0fff but the memory map is under full mcu control and can select any of the
+                four modes (internal only, 4k external, 16k external, 64k external)
 The following two modes are unusable on the c-chip:
-	HIGH/LOW	78c11 mem map is 16k external rom from 0x0000-0x3FFF;
-				the low 6 bits of port F are used, to provide the high 6 address bits.
-	HIGH/HIGH	78c11 mem map is 64k external rom from 0x0000-0xFFFF;
-				all 8 bits of port F are used to provide the high 8 address bits.
+    HIGH/LOW    78c11 mem map is 16k external rom from 0x0000-0x3FFF;
+                the low 6 bits of port F are used, to provide the high 6 address bits.
+    HIGH/HIGH   78c11 mem map is 64k external rom from 0x0000-0xFFFF;
+                all 8 bits of port F are used to provide the high 8 address bits.
 VPP is only used for programming the 27c64, do not tie it to 18v or you will probably overwrite the 27c64 with garbage.
 
 (see http://www.cpcwiki.eu/index.php/UPD7810/uPD7811 )
@@ -83,6 +83,7 @@ VPP is only used for programming the 27c64, do not tie it to 18v or you will pro
 
 C-chip EXTERNAL memory map (it acts as a device mapped to ram; dtack is asserted on /cs for a 68k):
 0x000-0x3FF = RW ram window, a 1k window into the 8k byte sram inside the c-chip; the 'bank' visible is selected by 0x600 below
+0x400-0x403 = "ASIC RAM", 4 bytes of ram on the asic
 0x400 = unknown, no idea if /DTACK is asserted for R or W here
 0x401 = RW 'test command/status register', writing a 0x02 here starts test mode, will return 0x01 set if ok/ready for command and 0x04 set if error; this register is very likely handled by the internal rom in the upd78c11 itself rather than the eprom, and probably tests the sram and the 78c11 internal ram, among other things.
 Current guess: 0x401 is actually attached to the high 2 bits of the PF register; bit 0 is pf6 out, bit 1 is pf6 in (attached to pf6 thru a resistor?), bit 2 is pf7 out, bit 3 is pf7 in (attached to pf7 through a resistor). The 78c11 (I'm guessing) reads pf6 and pf7 once per int; if pf6-in is set it reruns the startup selftest, clears pf6-out, then re-sets it. if there is an error, it also sets pf7.
@@ -96,15 +97,12 @@ This chip *ALWAYS* has a bypass capacitor (ceramic, 104, 0.10 uF) soldered on to
 */
 
 #include "emu.h"
-#include "machine/cchip_dev.h"
+#include "machine/taitocchip.h"
 
-// uncomment to run code from cchip mask rom
-//#define CCHIP_TEST
-
-DEFINE_DEVICE_TYPE(TAITO_CCHIP_DEV, taito_cchip_device, "cchip", "Taito TC0030CMD (C-Chip)")
+DEFINE_DEVICE_TYPE(TAITO_CCHIP, taito_cchip_device, "cchip", "Taito TC0030CMD (C-Chip)")
 
 taito_cchip_device::taito_cchip_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, TAITO_CCHIP_DEV, tag, owner, clock),
+	: device_t(mconfig, TAITO_CCHIP, tag, owner, clock),
 	m_upd7811(*this, "upd7811"),
 	m_upd4464_bank(*this, "upd4464_bank"),
 	m_upd4464(*this, "upd4464")
@@ -113,11 +111,8 @@ taito_cchip_device::taito_cchip_device(const machine_config &mconfig, const char
 
 ROM_START( taito_cchip )
 	ROM_REGION( 0x1000, "upd7811", 0 )
-#ifdef CCHIP_TEST
-	ROM_LOAD( "cchip_upd78c11.rom", 0x0000, 0x1000, CRC(11111111) SHA1(1111111111111111111111111111111111111111) )
-#else
-	ROM_LOAD( "cchip_upd78c11.rom", 0x0000, 0x1000, NO_DUMP )
-#endif
+	// optically extracted, the internal checksum passes, although that doesn't rule out the possibility of error
+	ROM_LOAD( "cchip_upd78c11.bin", 0x0000, 0x1000, CRC(43021521) SHA1(73bc4b46cd2d6805ec926f39f22af00e38a3f822) )
 ROM_END
 
 
@@ -127,12 +122,11 @@ ADDRESS_MAP_END
 
 READ8_MEMBER(taito_cchip_device::asic_r)
 {
-	logerror("%s: asic_r %04x\n", machine().describe_context(), offset);
-
-	if (offset == 0x001) // megablst
-		return 0x01;
-
-	return 0x00;
+	if ((offset != 0x001) && (!machine().side_effect_disabled())) // prevent logerror spam for now
+		logerror("%s: asic_r %04x\n", machine().describe_context(), offset);
+	if (offset<0x200) // 400-5ff is asic 'ram'
+		return m_asic_ram[offset&3];
+	return 0x00; // 600-7ff is read-only(?) asic banking reg, may read as open bus or never assert /DTACK on read?
 }
 
 WRITE8_MEMBER(taito_cchip_device::asic_w)
@@ -143,6 +137,8 @@ WRITE8_MEMBER(taito_cchip_device::asic_w)
 		logerror("cchip set bank to %02x\n", data & 0x7);
 		m_upd4464_bank->set_bank(data & 0x7);
 	}
+	else
+		m_asic_ram[offset&3] = data;
 }
 
 READ8_MEMBER(taito_cchip_device::mem_r)
@@ -167,9 +163,6 @@ ADDRESS_MAP_END
 MACHINE_CONFIG_MEMBER( taito_cchip_device::device_add_mconfig )
 	MCFG_CPU_ADD("upd7811", UPD7811, DERIVED_CLOCK(1,1))
 	MCFG_CPU_PROGRAM_MAP(cchip_map)
-#ifndef CCHIP_TEST
-	MCFG_DEVICE_DISABLE() 
-#endif
 
 	MCFG_DEVICE_ADD("upd4464_bank", ADDRESS_MAP_BANK, 0)
 	MCFG_DEVICE_PROGRAM_MAP(cchip_ram_bank)
@@ -183,6 +176,8 @@ MACHINE_CONFIG_END
 void taito_cchip_device::device_start()
 {
 	m_upd4464_bank->set_bank(0);
+	save_item(NAME(m_asic_ram));
+	m_asic_ram[0] = m_asic_ram[1] = m_asic_ram[2] = m_asic_ram[3] = 0;
 }
 
 void taito_cchip_device::device_reset()

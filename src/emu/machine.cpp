@@ -139,6 +139,7 @@ running_machine::running_machine(const machine_config &_config, machine_manager 
 	memset(&m_base_time, 0, sizeof(m_base_time));
 
 	m_dummy_space.set_machine(*this);
+	m_dummy_space.config_complete();
 
 	// set the machine on all devices
 	device_iterator iter(root_device());
@@ -238,7 +239,6 @@ void running_machine::start()
 	// needs rom bases), and finally initialize CPUs (which needs
 	// complete address spaces).  These operations must proceed in this
 	// order
-	m_memory.configure();
 	m_rom_load = make_unique_clear<rom_load_manager>(*this);
 	m_memory.initialize();
 
@@ -343,8 +343,6 @@ int running_machine::run(bool quiet)
 			handle_saveload();
 
 		export_http_api();
-
-		m_manager.http()->update();
 
 		// run the CPUs until a reset or exit
 		m_hard_reset_pending = false;
@@ -1193,26 +1191,30 @@ running_machine::logerror_callback_item::logerror_callback_item(logerror_callbac
 
 void running_machine::export_http_api()
 {
-	m_manager.http()->add("/api/machine", [this](std::string)
-	{
-		rapidjson::StringBuffer s;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(s);
-		writer.StartObject();
-		writer.Key("name");
-		writer.String(m_basename.c_str());
+	if (m_manager.http()->is_active()) {
+		m_manager.http()->add_http_handler("/api/machine", [this](http_manager::http_request_ptr request, http_manager::http_response_ptr response)
+		{
+			rapidjson::StringBuffer s;
+			rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+			writer.StartObject();
+			writer.Key("name");
+			writer.String(m_basename.c_str());
 
-		writer.Key("devices");
-		writer.StartArray();
+			writer.Key("devices");
+			writer.StartArray();
 
-		device_iterator iter(this->root_device());
-		for (device_t &device : iter)
-			writer.String(device.tag());
+			device_iterator iter(this->root_device());
+			for (device_t &device : iter)
+				writer.String(device.tag());
 
-		writer.EndArray();
-		writer.EndObject();
+			writer.EndArray();
+			writer.EndObject();
 
-		return std::make_tuple(std::string(s.GetString()), 200, "application/json");
-	});
+			response->set_status(200);
+			response->set_content_type("application/json");
+			response->set_body(s.GetString());
+		});
+	}
 }
 
 //**************************************************************************
@@ -1302,9 +1304,9 @@ void dummy_space_device::device_start()
 //  any address spaces owned by this device
 //-------------------------------------------------
 
-std::vector<std::pair<int, const address_space_config *>> dummy_space_device::memory_space_config() const
+device_memory_interface::space_config_vector dummy_space_device::memory_space_config() const
 {
-	return std::vector<std::pair<int, const address_space_config *>> {
+	return space_config_vector {
 		std::make_pair(0, &m_space_config)
 	};
 }

@@ -1,15 +1,20 @@
 // license:BSD-3-Clause
 // copyright-holders:Howie Cohen, Yochizo
 // thanks-to:Richard Bush
+#ifndef MAME_INCLUDES_TAITO_X_H
+#define MAME_INCLUDES_TAITO_X_H
+
+#pragma once
+
 #include "includes/seta.h"
-#include "machine/cchip_dev.h"
+#include "machine/taitocchip.h"
 
 class taitox_state : public seta_state
 {
 public:
 	taitox_state(const machine_config &mconfig, device_type type, const char *tag)
 		: seta_state(mconfig, type, tag),
-		m_cchip(*this, "cchip")	
+		m_cchip(*this, "cchip")
 	{ }
 
 	optional_device<taito_cchip_device> m_cchip;
@@ -32,3 +37,5 @@ public:
 	DECLARE_WRITE16_MEMBER( cchip1_bank_w );
 	DECLARE_WRITE16_MEMBER( cchip1_ram_w );
 };
+
+#endif // MAME_INCLUDES_TAITO_X_H

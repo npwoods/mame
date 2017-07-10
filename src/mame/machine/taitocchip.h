@@ -1,18 +1,18 @@
 // license:BSD-3-Clause
 // copyright-holders:David Haywood, Jonathan Gevaryahu
 
-#ifndef MAME_MACHINE_CCHIP_DEV
-#define MAME_MACHINE_CCHIP_DEV
+#ifndef MAME_MACHINE_TAITOCCHIP_H
+#define MAME_MACHINE_TAITOCCHIP_H
 
 #pragma once
 
 #include "cpu/upd7810/upd7811.h"
 #include "machine/bankdev.h"
 
-DECLARE_DEVICE_TYPE(TAITO_CCHIP_DEV, taito_cchip_device)
+DECLARE_DEVICE_TYPE(TAITO_CCHIP, taito_cchip_device)
 
-#define MCFG_TAITO_CCHIP_DEV_ADD(_tag, _clock) \
-	MCFG_DEVICE_ADD(_tag, TAITO_CCHIP_DEV, _clock)
+#define MCFG_TAITO_CCHIP_ADD(_tag, _clock) \
+	MCFG_DEVICE_ADD(_tag, TAITO_CCHIP, _clock)
 
 
 class taito_cchip_device :  public device_t
@@ -21,11 +21,7 @@ public:
 	// construction/destruction
 	taito_cchip_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-	required_device<cpu_device> m_upd7811;
-	required_device<address_map_bank_device> m_upd4464_bank;
-	required_shared_ptr<uint8_t> m_upd4464;
-
-	// can this be accessed externally?
+	// can be accessed externally
 	DECLARE_READ8_MEMBER(asic_r);
 	DECLARE_WRITE8_MEMBER(asic_w);
 	DECLARE_READ8_MEMBER(mem_r);
@@ -38,6 +34,10 @@ protected:
 	virtual void device_reset() override;
 
 private:
+	required_device<cpu_device> m_upd7811;
+	required_device<address_map_bank_device> m_upd4464_bank;
+	required_shared_ptr<uint8_t> m_upd4464;
+	uint8_t m_asic_ram[4];
 };
 
-#endif // MAME_MACHINE_CCHIP_DEV
+#endif // MAME_MACHINE_CCHIP_DEV_H
