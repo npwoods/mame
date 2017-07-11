@@ -60,7 +60,8 @@ OP_HANDLER( lsrd )
 {
 	uint16_t t;
 	CLR_NZC; t = D; CC|=(t&0x0001);
-	t>>=1; SET_Z16(t); D=t;
+	uint16_t old = t;
+	t>>=1; SET_Z16(t); SET_V16(old, t, t); D=t;
 }
 
 /* $05 ASLD inherent ?**** */
@@ -498,7 +499,8 @@ OP_HANDLER( coma )
 OP_HANDLER( lsra )
 {
 	CLR_NZC; CC|=(A&0x01);
-	A>>=1; SET_Z8(A);
+	uint8_t old = A;
+	A>>=1; SET_Z8(A); SET_V8(old, A, A);
 }
 
 /* $45 ILLEGAL */
@@ -509,16 +511,18 @@ OP_HANDLER( rora )
 	uint8_t r;
 	r=(CC&0x01)<<7;
 	CLR_NZC; CC|=(A&0x01);
-	r |= A>>1; SET_NZ8(r);
+	r |= A>>1; SET_NZ8(r); SET_V8(A, r, r);
 	A=r;
 }
 
 /* $47 ASRA inherent ?**-* */
 OP_HANDLER( asra )
 {
-	CLR_NZC; CC|=(A&0x01);
+	CLR_NZVC; CC|=(A&0x01);
+	uint8_t old = A;
 	A>>=1; A|=((A&0x40)<<1);
 	SET_NZ8(A);
+	SET_V8(old, A, A);
 }
 
 /* $48 ASLA inherent ?**** */
@@ -594,7 +598,8 @@ OP_HANDLER( comb )
 OP_HANDLER( lsrb )
 {
 	CLR_NZC; CC|=(B&0x01);
-	B>>=1; SET_Z8(B);
+	uint8_t old = B;
+	B>>=1; SET_Z8(B); SET_V8(old, B, B);
 }
 
 /* $55 ILLEGAL */
@@ -605,7 +610,7 @@ OP_HANDLER( rorb )
 	uint8_t r;
 	r=(CC&0x01)<<7;
 	CLR_NZC; CC|=(B&0x01);
-	r |= B>>1; SET_NZ8(r);
+	r |= B>>1; SET_NZ8(r); SET_V8(B, r, r);
 	B=r;
 }
 
@@ -613,8 +618,10 @@ OP_HANDLER( rorb )
 OP_HANDLER( asrb )
 {
 	CLR_NZC; CC|=(B&0x01);
+	uint8_t old = B;
 	B>>=1; B|=((B&0x40)<<1);
 	SET_NZ8(B);
+	SET_V8(old, B, B);
 }
 
 /* $58 ASLB inherent ?**** */
@@ -711,7 +718,8 @@ OP_HANDLER( lsr_ix )
 {
 	uint8_t t;
 	IDXBYTE(t); CLR_NZC; CC|=(t&0x01);
-	t>>=1; SET_Z8(t);
+	uint8_t old = t;
+	t>>=1; SET_Z8(t); SET_V8(old, t, t);
 	WM(EAD,t);
 }
 
@@ -732,7 +740,7 @@ OP_HANDLER( ror_ix )
 	uint8_t t,r;
 	IDXBYTE(t); r=(CC&0x01)<<7;
 	CLR_NZC; CC|=(t&0x01);
-	r |= t>>1; SET_NZ8(r);
+	r |= t>>1; SET_NZ8(r); SET_V8(t, r, r);
 	WM(EAD,r);
 }
 
@@ -741,8 +749,10 @@ OP_HANDLER( asr_ix )
 {
 	uint8_t t;
 	IDXBYTE(t); CLR_NZC; CC|=(t&0x01);
+	uint8_t old = t;
 	t>>=1; t|=((t&0x40)<<1);
 	SET_NZ8(t);
+	SET_V8(old, t, t);
 	WM(EAD,t);
 }
 
@@ -859,8 +869,10 @@ OP_HANDLER( lsr_ex )
 	EXTBYTE(t);
 	CLR_NZC;
 	CC|=(t&0x01);
+	uint8_t old = t;
 	t>>=1;
 	SET_Z8(t);
+	SET_V8(old, t, t);
 	WM(EAD,t);
 }
 
@@ -881,7 +893,7 @@ OP_HANDLER( ror_ex )
 	uint8_t t,r;
 	EXTBYTE(t); r=(CC&0x01)<<7;
 	CLR_NZC; CC|=(t&0x01);
-	r |= t>>1; SET_NZ8(r);
+	r |= t>>1; SET_NZ8(r); SET_V8(t, r, r);
 	WM(EAD,r);
 }
 
@@ -890,8 +902,10 @@ OP_HANDLER( asr_ex )
 {
 	uint8_t t;
 	EXTBYTE(t); CLR_NZC; CC|=(t&0x01);
+	uint8_t old = t;
 	t>>=1; t|=((t&0x40)<<1);
 	SET_NZ8(t);
+	SET_V8(old, t, t);
 	WM(EAD,t);
 }
 
