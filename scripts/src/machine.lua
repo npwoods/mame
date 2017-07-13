@@ -3227,3 +3227,15 @@ if (MACHINES["I82586"]~=null) then
 		MAME_DIR .. "src/devices/machine/i82586.h",
 	}
 end
+
+---------------------------------------------------
+--
+--@src/devices/machine/65spi.h,MACHINES["65SPI"] = true
+---------------------------------------------------
+
+if (MACHINES["65SPI"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/65spi.cpp",
+		MAME_DIR .. "src/devices/machine/65spi.h",
+	}
+end

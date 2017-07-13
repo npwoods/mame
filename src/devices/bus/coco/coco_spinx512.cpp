@@ -10,6 +10,7 @@
 
 #include "emu.h"
 #include "cococart.h"
+#include "machine/65spi.h"
 
 
 //**************************************************************************
@@ -29,13 +30,18 @@ namespace
 		coco_spinx512_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 			: device_t(mconfig, COCO_SPINX512, tag, owner, clock)
 			, device_cococart_interface(mconfig, *this)
+			, m_spi(*this, "spi")
 		{
 		}
+
+		// optional information overrides
+		virtual void device_add_mconfig(machine_config &config) override;
 
 	protected:
 		// device-level overrides
 		virtual void device_start() override
 		{
+			install_readwrite_handler(0xFF6C, 0xFF6F, read8_delegate(FUNC(spi65_device::read), &*m_spi), write8_delegate(FUNC(spi65_device::write), &*m_spi));
 			install_write_handler(0xFFA8, 0xFFAF, write8_delegate(FUNC(coco_spinx512_device::ffax_w), this));
 			install_write_handler(0xFFBE, 0xFFBF, write8_delegate(FUNC(coco_spinx512_device::ffbx_w), this));
 			install_write_handler(0xFFDE, 0xFFDF, write8_delegate(FUNC(coco_spinx512_device::ty_w), this));
@@ -97,6 +103,9 @@ namespace
 			}
 		}
 
+		// devices
+		required_device<spi65_device> m_spi;
+
 		// internal state
 		bool			m_map[4];
 		bool			m_ty;
@@ -104,6 +113,15 @@ namespace
 		uint8_t			m_memory[16][0x8000];
 	};
 };
+
+
+//**************************************************************************
+//  MACHINE AND ROM DECLARATIONS
+//**************************************************************************
+
+MACHINE_CONFIG_MEMBER(coco_spinx512_device::device_add_mconfig)
+	MCFG_DEVICE_ADD("spi", SPI65, 0)
+MACHINE_CONFIG_END
 
 
 //**************************************************************************
