@@ -58,7 +58,7 @@ image_init_result intel_imm6_76_device::call_load()
 		return image_init_result::PASS;
 }
 
-image_init_result intel_imm6_76_device::call_create(int format_type, util::option_resolution *format_options)
+image_init_result intel_imm6_76_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
 	std::fill(std::begin(m_data), std::end(m_data), 0U);
 	if (fwrite(m_data, ARRAY_LENGTH(m_data)) != ARRAY_LENGTH(m_data))

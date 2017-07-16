@@ -153,7 +153,7 @@ public:
 
 	// device_image_interface implementation
 	virtual image_init_result call_load() override;
-	virtual image_init_result call_create(int format_type, util::option_resolution *format_options) override;
+	virtual image_init_result call_create(const image_device_format *create_format, util::option_resolution *format_options) override;
 	virtual void call_unload() override;
 
 	// device_image_interface static info
