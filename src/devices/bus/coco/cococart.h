@@ -25,6 +25,7 @@
 #include "machine/msm6242.h"
 #include "machine/ds1315.h"
 #include "machine/wd_fdc.h"
+#include "machine/65spi.h"
 #include "sound/ay8910.h"
 #include "sound/sp0256.h"
 #include "sound/sn76496.h"

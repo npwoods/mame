@@ -8,6 +8,7 @@
 
 ***************************************************************************/
 
+#include "emu.h"
 #include "65spi.h"
 
 
@@ -16,6 +17,16 @@
 //-------------------------------------------------
 
 spi65_device::spi65_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+	: device_t(mconfig, SPI65, tag, owner, clock)
+{
+}
+
+
+//-------------------------------------------------
+//  device_start - device-specific startup
+//-------------------------------------------------
+
+void spi65_device::device_start()
 {
 }
 
@@ -26,6 +37,7 @@ spi65_device::spi65_device(const machine_config &mconfig, const char *tag, devic
 
 READ8_MEMBER(spi65_device::read)
 {
+	return 0;
 }
 
 

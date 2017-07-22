@@ -53,6 +53,7 @@ SOUNDS["VOLT_REG"] = true
 -- specify available machine cores
 --------------------------------------------------
 
+MACHINES["65SPI"] = true
 MACHINES["6821PIA"] = true
 MACHINES["TTL74148"] = true
 MACHINES["TTL74153"] = true
