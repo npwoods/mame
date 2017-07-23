@@ -104,8 +104,7 @@ struct foreach_entry
 	struct foreach_entry *next;
 };
 
-static imgtoolerr_t foreach_selected_item(HWND window,
-	imgtoolerr_t (*proc)(HWND, const imgtool_dirent *, void *), void *param)
+static imgtoolerr_t foreach_selected_item(HWND window, const std::function<imgtoolerr_t (HWND, const imgtool_dirent &)> &proc)
 {
 	wimgtool_info *info;
 	imgtoolerr_t err;
@@ -178,7 +177,7 @@ static imgtoolerr_t foreach_selected_item(HWND window,
 	// now that we have the list, call the callbacks
 	for (entry = first_entry; entry; entry = entry->next)
 	{
-		err = proc(window, &entry->dirent, param);
+		err = proc(window, entry->dirent);
 		if (err)
 			return err;
 	}
@@ -1053,7 +1052,7 @@ static UINT_PTR CALLBACK extract_dialog_hook(HWND dlgwnd, UINT message,
 
 
 
-static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent *entry, void *param)
+static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent &entry)
 {
 	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
 	win_open_file_name ofn;
@@ -1067,13 +1066,13 @@ static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent *entry, 
 
 	info = get_wimgtool_info(window);
 
-	filename = entry->filename;
+	filename = entry.filename;
 
 	// figure out a suggested host filename
-	image_basename = info->partition->get_base_name(entry->filename);
+	image_basename = info->partition->get_base_name(entry.filename);
 
 	// try suggesting some filters (only if doing a single file)
-	if (!entry->directory)
+	if (!entry.directory)
 	{
 		info->partition->suggest_file_filters(filename, nullptr, suggestion_info.suggestions,
 			ARRAY_LENGTH(suggestion_info.suggestions));
@@ -1114,7 +1113,7 @@ static imgtoolerr_t menu_extract_proc(HWND window, const imgtool_dirent *entry, 
 	if (!win_get_file_name_dialog(&ofn))
 		goto done;
 
-	if (entry->directory)
+	if (entry.directory)
 	{
 		err = get_recursive_directory(*info->partition, filename, ofn.filename.c_str());
 		if (err)
@@ -1148,7 +1147,7 @@ done:
 
 static void menu_extract(HWND window)
 {
-	foreach_selected_item(window, menu_extract_proc, nullptr);
+	foreach_selected_item(window, menu_extract_proc);
 }
 
 
@@ -1246,23 +1245,23 @@ done:
 
 
 
-static imgtoolerr_t menu_delete_proc(HWND window, const imgtool_dirent *entry, void *param)
+static imgtoolerr_t menu_delete_proc(HWND window, const imgtool_dirent &entry)
 {
 	imgtoolerr_t err;
 	wimgtool_info *info;
 
 	info = get_wimgtool_info(window);
 
-	if (entry->directory)
-		err = info->partition->delete_directory(entry->filename);
+	if (entry.directory)
+		err = info->partition->delete_directory(entry.filename);
 	else
-		err = info->partition->delete_file(entry->filename);
+		err = info->partition->delete_file(entry.filename);
 	if (err)
 		goto done;
 
 done:
 	if (err)
-		wimgtool_report_error(window, err, nullptr, entry->filename);
+		wimgtool_report_error(window, err, nullptr, entry.filename);
 	return err;
 }
 
@@ -1272,7 +1271,7 @@ static void menu_delete(HWND window)
 {
 	imgtoolerr_t err;
 
-	foreach_selected_item(window, menu_delete_proc, nullptr);
+	foreach_selected_item(window, menu_delete_proc);
 
 	err = refresh_image(window);
 	if (err)
@@ -1281,21 +1280,21 @@ static void menu_delete(HWND window)
 
 
 
-static imgtoolerr_t menu_view_proc(HWND window, const imgtool_dirent *entry, void *param)
+static imgtoolerr_t menu_view_proc(HWND window, const imgtool_dirent &entry)
 {
 	imgtoolerr_t err;
 	wimgtool_info *info = get_wimgtool_info(window);
 
 	// read the file
 	imgtool::stream::ptr stream = imgtool::stream::open_mem(nullptr, 0);
-	err = info->partition->read_file(entry->filename, nullptr, *stream, nullptr);
+	err = info->partition->read_file(entry.filename, nullptr, *stream, nullptr);
 	if (err)
 	{
-		wimgtool_report_error(window, err, nullptr, entry->filename);
+		wimgtool_report_error(window, err, nullptr, entry.filename);
 		return err;
 	}
 
-	win_fileview_dialog(window, entry->filename, stream->getptr(), stream->size());
+	win_fileview_dialog(window, entry.filename, stream->getptr(), stream->size());
 	return IMGTOOLERR_SUCCESS;
 }
 
@@ -1303,7 +1302,7 @@ static imgtoolerr_t menu_view_proc(HWND window, const imgtool_dirent *entry, voi
 
 static void menu_view(HWND window)
 {
-	foreach_selected_item(window, menu_view_proc, nullptr);
+	foreach_selected_item(window, menu_view_proc);
 }
 
 
@@ -1517,22 +1516,9 @@ static BOOL context_menu(HWND window, LONG x, LONG y)
 
 struct selection_info
 {
-	unsigned int has_files : 1;
-	unsigned int has_directories : 1;
+	bool has_files;
+	bool has_directories;
 };
-
-
-
-static imgtoolerr_t init_menu_proc(HWND window, const imgtool_dirent *entry, void *param)
-{
-	struct selection_info *si;
-	si = (struct selection_info *) param;
-	if (entry->directory)
-		si->has_directories = 1;
-	else
-		si->has_files = 1;
-	return IMGTOOLERR_SUCCESS;
-}
 
 
 
@@ -1555,7 +1541,14 @@ static void init_menu(HWND window, HMENU menu)
 	{
 		module_features = imgtool_get_module_features(&info->image->module());
 		partition_features = info->partition->get_features();
-		foreach_selected_item(window, init_menu_proc, &si);
+		foreach_selected_item(window, [&si](HWND window, const imgtool_dirent &entry)
+		{
+			if (entry.directory)
+				si.has_directories = true;
+			else
+				si.has_files = true;
+			return IMGTOOLERR_SUCCESS;
+		});
 	}
 
 	can_read      = partition_features.supports_reading && (si.has_files || si.has_directories);
