@@ -215,3 +215,25 @@ BOOL win_append_menu_utf8(HMENU menu, UINT flags, UINT_PTR id, const char *item)
 
 	return AppendMenu(menu, flags, id, t_item);
 }
+
+
+//============================================================
+//  win_create_monospace_font
+//============================================================
+
+HFONT win_create_monospace_font()
+{
+	HDC temp_dc;
+	HFONT font;
+
+	temp_dc = GetDC(nullptr);
+
+	font = CreateFont(-MulDiv(8, GetDeviceCaps(temp_dc, LOGPIXELSY), 72), 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE,
+		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, TEXT("Lucida Console"));
+	if (temp_dc)
+		ReleaseDC(nullptr, temp_dc);
+	return font;
+}
+
+
+

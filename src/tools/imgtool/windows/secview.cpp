@@ -12,11 +12,13 @@
 #include <tchar.h>
 #include <windows.h>
 #include <commctrl.h>
+#include <commdlg.h>
 
 #include "secview.h"
 #include "wimgres.h"
 #include "hexview.h"
 #include "winutf8.h"
+#include "winutils.h"
 
 #define ANCHOR_LEFT		0x01
 #define ANCHOR_TOP		0x02
@@ -67,22 +69,6 @@ static struct sectorview_info *get_sectorview_info(HWND dialog)
 	LONG_PTR l;
 	l = GetWindowLongPtr(dialog, GWLP_USERDATA);
 	return (struct sectorview_info *) l;
-}
-
-
-
-static HFONT create_font(void)
-{
-	HDC temp_dc;
-	HFONT font;
-
-	temp_dc = GetDC(nullptr);
-
-	font = CreateFont(-MulDiv(8, GetDeviceCaps(temp_dc, LOGPIXELSY), 72), 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE,
-				ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, TEXT("Lucida Console"));
-	if (temp_dc)
-		ReleaseDC(nullptr, temp_dc);
-	return font;
 }
 
 
@@ -292,7 +278,7 @@ static INT_PTR CALLBACK win_sectorview_dialog_proc(HWND dialog, UINT message,
 			// TODO: get actual tracks, heads, sectors from image
 
 			info = (struct sectorview_info *) lparam;
-			info->font = create_font();
+			info->font = win_create_monospace_font();
 
 			GetWindowRect(dialog, &dialog_rect);
 			info->old_width = dialog_rect.right - dialog_rect.left;

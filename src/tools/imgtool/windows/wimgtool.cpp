@@ -32,6 +32,7 @@
 #include "strconv.h"
 #include "attrdlg.h"
 #include "exticon.h"
+#include "fileview.h"
 #include "secview.h"
 #include "winfile.h"
 #include "winutf8.h"
@@ -1280,6 +1281,33 @@ static void menu_delete(HWND window)
 
 
 
+static imgtoolerr_t menu_view_proc(HWND window, const imgtool_dirent *entry, void *param)
+{
+	imgtoolerr_t err;
+	wimgtool_info *info = get_wimgtool_info(window);
+
+	// read the file
+	imgtool::stream::ptr stream = imgtool::stream::open_mem(nullptr, 0);
+	err = info->partition->read_file(entry->filename, nullptr, *stream, nullptr);
+	if (err)
+	{
+		wimgtool_report_error(window, err, nullptr, entry->filename);
+		return err;
+	}
+
+	win_fileview_dialog(window, entry->filename, stream->getptr(), stream->size());
+	return IMGTOOLERR_SUCCESS;
+}
+
+
+
+static void menu_view(HWND window)
+{
+	foreach_selected_item(window, menu_view_proc, nullptr);
+}
+
+
+
 static void menu_sectorview(HWND window)
 {
 	wimgtool_info *info;
@@ -1546,6 +1574,8 @@ static void init_menu(HWND window, HMENU menu)
 		MF_BYCOMMAND | (can_createdir ? MF_ENABLED : MF_GRAYED));
 	EnableMenuItem(menu, ID_IMAGE_DELETE,
 		MF_BYCOMMAND | (can_delete ? MF_ENABLED : MF_GRAYED));
+	EnableMenuItem(menu, ID_IMAGE_VIEW,
+		MF_BYCOMMAND | (can_read ? MF_ENABLED : MF_GRAYED));
 	EnableMenuItem(menu, ID_IMAGE_SECTORVIEW,
 		MF_BYCOMMAND | (module_features.supports_readsector ? MF_ENABLED : MF_GRAYED));
 
@@ -1638,6 +1668,10 @@ static LRESULT CALLBACK wimgtool_wndproc(HWND window, UINT message, WPARAM wpara
 
 				case ID_IMAGE_DELETE:
 					menu_delete(window);
+					break;
+
+				case ID_IMAGE_VIEW:
+					menu_view(window);
 					break;
 
 				case ID_IMAGE_SECTORVIEW:
