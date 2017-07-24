@@ -19,23 +19,7 @@
 #include "hexview.h"
 #include "winutf8.h"
 #include "winutils.h"
-
-#define ANCHOR_LEFT		0x01
-#define ANCHOR_TOP		0x02
-#define ANCHOR_RIGHT	0x04
-#define ANCHOR_BOTTOM	0x08
-
-#ifdef PTR64
-typedef UINT64 FPTR;
-#else
-typedef UINT32 FPTR;
-#endif
-
-struct anchor_entry
-{
-	UINT16 control;
-	UINT8 anchor;
-};
+#include "anchor.h"
 
 struct sectorview_info
 {
@@ -44,22 +28,30 @@ struct sectorview_info
 	UINT32 track, head, sector;
 	LONG old_width;
 	LONG old_height;
-};
+	anchor_manager anchor;
 
-static const struct anchor_entry sectorview_anchor[] =
-{
-	{ IDC_HEXVIEW,		ANCHOR_LEFT | ANCHOR_TOP | ANCHOR_RIGHT | ANCHOR_BOTTOM },
-	{ IDOK,				ANCHOR_RIGHT | ANCHOR_BOTTOM },
-	{ IDC_TRACKEDIT,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_TRACKLABEL,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_TRACKSPIN,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_HEADEDIT,		ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_HEADLABEL,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_HEADSPIN,		ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_SECTOREDIT,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_SECTORLABEL,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ IDC_SECTORSPIN,	ANCHOR_LEFT | ANCHOR_BOTTOM },
-	{ 0 }
+	sectorview_info(imgtool::image *i)
+		: image(i)
+		, font(nullptr)
+		, track(0)
+		, head(0)
+		, sector(0)
+		, old_width(0)
+		, old_height(0)
+		, anchor({
+			{ IDC_HEXVIEW,		anchor_manager::anchor::LEFT | anchor_manager::anchor::TOP | anchor_manager::anchor::RIGHT | anchor_manager::anchor::BOTTOM },
+			{ IDOK,				anchor_manager::anchor::RIGHT | anchor_manager::anchor::BOTTOM },
+			{ IDC_TRACKEDIT,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_TRACKLABEL,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_TRACKSPIN,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_HEADEDIT,		anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_HEADLABEL,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_HEADSPIN,		anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_SECTOREDIT,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_SECTORLABEL,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM },
+			{ IDC_SECTORSPIN,	anchor_manager::anchor::LEFT | anchor_manager::anchor::BOTTOM } } )
+	{
+	}
 };
 
 
@@ -70,98 +62,6 @@ static struct sectorview_info *get_sectorview_info(HWND dialog)
 	l = GetWindowLongPtr(dialog, GWLP_USERDATA);
 	return (struct sectorview_info *) l;
 }
-
-
-
-static void size_dialog(HWND dialog, const struct anchor_entry *anchor_entries,
-	LONG width_delta, LONG height_delta)
-{
-	int i;
-	HWND dlgitem;
-	RECT dialog_rect, adjusted_dialog_rect, dlgitem_rect;
-	LONG dialog_left, dialog_top;
-	LONG left, top;
-	UINT64 width, height;
-	UINT8 anchor;
-	HANDLE width_prop, height_prop;
-	static const TCHAR winprop_negwidth[] = TEXT("winprop_negwidth");
-	static const TCHAR winprop_negheight[] = TEXT("winprop_negheight");
-
-	// figure out the dialog client top/left coordinates
-	GetWindowRect(dialog, &dialog_rect);
-	adjusted_dialog_rect = dialog_rect;
-	AdjustWindowRectEx(&adjusted_dialog_rect,
-		GetWindowLong(dialog, GWL_STYLE),
-		GetMenu(dialog) ? TRUE : FALSE,
-		GetWindowLong(dialog, GWL_EXSTYLE));
-	dialog_left = dialog_rect.left + (dialog_rect.left - adjusted_dialog_rect.left);
-	dialog_top = dialog_rect.top + (dialog_rect.top - adjusted_dialog_rect.top);
-
-	for (i = 0; anchor_entries[i].control; i++)
-	{
-		dlgitem = GetDlgItem(dialog, anchor_entries[i].control);
-		if (dlgitem)
-		{
-			GetWindowRect(dlgitem, &dlgitem_rect);
-			anchor = anchor_entries[i].anchor;
-
-			left = dlgitem_rect.left - dialog_left;
-			top = dlgitem_rect.top - dialog_top;
-			width = dlgitem_rect.right - dlgitem_rect.left;
-			height = dlgitem_rect.bottom - dlgitem_rect.top;
-
-			width_prop = GetProp(dlgitem, winprop_negwidth);
-			if (width_prop)
-				width = (FPTR) width_prop;
-			height_prop = GetProp(dlgitem, winprop_negheight);
-			if (height_prop)
-				height = (FPTR) height_prop;
-
-			switch(anchor & (ANCHOR_LEFT | ANCHOR_RIGHT))
-			{
-				case ANCHOR_RIGHT:
-					left += width_delta;
-					break;
-
-				case ANCHOR_LEFT | ANCHOR_RIGHT:
-					width += width_delta;
-					break;
-			}
-
-			switch(anchor & (ANCHOR_TOP | ANCHOR_BOTTOM))
-			{
-				case ANCHOR_BOTTOM:
-					top += height_delta;
-					break;
-
-				case ANCHOR_TOP | ANCHOR_BOTTOM:
-					height += height_delta;
-					break;
-			}
-
-			// Record the width/height properties if they are negative
-			if (width < 0)
-			{
-				SetProp(dlgitem, winprop_negwidth, (HANDLE) width);
-				width = 0;
-			}
-			else if (width_prop)
-				RemoveProp(dlgitem, winprop_negwidth);
-			if (height < 0)
-			{
-				SetProp(dlgitem, winprop_negheight, (HANDLE) height);
-				height = 0;
-			}
-			else if (height_prop)
-				RemoveProp(dlgitem, winprop_negheight);
-
-			// Actually move the window
-			SetWindowPos(dlgitem, 0, left, top, width, height, SWP_NOZORDER);
-			InvalidateRect(dlgitem, nullptr, TRUE);
-		}
-	}
-}
-
 
 
 // reads sector data from the disk image into the view
@@ -294,6 +194,8 @@ static INT_PTR CALLBACK win_sectorview_dialog_proc(HWND dialog, UINT message,
 			setup_spin_control(dialog, IDC_HEADSPIN, IDC_HEADEDIT, 0, heads-1);
 			setup_spin_control(dialog, IDC_SECTORSPIN, IDC_SECTOREDIT, 0, sectors-1);
 
+			info->anchor.setup(dialog);
+
 			// TODO: get first sector id instead of try and error
 			err = read_sector_data(dialog, 0, 0, 0);
 			if (err == IMGTOOLERR_SEEKERROR)
@@ -338,14 +240,7 @@ static INT_PTR CALLBACK win_sectorview_dialog_proc(HWND dialog, UINT message,
 
 		case WM_SIZE:
 			info = get_sectorview_info(dialog);
-
-			GetWindowRect(dialog, &dialog_rect);
-			size_dialog(dialog, sectorview_anchor,
-				(dialog_rect.right - dialog_rect.left) - info->old_width,
-				(dialog_rect.bottom - dialog_rect.top) - info->old_height);
-
-			info->old_width = dialog_rect.right - dialog_rect.left;
-			info->old_height = dialog_rect.bottom - dialog_rect.top;
+			info->anchor.resize();
 			break;
 
 		case WM_MOUSEWHEEL:
@@ -363,11 +258,7 @@ static INT_PTR CALLBACK win_sectorview_dialog_proc(HWND dialog, UINT message,
 
 void win_sectorview_dialog(HWND parent, imgtool::image *image)
 {
-	struct sectorview_info info;
-
-	memset(&info, 0, sizeof(info));
-	info.image = image;
-
+	struct sectorview_info info(image);
 	DialogBoxParam(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDD_SECTORVIEW), parent,
 		win_sectorview_dialog_proc, (LPARAM) &info);
 }
