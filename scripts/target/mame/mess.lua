@@ -896,6 +896,7 @@ FORMATS["ZX81_P"] = true
 --------------------------------------------------
 function linkProjects_mame_mess(_target, _subtarget)
 	links {
+		"access",
 		"acorn",
 		"act",
 		"adc",
@@ -952,6 +953,7 @@ function linkProjects_mame_mess(_target, _subtarget)
 		"einis",
 		"elektor",
 		"elektrka",
+		"elektron",
 		"ensoniq",
 		"enterprise",
 		"entex",
@@ -1299,6 +1301,11 @@ files {
 --------------------------------------------------
 -- manufacturer-specific groupings for drivers
 --------------------------------------------------
+
+createMESSProjects(_target, _subtarget, "access")
+files {
+	MAME_DIR .. "src/mame/drivers/acvirus.cpp",
+}
 
 createMESSProjects(_target, _subtarget, "acorn")
 files {
