@@ -19,6 +19,7 @@
 #include "hexview.h"
 #include "winutf8.h"
 #include "winutils.h"
+#include "anchor.h"
 
 
 namespace
@@ -31,6 +32,9 @@ namespace
 			, m_ptr(ptr)
 			, m_size(size)
 			, m_font(nullptr)
+			, m_anchor({
+				{ IDC_HEXVIEW,	anchor_manager::anchor::LEFT | anchor_manager::anchor::TOP | anchor_manager::anchor::RIGHT | anchor_manager::anchor::BOTTOM },
+				{ IDOK,			anchor_manager::anchor::BOTTOM | anchor_manager::anchor::RIGHT } })
 		{
 		}
 
@@ -50,6 +54,10 @@ namespace
 			case WM_COMMAND:
 				get_file_viewer(dialog).handle_command(dialog, HIWORD(wparam), LOWORD(wparam));
 				break;
+
+			case WM_SIZE:
+				get_file_viewer(dialog).m_anchor.resize();
+				break;
 			}
 			return rc;
 		}
@@ -64,6 +72,9 @@ namespace
 			HWND hexview = GetDlgItem(dialog, IDC_HEXVIEW);
 			SendMessage(hexview, WM_SETFONT, (WPARAM)m_font, (LPARAM)TRUE);
 			hexview_setdata(hexview, m_ptr, m_size);
+
+			// set up anchoring
+			m_anchor.setup(dialog);
 		}
 
 		void handle_destroy()
@@ -80,7 +91,6 @@ namespace
 			switch (id)
 			{
 			case IDOK:
-			case IDCANCEL:
 				EndDialog(dialog, 0);
 				break;
 			}
@@ -95,6 +105,7 @@ namespace
 		const void *	m_ptr;
 		size_t			m_size;
 		HFONT			m_font;
+		anchor_manager	m_anchor;
 	};
 }
 

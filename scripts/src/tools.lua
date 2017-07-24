@@ -889,6 +889,8 @@ files {
 	MAME_DIR .. "src/tools/imgtool/windows/assoc.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/assoc.h",
 	MAME_DIR .. "src/tools/imgtool/windows/assocdlg.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/anchor.cpp",
+	MAME_DIR .. "src/tools/imgtool/windows/anchor.h",
 	MAME_DIR .. "src/tools/imgtool/windows/attrdlg.cpp",
 	MAME_DIR .. "src/tools/imgtool/windows/attrdlg.h",
 	MAME_DIR .. "src/tools/imgtool/windows/exticon.cpp",
