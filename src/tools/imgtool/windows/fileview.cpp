@@ -91,6 +91,7 @@ namespace
 			switch (id)
 			{
 			case IDOK:
+			case IDCANCEL:
 				EndDialog(dialog, 0);
 				break;
 			}
