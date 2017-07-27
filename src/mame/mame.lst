@@ -10059,6 +10059,7 @@ sf2m6                           // hack
 sf2m7                           // hack
 sf2m8                           // bootleg
 sf2qp1                          // hack
+sf2qp2                          // hack
 sf2rb                           // hack
 sf2rb2                          // hack
 sf2rb3                          // hack
@@ -12853,8 +12854,8 @@ aligator                        // (c) 1994 - Ref 940411
 aligatorun                      // (c) 1994 - Ref 940411 (unprotected)
 bang                            // (c) 1998 - Ref ???
 bangj                           // (c) 1999 - Ref ???
-grtesoro                        // (c) 1999 - Ref ???
-grtesoro4                       // (c) 1999 - Ref ???
+play2000                        // (c) 1999 - Ref ???
+play2000a                       // (c) 1999 - Ref ???
 maniacsq                        // (c) 1996 - Ref 940411 - (unprotected)
 maniacsqa                       // (c) 1996 - Ref 940411
 snowboar                        // (c) 1996 - Ref 960419/1
@@ -14576,12 +14577,15 @@ gnw_jr55                        // Nintendo
 gnw_mc25                        // Nintendo
 gnw_ml102                       // Nintendo
 gnw_mw56                        // Nintendo
+kbilly                          // Konami
 kblades                         // Konami
 kbucky                          // Konami
 kcontra                         // Konami
+kdribble                        // Konami
 kgarfld                         // Konami
 kgradius                        // Konami
 kloneran                        // Konami
+knfl                            // Konami
 ktmnt                           // Konami
 ktopgun                         // Konami
 nupogodi                        // Elektronika
@@ -28533,6 +28537,7 @@ metlhawkj                       // (c) 1988
 mirninja                        // (c) 1988 (Japan)
 ordyne                          // (c) 1988
 ordynej                         // (c) 1988
+ordyneje                        // (c) 1988
 phelios                         // (c) 1988
 pheliosj                        // (c) 1988 (Japan)
 rthun2                          // (c) 1990
@@ -35146,6 +35151,7 @@ super80v                        //
 superchs                        // D46 (c) 1992 Taito Corporation Japan (World)
 superchsj                       // D46 (c) 1992 Taito Corporation (Japan)
 superchsp                       // prototype
+superchsp2                      // prototype
 superchsu                       // D46 (c) 1992 Taito America Corporation (US)
 
 @source:supercrd.cpp
