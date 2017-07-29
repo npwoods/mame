@@ -611,7 +611,7 @@ imgtool::partition::partition(imgtool::image &image, const imgtool_class &imgcla
 	m_read_file = (imgtoolerr_t(*)(imgtool::partition &, const char *, const char *, imgtool::stream &)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_READ_FILE);
 	m_write_file = (imgtoolerr_t(*)(imgtool::partition &, const char *, const char *, imgtool::stream &, util::option_resolution *)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_WRITE_FILE);
 	m_delete_file = (imgtoolerr_t(*)(imgtool::partition &, const char *)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_DELETE_FILE);
-	m_list_forks = (imgtoolerr_t(*)(imgtool::partition &, const char *, imgtool_forkent *, size_t)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_LIST_FORKS);
+	m_list_forks = (imgtoolerr_t(*)(imgtool::partition &, const char *, std::vector<imgtool::fork_entry> &forks)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_LIST_FORKS);
 	m_create_dir = (imgtoolerr_t(*)(imgtool::partition &, const char *)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_CREATE_DIR);
 	m_delete_dir = (imgtoolerr_t(*)(imgtool::partition &, const char *)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_DELETE_DIR);
 	m_list_attrs = (imgtoolerr_t(*)(imgtool::partition &, const char *, uint32_t *, size_t)) imgtool_get_info_fct(&imgclass, IMGTOOLINFO_PTR_LIST_ATTRS);
@@ -2040,7 +2040,7 @@ done:
 //  forks on an image
 //-------------------------------------------------
 
-imgtoolerr_t imgtool::partition::list_file_forks(const char *path, imgtool_forkent *ents, size_t len)
+imgtoolerr_t imgtool::partition::list_file_forks(const char *path, std::vector<imgtool::fork_entry> &forks)
 {
 	imgtoolerr_t err;
 	char *alloc_path = nullptr;
@@ -2066,7 +2066,9 @@ imgtoolerr_t imgtool::partition::list_file_forks(const char *path, imgtool_forke
 	if (err)
 		goto done;
 
-	err = m_list_forks(*this, path, ents, len);
+	// call the callback
+	forks.clear();
+	err = m_list_forks(*this, path, forks);
 	if (err)
 		goto done;
 
