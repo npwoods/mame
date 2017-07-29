@@ -855,7 +855,7 @@ imgtoolerr_t wimgtool_instance::open_image(const imgtool_module *module, const s
 	{
 		err = imgtool::image::identify_file(filename.c_str(), &identified_module, 1);
 		if (err)
-			goto done;
+			return err;
 		module = identified_module;
 	}
 
@@ -878,12 +878,12 @@ imgtoolerr_t wimgtool_instance::open_image(const imgtool_module *module, const s
 		err = imgtool::image::open(module, filename, read_or_write, image);
 	}
 	if (err)
-		goto done;
+		return err;
 
 	// try to open the partition
 	err = imgtool::partition::open(*image, partition_index, partition);
 	if (err)
-		goto done;
+		return err;
 
 	// unload current image and partition
 	m_image = std::move(image);
@@ -894,15 +894,14 @@ imgtoolerr_t wimgtool_instance::open_image(const imgtool_module *module, const s
 	// do we support directories?
 	if (m_partition->get_features().supports_directories)
 	{
-		root_path = partition->get_root_path();
+		root_path = m_partition->get_root_path();
 		m_current_directory.assign(root_path);
 	}
 
 	// refresh the window
 	full_refresh_image();
 
-done:
-	return err;
+	return IMGTOOLERR_SUCCESS;
 }
 
 
