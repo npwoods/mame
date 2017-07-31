@@ -31,7 +31,7 @@ assert(dirent.directory == false);
 
 local other_child_directory = partition:opendir(other_directory_filename);
 dirent = other_child_directory();
-assert(dirent.filename == "Hearts", "Expected 'Inside Child Directory' but instead got '" .. dirent.filename .. "'");
+assert(dirent.filename == "Hearts", "Expected 'Hearts' but instead got '" .. dirent.filename .. "'");
 assert(dirent.filesize == 55296, "Expected 55296 but instead got " .. dirent.filesize);
 assert(dirent.directory == false);
 
