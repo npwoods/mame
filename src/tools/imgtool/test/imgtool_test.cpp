@@ -99,6 +99,24 @@ public:
 		return l_directory(m_lua, std::move(directory));
 	}
 
+	sol::object list_file_forks(const std::string &path)
+	{
+		std::vector<imgtool::fork_entry> forks;
+		imgtoolerr_t err = m_partition->list_file_forks(path.c_str(), forks);
+		if (err)
+			raise_error(err);
+
+		sol::table table = m_lua.create_table();
+		for (auto i = 0; i < forks.size(); i++)
+		{
+			sol::table subtable = m_lua.create_table();
+			subtable["name"] = forks[i].name();
+			subtable["size"] = forks[i].size();
+			table.add(subtable);
+		}
+
+		return table;
+	}
 
 private:
 	sol::state &m_lua;
@@ -277,7 +295,8 @@ int main(int argc, char *argv[])
 	// partition type
 	imgtool_ns.new_usertype<l_partition>("partition",
 		"freespace", &l_partition::freespace,
-		"opendir", &l_partition::opendir);
+		"opendir", &l_partition::opendir,
+		"list_file_forks", &l_partition::list_file_forks);
 
 	// parition iterator type
 	imgtool_ns.new_usertype<l_partition_iterator>("partition_iterator",
