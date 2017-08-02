@@ -170,8 +170,8 @@ int extension_icon_provider::provide_icon_index(const imgtool_iconinfo &icon)
 			? create_icon<32>(icon.icon32x32)
 			: nullptr;
 
-		icon_index = ImageList_AddIcon(m_normal.handle(), icon32x32);
-		ImageList_AddIcon(m_small.handle(), icon16x16);
+		icon_index = ImageList_AddIcon(m_normal.handle(), icon32x32 ? icon32x32 : icon16x16);
+		ImageList_AddIcon(m_small.handle(), icon16x16 ? icon16x16 : icon32x32);
 	}
 	return icon_index;
 }

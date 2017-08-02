@@ -74,6 +74,7 @@ namespace
 		imgtoolerr_t foreach_selected_item(const std::function<imgtoolerr_t(const imgtool_dirent &)> &proc);
 		imgtoolerr_t foreach_selected_item(imgtoolerr_t(wimgtool_instance::*proc)(const imgtool_dirent &));
 		imgtoolerr_t append_dirent(int index, const imgtool_dirent &entry);
+		std::string full_path_from_dirent(const imgtool_dirent &dirent);
 		imgtoolerr_t refresh_image();
 		imgtoolerr_t full_refresh_image();
 		win_open_file_name setup_openfilename_struct(bool creating_file);
@@ -197,10 +198,8 @@ imgtoolerr_t wimgtool_instance::foreach_selected_item(const std::function<imgtoo
 				// if we have a path, prepend the path
 				if (!m_current_directory.empty())
 				{
-					char path_separator = (char)m_partition->get_info_int(IMGTOOLINFO_INT_PATH_SEPARATOR);
-
 					// copy the full path back in
-					std::string s = util::string_format("%s%c%s", m_current_directory, path_separator, dirent.filename);
+					std::string s = full_path_from_dirent(dirent);
 					snprintf(dirent.filename, ARRAY_LENGTH(dirent.filename), "%s", s.c_str());
 				}
 
@@ -294,7 +293,7 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 	if (features.supports_geticoninfo)
 	{
 		imgtool_iconinfo iconinfo;
-		std::string buf = string_format("%s%s", m_current_directory, entry.filename);
+		std::string buf = full_path_from_dirent(entry);
 		m_partition->get_icon_info(buf.c_str(), &iconinfo);
 
 		icon_index = m_icon_provider.provide_icon_index(iconinfo);
@@ -380,6 +379,17 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 		ListView_SetItemText(m_listview, new_index, column_index++, (LPTSTR) TEXT("Corrupt"));
 	}
 	return IMGTOOLERR_SUCCESS;
+}
+
+
+//-------------------------------------------------
+//  full_path_from_dirent
+//-------------------------------------------------
+
+std::string wimgtool_instance::full_path_from_dirent(const imgtool_dirent &dirent)
+{
+	char path_separator = (char)m_partition->get_info_int(IMGTOOLINFO_INT_PATH_SEPARATOR);
+	return util::string_format("%s%c%s", m_current_directory, path_separator, dirent.filename);
 }
 
 
