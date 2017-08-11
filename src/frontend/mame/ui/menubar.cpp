@@ -194,7 +194,7 @@ bool menubar::event_loop()
 
 		switch (local_menu_event.event_type)
 		{
-			case UI_EVENT_MOUSE_DOWN:
+			case ui_event::type::MOUSE_DOWN:
 				if (mi != nullptr)
 				{
 					m_selected_item = mi;
@@ -203,7 +203,7 @@ bool menubar::event_loop()
 				}
 				break;
 
-			case UI_EVENT_MOUSE_MOVE:
+			case ui_event::type::MOUSE_MOVE:
 				// record the move
 				m_last_mouse_move = osd_ticks();
 
@@ -228,7 +228,7 @@ bool menubar::event_loop()
 				}
 				break;
 
-			case UI_EVENT_MOUSE_UP:
+			case ui_event::type::MOUSE_UP:
 				m_active_item = nullptr;
 				if (m_selected_item && m_selected_item == mi)
 				{
