@@ -11,6 +11,7 @@
 #include "emu.h"
 #include "ui/selmenu.h"
 
+#include "ui/datmenu.h"
 #include "ui/icorender.h"
 #include "ui/info.h"
 #include "ui/inifile.h"
@@ -26,6 +27,7 @@
 
 #include "drivenum.h"
 #include "emuopts.h"
+#include "rendfont.h"
 #include "rendutil.h"
 #include "softlist.h"
 #include "softlist_dev.h"
@@ -133,9 +135,11 @@ char const *const menu_select_launch::s_info_titles[] = {
 		__("Sysinfo") };
 
 
-// instantiate possible variants of select_bios so derived classes don't get link errors
+// instantiate possible variants of these so derived classes don't get link errors
 template bool menu_select_launch::select_bios(game_driver const &, bool);
 template bool menu_select_launch::select_bios(ui_software_info const &, bool);
+template float menu_select_launch::draw_left_panel<machine_filter>(machine_filter::type current, std::map<machine_filter::type, machine_filter::ptr> const &filters, float x1, float y1, float x2, float y2);
+template float menu_select_launch::draw_left_panel<software_filter>(software_filter::type current, std::map<software_filter::type, software_filter::ptr> const &filters, float x1, float y1, float x2, float y2);
 
 
 menu_select_launch::system_flags::system_flags(machine_static_info const &info)
@@ -434,6 +438,7 @@ menu_select_launch::menu_select_launch(mame_ui_manager &mui, render_container &c
 	, m_prev_selected(nullptr)
 	, m_total_lines(0)
 	, m_topline_datsview(0)
+	, m_filter_highlight(0)
 	, m_ui_error(false)
 	, m_info_driver(nullptr)
 	, m_info_software(nullptr)
@@ -728,6 +733,26 @@ void menu_select_launch::inkey_navigation()
 }
 
 
+void menu_select_launch::inkey_dats()
+{
+	ui_software_info const *software;
+	game_driver const *driver;
+	get_selection(software, driver);
+	if (software)
+	{
+		if (software->startempty && mame_machine_manager::instance()->lua()->call_plugin_check<const char *>("data_list", software->driver->name, true))
+			menu::stack_push<menu_dats_view>(ui(), container(), software->driver);
+		else if (mame_machine_manager::instance()->lua()->call_plugin_check<const char *>("data_list", std::string(software->shortname).append(1, ',').append(software->listname).c_str()) || !software->usage.empty())
+			menu::stack_push<menu_dats_view>(ui(), container(), software);
+	}
+	else if (driver)
+	{
+		if (mame_machine_manager::instance()->lua()->call_plugin_check<const char *>("data_list", driver->name, true))
+			menu::stack_push<menu_dats_view>(ui(), container(), driver);
+	}
+}
+
+
 //-------------------------------------------------
 //  draw common arrows
 //-------------------------------------------------
@@ -810,6 +835,126 @@ bool menu_select_launch::draw_error_text()
 		ui().draw_text_box(container(), m_error_text.c_str(), ui::text_layout::CENTER, 0.5f, 0.5f, UI_RED_COLOR);
 
 	return m_ui_error;
+}
+
+
+template <typename Filter>
+float menu_select_launch::draw_left_panel(
+		typename Filter::type current,
+		std::map<typename Filter::type, typename Filter::ptr> const &filters,
+		float x1, float y1, float x2, float y2)
+{
+	if ((ui_globals::panels_status != SHOW_PANELS) && (ui_globals::panels_status != HIDE_RIGHT_PANEL))
+		return draw_collapsed_left_panel(x1, y1, x2, y2);
+
+	// calculate line height
+	float const line_height(ui().get_line_height());
+	float const text_size(ui().options().infos_size());
+	float const sc(y2 - y1 - (2.0f * UI_BOX_TB_BORDER));
+	float line_height_max(line_height * text_size);
+	if ((Filter::COUNT * line_height_max) > sc)
+	{
+		float const lm(sc / Filter::COUNT);
+		line_height_max = line_height * (lm / line_height);
+	}
+
+	// calculate horizontal offset for unadorned names
+	std::string tmp("_# ");
+	convert_command_glyph(tmp);
+	float const text_sign = ui().get_string_width(tmp.c_str(), text_size);
+
+	// get the maximum width of a filter name
+	float left_width(0.0f);
+	for (typename Filter::type x = Filter::FIRST; Filter::COUNT > x; ++x)
+		left_width = std::max(ui().get_string_width(Filter::display_name(x), text_size) + text_sign, left_width);
+
+	// outline the box and inset by the border width
+	float const origy1(y1);
+	float const origy2(y2);
+	x2 = x1 + left_width + 2.0f * UI_BOX_LR_BORDER;
+	ui().draw_outlined_box(container(), x1, y1, x2, y2, UI_BACKGROUND_COLOR);
+	x1 += UI_BOX_LR_BORDER;
+	x2 -= UI_BOX_LR_BORDER;
+	y1 += UI_BOX_TB_BORDER;
+	y2 -= UI_BOX_TB_BORDER;
+
+	// now draw the rows
+	auto const active_filter(filters.find(current));
+	for (typename Filter::type filter = Filter::FIRST; Filter::COUNT > filter; ++filter)
+	{
+		std::string str;
+		if (filters.end() != active_filter)
+		{
+			str = active_filter->second->adorned_display_name(filter);
+		}
+		else
+		{
+			if (current == filter)
+			{
+				str = std::string("_> ");
+				convert_command_glyph(str);
+			}
+			str.append(Filter::display_name(filter));
+		}
+
+		// handle mouse hover in passing
+		rgb_t bgcolor = UI_TEXT_BG_COLOR;
+		rgb_t fgcolor = UI_TEXT_COLOR;
+		if (mouse_in_rect(x1, y1, x2, y1 + line_height_max))
+		{
+			bgcolor = UI_MOUSEOVER_BG_COLOR;
+			fgcolor = UI_MOUSEOVER_COLOR;
+			hover = HOVER_FILTER_FIRST + filter;
+			highlight(x1, y1, x2, y1 + line_height_max, bgcolor);
+		}
+
+		// draw primary highlight if keyboard focus is here
+		if ((m_filter_highlight == filter) && (get_focus() == focused_menu::LEFT))
+		{
+			fgcolor = rgb_t(0xff, 0xff, 0xff, 0x00);
+			bgcolor = rgb_t(0xff, 0xff, 0xff, 0xff);
+			ui().draw_textured_box(
+					container(),
+					x1, y1, x2, y1 + line_height_max,
+					bgcolor, rgb_t(255, 43, 43, 43),
+					hilight_main_texture(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_TEXWRAP(1));
+		}
+
+		// finally draw the text itself and move to the next line
+		float const x1t = x1 + ((str == Filter::display_name(filter)) ? text_sign : 0.0f);
+		ui().draw_text_full(
+				container(), str.c_str(),
+				x1t, y1, x2 - x1,
+				ui::text_layout::LEFT, ui::text_layout::NEVER,
+				mame_ui_manager::NORMAL, fgcolor, bgcolor,
+				nullptr, nullptr, text_size);
+		y1 += line_height_max;
+	}
+
+	x1 = x2 + UI_BOX_LR_BORDER;
+	x2 = x1 + 2.0f * UI_BOX_LR_BORDER;
+	y1 = origy1;
+	y2 = origy2;
+	float const space = x2 - x1;
+	float const lr_arrow_width = 0.4f * space * machine().render().ui_aspect();
+
+	// set left-right arrows dimension
+	float const ar_x0 = 0.5f * (x2 + x1) - 0.5f * lr_arrow_width;
+	float const ar_y0 = 0.5f * (y2 + y1) + 0.1f * space;
+	float const ar_x1 = ar_x0 + lr_arrow_width;
+	float const ar_y1 = 0.5f * (y2 + y1) + 0.9f * space;
+
+	ui().draw_outlined_box(container(), x1, y1, x2, y2, rgb_t(0xef, 0x12, 0x47, 0x7b));
+
+	rgb_t fgcolor = UI_TEXT_COLOR;
+	if (mouse_in_rect(x1, y1, x2, y2))
+	{
+		fgcolor = UI_MOUSEOVER_COLOR;
+		hover = HOVER_LPANEL_ARROW;
+	}
+
+	draw_arrow(ar_x0, ar_y0, ar_x1, ar_y1, fgcolor, ROT90 ^ ORIENTATION_FLIP_X);
+	return x2 + UI_BOX_LR_BORDER;
 }
 
 
@@ -1098,7 +1243,16 @@ void menu_select_launch::handle_keys(uint32_t flags, int &iptkey)
 	// if we hit select, return true or pop the stack, depending on the item
 	if (exclusive_input_pressed(iptkey, IPT_UI_SELECT, 0))
 	{
-		if (is_last_selected() && m_focus == focused_menu::MAIN)
+		if (m_ui_error)
+		{
+			// dismiss error
+		}
+		else if (m_focus == focused_menu::LEFT)
+		{
+			m_prev_selected = nullptr;
+			filter_selected();
+		}
+		if (is_last_selected() && (m_focus == focused_menu::MAIN))
 		{
 			iptkey = IPT_UI_CANCEL;
 			stack_pop();
@@ -1403,12 +1557,12 @@ void menu_select_launch::handle_events(uint32_t flags, event &ev)
 				}
 				else if (hover == HOVER_B_EXPORT)
 				{
-					ev.iptkey = IPT_UI_EXPORT;
+					inkey_export();
 					stop = true;
 				}
 				else if (hover == HOVER_B_DATS)
 				{
-					ev.iptkey = IPT_UI_DATS;
+					inkey_dats();
 					stop = true;
 				}
 				else if (hover >= HOVER_RP_FIRST && hover <= HOVER_RP_LAST)
@@ -1416,16 +1570,11 @@ void menu_select_launch::handle_events(uint32_t flags, event &ev)
 					ui_globals::rpanel = (HOVER_RP_FIRST - hover) * (-1);
 					stop = true;
 				}
-				else if (hover >= HOVER_SW_FILTER_FIRST && hover <= HOVER_SW_FILTER_LAST)
-				{
-					l_sw_hover = (HOVER_SW_FILTER_FIRST - hover) * (-1);
-					ev.iptkey = IPT_OTHER;
-					stop = true;
-				}
 				else if (hover >= HOVER_FILTER_FIRST && hover <= HOVER_FILTER_LAST)
 				{
-					l_hover = (HOVER_FILTER_FIRST - hover) * (-1);
-					ev.iptkey = IPT_OTHER;
+					m_prev_selected = nullptr;
+					m_filter_highlight = hover - HOVER_FILTER_FIRST;
+					filter_selected();
 					stop = true;
 				}
 			}
@@ -1910,7 +2059,7 @@ void menu_select_launch::arts_render(float origx1, float origy1, float origx2, f
 	game_driver const *driver;
 	get_selection(software, driver);
 
-	if (software && ((software->startempty != 1) || !driver))
+	if (software && (!software->startempty || !driver))
 	{
 		m_cache->set_snapx_driver(nullptr);
 
@@ -2279,6 +2428,36 @@ void menu_select_launch::exit(running_machine &machine)
 {
 	std::lock_guard<std::mutex> guard(s_cache_guard);
 	s_caches.erase(&machine);
+}
+
+
+//-------------------------------------------------
+//  draw collapsed left panel
+//-------------------------------------------------
+
+float menu_select_launch::draw_collapsed_left_panel(float x1, float y1, float x2, float y2)
+{
+	float const space = x2 - x1;
+	float const lr_arrow_width = 0.4f * space * machine().render().ui_aspect();
+
+	// set left-right arrows dimension
+	float const ar_x0 = 0.5f * (x2 + x1) - (0.5f * lr_arrow_width);
+	float const ar_y0 = 0.5f * (y2 + y1) + (0.1f * space);
+	float const ar_x1 = ar_x0 + lr_arrow_width;
+	float const ar_y1 = 0.5f * (y2 + y1) + (0.9f * space);
+
+	ui().draw_outlined_box(container(), x1, y1, x2, y2, rgb_t(0xef, 0x12, 0x47, 0x7b)); // FIXME: magic numbers in colour?
+
+	rgb_t fgcolor = UI_TEXT_COLOR;
+	if (mouse_in_rect(x1, y1, x2, y2))
+	{
+		fgcolor = UI_MOUSEOVER_COLOR;
+		hover = HOVER_LPANEL_ARROW;
+	}
+
+	draw_arrow(ar_x0, ar_y0, ar_x1, ar_y1, fgcolor, ROT90);
+
+	return x2 + UI_BOX_LR_BORDER;
 }
 
 
