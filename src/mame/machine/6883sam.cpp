@@ -251,14 +251,12 @@ void sam6883_device::update_memory(void)
 			// 4K mode
 			m_space_0000.point(m_banks[0], 0x0000, m_banks[0].m_memory_size);
 			m_counter_mask = 0x0FFF;
-			m_counter_or = 0x0000;
 			break;
 
 		case SAM_STATE_M0:
 			// 16K mode
 			m_space_0000.point(m_banks[0], 0x0000, m_banks[0].m_memory_size);
 			m_counter_mask = 0x3FFF;
-			m_counter_or = 0x0000;
 			break;
 
 		case SAM_STATE_M1:
@@ -272,7 +270,6 @@ void sam6883_device::update_memory(void)
 				m_space_A000.point(m_banks[0], 0xA000);
 				m_space_C000.point(m_banks[0], 0xC000);
 				m_counter_mask = 0xFFFF;
-				m_counter_or = 0x0000;
 				setup_rom = false;
 			}
 			else
@@ -281,7 +278,6 @@ void sam6883_device::update_memory(void)
 				uint16_t ram_base = (m_sam_state & SAM_STATE_P1) ? 0x8000 : 0x0000;
 				m_space_0000.point(m_banks[0], ram_base, m_banks[0].m_memory_size);
 				m_counter_mask = 0x7FFF;
-				m_counter_or = ram_base;
 			}
 			break;
 	}

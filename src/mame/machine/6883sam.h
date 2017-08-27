@@ -131,7 +131,7 @@ public:
 			if (bit3_carry)
 				counter_carry_bit3();
 		}
-		return m_read_res((m_counter & m_counter_mask) | m_counter_or);
+		return m_read_res(m_counter & m_counter_mask);
 	}
 
 	DECLARE_WRITE_LINE_MEMBER( hs_w );
@@ -212,7 +212,6 @@ private:
 	sam_space<0xFF60, 0xFFBF>   m_space_FF60;
 	sam_space<0xFFE0, 0xFFFF>   m_space_FFE0;
 	uint16_t                      m_counter_mask;
-	uint16_t                      m_counter_or;
 	std::function<void(uint16_t, uint16_t, read_or_write)> m_update_shadow;
 
 	// SAM state
