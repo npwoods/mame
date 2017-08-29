@@ -341,7 +341,7 @@ image_init_result hp_1ma6_device::call_load()
 	return internal_load(false);
 }
 
-image_init_result hp_1ma6_device::call_create(int format_type, util::option_resolution *format_options)
+image_init_result hp_1ma6_device::call_create(const image_device_format *create_format, util::option_resolution *format_options)
 {
 	LOG("call_create\n");
 	return internal_load(true);
