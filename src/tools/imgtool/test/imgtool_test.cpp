@@ -252,27 +252,12 @@ static std::string get_directory_name(const std::string &filename)
 
 
 //-------------------------------------------------
-//  argv_to_vector
-//-------------------------------------------------
-
-static std::vector<std::string> argv_to_vector(int argc, char *argv[])
-{
-	std::vector<std::string> result(argc);
-
-	for (int i = 0; i < argc; i++)
-		result[i] = std::string(argv[i]);
-
-	return result;
-}
-
-
-//-------------------------------------------------
 //  main
 //-------------------------------------------------
 
 int main(int argc, char *argv[])
 {
-	std::vector<std::string> args = argv_to_vector(argc, argv);
+	std::vector<std::string> args = osd_get_command_line(argc, argv);
 	if (args.size() <= 1)
 	{
 		std::cerr << args[0] << ": Missing operand" << std::endl;
