@@ -158,11 +158,7 @@ const char info_xml_creator::s_dtd_string[] =
 "\t\t<!ELEMENT driver EMPTY>\n"
 "\t\t\t<!ATTLIST driver status (good|imperfect|preliminary) #REQUIRED>\n"
 "\t\t\t<!ATTLIST driver emulation (good|imperfect|preliminary) #REQUIRED>\n"
-"\t\t\t<!ATTLIST driver color (good|imperfect|preliminary) #REQUIRED>\n"
-"\t\t\t<!ATTLIST driver sound (good|imperfect|preliminary) #REQUIRED>\n"
-"\t\t\t<!ATTLIST driver graphic (good|imperfect|preliminary) #REQUIRED>\n"
 "\t\t\t<!ATTLIST driver cocktail (good|imperfect|preliminary) #IMPLIED>\n"
-"\t\t\t<!ATTLIST driver protection (good|imperfect|preliminary) #IMPLIED>\n"
 "\t\t\t<!ATTLIST driver savestate (supported|unsupported) #REQUIRED>\n"
 "\t\t<!ELEMENT feature EMPTY>\n"
 "\t\t\t<!ATTLIST feature type (protection|palette|graphics|sound|controls|keyboard|mouse|microphone|camera|disk|printer|lan|wan|timing) #REQUIRED>\n"
@@ -224,7 +220,7 @@ void info_xml_creator::output(FILE *out, std::vector<std::string> const &pattern
 	driver_enumerator drivlist(m_lookup_options);
 	std::vector<bool> matched(patterns.size(), false);
 	size_t exact_matches = 0;
-	auto const included = [&patterns, &drivlist, &matched, &exact_matches] (char const *const name) -> bool
+	auto const included = [&patterns, &matched, &exact_matches] (char const *const name) -> bool
 	{
 		if (patterns.empty())
 			return true;
@@ -658,18 +654,15 @@ void info_xml_creator::output_bios(device_t const &device)
 	}
 
 	// iterate over ROM entries and look for BIOSes
-	for (tiny_rom_entry const *rom = device.rom_region(); rom && !ROMENTRY_ISEND(rom); ++rom)
+	for (romload::system_bios const &bios : romload::entries(device.rom_region()).get_system_bioses())
 	{
-		if (ROMENTRY_ISSYSTEM_BIOS(rom))
-		{
-			// output extracted name and descriptions
-			fprintf(m_output, "\t\t<biosset");
-			fprintf(m_output, " name=\"%s\"", util::xml::normalize_string(rom->name));
-			fprintf(m_output, " description=\"%s\"", util::xml::normalize_string(rom->hashdata));
-			if (defaultname && !std::strcmp(defaultname, rom->name))
-				fprintf(m_output, " default=\"yes\"");
-			fprintf(m_output, "/>\n");
-		}
+		// output extracted name and descriptions
+		fprintf(m_output, "\t\t<biosset");
+		fprintf(m_output, " name=\"%s\"", util::xml::normalize_string(bios.get_name()));
+		fprintf(m_output, " description=\"%s\"", util::xml::normalize_string(bios.get_description()));
+		if (defaultname && !std::strcmp(defaultname, bios.get_name()))
+			fprintf(m_output, " default=\"yes\"");
+		fprintf(m_output, "/>\n");
 	}
 }
 
@@ -1586,17 +1579,6 @@ void info_xml_creator::output_driver(game_driver const &driver, device_t::featur
 	emulation problems.
 	*/
 
-	auto const print_feature =
-			[this, unemulated, imperfect] (device_t::feature_type feature, char const *name, bool show_good)
-			{
-				if (unemulated & feature)
-					fprintf(m_output, " %s=\"preliminary\"", name);
-				else if (imperfect & feature)
-					fprintf(m_output, " %s=\"imperfect\"", name);
-				else if (show_good)
-					fprintf(m_output, " %s=\"good\"", name);
-			};
-
 	u32 const flags = driver.flags;
 	bool const machine_preliminary(flags & (machine_flags::NOT_WORKING | machine_flags::MECHANICAL));
 	bool const unemulated_preliminary(unemulated & (device_t::feature::PALETTE | device_t::feature::GRAPHICS | device_t::feature::SOUND | device_t::feature::KEYBOARD));
@@ -1614,14 +1596,8 @@ void info_xml_creator::output_driver(game_driver const &driver, device_t::featur
 	else
 		fprintf(m_output, " emulation=\"good\"");
 
-	print_feature(device_t::feature::PALETTE, "color", true);
-	print_feature(device_t::feature::SOUND, "sound", true);
-	print_feature(device_t::feature::GRAPHICS, "graphic", true);
-
 	if (flags & machine_flags::NO_COCKTAIL)
 		fprintf(m_output, " cocktail=\"preliminary\"");
-
-	print_feature(device_t::feature::PROTECTION, "protection", false);
 
 	if (flags & machine_flags::SUPPORTS_SAVE)
 		fprintf(m_output, " savestate=\"supported\"");
@@ -1847,23 +1823,20 @@ void info_xml_creator::output_ramoptions(device_t &root)
 const char *info_xml_creator::get_merge_name(driver_enumerator &drivlist, util::hash_collection const &romhashes)
 {
 	// walk the parent chain
-	const char *merge_name = nullptr;
-	for (int clone_of = drivlist.find(drivlist.driver().parent); clone_of != -1; clone_of = drivlist.find(drivlist.driver(clone_of).parent))
+	for (int clone_of = drivlist.find(drivlist.driver().parent); 0 <= clone_of; clone_of = drivlist.find(drivlist.driver(clone_of).parent))
 	{
 		// look in the parent's ROMs
-		device_t *device = &drivlist.config(clone_of, m_lookup_options)->root_device();
-		for (const rom_entry *pregion = rom_first_region(*device); pregion != nullptr; pregion = rom_next_region(pregion))
-			for (const rom_entry *prom = rom_first_file(pregion); prom != nullptr; prom = rom_next_file(prom))
+		for (romload::region const &pregion : romload::entries(drivlist.driver(clone_of).rom).get_regions())
+		{
+			for (romload::file const &prom : pregion.get_files())
 			{
-				util::hash_collection phashes(ROM_GETHASHDATA(prom));
-				if (!phashes.flag(util::hash_collection::FLAG_NO_DUMP) && romhashes == phashes)
-				{
-					// stop when we find a match
-					merge_name = ROM_GETNAME(prom);
-					break;
-				}
+				// stop when we find a match
+				util::hash_collection const phashes(prom.get_hashdata());
+				if (!phashes.flag(util::hash_collection::FLAG_NO_DUMP) && (romhashes == phashes))
+					return prom.get_name();
 			}
+		}
 	}
 
-	return merge_name;
+	return nullptr;
 }
