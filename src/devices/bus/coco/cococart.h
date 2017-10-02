@@ -120,7 +120,8 @@ public:
 	void twiddle_q_lines();
 
 	// cart base
-	uint8_t* get_cart_base();
+	uint8_t *get_cart_base();
+	uint32_t get_cart_size();
 	void set_cart_base_update(cococart_base_update_delegate update);
 
 private:
@@ -199,6 +200,7 @@ public:
 	virtual void set_sound_enable(bool sound_enable);
 
 	virtual uint8_t* get_cart_base();
+	virtual uint32_t get_cart_size();
 	void set_cart_base_update(cococart_base_update_delegate update);
 
 	virtual void interface_config_complete() override;
