@@ -2,7 +2,7 @@
 // copyright-holders:Curt Coder
 /**********************************************************************
 
-    Intel 8214 Priority Interrupt Controller emulation
+    Intel 8214/3214 Priority Interrupt Control Unit
 
 **********************************************************************/
 
@@ -14,7 +14,7 @@
 
 
 // device type definition
-DEFINE_DEVICE_TYPE(I8214, i8214_device, "i8214", "Intel 8214 PIC")
+DEFINE_DEVICE_TYPE(I8214, i8214_device, "i8214", "Intel 8214 PICU")
 
 
 
@@ -131,6 +131,17 @@ uint8_t i8214_device::a_r()
 	LOG("I8214 A: %01x\n", a);
 
 	return a;
+}
+
+
+//-------------------------------------------------
+//  vector_r - read A outputs to be latched as an
+//  8080-compatible interrupt vector
+//-------------------------------------------------
+
+READ8_MEMBER(i8214_device::vector_r)
+{
+	return 0xc7 | (m_a << 3);
 }
 
 
