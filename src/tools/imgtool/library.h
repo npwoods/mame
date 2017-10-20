@@ -111,6 +111,8 @@ namespace imgtool
 		std::tm gmtime() const;
 		time_t to_time_t() const;
 
+		operator bool() const { return m_type != datetime_type::NONE; }
+
 	private:
 		static imgtool_clock::duration			s_gmt_offset;
 		datetime_type							m_type;

@@ -8,15 +8,16 @@
 
 ***************************************************************************/
 
-#pragma once
-
 #ifndef MAME_LIB_UTIL_TIMECONV_H
 #define MAME_LIB_UTIL_TIMECONV_H
+
+#pragma once
 
 #include "osdcore.h"
 #include "coreutil.h"
 
 #include <chrono>
+#include <algorithm>
 
 
 namespace util {

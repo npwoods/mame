@@ -285,7 +285,6 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 	int new_index, column_index;
 	TCHAR buffer[32];
 	int icon_index = -1;
-	struct tm *local_time;
 
 	imgtool_partition_features features = m_partition->get_features();
 
@@ -345,10 +344,10 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 	// set creation time, if supported
 	if (features.supports_creation_time)
 	{
-		if (entry.creation_time != 0)
+		if (entry.creation_time)
 		{
-			local_time = localtime(&entry.creation_time);
-			_sntprintf(buffer, ARRAY_LENGTH(buffer), _tasctime(local_time));
+			std::tm local_time = entry.creation_time.localtime();
+			_sntprintf(buffer, ARRAY_LENGTH(buffer), _tasctime(&local_time));
 			tstring_rtrim(buffer);
 			ListView_SetItemText(m_listview, new_index, column_index, buffer);
 		}
@@ -360,8 +359,8 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 	{
 		if (entry.lastmodified_time != 0)
 		{
-			local_time = localtime(&entry.lastmodified_time);
-			_sntprintf(buffer, ARRAY_LENGTH(buffer), _tasctime(local_time));
+			std::tm local_time = entry.lastmodified_time.localtime();
+			_sntprintf(buffer, ARRAY_LENGTH(buffer), _tasctime(&local_time));
 			tstring_rtrim(buffer);
 			ListView_SetItemText(m_listview, new_index, column_index, buffer);
 		}
