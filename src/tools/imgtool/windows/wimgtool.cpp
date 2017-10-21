@@ -118,17 +118,21 @@ namespace
 }
 
 
-static void tstring_rtrim(TCHAR *buf)
+void strtrimrightspace(std::wstring &str)
 {
-	size_t buflen;
-	TCHAR *s;
+	// identify the start
+	std::wstring::iterator start = str.begin();
 
-	buflen = _tcslen(buf);
-	if (buflen)
-	{
-		for (s = &buf[buflen-1]; s >= buf && isspace(*s); s--)
-			*s = '\0';
-	}
+	// identify the end
+	std::wstring::iterator end = std::find_if(
+		str.rbegin(),
+		std::wstring::reverse_iterator(start),
+		[](wchar_t c) { return !iswspace(uint16_t(c)); }).base();
+
+	// extract the string
+	str = end > start
+		? str.substr(start - str.begin(), end - start)
+		: L"";
 }
 
 
@@ -283,7 +287,7 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 {
 	LVITEM lvi;
 	int new_index, column_index;
-	TCHAR buffer[32];
+	osd::text::tstring buffer;
 	int icon_index = -1;
 
 	imgtool_partition_features features = m_partition->get_features();
@@ -331,15 +335,15 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 
 	if (entry.directory)
 	{
-		_sntprintf(buffer, ARRAY_LENGTH(buffer), TEXT("<DIR>"));
+		buffer = TEXT("<DIR>");
 	}
 	else
 	{
 		// set the file size
-		_sntprintf(buffer, ARRAY_LENGTH(buffer), TEXT("%I64u"), entry.filesize);
+		buffer = util::string_format<osd::text::tstring>(TEXT("%s"), entry.filesize);
 	}
 	column_index = 1;
-	ListView_SetItemText(m_listview, new_index, column_index++, buffer);
+	ListView_SetItemText(m_listview, new_index, column_index++, (LPTSTR)buffer.c_str());
 
 	// set creation time, if supported
 	if (features.supports_creation_time)
@@ -347,9 +351,9 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 		if (entry.creation_time)
 		{
 			std::tm local_time = entry.creation_time.localtime();
-			_sntprintf(buffer, ARRAY_LENGTH(buffer), _tasctime(&local_time));
-			tstring_rtrim(buffer);
-			ListView_SetItemText(m_listview, new_index, column_index, buffer);
+			buffer.assign(_tasctime(&local_time));
+			strtrimrightspace(buffer);
+			ListView_SetItemText(m_listview, new_index, column_index, (LPTSTR) buffer.c_str());
 		}
 		column_index++;
 	}
@@ -360,9 +364,9 @@ imgtoolerr_t wimgtool_instance::append_dirent(int index, const imgtool_dirent &e
 		if (entry.lastmodified_time != 0)
 		{
 			std::tm local_time = entry.lastmodified_time.localtime();
-			_sntprintf(buffer, ARRAY_LENGTH(buffer), _tasctime(&local_time));
-			tstring_rtrim(buffer);
-			ListView_SetItemText(m_listview, new_index, column_index, buffer);
+			buffer.assign(_tasctime(&local_time));
+			strtrimrightspace(buffer);
+			ListView_SetItemText(m_listview, new_index, column_index, (LPTSTR)buffer.c_str());
 		}
 		column_index++;
 	}
