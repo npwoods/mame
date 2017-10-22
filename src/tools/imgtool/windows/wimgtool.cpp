@@ -158,6 +158,29 @@ static DWORD win_get_file_attributes_utf8(const char *filename)
 
 
 //-------------------------------------------------
+//  win_drag_query_file
+//-------------------------------------------------
+
+static UINT win_drag_query_file(HDROP drop, UINT file_index = 0xFFFFFFFF, osd::text::tstring *file = nullptr)
+{
+	UINT result;
+	UINT length = DragQueryFile(drop, file_index, nullptr, 0);
+
+	if (file && length > 0)
+	{
+		assert(file_index != 0xFFFFFFFF);
+		file->resize(length);
+		result = DragQueryFile(drop, file_index, &(*file)[0], length + 1);
+	}
+	else
+	{
+		result = length;
+	}
+	return result;
+}
+
+
+//-------------------------------------------------
 //  foreach_selected_item
 //-------------------------------------------------
 
@@ -801,28 +824,28 @@ static imgtoolerr_t get_recursive_directory(imgtool::partition &partition, const
 //  put_recursive_directory
 //-------------------------------------------------
 
-static imgtoolerr_t put_recursive_directory(imgtool::partition &partition, LPCTSTR local_path, const char *path)
+static imgtoolerr_t put_recursive_directory(imgtool::partition &partition, const osd::text::tstring &local_path, const char *path)
 {
 	imgtoolerr_t err;
 	HANDLE h = INVALID_HANDLE_VALUE;
 	WIN32_FIND_DATA wfd;
 	const char *subpath;
-	TCHAR local_subpath[MAX_PATH];
+	osd::text::tstring local_subpath;
 
 	err = partition.create_directory(path);
 	if (err)
 		goto done;
 
-	_sntprintf(local_subpath, ARRAY_LENGTH(local_subpath), TEXT("%s\\*.*"), local_path);
+	local_subpath = util::string_format<osd::text::tstring>(TEXT("%s\\*.*"), local_path);
 
-	h = FindFirstFile(local_subpath, &wfd);
+	h = FindFirstFile(local_subpath.c_str(), &wfd);
 	if (h && (h != INVALID_HANDLE_VALUE))
 	{
 		do
 		{
 			if (_tcscmp(wfd.cFileName, TEXT(".")) && _tcscmp(wfd.cFileName, TEXT("..")))
 			{
-				_sntprintf(local_subpath, ARRAY_LENGTH(local_subpath), TEXT("%s\\%s"), local_path, wfd.cFileName);
+				local_subpath = util::string_format<osd::text::tstring>(TEXT("%s\\%s"), local_path, wfd.cFileName);
 				std::string filename = osd::text::from_tstring(wfd.cFileName);
 				subpath = partition.path_concatenate(path, filename.c_str());
 
@@ -1456,22 +1479,23 @@ LRESULT wimgtool_instance::handle_create(const CREATESTRUCT &pcs)
 void wimgtool_instance::drop_files(HDROP drop)
 {
 	UINT count, i;
-	TCHAR buffer[MAX_PATH];
+	osd::text::tstring buffer;
+	std::string filename;
 	std::string subpath;
 	imgtoolerr_t err = IMGTOOLERR_SUCCESS;
 
-	count = DragQueryFile(drop, 0xFFFFFFFF, nullptr, 0);
+	count = win_drag_query_file(drop);
 	for (i = 0; i < count; i++)
 	{
-		DragQueryFile(drop, i, buffer, ARRAY_LENGTH(buffer));
-		std::string filename = osd::text::from_tstring(buffer);
+		win_drag_query_file(drop, i, &buffer);
+		osd::text::from_tstring(filename, buffer);
 
 		// figure out the file/dir name on the image
 		subpath = string_format("%s%s",
 			m_current_directory,
 			core_filename_extract_base(filename));
 
-		if (GetFileAttributes(buffer) & FILE_ATTRIBUTE_DIRECTORY)
+		if (GetFileAttributes(buffer.c_str()) & FILE_ATTRIBUTE_DIRECTORY)
 			err = put_recursive_directory(*m_partition, buffer, subpath.c_str());
 		else
 			err = m_partition->put_file(subpath.c_str(), nullptr, filename.c_str(), nullptr, nullptr);
