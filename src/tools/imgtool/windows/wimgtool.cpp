@@ -181,6 +181,19 @@ static UINT win_drag_query_file(HDROP drop, UINT file_index = 0xFFFFFFFF, osd::t
 
 
 //-------------------------------------------------
+//  win_get_file_title_utf8
+//-------------------------------------------------
+
+static std::string win_get_file_title_utf8(const std::string &filename)
+{
+	TCHAR file_title_buf[MAX_PATH];
+	osd::text::tstring t_filename = osd::text::to_tstring(filename);
+	GetFileTitle(t_filename.c_str(), file_title_buf, ARRAY_LENGTH(file_title_buf));
+	return osd::text::from_tstring(file_title_buf);
+}
+
+
+//-------------------------------------------------
 //  foreach_selected_item
 //-------------------------------------------------
 
@@ -517,7 +530,6 @@ imgtoolerr_t wimgtool_instance::full_refresh_image()
 	int i;
 	std::string buf;
 	std::string imageinfo;
-	TCHAR file_title_buf[MAX_PATH];
 	const char *statusbar_text[2];
 	imgtool_partition_features features;
 	std::string basename;
@@ -531,9 +543,7 @@ imgtoolerr_t wimgtool_instance::full_refresh_image()
 	if (!m_filename.empty())
 	{
 		// get file title from Windows
-		osd::text::tstring t_filename = osd::text::to_tstring(m_filename);
-		GetFileTitle(t_filename.c_str(), file_title_buf, ARRAY_LENGTH(file_title_buf));
-		std::string utf8_file_title = osd::text::from_tstring(file_title_buf);
+		std::string file_title = win_get_file_title_utf8(m_filename);
 
 		// get info from image
 		if (m_image)
@@ -545,11 +555,11 @@ imgtoolerr_t wimgtool_instance::full_refresh_image()
 			// has a current directory
 			if (!imageinfo.empty())
 			{
-				buf = string_format("%s (\"%s\") - %s", utf8_file_title, imageinfo, m_current_directory);
+				buf = string_format("%s (\"%s\") - %s", file_title, imageinfo, m_current_directory);
 			}
 			else
 			{
-				buf = string_format("%s - %s", utf8_file_title, m_current_directory);
+				buf = string_format("%s - %s", file_title, m_current_directory);
 			}
 		}
 		else
@@ -557,7 +567,7 @@ imgtoolerr_t wimgtool_instance::full_refresh_image()
 			// no current directory
 			buf = util::string_format(
 				!imageinfo.empty() ? "%s (\"%s\")" : "%s",
-				utf8_file_title, imageinfo);
+				file_title, imageinfo);
 		}
 
 		basename = core_filename_extract_base(m_filename);
