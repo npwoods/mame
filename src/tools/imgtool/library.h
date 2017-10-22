@@ -114,9 +114,9 @@ namespace imgtool
 		operator bool() const { return m_type != datetime_type::NONE; }
 
 	private:
-		static imgtool_clock::duration			s_gmt_offset;
-		datetime_type							m_type;
-		std::chrono::time_point<imgtool_clock>	m_time_point;
+		static imgtool_clock::duration          s_gmt_offset;
+		datetime_type                           m_type;
+		std::chrono::time_point<imgtool_clock>  m_time_point;
 
 		static imgtool_clock::duration calculate_gmt_offset();
 	};
