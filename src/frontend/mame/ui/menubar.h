@@ -35,6 +35,8 @@ public:
 	menubar(::mame_ui_manager &mui);
 	virtual ~menubar();
 
+	typedef std::unique_ptr<menubar> ptr;
+
 	// menu item
 	class menu_item
 	{

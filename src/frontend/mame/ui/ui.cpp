@@ -1282,7 +1282,7 @@ uint32_t mame_ui_manager::handler_ingame_menus(render_container &container)
 {
 	// no menubar? create it
 	if (!m_menubar)
-		m_menubar = std::make_unique<ui::mame_menubar>(*this);
+		m_menubar = ui::make_mame_menubar(*this);
 
 	// call image display
 	image_handler_ingame();
