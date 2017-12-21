@@ -23,12 +23,16 @@ files {
 	MAME_DIR .. "src/devices/machine/laserdsc.h",
 	MAME_DIR .. "src/devices/machine/latch.cpp",
 	MAME_DIR .. "src/devices/machine/latch.h",
+	MAME_DIR .. "src/devices/machine/myb3k_kbd.cpp",
+	MAME_DIR .. "src/devices/machine/myb3k_kbd.h",
 	MAME_DIR .. "src/devices/machine/nvram.cpp",
 	MAME_DIR .. "src/devices/machine/nvram.h",
 	MAME_DIR .. "src/devices/machine/ram.cpp",
 	MAME_DIR .. "src/devices/machine/ram.h",
 	MAME_DIR .. "src/devices/machine/legscsi.cpp",
 	MAME_DIR .. "src/devices/machine/legscsi.h",
+	MAME_DIR .. "src/devices/machine/sdlc.cpp",
+	MAME_DIR .. "src/devices/machine/sdlc.h",
 	MAME_DIR .. "src/devices/machine/terminal.cpp",
 	MAME_DIR .. "src/devices/machine/terminal.h",
 	MAME_DIR .. "src/devices/machine/timer.cpp",
@@ -673,6 +677,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/atmel_arm_aic.h,MACHINES["ARM_AIC"] = true
+---------------------------------------------------
+
+if (MACHINES["ARM_AIC"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/atmel_arm_aic.cpp",
+		MAME_DIR .. "src/devices/machine/atmel_arm_aic.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/ay31015.h,MACHINES["AY31015"] = true
 ---------------------------------------------------
 
@@ -1069,6 +1085,18 @@ if (MACHINES["I7220"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/i7220.cpp",
 		MAME_DIR .. "src/devices/machine/i7220.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/i8087.h,MACHINES["I8087"] = true
+---------------------------------------------------
+
+if (MACHINES["I8087"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/i8087.cpp",
+		MAME_DIR .. "src/devices/machine/i8087.h",
 	}
 end
 
@@ -2184,6 +2212,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/ripple_counter.h,MACHINES["RIPPLE_COUNTER"] = true
+---------------------------------------------------
+
+if (MACHINES["RIPPLE_COUNTER"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/ripple_counter.cpp",
+		MAME_DIR .. "src/devices/machine/ripple_counter.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/roc10937.h,MACHINES["ROC10937"] = true
 ---------------------------------------------------
 
@@ -3285,5 +3325,29 @@ if (MACHINES["I82586"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/i82586.cpp",
 		MAME_DIR .. "src/devices/machine/i82586.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/adc0844.h,MACHINES["ADC0844"] = true
+---------------------------------------------------
+
+if (MACHINES["ADC0844"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/adc0844.cpp",
+		MAME_DIR .. "src/devices/machine/adc0844.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/28fxxx.h,MACHINES["28FXXX"] = true
+---------------------------------------------------
+
+if (MACHINES["28FXXX"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/28fxxx.cpp",
+		MAME_DIR .. "src/devices/machine/28fxxx.h",
 	}
 end

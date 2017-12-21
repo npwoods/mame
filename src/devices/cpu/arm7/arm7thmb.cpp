@@ -1307,8 +1307,7 @@ void arm7_cpu_device::tg0b_f(uint32_t pc, uint32_t op)
 // "The address should normally be a word aligned quantity and non-word aligned addresses do not affect the instruction."
 // "However, the bottom 2 bits of the address will appear on A[1:0] and might be interpreted by the memory system."
 
-// GBA "BB Ball" performs an unaligned read with A[1:0] = 2 and expects A[1] not to be ignored [BP 800B90A,(R4&3)!=0]
-// GBA "Gadget Racers" performs an unaligned read with A[1:0] = 1 and expects A[0] to be ignored [BP B72,(R0&3)!=0]
+// Endrift says LDMIA/STMIA ignore the low 2 bits and GBA Test Suite assumes it.
 
 void arm7_cpu_device::tg0c_0(uint32_t pc, uint32_t op) /* Store */
 {
@@ -1335,7 +1334,7 @@ void arm7_cpu_device::tg0c_1(uint32_t pc, uint32_t op) /* Load */
 	{
 		if (op & (1 << offs))
 		{
-			SetRegister(offs, READ32(ld_st_address & ~1));
+			SetRegister(offs, READ32(ld_st_address & ~3));
 			ld_st_address += 4;
 		}
 	}
@@ -1557,18 +1556,21 @@ void arm7_cpu_device::tg0e_0(uint32_t pc, uint32_t op)
 
 void arm7_cpu_device::tg0e_1(uint32_t pc, uint32_t op)
 {
+	/* BLX (LO) */
+
 	uint32_t addr = GetRegister(14);
 	addr += (op & THUMB_BLOP_OFFS) << 1;
 	addr &= 0xfffffffc;
-	SetRegister(14, (R15 + 4) | 1);
+	SetRegister(14, (R15 + 2) | 1);
 	R15 = addr;
 	set_cpsr(GET_CPSR & ~T_MASK);
 }
 
-	/* BL */
 
 void arm7_cpu_device::tg0f_0(uint32_t pc, uint32_t op)
 {
+	/* BL (HI) */
+
 	uint32_t addr = (op & THUMB_BLOP_OFFS) << 12;
 	if (addr & (1 << 22))
 	{
@@ -1581,6 +1583,8 @@ void arm7_cpu_device::tg0f_0(uint32_t pc, uint32_t op)
 
 void arm7_cpu_device::tg0f_1(uint32_t pc, uint32_t op) /* BL */
 {
+	/* BL (LO) */
+
 	uint32_t addr = GetRegister(14) & ~1;
 	addr += (op & THUMB_BLOP_OFFS) << 1;
 	SetRegister(14, (R15 + 2) | 1);

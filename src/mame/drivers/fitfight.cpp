@@ -96,7 +96,7 @@ Stephh's notes :
 READ16_MEMBER( fitfight_state::hotmindff_unk_r )
 {
 	// won't boot unless things in here change, this is p1/p2 inputs in fitfight
-	return space.machine().rand();
+	return machine().rand();
 }
 
 READ16_MEMBER(fitfight_state::fitfight_700000_r)
@@ -258,7 +258,7 @@ WRITE8_MEMBER(fitfight_state::snd_portc_w)
 
 INTERRUPT_GEN_MEMBER(fitfight_state::snd_irq)
 {
-	generic_pulse_irq_line(device.execute(), UPD7810_INTF2, 1);
+	device.execute().pulse_input_line(UPD7810_INTF2, device.execute().minimum_quantum_time());
 }
 
 

@@ -54,9 +54,7 @@ protected:
 	virtual void state_string_export(const device_state_entry &entry, std::string &str) const override;
 
 	// device_disasm_interface overrides
-	virtual uint32_t disasm_min_opcode_bytes() const override { return 1; }
-	virtual uint32_t disasm_max_opcode_bytes() const override { return 3; }
-	virtual offs_t disasm_disassemble(std::ostream &stream, offs_t pc, const uint8_t *oprom, const uint8_t *opram, uint32_t options) override;
+	virtual util::disasm_interface *create_disassembler() override;
 
 private:
 	address_space_config m_program_config;
@@ -73,7 +71,7 @@ private:
 	uint16_t  m_io;     /* last I/O address */
 	uint16_t  m_irq_vector;
 	address_space *m_program;
-	direct_read_data *m_direct;
+	direct_read_data<0> *m_direct;
 	address_space *m_iospace;
 	int m_icount;
 	uint8_t   m_r[64];  /* scratchpad RAM */
@@ -83,6 +81,8 @@ private:
 	uint8_t timer_shifter[256];
 
 	uint16_t m_pc; // For the debugger
+
+	uint8_t do_ad(uint8_t augend, uint8_t addend);
 
 	void ROMC_00(int insttim);
 	void ROMC_01();
@@ -207,7 +207,6 @@ private:
 	void f8_ns_isar();
 	void f8_ns_isar_i();
 	void f8_ns_isar_d();
-
 };
 
 

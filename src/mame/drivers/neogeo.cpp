@@ -3361,6 +3361,25 @@ ROM_START( bjourney ) /* MVS AND AES VERSION */
 	ROM_LOAD16_BYTE( "022-c4.c4", 0x200001, 0x080000, CRC(71bfd48a) SHA1(47288be69e6992d09ebef108b4de9ffab6293dc8) ) /* Plane 2,3 */ /* TC534200 */
 ROM_END
 
+ROM_START( bjourneyh ) /* AES VERSION */
+	ROM_REGION( 0x100000, "cslot1:maincpu", ROMREGION_BE|ROMREGION_16BIT )
+	ROM_LOAD16_WORD_SWAP( "022-hp1.p1", 0x000000, 0x100000, CRC(62cbe7b2) SHA1(f9a8fd98702c623ae793804ba50d09751e3fee4c) ) /* TC538200 */
+
+	NEO_SFIX_128K( "022-s1.s1", CRC(843c3624) SHA1(dbdf86c193b7c1d795f8c21f2c103c1d3e18abbe) ) /* TC531000 */
+
+	NEO_BIOS_AUDIO_128K( "022-m1.m1", CRC(8e1d4ab6) SHA1(deabc11ab81e7e68a3e041c03a127ae28d0d7264) ) /* TC531001 */
+
+	ROM_REGION( 0x200000, "cslot1:ymsnd", 0 )
+	ROM_LOAD( "022-v11.v11", 0x000000, 0x100000, CRC(2cb4ad91) SHA1(169ec7303c4275155a66a88cc08270c24132bb36) ) /* TC538200 */
+	ROM_LOAD( "022-v22.v22", 0x100000, 0x100000, CRC(65a54d13) SHA1(a591fbcedca8f679dacbebcd554e3aa3fd163e92) ) /* TC538200 */
+
+	ROM_REGION( 0x300000, "cslot1:sprites", 0 )
+	ROM_LOAD16_BYTE( "022-c1.c1", 0x000000, 0x100000, CRC(4d47a48c) SHA1(6e282285be72583d828e7765b1c1695ecdc44777) ) /* Plane 0,1 */ /* TC538200 */
+	ROM_LOAD16_BYTE( "022-c2.c2", 0x000001, 0x100000, CRC(e8c1491a) SHA1(c468d2556b3de095aaa05edd1bc16d71303e9478) ) /* Plane 2,3 */ /* TC538200 */
+	ROM_LOAD16_BYTE( "022-c3.c3", 0x200000, 0x080000, CRC(66e69753) SHA1(974b823fc62236fbc23e727f25b61a805a707a9e) ) /* Plane 0,1 */ /* TC534200 */
+	ROM_LOAD16_BYTE( "022-c4.c4", 0x200001, 0x080000, CRC(71bfd48a) SHA1(47288be69e6992d09ebef108b4de9ffab6293dc8) ) /* Plane 2,3 */ /* TC534200 */
+ROM_END
+
 /****************************************
  ID-0023
  . NGM-023
@@ -10791,8 +10810,8 @@ GAME( 1990, bstars,     neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   R
 GAME( 1990, bstarsh,    bstars,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Baseball Stars Professional (NGH-002)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, tpgolf,     neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Top Player's Golf (NGM-003 ~ NGH-003)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, mahretsu,   neogeo,   neogeo_mj, mjneogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Mahjong Kyo Retsuden (NGM-004 ~ NGH-004)", MACHINE_SUPPORTS_SAVE ) // does not support mahjong panel in MVS mode <- it actually works fine???
-GAME( 1990, ridhero,    neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Riding Hero (NGM-006 ~ NGH-006)", MACHINE_SUPPORTS_SAVE )
-GAME( 1990, ridheroh,   ridhero,  neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Riding Hero (set 2)", MACHINE_SUPPORTS_SAVE )
+GAME( 1990, ridhero,    neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Riding Hero (NGM-006 ~ NGH-006)", MACHINE_NODEVICE_LAN | MACHINE_SUPPORTS_SAVE )
+GAME( 1990, ridheroh,   ridhero,  neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Riding Hero (set 2)", MACHINE_NODEVICE_LAN | MACHINE_SUPPORTS_SAVE )
 GAME( 1991, alpham2,    neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Alpha Mission II / ASO II - Last Guardian (NGM-007 ~ NGH-007)", MACHINE_SUPPORTS_SAVE )
 GAME( 1991, alpham2p,   alpham2,  neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Alpha Mission II / ASO II - Last Guardian (prototype)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, cyberlip,   neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Cyber-Lip (NGM-010)", MACHINE_SUPPORTS_SAVE )
@@ -10806,7 +10825,7 @@ GAME( 1991, burningf,   neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   R
 GAME( 1991, burningfh,  burningf, neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Burning Fight (NGH-018, US)", MACHINE_SUPPORTS_SAVE )
 GAME( 1991, burningfpa, burningf, neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Burning Fight (prototype, ver 23.3, 910326)", MACHINE_SUPPORTS_SAVE )
 GAME( 1991, burningfp,  burningf, neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Burning Fight (prototype, older)", MACHINE_SUPPORTS_SAVE )
-GAME( 1990, lbowling,   neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "League Bowling (NGM-019 ~ NGH-019)", MACHINE_SUPPORTS_SAVE )
+GAME( 1990, lbowling,   neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "League Bowling (NGM-019 ~ NGH-019)", MACHINE_NODEVICE_LAN | MACHINE_SUPPORTS_SAVE )
 GAME( 1991, gpilots,    neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Ghost Pilots (NGM-020 ~ NGH-020)", MACHINE_SUPPORTS_SAVE )
 GAME( 1991, gpilotsh,   gpilots,  neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Ghost Pilots (NGH-020, US)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, joyjoy,     neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "SNK", "Puzzled / Joy Joy Kid (NGM-021 ~ NGH-021)", MACHINE_SUPPORTS_SAVE )
@@ -10953,8 +10972,9 @@ GAME( 1990, maglordh,   maglord,  neobase,   neogeo, neogeo_state,   neogeo,   R
 GAME( 1990, ncombat,    neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Ninja Combat (NGM-009)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, ncombath,   ncombat,  neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Ninja Combat (NGH-009)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, bjourney,   neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Blue's Journey / Raguy (ALM-001 ~ ALH-001)", MACHINE_SUPPORTS_SAVE )
+GAME( 1990, bjourneyh,  bjourney, neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Blue's Journey / Raguy (ALH-001)", MACHINE_SUPPORTS_SAVE )
 GAME( 1991, crsword,    neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Crossed Swords (ALM-002 ~ ALH-002)", MACHINE_SUPPORTS_SAVE )
-GAME( 1991, trally,     neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Thrash Rally (ALM-003 ~ ALH-003)", MACHINE_SUPPORTS_SAVE )
+GAME( 1991, trally,     neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Thrash Rally (ALM-003 ~ ALH-003)", MACHINE_NODEVICE_LAN | MACHINE_SUPPORTS_SAVE )
 GAME( 1992, ncommand,   neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "Ninja Commando", MACHINE_SUPPORTS_SAVE )
 GAME( 1992, wh1,        neogeo,   neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "World Heroes (ALM-005)", MACHINE_SUPPORTS_SAVE )
 GAME( 1992, wh1h,       wh1,      neobase,   neogeo, neogeo_state,   neogeo,   ROT0, "Alpha Denshi Co.", "World Heroes (ALH-005)", MACHINE_SUPPORTS_SAVE )

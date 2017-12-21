@@ -6232,9 +6232,9 @@ ROM_END
 ROM_START( sfa )
 	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
 	ROM_LOAD16_WORD_SWAP( "sfze.03d", 0x000000, 0x80000, CRC(ebf2054d) SHA1(6e7b9e4202b86ab237ea5634c98b71b82d812ef2) )
-	ROM_LOAD16_WORD_SWAP( "sfz.04b",  0x080000, 0x80000, CRC(8b73b0e5) SHA1(5318761f615c21395366b5333e75eaaa73ef2073) )
-	ROM_LOAD16_WORD_SWAP( "sfz.05a",  0x100000, 0x80000, CRC(0810544d) SHA1(5f39bda3e7b16508eb58e5a2e0cc58c09cf428ce) )
-	ROM_LOAD16_WORD_SWAP( "sfz.06",   0x180000, 0x80000, CRC(806e8f38) SHA1(b6d6912aa8f2f590335d7ff9a8214648e7131ebb) )
+	ROM_LOAD16_WORD_SWAP( "sfz.04b",  0x080000, 0x80000, CRC(8b73b0e5) SHA1(5318761f615c21395366b5333e75eaaa73ef2073) ) // also found as sfze.04c, same hash
+	ROM_LOAD16_WORD_SWAP( "sfz.05a",  0x100000, 0x80000, CRC(0810544d) SHA1(5f39bda3e7b16508eb58e5a2e0cc58c09cf428ce) ) // also found as sfze.05b, same hash
+	ROM_LOAD16_WORD_SWAP( "sfz.06",   0x180000, 0x80000, CRC(806e8f38) SHA1(b6d6912aa8f2f590335d7ff9a8214648e7131ebb) ) // also found as sfze.06, same hash
 
 	ROM_REGION( 0x1000000, "gfx", 0 )
 	ROM_FILL(              0x000000, 0x800000, 0x00 )
@@ -9359,8 +9359,8 @@ ROM_END
 
 ROM_START( xmvsfur1 )
 	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
-	ROM_LOAD16_WORD_SWAP( "xvsu.03h", 0x000000, 0x80000, CRC(5481155a) SHA1(799a2488684cbead33206498d13261b79624a46e) ) /* also found as rev I */
-	ROM_LOAD16_WORD_SWAP( "xvsu.04h", 0x080000, 0x80000, CRC(1e236388) SHA1(329c08103840fadbc4176785c4b24013a7a2b1bc) ) /* also found as rev I */
+	ROM_LOAD16_WORD_SWAP( "xvsu.03i", 0x000000, 0x80000, CRC(5481155a) SHA1(799a2488684cbead33206498d13261b79624a46e) )
+	ROM_LOAD16_WORD_SWAP( "xvsu.04i", 0x080000, 0x80000, CRC(1e236388) SHA1(329c08103840fadbc4176785c4b24013a7a2b1bc) )
 	ROM_LOAD16_WORD_SWAP( "xvs.05a",  0x100000, 0x80000, CRC(7db6025d) SHA1(2d74f48f83f45359bfaca28ab686625766af12ee) )
 	ROM_LOAD16_WORD_SWAP( "xvs.06a",  0x180000, 0x80000, CRC(e8e2c75c) SHA1(929408cb5d98e95cec75ea58e4701b0cbdbcd016) )
 	ROM_LOAD16_WORD_SWAP( "xvs.07",   0x200000, 0x80000, CRC(08f0abed) SHA1(ef16c376232dba63b0b9bc3aa0640f9001ccb68a) )
@@ -9901,12 +9901,12 @@ GAME( 1993, ssf2j,      ssf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   
 GAME( 1993, ssf2jr1,    ssf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Super Street Fighter II: The New Challengers (Japan 930911)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ssf2jr2,    ssf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Super Street Fighter II: The New Challengers (Japan 930910)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ssf2h,      ssf2,     cps2, cps2_2p6b, cps_state, cps2,     ROT0,   "Capcom", "Super Street Fighter II: The New Challengers (Hispanic 930911)", MACHINE_SUPPORTS_SAVE )
-GAME( 1993, ssf2tb,     ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (World 931119)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
-GAME( 1993, ssf2tbr1,   ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (World 930911)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
-GAME( 1993, ssf2tbj,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 931005)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
-GAME( 1993, ssf2tbj1,   ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 930911)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
-GAME( 1993, ssf2tba,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Asia 931005)", MACHINE_SUPPORTS_SAVE ) // works, but not in tournament mode
-GAME( 1993, ssf2tbh,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Hispanic 931005)", MACHINE_SUPPORTS_SAVE )  // works, but not in tournament mode
+GAME( 1993, ssf2tb,     ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (World 931119)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN ) // works, but not in tournament mode
+GAME( 1993, ssf2tbr1,   ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (World 930911)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN ) // works, but not in tournament mode
+GAME( 1993, ssf2tbj,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 931005)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN ) // works, but not in tournament mode
+GAME( 1993, ssf2tbj1,   ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Japan 930911)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN ) // works, but not in tournament mode
+GAME( 1993, ssf2tba,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Asia 931005)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN ) // works, but not in tournament mode
+GAME( 1993, ssf2tbh,    ssf2,     cps2, cps2_2p6b, cps_state, ssf2tb,   ROT0,   "Capcom", "Super Street Fighter II: The Tournament Battle (Hispanic 931005)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN )  // works, but not in tournament mode
 GAME( 1993, ecofghtr,   0,        cps2, ecofghtr, cps_state, ecofghtr,  ROT0,   "Capcom", "Eco Fighters (World 931203)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ecofghtru,  ecofghtr, cps2, ecofghtr, cps_state, ecofghtr,  ROT0,   "Capcom", "Eco Fighters (USA 940215)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ecofghtru1, ecofghtr, cps2, ecofghtr, cps_state, ecofghtr,  ROT0,   "Capcom", "Eco Fighters (USA 931203)", MACHINE_SUPPORTS_SAVE )
@@ -11651,7 +11651,7 @@ ROM_END
 GAME( 1993, ddtodd,   ddtod,    dead_cps2, cps2_4p4b, cps_state, cps2,    ROT0,   "bootleg", "Dungeons & Dragons: Tower of Doom (Euro 940412 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ecofghtrd,ecofghtr, dead_cps2, ecofghtr,  cps_state, ecofghtr,ROT0,   "bootleg", "Eco Fighters (World 931203 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )
 GAME( 1993, ssf2ud,   ssf2,     dead_cps2, cps2_2p6b, cps_state, cps2,    ROT0,   "bootleg", "Super Street Fighter II: The New Challengers (USA 930911 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )
-GAME( 1993, ssf2tbd,  ssf2,     dead_cps2, cps2_2p6b, cps_state, ssf2tb,  ROT0,   "bootleg", "Super Street Fighter II: The Tournament Battle (World 931119 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )
+GAME( 1993, ssf2tbd,  ssf2,     dead_cps2, cps2_2p6b, cps_state, ssf2tb,  ROT0,   "bootleg", "Super Street Fighter II: The Tournament Battle (World 931119 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE | MACHINE_NODEVICE_LAN )
 GAME( 1994, armwar1d, armwar,   dead_cps2, cps2_3p3b, cps_state, cps2,    ROT0,   "bootleg", "Armored Warriors (Euro 941011 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )
 GAME( 1994, avspd,    avsp,     dead_cps2, cps2_3p3b, cps_state, cps2,    ROT0,   "bootleg", "Alien vs. Predator (Euro 940520 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )
 GAME( 1994, dstlku1d, dstlk,    dead_cps2, cps2_2p6b, cps_state, cps2,    ROT0,   "bootleg", "Darkstalkers: The Night Warriors (USA 940705 Phoenix Edition) (bootleg)", MACHINE_SUPPORTS_SAVE )

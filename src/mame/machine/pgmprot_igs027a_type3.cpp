@@ -90,7 +90,7 @@ READ16_MEMBER(pgm_arm_type3_state::svg_68k_nmi_r )
 
 WRITE16_MEMBER(pgm_arm_type3_state::svg_68k_nmi_w )
 {
-	generic_pulse_irq_line(*m_prot, ARM7_FIRQ_LINE, 1);
+	m_prot->pulse_input_line(ARM7_FIRQ_LINE, m_prot->minimum_quantum_time());
 }
 
 WRITE16_MEMBER(pgm_arm_type3_state::svg_latch_68k_w )
@@ -727,7 +727,7 @@ DRIVER_INIT_MEMBER(pgm_arm_type3_state,dmnfrnt)
 }
 
 //
-// int j = BITSWAP24(i, 23, 20, 17, 16, 19, 18, 15, 14, 13, 12, 11, 10, 9, 22, 21, 6, 7, 6, 5, 4, 3, 2, 1, 0);
+// int j = bitswap<24>(i, 23, 20, 17, 16, 19, 18, 15, 14, 13, 12, 11, 10, 9, 22, 21, 6, 7, 6, 5, 4, 3, 2, 1, 0);
 // buffer[i] = src[j]
 
 // todo, collapse these to an address swap
