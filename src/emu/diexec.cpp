@@ -499,6 +499,9 @@ void device_execute_interface::interface_post_start()
 	assert_always(m_icountptr != nullptr, "m_icountptr never initialized!");
 
 	// register for save states
+	device().save_pointer(NAME(m_icountptr), 1);
+	device().save_item(NAME(m_cycles_running));
+	device().save_item(NAME(m_cycles_stolen));
 	device().save_item(NAME(m_suspend));
 	device().save_item(NAME(m_nextsuspend));
 	device().save_item(NAME(m_eatcycles));
@@ -692,6 +695,48 @@ TIMER_CALLBACK_MEMBER(device_execute_interface::trigger_periodic_interrupt)
 		if (!m_timed_interrupt.isnull())
 			m_timed_interrupt(device());
 	}
+}
+
+
+//-------------------------------------------------
+//  irq_pulse_clear - clear a "pulsed" input line
+//-------------------------------------------------
+
+TIMER_CALLBACK_MEMBER(device_execute_interface::irq_pulse_clear)
+{
+	int irqline = param;
+	set_input_line(irqline, CLEAR_LINE);
+}
+
+
+//-------------------------------------------------
+//  pulse_input_line - "pulse" an input line by
+//  asserting it and then clearing it later
+//-------------------------------------------------
+
+void device_execute_interface::pulse_input_line(int irqline, const attotime &duration)
+{
+	assert(duration > attotime::zero);
+	set_input_line(irqline, ASSERT_LINE);
+
+	attotime target_time = local_time() + duration;
+	m_scheduler->timer_set(target_time - m_scheduler->time(), timer_expired_delegate(FUNC(device_execute_interface::irq_pulse_clear), this), irqline);
+}
+
+
+//-------------------------------------------------
+//  pulse_input_line_and_vector - "pulse" an
+//  input line by asserting it and then clearing it
+//  later, specifying a vector
+//-------------------------------------------------
+
+void device_execute_interface::pulse_input_line_and_vector(int irqline, int vector, const attotime &duration)
+{
+	assert(duration > attotime::zero);
+	set_input_line_and_vector(irqline, ASSERT_LINE, vector);
+
+	attotime target_time = local_time() + duration;
+	m_scheduler->timer_set(target_time - m_scheduler->time(), timer_expired_delegate(FUNC(device_execute_interface::irq_pulse_clear), this), irqline);
 }
 
 

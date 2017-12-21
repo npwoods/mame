@@ -10,6 +10,7 @@
 
 #include "emu.h"
 #include "cococart.h"
+#include "coco_spinx512.h"
 #include "machine/65spi.h"
 
 

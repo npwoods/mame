@@ -543,7 +543,7 @@ ROM_START( 4enrayaa )
 ROM_END
 
 
-/* 
+/*
   Unknown 'Pac-Man' gambling game.
 */
 ROM_START(unkpacg)
@@ -557,7 +557,7 @@ ROM_START(unkpacg)
 	ROM_LOAD( "5.u18",   0x0000, 0x2000, CRC(44f272d2) SHA1(b39cbc1f290d9fb2453396906e4da4a682c41ef4) )
 ROM_END
 
-/* 
+/*
   Unknown 'Space Invaders' gambling game.
   All roms are 0x8000 but only the last 0x2000 of each is used.
 */
@@ -587,7 +587,7 @@ ROM_START( unksig )
 	ROM_CONTINUE(      0x4000, 0x2000) // only data here matters
 ROM_END
 
-/* 
+/*
   Unknown 'Space Invaders' gambling game
   All roms are 0x10000 but with a lot of addressing issues
 
@@ -636,7 +636,7 @@ DRIVER_INIT_MEMBER(_4enraya_state, unkpacg)
 	// descramble rom
 	uint8_t *rom = memregion("maincpu")->base();
 	for (int i = 0x8000; i < 0xa000; i++)
-		rom[i] = BITSWAP8(rom[i], 7,6,5,4,3,2,0,1);
+		rom[i] = bitswap<8>(rom[i], 7,6,5,4,3,2,0,1);
 }
 
 

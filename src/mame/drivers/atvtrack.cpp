@@ -438,7 +438,7 @@ void get_altera10ke_eab(u8* dst, u8 *pof, int eab)
 
 	for (u32 bit = 0; bit < 4096; bit++)
 	{
-		u32 tbit = BITSWAP16(bit, 15, 14, 13, 12,
+		u32 tbit = bitswap<16>(bit, 15, 14, 13, 12,
 			9, 8, 7, 6, 5, 4, 3,
 			11, 10,
 			2, 1, 0);
@@ -471,8 +471,8 @@ void atvtrack_state::machine_reset()
 	{
 		u16 lword = tdata[i * 2 + 512] | (tdata[i * 2 + 513] << 8);
 		u16 hword = tdata[i * 2] | (tdata[i * 2 + 1] << 8);
-		lword = BITSWAP16(lword, 7, 9, 0, 10, 3, 11, 4, 12, 2, 15, 1, 13, 6, 8, 5, 14);
-		hword = BITSWAP16(hword, 5, 10, 7, 9, 6, 13, 3, 15, 2, 11, 1, 8, 0, 12, 4, 14);
+		lword = bitswap<16>(lword, 7, 9, 0, 10, 3, 11, 4, 12, 2, 15, 1, 13, 6, 8, 5, 14);
+		hword = bitswap<16>(hword, 5, 10, 7, 9, 6, 13, 3, 15, 2, 11, 1, 8, 0, 12, 4, 14);
 		dst[i * 4 + 0] = lword & 0xff;
 		dst[i * 4 + 1] = lword >> 8;
 		dst[i * 4 + 2] = hword & 0xff;
@@ -565,6 +565,7 @@ static MACHINE_CONFIG_START( atvtrack )
 	MCFG_SH4_CLOCK(ATV_CPU_CLOCK)
 	MCFG_CPU_PROGRAM_MAP(atvtrack_main_map)
 	MCFG_CPU_IO_MAP(atvtrack_main_port)
+	MCFG_CPU_FORCE_NO_DRC()
 
 	MCFG_CPU_ADD("subcpu", SH4LE, ATV_CPU_CLOCK)
 	MCFG_SH4_MD0(1)
@@ -579,6 +580,7 @@ static MACHINE_CONFIG_START( atvtrack )
 	MCFG_SH4_CLOCK(ATV_CPU_CLOCK)
 	MCFG_CPU_PROGRAM_MAP(atvtrack_sub_map)
 	MCFG_CPU_IO_MAP(atvtrack_sub_port)
+	MCFG_CPU_FORCE_NO_DRC()
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)

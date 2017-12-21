@@ -46,6 +46,7 @@ amerihok.cpp
 ampoker2.cpp
 amspdwy.cpp
 amusco.cpp
+anes.cpp
 angelkds.cpp
 appoooh.cpp
 aquarium.cpp
@@ -171,6 +172,7 @@ bzone.cpp
 cabal.cpp
 cabaret.cpp
 calchase.cpp
+calcune.cpp
 calomega.cpp
 calorie.cpp
 canyon.cpp
@@ -447,6 +449,7 @@ gng.cpp
 go2000.cpp
 goal92.cpp
 goindol.cpp
+gokidetor.cpp
 goldngam.cpp
 goldnpkr.cpp
 goldstar.cpp
@@ -826,7 +829,9 @@ niyanpai.cpp
 nmg5.cpp
 nmk16.cpp
 norautp.cpp
+notechan.cpp
 nova2001.cpp
+nsg6809.cpp
 nsm.cpp
 nsmpoker.cpp
 nss.cpp
@@ -1027,6 +1032,7 @@ segasp.cpp
 segaufo.cpp
 segaxbd.cpp
 segaybd.cpp
+seibucats.cpp
 seibuspi.cpp
 seicross.cpp
 seicupbl.cpp
@@ -1349,6 +1355,7 @@ xyonix.cpp
 yiear.cpp
 yunsun16.cpp
 yunsung8.cpp
+yuvomz80.cpp
 zac_1.cpp
 zac_2.cpp
 zac_proto.cpp

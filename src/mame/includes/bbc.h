@@ -43,23 +43,6 @@
 
 #define RS232_TAG       "rs232"
 
-enum machine_type_t
-{
-	MODELA,
-	MODELB,
-	BPLUS,
-	MASTER,
-	COMPACT
-};
-
-enum monitor_type_t
-{
-	COLOUR = 0,
-	BLACKWHITE = 1,
-	GREEN = 2,
-	AMBER = 3
-};
-
 class bbc_state : public driver_device
 {
 public:
@@ -111,6 +94,23 @@ public:
 		m_bbcconfig(*this, "BBCCONFIG")
 	{ }
 
+	enum machine_type_t
+	{
+		MODELA,
+		MODELB,
+		BPLUS,
+		MASTER,
+		COMPACT
+	};
+
+	enum monitor_type_t
+	{
+		COLOUR = 0,
+		BLACKWHITE = 1,
+		GREEN = 2,
+		AMBER = 3
+	};
+
 	DECLARE_FLOPPY_FORMATS(floppy_formats_bbc);
 	DECLARE_FLOPPY_FORMATS(floppy_formats_bbcm);
 	DECLARE_FLOPPY_FORMATS(floppy_formats_bbcmc);
@@ -161,6 +161,7 @@ public:
 	DECLARE_MACHINE_RESET(bbcmc);
 	DECLARE_MACHINE_RESET(ltmpbp);
 	DECLARE_MACHINE_RESET(ltmpm);
+	DECLARE_MACHINE_START(cfa3000);
 
 	DECLARE_PALETTE_INIT(bbc);
 	INTERRUPT_GEN_MEMBER(bbcb_vsync);
@@ -277,6 +278,9 @@ public: // HACK FOR MC6845
 
 	int m_pagedRAM;         // BBC B+ memory handling
 	int m_vdusel;           // BBC B+ memory handling
+
+	bool m_lk18_ic41_paged_rom;  // BBC Master Paged ROM/RAM select IC41
+	bool m_lk19_ic37_paged_rom;  // BBC Master Paged ROM/RAM select IC37
 
 							/*
 							ACCCON

@@ -387,10 +387,10 @@ WRITE16_MEMBER( taitox_state::cchip1_ram_w )
 	{
 		m_cc_port = data;
 
-		space.machine().bookkeeping().coin_lockout_w(1, data & 0x08);
-		space.machine().bookkeeping().coin_lockout_w(0, data & 0x04);
-		space.machine().bookkeeping().coin_counter_w(1, data & 0x02);
-		space.machine().bookkeeping().coin_counter_w(0, data & 0x01);
+		machine().bookkeeping().coin_lockout_w(1, data & 0x08);
+		machine().bookkeeping().coin_lockout_w(0, data & 0x04);
+		machine().bookkeeping().coin_counter_w(1, data & 0x02);
+		machine().bookkeeping().coin_counter_w(0, data & 0x01);
 	}
 	else
 	{
@@ -421,9 +421,9 @@ READ16_MEMBER( taitox_state::cchip1_ram_r )
 	{
 		switch (offset)
 		{
-		case 0x00: return space.machine().root_device().ioport("IN0")->read();    /* Player 1 controls + START1 */
-		case 0x01: return space.machine().root_device().ioport("IN1")->read();    /* Player 2 controls + START2 */
-		case 0x02: return space.machine().root_device().ioport("IN2")->read();    /* COINn + SERVICE1 + TILT */
+		case 0x00: return machine().root_device().ioport("IN0")->read();    /* Player 1 controls + START1 */
+		case 0x01: return machine().root_device().ioport("IN1")->read();    /* Player 2 controls + START2 */
+		case 0x02: return machine().root_device().ioport("IN2")->read();    /* COINn + SERVICE1 + TILT */
 		case 0x03: return m_cc_port;
 		}
 	}
@@ -557,8 +557,8 @@ static ADDRESS_MAP_START( daisenpu_map, AS_PROGRAM, 16, taitox_state )
 //  AM_RANGE(0x400000, 0x400001) AM_WRITENOP    /* written each frame at $2ac, values change */
 	AM_RANGE(0x500000, 0x50000f) AM_READ(superman_dsw_input_r)
 //  AM_RANGE(0x600000, 0x600001) AM_WRITENOP    /* written each frame at $2a2, values change */
-	AM_RANGE(0x800000, 0x800001) AM_READNOP AM_DEVWRITE8("tc0140syt", tc0140syt_device, master_port_w, 0x00ff)
-	AM_RANGE(0x800002, 0x800003) AM_DEVREADWRITE8("tc0140syt", tc0140syt_device, master_comm_r, master_comm_w, 0x00ff)
+	AM_RANGE(0x800000, 0x800001) AM_READNOP AM_DEVWRITE8("ciu", pc060ha_device, master_port_w, 0x00ff)
+	AM_RANGE(0x800002, 0x800003) AM_DEVREADWRITE8("ciu", pc060ha_device, master_comm_r, master_comm_w, 0x00ff)
 	AM_RANGE(0x900000, 0x90000f) AM_READWRITE(daisenpu_input_r, daisenpu_input_w)
 	AM_RANGE(0xb00000, 0xb00fff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
 	AM_RANGE(0xd00000, 0xd005ff) AM_RAM AM_DEVREADWRITE("spritegen", seta001_device, spriteylow_r16, spriteylow_w16) // Sprites Y
@@ -619,8 +619,8 @@ static ADDRESS_MAP_START( daisenpu_sound_map, AS_PROGRAM, 8, taitox_state )
 	AM_RANGE(0x4000, 0x7fff) AM_ROMBANK("z80bank")
 	AM_RANGE(0xc000, 0xdfff) AM_RAM
 	AM_RANGE(0xe000, 0xe001) AM_DEVREADWRITE("ymsnd", ym2151_device, read, write)
-	AM_RANGE(0xe200, 0xe200) AM_READNOP AM_DEVWRITE("tc0140syt", tc0140syt_device, slave_port_w)
-	AM_RANGE(0xe201, 0xe201) AM_DEVREADWRITE("tc0140syt", tc0140syt_device, slave_comm_r, slave_comm_w)
+	AM_RANGE(0xe200, 0xe200) AM_READNOP AM_DEVWRITE("ciu", pc060ha_device, slave_port_w)
+	AM_RANGE(0xe201, 0xe201) AM_DEVREADWRITE("ciu", pc060ha_device, slave_comm_r, slave_comm_w)
 	AM_RANGE(0xe400, 0xe403) AM_WRITENOP /* pan */
 	AM_RANGE(0xea00, 0xea00) AM_READNOP
 	AM_RANGE(0xee00, 0xee00) AM_WRITENOP /* ? */
@@ -1006,9 +1006,9 @@ static MACHINE_CONFIG_START( daisenpu )
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.45)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.45)
 
-	MCFG_DEVICE_ADD("tc0140syt", TC0140SYT, 0)
-	MCFG_TC0140SYT_MASTER_CPU("maincpu")
-	MCFG_TC0140SYT_SLAVE_CPU("audiocpu")
+	MCFG_DEVICE_ADD("ciu", PC060HA, 0)
+	MCFG_PC060HA_MASTER_CPU("maincpu")
+	MCFG_PC060HA_SLAVE_CPU("audiocpu")
 MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_START( gigandes )

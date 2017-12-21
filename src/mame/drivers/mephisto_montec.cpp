@@ -162,8 +162,8 @@ WRITE8_MEMBER(mephisto_montec_state::montec_lcd_clk_w)
 
 	if (m_display.shift == 8)
 	{
-		if (m_lcd_mux & 0x01)   output().set_digit_value(0 + m_display.pos, BITSWAP8(m_display.data, 0,3,2,7,6,5,4,1));
-		if (m_lcd_mux & 0x02)   output().set_digit_value(4 + m_display.pos, BITSWAP8(m_display.data, 0,3,2,7,6,5,4,1));
+		if (m_lcd_mux & 0x01)   output().set_digit_value(0 + m_display.pos, bitswap<8>(m_display.data, 0,3,2,7,6,5,4,1));
+		if (m_lcd_mux & 0x02)   output().set_digit_value(4 + m_display.pos, bitswap<8>(m_display.data, 0,3,2,7,6,5,4,1));
 
 		m_display.shift = 0;
 		m_display.pos = (m_display.pos + 1) & 3;
@@ -317,11 +317,11 @@ WRITE8_MEMBER(mephisto_montec_state::mondial2_input_mux_w)
 	{
 		if (!BIT(leds_data, i))
 		{
-			if (data & 0x10)	output().set_led_value(100 + i, 1);
-			if (data & 0x20)	output().set_led_value(  8 + i, 1);
-			if (data & 0x40)	output().set_led_value(  0 + i, 1);
+			if (data & 0x10)    output().set_led_value(100 + i, 1);
+			if (data & 0x20)    output().set_led_value(  8 + i, 1);
+			if (data & 0x40)    output().set_led_value(  0 + i, 1);
 		}
-	}	
+	}
 
 	m_input_mux = data ^ 0xff;
 	m_beeper->set_state(BIT(data, 7));

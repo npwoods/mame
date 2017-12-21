@@ -59,7 +59,6 @@ MACHINE_CONFIG_MEMBER( a2bus_ezcgi_9938_device::device_add_mconfig )
 	MCFG_SCREEN_UPDATE_DEVICE(TMS_TAG, v9938_device, screen_update)
 	MCFG_SCREEN_SIZE(MSX2_TOTAL_XRES_PIXELS, 262*2)
 	MCFG_SCREEN_VISIBLE_AREA(MSX2_XBORDER_PIXELS - MSX2_VISIBLE_XBORDER_PIXELS, MSX2_TOTAL_XRES_PIXELS - MSX2_XBORDER_PIXELS + MSX2_VISIBLE_XBORDER_PIXELS - 1, MSX2_YBORDER_PIXELS - MSX2_VISIBLE_YBORDER_PIXELS, MSX2_TOTAL_YRES_PIXELS - MSX2_YBORDER_PIXELS + MSX2_VISIBLE_YBORDER_PIXELS - 1)
-	MCFG_SCREEN_PALETTE(TMS_TAG)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_MEMBER( a2bus_ezcgi_9958_device::device_add_mconfig )
@@ -73,7 +72,6 @@ MACHINE_CONFIG_MEMBER( a2bus_ezcgi_9958_device::device_add_mconfig )
 	MCFG_SCREEN_UPDATE_DEVICE(TMS_TAG, v9938_device, screen_update)
 	MCFG_SCREEN_SIZE(MSX2_TOTAL_XRES_PIXELS, 262*2)
 	MCFG_SCREEN_VISIBLE_AREA(MSX2_XBORDER_PIXELS - MSX2_VISIBLE_XBORDER_PIXELS, MSX2_TOTAL_XRES_PIXELS - MSX2_XBORDER_PIXELS + MSX2_VISIBLE_XBORDER_PIXELS - 1, MSX2_YBORDER_PIXELS - MSX2_VISIBLE_YBORDER_PIXELS, MSX2_TOTAL_YRES_PIXELS - MSX2_YBORDER_PIXELS + MSX2_VISIBLE_YBORDER_PIXELS - 1)
-	MCFG_SCREEN_PALETTE(TMS_TAG)
 MACHINE_CONFIG_END
 
 //**************************************************************************
@@ -156,35 +154,35 @@ void a2bus_ezcgi_9958_device::device_reset()
     1 - TMS write
 */
 
-uint8_t a2bus_ezcgi_device::read_c0nx(address_space &space, uint8_t offset)
+uint8_t a2bus_ezcgi_device::read_c0nx(uint8_t offset)
 {
 	switch (offset)
 	{
 		case 0:
-			return m_tms->vram_read(space, 0);
+			return m_tms->vram_read();
 
 		case 1:
-			return m_tms->register_read(space, 0);
+			return m_tms->register_read();
 	}
 
 	return 0xff;
 }
 
-void a2bus_ezcgi_device::write_c0nx(address_space &space, uint8_t offset, uint8_t data)
+void a2bus_ezcgi_device::write_c0nx(uint8_t offset, uint8_t data)
 {
 	switch (offset)
 	{
 		case 0:
-			m_tms->vram_write(space, 0, data);
+			m_tms->vram_write(data);
 			break;
 
 		case 1:
-			m_tms->register_write(space, 0, data);
+			m_tms->register_write(data);
 			break;
 	}
 }
 
-uint8_t a2bus_ezcgi_9938_device::read_c0nx(address_space &space, uint8_t offset)
+uint8_t a2bus_ezcgi_9938_device::read_c0nx(uint8_t offset)
 {
 	switch (offset)
 	{
@@ -198,7 +196,7 @@ uint8_t a2bus_ezcgi_9938_device::read_c0nx(address_space &space, uint8_t offset)
 	return 0xff;
 }
 
-void a2bus_ezcgi_9938_device::write_c0nx(address_space &space, uint8_t offset, uint8_t data)
+void a2bus_ezcgi_9938_device::write_c0nx(uint8_t offset, uint8_t data)
 {
 	switch (offset)
 	{
@@ -220,7 +218,7 @@ void a2bus_ezcgi_9938_device::write_c0nx(address_space &space, uint8_t offset, u
 	}
 }
 
-uint8_t a2bus_ezcgi_9958_device::read_c0nx(address_space &space, uint8_t offset)
+uint8_t a2bus_ezcgi_9958_device::read_c0nx(uint8_t offset)
 {
 	switch (offset)
 	{
@@ -234,7 +232,7 @@ uint8_t a2bus_ezcgi_9958_device::read_c0nx(address_space &space, uint8_t offset)
 	return 0xff;
 }
 
-void a2bus_ezcgi_9958_device::write_c0nx(address_space &space, uint8_t offset, uint8_t data)
+void a2bus_ezcgi_9958_device::write_c0nx(uint8_t offset, uint8_t data)
 {
 	switch (offset)
 	{

@@ -67,7 +67,7 @@ void archimedes_state::archimedes_request_fiq(int mask)
 
 	if (m_ioc_regs[FIQ_STATUS] & m_ioc_regs[FIQ_MASK])
 	{
-		generic_pulse_irq_line(*m_maincpu, ARM_FIRQ_LINE, 1);
+		m_maincpu->pulse_input_line(ARM_FIRQ_LINE, m_maincpu->minimum_quantum_time());
 
 		//m_maincpu->set_input_line(ARM_FIRQ_LINE, CLEAR_LINE);
 		//m_maincpu->set_input_line(ARM_FIRQ_LINE, ASSERT_LINE);
@@ -982,7 +982,7 @@ WRITE32_MEMBER(archimedes_state::archimedes_vidc_w)
 			for(i=0;i<0x100;i+=0x10)
 			{
 				b = ((val & 0x700) >> 8) | ((i & 0x80) >> 4);
-				g = ((val & 0x030) >> 4) | ((i & 0x20) >> 3) | ((i & 0x40) >> 3);
+				g = ((val & 0x030) >> 4) | ((i & 0x60) >> 3);
 				r = ((val & 0x007) >> 0) | ((i & 0x10) >> 1);
 
 				m_palette->set_pen_color((reg >> 2) + 0x100 + i, pal4bit(r), pal4bit(g), pal4bit(b) );

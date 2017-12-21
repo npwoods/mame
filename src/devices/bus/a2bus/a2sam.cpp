@@ -21,7 +21,7 @@
 //  GLOBAL VARIABLES
 //**************************************************************************
 
-DEFINE_DEVICE_TYPE(A2BUS_SAM, a2bus_sam_device, "a2sam", "Don't Ask Software SAM")
+DEFINE_DEVICE_TYPE(A2BUS_SAM, a2bus_sam_device, "a2sam", "Don't Ask Software S.A.M.")
 
 /***************************************************************************
     FUNCTION PROTOTYPES
@@ -63,7 +63,7 @@ void a2bus_sam_device::device_reset()
 {
 }
 
-void a2bus_sam_device::write_c0nx(address_space &space, uint8_t offset, uint8_t data)
+void a2bus_sam_device::write_c0nx(uint8_t offset, uint8_t data)
 {
 	m_dac->write(data);
 }

@@ -491,10 +491,10 @@ WRITE8_MEMBER(kurukuru_state::kurukuru_out_latch_w)
     07 | Not connected      | unused
 
 */
-	machine().bookkeeping().coin_counter_w(0, data & 0x01);      /* Coin Counter 1 */
-	machine().bookkeeping().coin_counter_w(1, data & 0x20);      /* Coin Counter 2 */
-	machine().bookkeeping().coin_lockout_global_w(data & 0x40);  /* Coin Lock */
-	m_hopper->write(space, 0, (data & 0x40) ? 0x80 : 0);         /* Hopper Motor */
+	machine().bookkeeping().coin_counter_w(0, BIT(data, 0));
+	machine().bookkeeping().coin_counter_w(1, BIT(data, 5));
+	//machine().bookkeeping().coin_lockout_global_w(BIT(data, 6));
+	m_hopper->motor_w(BIT(data, 6));
 
 	if (data & 0x9e)
 		logerror("kurukuru_out_latch_w %02X @ %04X\n", data, space.device().safe_pc());
@@ -604,7 +604,7 @@ WRITE8_MEMBER(kurukuru_state::kurukuru_adpcm_reset_w)
        bit 2 = S2
        bit 3 = S1
 */
-	m_adpcm->playmode_w(BITSWAP8((data>>1), 7,6,5,4,3,0,1,2));
+	m_adpcm->playmode_w(bitswap<8>((data>>1), 7,6,5,4,3,0,1,2));
 	m_adpcm->reset_w(data & 1);
 }
 
@@ -954,7 +954,7 @@ ROM_END
 
 /*  Pyon Pyon Jump.
     Ver 1.40.
-    199?, Success / Taiyo Jidoki.
+    1991, Success / Taiyo Jidoki.
 */
 ROM_START( ppj )
 	ROM_REGION( 0x08000, "maincpu", 0 )
@@ -982,11 +982,11 @@ ROM_END
 *                              Game Drivers                                *
 ***************************************************************************/
 
-//    YEAR  NAME      PARENT  MACHINE   INPUT     STATE           INIT  ROT   COMPANY                   FULLNAME                         FLAGS
+//    YEAR  NAME      PARENT  MACHINE   INPUT     STATE           INIT  ROT    COMPANY                   FULLNAME                        FLAGS
 GAME( 1990, kurukuru, 0,      kurukuru, kurukuru, kurukuru_state, 0,    ROT0, "Success / Taiyo Jidoki", "Kuru Kuru Pyon Pyon (Japan)",   0 )
-GAME( 199?, ppj,      0,      ppj,      ppj,      kurukuru_state, 0,    ROT0, "Success / Taiyo Jidoki", "Pyon Pyon Jump (V1.40, Japan)", 0 )
+GAME( 1991, ppj,      0,      ppj,      ppj,      kurukuru_state, 0,    ROT0, "Success / Taiyo Jidoki", "Pyon Pyon Jump (V1.40, Japan)", 0 )
 
 // unemulated....
 
-//    199?, Success / Taiyo Jidoki, Pyon Pyon
-//    1990, Success / Taiyo Jidoki, Sui Sui Pyon Pyon
+//    1988, Success / Taiyo Jidoki, Pyon Pyon
+//    1992, Success / Taiyo Jidoki, Sui Sui Pyon Pyon

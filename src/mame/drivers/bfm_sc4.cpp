@@ -493,7 +493,7 @@ WRITE8_MEMBER(bfm_sc45_state::mux_output2_w)
 	}
 	else
 	{
-		uint8_t bf7segdata = BITSWAP8(data,0,7,6,5,4,3,2,1);
+		uint8_t bf7segdata = bitswap<8>(data,0,7,6,5,4,3,2,1);
 		output().set_digit_value(offset, bf7segdata);
 	}
 }
@@ -905,7 +905,7 @@ MACHINE_CONFIG_START( sc4_common )
 
 	MCFG_NVRAM_ADD_1FILL("nvram")
 
-	MCFG_MC68681_ADD("duart68681", 16000000/4) // ?? Mhz
+	MCFG_DEVICE_ADD("duart68681", MC68681, 16000000/4) // ?? Mhz
 	MCFG_MC68681_SET_EXTERNAL_CLOCKS(XTAL_16MHz/2/8, XTAL_16MHz/2/16, XTAL_16MHz/2/16, XTAL_16MHz/2/8)
 	MCFG_MC68681_IRQ_CALLBACK(WRITELINE(sc4_state, bfm_sc4_duart_irq_handler))
 	MCFG_MC68681_A_TX_CALLBACK(WRITELINE(sc4_state, bfm_sc4_duart_txa))

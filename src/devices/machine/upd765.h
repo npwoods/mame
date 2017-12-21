@@ -113,8 +113,11 @@ public:
 	DECLARE_WRITE8_MEMBER(dor_w);
 	DECLARE_READ8_MEMBER (tdr_r);
 	DECLARE_WRITE8_MEMBER(tdr_w);
+	uint8_t msr_r();
 	DECLARE_READ8_MEMBER (msr_r);
 	DECLARE_WRITE8_MEMBER(dsr_w);
+	uint8_t fifo_r();
+	void fifo_w(uint8_t data);
 	DECLARE_READ8_MEMBER (fifo_r);
 	DECLARE_WRITE8_MEMBER(fifo_w);
 	DECLARE_READ8_MEMBER (dir_r);
@@ -386,7 +389,7 @@ protected:
 	virtual int check_command();
 	virtual void start_command(int cmd);
 	virtual void execute_command(int cmd);
-	void command_end(floppy_info &fi, bool data_completion);
+	virtual void command_end(floppy_info &fi, bool data_completion);
 
 	void recalibrate_start(floppy_info &fi);
 	void seek_start(floppy_info &fi);
@@ -469,6 +472,7 @@ protected:
 	virtual int check_command() override;
 	virtual void start_command(int cmd) override;
 	virtual void execute_command(int cmd) override;
+	virtual void command_end(floppy_info &fi, bool data_completion) override;
 	virtual void index_callback(floppy_image_device *floppy, int state) override;
 
 	void motor_control(int fid, bool start_motor);
