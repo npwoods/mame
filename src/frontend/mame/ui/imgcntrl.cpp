@@ -56,7 +56,8 @@ menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, rende
 	}
 
 	// check to see if the path exists; if not clear it
-	if (util::zippath_opendir(m_current_directory, nullptr) != osd_file::error::NONE)
+	util::zippath_directory::ptr directory;
+	if (util::zippath_directory::open(m_current_directory, directory) != osd_file::error::NONE)
 		m_current_directory.clear();
 }
 
