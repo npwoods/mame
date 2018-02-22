@@ -7,8 +7,8 @@
 
     TODO:
     - ccdelta1 doesn't work, goes bonkers when you press Enter. CPU core bug?
-	- hardware is similar to MK I, the drivers can be merged in theory.
-	  But I prefer my source code to be licensed BSD3, mk1.cpp is GPL2.
+    - hardware is similar to MK I, the drivers can be merged in theory.
+      But I prefer my source code to be licensed BSD3, mk1.cpp is GPL2.
 
 ******************************************************************************
 
@@ -75,7 +75,7 @@ WRITE8_MEMBER(novagf8_state::delta1_io0_w)
 {
 	m_io[0] = data;
 
-	// IO00-02: MC14028B A-C
+	// IO00-02: MC14028B A-C (IO03: GND)
 	// MC14028B Q3-Q7: input mux
 	// MC14028B Q4-Q7: digit select through 75492
 	u16 sel = 1 << (~data & 7);
@@ -170,7 +170,7 @@ static INPUT_PORTS_START( delta1 )
 	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Enter")
 
 	PORT_START("RESET") // not on matrix
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_N) PORT_CHANGED_MEMBER(DEVICE_SELF, novagf8_state, reset_button, 0) PORT_NAME("New Game")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_N) PORT_CHANGED_MEMBER(DEVICE_SELF, novagf8_state, reset_button, nullptr) PORT_NAME("New Game")
 INPUT_PORTS_END
 
 
