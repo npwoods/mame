@@ -9,6 +9,7 @@
 #include "machine/gen_latch.h"
 #include "machine/timer.h"
 #include "sound/discrete.h"
+#include "emupal.h"
 
 class ironhors_state : public driver_device
 {
@@ -46,6 +47,13 @@ public:
 	DECLARE_PALETTE_INIT(ironhors);
 	DECLARE_VIDEO_START(farwest);
 
+	void farwest(machine_config &config);
+	void ironhors(machine_config &config);
+	void farwest_master_map(address_map &map);
+	void farwest_slave_map(address_map &map);
+	void master_map(address_map &map);
+	void slave_io_map(address_map &map);
+	void slave_map(address_map &map);
 protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;

@@ -351,7 +351,7 @@ READ32_MEMBER( zeus2_device::zeus2_r )
 	}
 
 	if (logit)
-		logerror("%08X:zeus2_r(%02X) = %08X\n", machine().device("maincpu")->safe_pc(), offset, result);
+		logerror("%s:zeus2_r(%02X) = %08X\n", machine().describe_context(), offset, result);
 
 	return result;
 }
@@ -374,7 +374,7 @@ WRITE32_MEMBER( zeus2_device::zeus2_w )
 		);
 	logit &= LOG_REGS;
 	if (logit)
-		logerror("%08X:zeus2_w", machine().device("maincpu")->safe_pc());
+		logerror("%s:zeus2_w", machine().describe_context());
 	zeus2_register32_w(offset, data, logit);
 }
 
@@ -461,7 +461,7 @@ void zeus2_device::zeus2_register_update(offs_t offset, uint32_t oldval, int log
 			int htotal = (m_zeusbase[0x34] >> 16) << m_yScale;
 			//rectangle visarea((m_zeusbase[0x33] >> 16) << m_yScale, htotal - 1, 0, (m_zeusbase[0x35] & 0xffff) << m_yScale);
 			rectangle visarea(0, hor - 1, 0, ver - 1);
-			screen().configure(htotal, vtotal, visarea, HZ_TO_ATTOSECONDS((double)ZEUS2_VIDEO_CLOCK / 4.0 / (htotal * vtotal)));
+			screen().configure(htotal, vtotal, visarea, HZ_TO_ATTOSECONDS(ZEUS2_VIDEO_CLOCK / 4.0 / (htotal * vtotal)));
 			zeus_cliprect = visarea;
 			zeus_cliprect.max_x -= zeus_cliprect.min_x;
 			zeus_cliprect.min_x = 0;

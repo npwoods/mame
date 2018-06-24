@@ -26,6 +26,10 @@ public:
 	DECLARE_READ8_MEMBER(fff400_r);
 	SCN2674_DRAW_CHARACTER_MEMBER(draw_character);
 
+	void tr175(machine_config &config);
+	void mem_map(address_map &map);
+	void ramdac_map(address_map &map);
+	void vram_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 };
@@ -45,58 +49,57 @@ READ8_MEMBER(tr175_state::fff400_r)
 	return 0;
 }
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 16, tr175_state )
-	AM_RANGE(0x000000, 0x01ffff) AM_ROM AM_REGION("maincpu", 0)
-	AM_RANGE(0xfe8000, 0xfebfff) AM_RAM // 8-bit?
-	AM_RANGE(0xfefe00, 0xfefedd) AM_WRITENOP // 8-bit; cleared at startup
-	AM_RANGE(0xff8000, 0xffbfff) AM_RAM // main RAM
-	AM_RANGE(0xff0000, 0xff7fff) AM_RAM // video RAM?
-	AM_RANGE(0xffe000, 0xffe01f) AM_DEVREADWRITE8("duart", scn2681_device, read, write, 0xff00)
-	AM_RANGE(0xffe400, 0xffe40f) AM_DEVREADWRITE8("avdc", scn2674_device, read, write, 0xff00)
-	AM_RANGE(0xffe800, 0xffe805) AM_UNMAP //AM_DEVREADWRITE8("pai", um82c11_device, read, write, 0xff00)
-	AM_RANGE(0xffec00, 0xffec01) AM_WRITE8(ffec01_w, 0x00ff)
-	AM_RANGE(0xfff000, 0xfff001) AM_WRITE8(fff000_w, 0xff00)
-	AM_RANGE(0xfff400, 0xfff401) AM_READ8(fff400_r, 0xff00)
-	AM_RANGE(0xfffc00, 0xfffc01) AM_DEVWRITE8("ramdac", ramdac_device, index_w, 0x00ff)
-	AM_RANGE(0xfffc02, 0xfffc03) AM_DEVWRITE8("ramdac", ramdac_device, pal_w, 0x00ff)
-	AM_RANGE(0xfffc04, 0xfffc05) AM_DEVWRITE8("ramdac", ramdac_device, mask_w, 0x00ff)
-ADDRESS_MAP_END
+void tr175_state::mem_map(address_map &map)
+{
+	map(0x000000, 0x01ffff).rom().region("maincpu", 0);
+	map(0xfe8000, 0xfebfff).ram(); // 8-bit?
+	map(0xfefe00, 0xfefedd).nopw(); // 8-bit; cleared at startup
+	map(0xff8000, 0xffbfff).ram(); // main RAM
+	map(0xff0000, 0xff7fff).ram(); // video RAM?
+	map(0xffe000, 0xffe01f).rw("duart", FUNC(scn2681_device::read), FUNC(scn2681_device::write)).umask16(0xff00);
+	map(0xffe400, 0xffe40f).rw("avdc", FUNC(scn2674_device::read), FUNC(scn2674_device::write)).umask16(0xff00);
+	map(0xffe800, 0xffe805).unmaprw(); //AM_DEVREADWRITE8("pai", um82c11_device, read, write, 0xff00)
+	map(0xffec01, 0xffec01).w(FUNC(tr175_state::ffec01_w));
+	map(0xfff000, 0xfff000).w(FUNC(tr175_state::fff000_w));
+	map(0xfff400, 0xfff400).r(FUNC(tr175_state::fff400_r));
+	map(0xfffc01, 0xfffc01).w("ramdac", FUNC(ramdac_device::index_w));
+	map(0xfffc03, 0xfffc03).w("ramdac", FUNC(ramdac_device::pal_w));
+	map(0xfffc05, 0xfffc05).w("ramdac", FUNC(ramdac_device::mask_w));
+}
 
 SCN2674_DRAW_CHARACTER_MEMBER(tr175_state::draw_character)
 {
 }
 
-static ADDRESS_MAP_START( vram_map, 0, 8, tr175_state )
-	AM_RANGE(0x0000, 0x3fff) AM_READNOP
-ADDRESS_MAP_END
+void tr175_state::vram_map(address_map &map)
+{
+	map(0x0000, 0x3fff).nopr();
+}
 
-static ADDRESS_MAP_START( ramdac_map, 0, 8, tr175_state )
-	AM_RANGE(0x000, 0x3ff) AM_DEVREADWRITE("ramdac", ramdac_device, ramdac_pal_r, ramdac_rgb666_w)
-ADDRESS_MAP_END
+void tr175_state::ramdac_map(address_map &map)
+{
+	map(0x000, 0x3ff).rw("ramdac", FUNC(ramdac_device::ramdac_pal_r), FUNC(ramdac_device::ramdac_rgb666_w));
+}
 
 static INPUT_PORTS_START( tr175 )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( tr175 )
-	MCFG_CPU_ADD("maincpu", M68000, 12'000'000)
-	MCFG_CPU_PROGRAM_MAP(mem_map)
+MACHINE_CONFIG_START(tr175_state::tr175)
+	MCFG_DEVICE_ADD("maincpu", M68000, 12'000'000)
+	MCFG_DEVICE_PROGRAM_MAP(mem_map)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(50)
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(2500)) /* not accurate */
-	MCFG_SCREEN_SIZE(720, 360)
-	MCFG_SCREEN_VISIBLE_AREA(0, 720-1, 0, 360-1)
+	MCFG_SCREEN_RAW_PARAMS(XTAL(28'322'000), 900, 0, 720, 449, 0, 416) // guess
 	MCFG_SCREEN_UPDATE_DEVICE("avdc", scn2674_device, screen_update)
 
-	MCFG_DEVICE_ADD("avdc", SCN2674, 4000000)
+	MCFG_DEVICE_ADD("avdc", SCN2674, XTAL(28'322'000) / 18) // guess
 	MCFG_SCN2674_INTR_CALLBACK(INPUTLINE("maincpu", M68K_IRQ_2))
-	MCFG_SCN2674_TEXT_CHARACTER_WIDTH(8)
-	MCFG_SCN2674_GFX_CHARACTER_WIDTH(8)
+	MCFG_SCN2674_CHARACTER_WIDTH(18) // guess
 	MCFG_SCN2674_DRAW_CHARACTER_CALLBACK_OWNER(tr175_state, draw_character)
 	MCFG_DEVICE_ADDRESS_MAP(0, vram_map)
 	MCFG_VIDEO_SET_SCREEN("screen")
 
-	MCFG_DEVICE_ADD("duart", SCN2681, XTAL_11_0592MHz / 3) // is this the right clock?
+	MCFG_DEVICE_ADD("duart", SCN2681, XTAL(11'059'200) / 3) // is this the right clock?
 	MCFG_MC68681_IRQ_CALLBACK(INPUTLINE("maincpu", M68K_IRQ_1))
 
 	MCFG_PALETTE_ADD("palette", 0x100)
@@ -110,7 +113,7 @@ MACHINE_CONFIG_END
 Relisys TR-175 II.
 Chips: MC68000P12, HM82C11C, SCN2681, 3x W24257-70L, KDA0476BCN-66 (RAMDAC), 4 undumped proms, Beeper, Button battery
 Crystals: 28.322, 46.448, 11.0592, unknown.
-Colour screen.
+Colour screen (VGA).
 
 ***************************************************************************************************************/
 
@@ -120,4 +123,4 @@ ROM_START( tr175 )
 	ROM_LOAD16_BYTE( "v6.05.u45", 0x00000, 0x10000, CRC(e220befe) SHA1(8402280577e6de4b85843222bbd6b06a3f625b3b) )
 ROM_END
 
-COMP( 1982, tr175, 0, 0, tr175, tr175, tr175_state, 0, "Relisys", "TR-175 II", MACHINE_IS_SKELETON )
+COMP( 1982, tr175, 0, 0, tr175, tr175, tr175_state, empty_init, "Relisys", "TR-175 II", MACHINE_IS_SKELETON )

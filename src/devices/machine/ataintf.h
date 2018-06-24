@@ -47,15 +47,15 @@ DECLARE_DEVICE_TYPE(ATA_SLOT, ata_slot_device)
 ***************************************************************************/
 
 #define MCFG_ATA_INTERFACE_IRQ_HANDLER(_devcb) \
-	devcb = &abstract_ata_interface_device::set_irq_handler(*device, DEVCB_##_devcb);
+	devcb = &downcast<abstract_ata_interface_device &>(*device).set_irq_handler(DEVCB_##_devcb);
 
 #define MCFG_ATA_INTERFACE_DMARQ_HANDLER(_devcb) \
-	devcb = &abstract_ata_interface_device::set_dmarq_handler(*device, DEVCB_##_devcb);
+	devcb = &downcast<abstract_ata_interface_device &>(*device).set_dmarq_handler(DEVCB_##_devcb);
 
 #define MCFG_ATA_INTERFACE_DASP_HANDLER(_devcb) \
-	devcb = &abstract_ata_interface_device::set_dasp_handler(*device, DEVCB_##_devcb);
+	devcb = &downcast<abstract_ata_interface_device &>(*device).set_dasp_handler(DEVCB_##_devcb);
 
-SLOT_INTERFACE_EXTERN(ata_devices);
+void ata_devices(device_slot_interface &device);
 
 /***************************************************************************
     DEVICE CONFIGURATION MACROS
@@ -79,9 +79,9 @@ class abstract_ata_interface_device : public device_t
 {
 public:
 	// static configuration helpers
-	template <class Object> static devcb_base &set_irq_handler(device_t &device, Object &&cb) { return downcast<abstract_ata_interface_device &>(device).m_irq_handler.set_callback(std::forward<Object>(cb)); }
-	template <class Object> static devcb_base &set_dmarq_handler(device_t &device, Object &&cb) { return downcast<abstract_ata_interface_device &>(device).m_dmarq_handler.set_callback(std::forward<Object>(cb)); }
-	template <class Object> static devcb_base &set_dasp_handler(device_t &device, Object &&cb) { return downcast<abstract_ata_interface_device &>(device).m_dasp_handler.set_callback(std::forward<Object>(cb)); }
+	template <class Object> devcb_base &set_irq_handler(Object &&cb) { return m_irq_handler.set_callback(std::forward<Object>(cb)); }
+	template <class Object> devcb_base &set_dmarq_handler(Object &&cb) { return m_dmarq_handler.set_callback(std::forward<Object>(cb)); }
+	template <class Object> devcb_base &set_dasp_handler(Object &&cb) { return m_dasp_handler.set_callback(std::forward<Object>(cb)); }
 
 	uint16_t read_dma();
 	void write_dma(uint16_t data);
@@ -135,10 +135,10 @@ public:
 	void write_cs0(offs_t offset, uint16_t data, uint16_t mem_mask = 0xffff) { internal_write_cs0(offset, data, mem_mask); }
 	void write_cs1(offs_t offset, uint16_t data, uint16_t mem_mask = 0xffff) { internal_write_cs1(offset, data, mem_mask); }
 
-	DECLARE_READ16_MEMBER(read_cs0) { return read_cs0(offset, mem_mask); }
-	DECLARE_READ16_MEMBER(read_cs1) { return read_cs1(offset, mem_mask); }
-	DECLARE_WRITE16_MEMBER(write_cs0) { write_cs0(offset, data, mem_mask); }
-	DECLARE_WRITE16_MEMBER(write_cs1) { write_cs1(offset, data, mem_mask); }
+	DECLARE_READ16_MEMBER(cs0_r) { return read_cs0(offset, mem_mask); }
+	DECLARE_READ16_MEMBER(cs1_r) { return read_cs1(offset, mem_mask); }
+	DECLARE_WRITE16_MEMBER(cs0_w) { write_cs0(offset, data, mem_mask); }
+	DECLARE_WRITE16_MEMBER(cs1_w) { write_cs1(offset, data, mem_mask); }
 };
 
 DECLARE_DEVICE_TYPE(ATA_INTERFACE, ata_interface_device)

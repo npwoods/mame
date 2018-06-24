@@ -229,6 +229,7 @@ public:
 	DECLARE_WRITE16_MEMBER(grid_w);
 	DECLARE_WRITE_LINE_MEMBER(speaker_w);
 	DECLARE_READ16_MEMBER(input_r);
+	void cfrogger(machine_config &config);
 };
 
 // handlers
@@ -294,16 +295,16 @@ static INPUT_PORTS_START( cfrogger )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_START ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_melps4_state, reset_button, nullptr)
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( cfrogger )
+MACHINE_CONFIG_START(cfrogger_state::cfrogger)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M58846, XTAL_600kHz)
-	MCFG_MELPS4_READ_K_CB(READ16(cfrogger_state, input_r))
-	MCFG_MELPS4_WRITE_S_CB(WRITE8(cfrogger_state, plate_w))
-	MCFG_MELPS4_WRITE_F_CB(WRITE8(cfrogger_state, plate_w))
-	MCFG_MELPS4_WRITE_G_CB(WRITE8(cfrogger_state, plate_w))
-	MCFG_MELPS4_WRITE_D_CB(WRITE16(cfrogger_state, grid_w))
-	MCFG_MELPS4_WRITE_T_CB(WRITELINE(cfrogger_state, speaker_w))
+	MCFG_DEVICE_ADD("maincpu", M58846, 600_kHz_XTAL)
+	MCFG_MELPS4_READ_K_CB(READ16(*this, cfrogger_state, input_r))
+	MCFG_MELPS4_WRITE_S_CB(WRITE8(*this, cfrogger_state, plate_w))
+	MCFG_MELPS4_WRITE_F_CB(WRITE8(*this, cfrogger_state, plate_w))
+	MCFG_MELPS4_WRITE_G_CB(WRITE8(*this, cfrogger_state, plate_w))
+	MCFG_MELPS4_WRITE_D_CB(WRITE16(*this, cfrogger_state, grid_w))
+	MCFG_MELPS4_WRITE_T_CB(WRITELINE(*this, cfrogger_state, speaker_w))
 
 	/* video hardware */
 	MCFG_SCREEN_SVG_ADD("screen", "svg")
@@ -314,8 +315,8 @@ static MACHINE_CONFIG_START( cfrogger )
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", hh_melps4_state, display_decay_tick, attotime::from_msec(1))
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("speaker", SPEAKER_SOUND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("speaker", SPEAKER_SOUND)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 
@@ -344,6 +345,7 @@ public:
 	DECLARE_WRITE16_MEMBER(grid_w);
 	DECLARE_WRITE_LINE_MEMBER(speaker_w);
 	DECLARE_READ16_MEMBER(input_r);
+	void gjungler(machine_config &config);
 };
 
 // handlers
@@ -409,17 +411,17 @@ static INPUT_PORTS_START( gjungler )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_START ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_melps4_state, reset_button, nullptr)
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( gjungler )
+MACHINE_CONFIG_START(gjungler_state::gjungler)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M58846, XTAL_600kHz)
-	MCFG_MELPS4_READ_K_CB(READ16(gjungler_state, input_r))
-	MCFG_MELPS4_WRITE_S_CB(WRITE8(gjungler_state, plate_w))
-	MCFG_MELPS4_WRITE_F_CB(WRITE8(gjungler_state, plate_w))
-	MCFG_MELPS4_WRITE_G_CB(WRITE8(gjungler_state, plate_w))
-	MCFG_MELPS4_WRITE_U_CB(WRITE8(gjungler_state, plate_w))
-	MCFG_MELPS4_WRITE_D_CB(WRITE16(gjungler_state, grid_w))
-	MCFG_MELPS4_WRITE_T_CB(WRITELINE(gjungler_state, speaker_w))
+	MCFG_DEVICE_ADD("maincpu", M58846, 600_kHz_XTAL)
+	MCFG_MELPS4_READ_K_CB(READ16(*this, gjungler_state, input_r))
+	MCFG_MELPS4_WRITE_S_CB(WRITE8(*this, gjungler_state, plate_w))
+	MCFG_MELPS4_WRITE_F_CB(WRITE8(*this, gjungler_state, plate_w))
+	MCFG_MELPS4_WRITE_G_CB(WRITE8(*this, gjungler_state, plate_w))
+	MCFG_MELPS4_WRITE_U_CB(WRITE8(*this, gjungler_state, plate_w))
+	MCFG_MELPS4_WRITE_D_CB(WRITE16(*this, gjungler_state, grid_w))
+	MCFG_MELPS4_WRITE_T_CB(WRITELINE(*this, gjungler_state, speaker_w))
 
 	/* video hardware */
 	MCFG_SCREEN_SVG_ADD("screen", "svg")
@@ -430,8 +432,8 @@ static MACHINE_CONFIG_START( gjungler )
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", hh_melps4_state, display_decay_tick, attotime::from_msec(1))
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("speaker", SPEAKER_SOUND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("speaker", SPEAKER_SOUND)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 
@@ -464,7 +466,7 @@ ROM_END
 
 
 
-//    YEAR  NAME      PARENT CMP MACHINE   INPUT     STATE        INIT  COMPANY, FULLNAME, FLAGS
-CONS( 1981, cfrogger, 0,      0, cfrogger, cfrogger, cfrogger_state, 0, "Coleco", "Frogger (Coleco)", MACHINE_SUPPORTS_SAVE )
+//    YEAR  NAME      PARENT CMP MACHINE   INPUT     CLASS           INIT        COMPANY, FULLNAME, FLAGS
+CONS( 1981, cfrogger, 0,      0, cfrogger, cfrogger, cfrogger_state, empty_init, "Coleco", "Frogger (Coleco)", MACHINE_SUPPORTS_SAVE )
 
-CONS( 1982, gjungler, 0,      0, gjungler, gjungler, gjungler_state, 0, "Gakken / Konami", "Jungler (Gakken)", MACHINE_SUPPORTS_SAVE )
+CONS( 1982, gjungler, 0,      0, gjungler, gjungler, gjungler_state, empty_init, "Gakken / Konami", "Jungler (Gakken)", MACHINE_SUPPORTS_SAVE )

@@ -40,7 +40,7 @@
   1x PPI 8255 (@U10)
   3x 4099 (8-Bit Addressable Latch) @U1-U3-U5.
   3x 4512 (8-Channel Data Selector) @U2-U4-U7.
-  
+
   1x INMOS B IMS1630K-70M (8K x 8 SRAM, DIL28)... NOTE: Replaced by UT6264CPC-70LL in another board.
   4x sanded IC's identified as 4464 (64K x 4 DRAM) @U16-U17-U18-U19, near the Yamaha 9938 for video RAM.
 
@@ -51,7 +51,7 @@
   1x unknown DAC (DIL16) @U13.
   1x LM324 (Single Supply Quad Operational Amplifier)
 
-  1x Maxim MAX691CPE (battery supervisor). 
+  1x Maxim MAX691CPE (battery supervisor).
 
   1x 21.47727 MHz. crystal, near the Yamaha 9938/58 VDP.
   1x 12.288 MHz. crystal, near the Zilog Z180.
@@ -138,7 +138,7 @@
 *********************************************************************
 
   Program ROM
-  Data Lines Scrambling.     
+  Data Lines Scrambling.
 
   BUS     ROM
 
@@ -177,7 +177,7 @@
 *********************************************************************
 
   I/O:
-  
+
   1x PPI 8255.
   3x 4099 (8-Bit Addressable Latch).
   3x 4512 (8-Channel Data Selector).
@@ -196,7 +196,7 @@
   |         PB0 |------> I/O 4099 (A0) & 4512 (A)
   |         PB1 |------> I/O 4099 (A1) & 4512 (B)
   |         PB2 |------> I/O 4099 (A2) & 4512 (C)
-  |         PB3 |------> I/O 4099 (WD 4099 #0, Players) 
+  |         PB3 |------> I/O 4099 (WD 4099 #0, Players)
   |         PB4 |------> I/O 4099 (WD 4099 #1, Counters)
   |         PB5 |------> I/O 4099 (WD 4099 #2, unknown)
   |         PB6 |------> I/O 4099 (D)
@@ -212,6 +212,41 @@
   |         PC7 |------> I/O 4512 #2 (SO, DIP switches)
   '-------------'
 
+      4099 #1
+   .-----v-----.
+   |        Q0 |-------> JUG. 1
+   |        Q1 |-------> JUG. 2
+   |        Q2 |-------> JUG. 3
+   |        Q3 |-------> JUG. 4
+   |        Q4 |-------> JUG. 5
+   |        Q5 |-------> JUG. 6
+   |        Q6 |-------> JUG. 7
+   |        Q7 |-------> JUG. 8
+   '-----------'
+
+      4099 #2
+   .-----v-----.
+   |        Q0 |-------> AUX OUT1
+   |        Q1 |-------> AUX OUT2 (through ULN2004)
+   |        Q2 |-------> AUX OUT3 (through ULN2004)
+   |        Q3 |-------> AUX OUT4 (through ULN2004)
+   |        Q4 |-------> CONT.AUX1 (through ULN2004)
+   |        Q5 |-------> CONT.ENT (through ULN2004)
+   |        Q6 |-------> CONT.AUX2 (through ULN2004)
+   |        Q7 |-------> CONT.SAL (through ULN2004)
+   '-----------'
+
+      4099 #3
+   .-----v-----.
+   |        Q0 |-------> n.c.?
+   |        Q1 |-------> n.c.?
+   |        Q2 |-------> n.c.?
+   |        Q3 |-------> n.c.?
+   |        Q4 |-------> TOUCH (through 1N60)
+   |        Q5 |-------> n.c.?
+   |        Q6 |-------> n.c.?
+   |        Q7 |-------> n.c.?
+   '-----------'
 
 *********************************************************************
 
@@ -225,20 +260,22 @@
   outputs back).
 
   Currently the machine gets stuck polling the control register for
-  the Z180's unemulated clocked serial I/O.
+  the Z180's unemulated clocked serial I/O (which connects with the
+  ST6265's SIN/SOUT/SCK).
 
 *********************************************************************/
 
 
-#define CPU_CLOCK       XTAL_12_288MHz
-#define MCU_CLOCK       XTAL_8MHz
-#define VID_CLOCK       XTAL_21_4772MHz
+#define CPU_CLOCK       XTAL(12'288'000)
+#define MCU_CLOCK       XTAL(8'000'000)
+#define VID_CLOCK       XTAL(21'477'272)
 
 #define VDP_MEM         0x20000  // 4x 4464 (64K x 4 DRAM)
 
 
 #include "emu.h"
 #include "cpu/z180/z180.h"
+#include "machine/74259.h"
 #include "machine/i8255.h"
 #include "video/v9938.h"
 #include "sound/dac.h"
@@ -256,6 +293,7 @@ public:
 		, m_maincpu(*this, "maincpu")
 		, m_ppi(*this, "ppi")
 		, m_dac(*this, "dac")
+		, m_latch(*this, "latch%u", 1)
 	{ }
 
 	DECLARE_WRITE8_MEMBER(port90_bitswap_w);
@@ -265,13 +303,18 @@ public:
 	DECLARE_WRITE8_MEMBER(output_port_b_w);
 	DECLARE_READ8_MEMBER(input_port_c_r);
 	DECLARE_WRITE8_MEMBER(output_port_c_w);
-	DECLARE_DRIVER_INIT(luckybal);
+	void init_luckybal();
 	uint8_t daclatch;
 
 	required_device<v9938_device> m_v9938;
 	required_device<cpu_device> m_maincpu;
 	required_device<i8255_device> m_ppi;
 	required_device<dac_byte_interface> m_dac;
+	required_device_array<cd4099_device, 3> m_latch;
+
+	void luckybal(machine_config &config);
+	void main_io(address_map &map);
+	void main_map(address_map &map);
 };
 
 
@@ -279,17 +322,19 @@ public:
 *             Memory Map              *
 **************************************/
 
-static ADDRESS_MAP_START( main_map, AS_PROGRAM, 8, luckybal_state )
-	AM_RANGE(0x0000, 0x57ff) AM_ROM
-	AM_RANGE(0xe000, 0xffff) AM_RAM  // 6264 SRAM
-ADDRESS_MAP_END
+void luckybal_state::main_map(address_map &map)
+{
+	map(0x0000, 0x57ff).rom();
+	map(0xe000, 0xffff).ram();  // 6264 SRAM
+}
 
-static ADDRESS_MAP_START( main_io, AS_IO, 8, luckybal_state )
-	ADDRESS_MAP_GLOBAL_MASK(0xff)
-	AM_RANGE(0x90, 0x90) AM_WRITE(port90_bitswap_w)
-	AM_RANGE(0xc0, 0xc3) AM_READWRITE(ppi_bitswap_r, ppi_bitswap_w)
-	AM_RANGE(0xe0, 0xe3) AM_DEVREADWRITE("v9938", v9938_device, read, write)
-ADDRESS_MAP_END
+void luckybal_state::main_io(address_map &map)
+{
+	map.global_mask(0xff);
+	map(0x90, 0x90).w(FUNC(luckybal_state::port90_bitswap_w));
+	map(0xc0, 0xc3).rw(FUNC(luckybal_state::ppi_bitswap_r), FUNC(luckybal_state::ppi_bitswap_w));
+	map(0xe0, 0xe3).rw(m_v9938, FUNC(v9938_device::read), FUNC(v9938_device::write));
+}
 /*
 [:maincpu] ':maincpu' (00006): unmapped io memory write to 0010 = 00 & FF
 [:maincpu] ':maincpu' (00009): unmapped io memory read from 0018 & FF
@@ -318,9 +363,9 @@ ADDRESS_MAP_END
 /*
 ;*********** PPI 8255 *******
 PORTCN    EQU  C0H    ;80H C
-P_AUDIO	  EQU  C0H    ;Port A ---> DAC
+P_AUDIO   EQU  C0H    ;Port A ---> DAC
 PORTIN    EQU  C2H    ;Port C (High nibble) Inputs. (4=EE, 5=PLATE, 6=KEY, 7=DIP)
-PORT_EE	  EQU  C2H    ;Port C (Low nibble) EEPROM.  (0=DI, 1=CS, 2=SK)
+PORT_EE   EQU  C2H    ;Port C (Low nibble) EEPROM.  (0=DI, 1=CS, 2=SK)
 PORTIO    EQU  C1H    ;Port B I/O 4099 (0=A0, 1=A1, 2=A2, 3=WJ, 4=WC, 5=WP, 6=D, 7=LED)
 PPI_CTRL  EQU  C3H    ;Mode.
 
@@ -368,7 +413,11 @@ WRITE8_MEMBER(luckybal_state::output_port_a_w)
 
 WRITE8_MEMBER(luckybal_state::output_port_b_w)
 {
-	if ((data & 0xf8) != 0xf8)
+	for (int n = 0; n < 3; n++)
+		if (!BIT(data, n + 3))
+			m_latch[n]->write_bit(data & 7, BIT(data, 6));
+
+	if ((data & 0x80) != 0x80)
 		logerror("%s: Write to PPI port B: %02X\n", machine().describe_context(), data);
 }
 
@@ -473,18 +522,24 @@ INPUT_PORTS_END
 *           Machine Driver            *
 **************************************/
 
-static MACHINE_CONFIG_START( luckybal )
+MACHINE_CONFIG_START(luckybal_state::luckybal)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z180, CPU_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(main_map)
-	MCFG_CPU_IO_MAP(main_io)
+	MCFG_DEVICE_ADD("maincpu", Z180, CPU_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(main_map)
+	MCFG_DEVICE_IO_MAP(main_io)
 
 	MCFG_DEVICE_ADD("ppi", I8255A, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(luckybal_state, output_port_a_w))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(luckybal_state, output_port_b_w))
-	MCFG_I8255_IN_PORTC_CB(READ8(luckybal_state, input_port_c_r))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(luckybal_state, output_port_c_w))
+	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, luckybal_state, output_port_a_w))
+	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, luckybal_state, output_port_b_w))
+	MCFG_I8255_IN_PORTC_CB(READ8(*this, luckybal_state, input_port_c_r))
+	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, luckybal_state, output_port_c_w))
+
+	MCFG_DEVICE_ADD("latch1", CD4099, 0)
+
+	MCFG_DEVICE_ADD("latch2", CD4099, 0)
+
+	MCFG_DEVICE_ADD("latch3", CD4099, 0)
 
 	/* video hardware */
 	MCFG_V9938_ADD("v9938", "screen", VDP_MEM, VID_CLOCK)
@@ -492,10 +547,10 @@ static MACHINE_CONFIG_START( luckybal )
 	MCFG_V99X8_SCREEN_ADD_NTSC("screen", "v9938", VID_CLOCK)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("speaker")
-	MCFG_SOUND_ADD("dac", DAC08, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.5) // DAC 08
+	SPEAKER(config, "speaker").front_center();
+	MCFG_DEVICE_ADD("dac", DAC08, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.5) // DAC 08
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 MACHINE_CONFIG_END
 
@@ -544,14 +599,12 @@ ROM_END
 *            Driver Init            *
 ************************************/
 
-DRIVER_INIT_MEMBER(luckybal_state, luckybal)
+void luckybal_state::init_luckybal()
 {
 	uint8_t *rom = memregion("maincpu")->base();
 	int size = memregion("maincpu")->bytes();
 	int start = 0;
-	int i;
-
-	for (i = start; i < size; i++)
+	for (int i = start; i < size; i++)
 	{
 		rom[i] = bitswap<8>(rom[i], 6, 7, 4, 5, 2, 3, 0, 1);
 	}
@@ -562,8 +615,8 @@ DRIVER_INIT_MEMBER(luckybal_state, luckybal)
 *           Game Driver(s)            *
 **************************************/
 
-/*    YEAR  NAME        PARENT    MACHINE   INPUT     STATE           INIT      ROT    COMPANY          FULLNAME                         FLAGS  */
-GAME( 1996, luckybal,   0,        luckybal, luckybal, luckybal_state, luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 627)", MACHINE_NOT_WORKING )//| MACHINE_NO_SOUND )
-GAME( 1996, luckybala,  luckybal, luckybal, luckybal, luckybal_state, luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 626)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
-GAME( 1996, luckybalb,  luckybal, luckybal, luckybal, luckybal_state, luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 623)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
-GAME( 1996, luckybalc,  luckybal, luckybal, luckybal, luckybal_state, luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 616)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+/*    YEAR  NAME       PARENT    MACHINE   INPUT     STATE           INIT           ROT    COMPANY          FULLNAME                         FLAGS  */
+GAME( 1996, luckybal,  0,        luckybal, luckybal, luckybal_state, init_luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 627)", MACHINE_NOT_WORKING )//| MACHINE_NO_SOUND )
+GAME( 1996, luckybala, luckybal, luckybal, luckybal, luckybal_state, init_luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 626)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+GAME( 1996, luckybalb, luckybal, luckybal, luckybal, luckybal_state, init_luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 623)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+GAME( 1996, luckybalc, luckybal, luckybal, luckybal, luckybal_state, init_luckybal, ROT0, "Sielcon Games", "Lucky Ball 96 (Ver 3.50 - 616)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )

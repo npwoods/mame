@@ -906,21 +906,31 @@ render_container::user_settings::user_settings()
 //-------------------------------------------------
 
 render_target::render_target(render_manager &manager, const internal_layout *layoutfile, u32 flags)
-	: m_next(nullptr),
-		m_manager(manager),
-		m_curview(nullptr),
-		m_flags(flags),
-		m_listindex(0),
-		m_width(640),
-		m_height(480),
-		m_pixel_aspect(0.0f),
-		m_max_refresh(0),
-		m_orientation(0),
-		m_base_view(nullptr),
-		m_base_orientation(ROT0),
-		m_maxtexwidth(65536),
-		m_maxtexheight(65536),
-		m_transform_container(true)
+	: render_target(manager, layoutfile, flags, CONSTRUCTOR_IMPL)
+{
+}
+
+render_target::render_target(render_manager &manager, util::xml::data_node const &layout, u32 flags)
+	: render_target(manager, layout, flags, CONSTRUCTOR_IMPL)
+{
+}
+
+template <typename T> render_target::render_target(render_manager &manager, T &&layout, u32 flags, constructor_impl_t)
+	: m_next(nullptr)
+	, m_manager(manager)
+	, m_curview(nullptr)
+	, m_flags(flags)
+	, m_listindex(0)
+	, m_width(640)
+	, m_height(480)
+	, m_pixel_aspect(0.0f)
+	, m_max_refresh(0)
+	, m_orientation(0)
+	, m_base_view(nullptr)
+	, m_base_orientation(ROT0)
+	, m_maxtexwidth(65536)
+	, m_maxtexheight(65536)
+	, m_transform_container(true)
 {
 	// determine the base layer configuration based on options
 	m_base_layerconfig.set_backdrops_enabled(manager.machine().options().use_backdrops());
@@ -967,7 +977,7 @@ render_target::render_target(render_manager &manager, const internal_layout *lay
 	m_layerconfig = m_base_layerconfig;
 
 	// load the layout files
-	load_layout_files(layoutfile, flags & RENDER_CREATE_SINGLE_FILE);
+	load_layout_files(std::forward<T>(layout), flags & RENDER_CREATE_SINGLE_FILE);
 
 	// set the current view to the first one
 	set_view(0);
@@ -1032,7 +1042,7 @@ void render_target::set_bounds(s32 width, s32 height, float pixel_aspect)
 void render_target::set_view(int viewindex)
 {
 	layout_view *view = view_by_index(viewindex);
-	if (view != nullptr)
+	if (view)
 	{
 		m_curview = view;
 		view->recompute(m_layerconfig);
@@ -1160,7 +1170,7 @@ void render_target::compute_visible_area(s32 target_width, s32 target_height, fl
 {
 	switch (m_scale_mode)
 	{
-		case SCALE_FRACTIONAL:
+	case SCALE_FRACTIONAL:
 		{
 			float width, height;
 			float scale;
@@ -1200,7 +1210,7 @@ void render_target::compute_visible_area(s32 target_width, s32 target_height, fl
 			break;
 		}
 
-		default:
+	default:
 		{
 			// get source size and aspect
 			s32 src_width, src_height;
@@ -1574,9 +1584,7 @@ void render_target::update_layer_config()
 
 void render_target::load_layout_files(const internal_layout *layoutfile, bool singlefile)
 {
-	bool have_default  = false;
 	bool have_artwork  = false;
-	bool have_override = false;
 
 	// if there's an explicit file, load that first
 	const char *basename = m_manager.machine().basename();
@@ -1584,8 +1592,27 @@ void render_target::load_layout_files(const internal_layout *layoutfile, bool si
 		have_artwork |= load_layout_file(basename, layoutfile);
 
 	// if we're only loading this file, we know our final result
-	if (singlefile)
-		return;
+	if (!singlefile)
+		load_additional_layout_files(basename, have_artwork);
+}
+
+void render_target::load_layout_files(util::xml::data_node const &rootnode, bool singlefile)
+{
+	bool have_artwork  = false;
+
+	// if there's an explicit file, load that first
+	const char *basename = m_manager.machine().basename();
+	have_artwork |= load_layout_file(basename, rootnode);
+
+	// if we're only loading this file, we know our final result
+	if (!singlefile)
+		load_additional_layout_files(basename, have_artwork);
+}
+
+void render_target::load_additional_layout_files(const char *basename, bool have_artwork)
+{
+	bool have_default  = false;
+	bool have_override = false;
 
 	// if override_artwork defined, load that and skip artwork other than default
 	if (m_manager.machine().options().override_artwork())
@@ -1664,13 +1691,7 @@ void render_target::load_layout_files(const internal_layout *layoutfile, bool si
 
 	if (!have_default && !have_artwork)
 	{
-		if (screens == 0)
-		{
-			load_layout_file(nullptr, &layout_noscreens);
-			if (m_filelist.empty())
-				throw emu_fatalerror("Couldn't parse default layout??");
-		}
-		else if (screens == 2)
+		if (screens == 2)
 		{
 			load_layout_file(nullptr, &layout_dualhsxs);
 			if (m_filelist.empty())
@@ -1678,8 +1699,16 @@ void render_target::load_layout_files(const internal_layout *layoutfile, bool si
 		}
 	}
 
-	// generate default layouts for larger numbers of screens
-	if (screens >= 3)
+	if (screens == 0) // ensure the fallback view for systems with no screens is loaded if necessary
+	{
+		if (!view_by_index(0))
+		{
+			load_layout_file(nullptr, &layout_noscreens);
+			if (m_filelist.empty())
+				throw emu_fatalerror("Couldn't parse default layout??");
+		}
+	}
+	else if (screens >= 3) // generate default layouts for larger numbers of screens
 	{
 		util::xml::file::ptr const root(util::xml::file::create());
 		if (!root)
@@ -1932,7 +1961,7 @@ bool render_target::load_layout_file(const char *dirname, util::xml::data_node c
 	{
 		m_filelist.emplace_back(m_manager.machine(), rootnode, dirname);
 	}
-	catch (emu_fatalerror)
+	catch (emu_fatalerror &)
 	{
 		return false;
 	}
@@ -2871,6 +2900,11 @@ float render_manager::max_update_rate() const
 render_target *render_manager::target_alloc(const internal_layout *layoutfile, u32 flags)
 {
 	return &m_targetlist.append(*global_alloc(render_target(*this, layoutfile, flags)));
+}
+
+render_target *render_manager::target_alloc(util::xml::data_node const &layout, u32 flags)
+{
+	return &m_targetlist.append(*global_alloc(render_target(*this, layout, flags)));
 }
 
 

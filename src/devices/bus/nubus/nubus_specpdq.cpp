@@ -51,7 +51,7 @@ DEFINE_DEVICE_TYPE(NUBUS_SPECPDQ, nubus_specpdq_device, "nb_spdq", "SuperMac Spe
 //  device_add_mconfig - add device configuration
 //-------------------------------------------------
 
-MACHINE_CONFIG_MEMBER( nubus_specpdq_device::device_add_mconfig )
+MACHINE_CONFIG_START(nubus_specpdq_device::device_add_mconfig)
 	MCFG_SCREEN_ADD( SPECPDQ_SCREEN_NAME, RASTER)
 	MCFG_SCREEN_UPDATE_DEVICE(DEVICE_SELF, nubus_specpdq_device, screen_update)
 	MCFG_SCREEN_RAW_PARAMS(25175000, 800, 0, 640, 525, 0, 480)
@@ -88,11 +88,10 @@ nubus_specpdq_device::nubus_specpdq_device(const machine_config &mconfig, device
 	device_video_interface(mconfig, *this),
 	device_nubus_card_interface(mconfig, *this),
 	m_vram32(nullptr), m_mode(0), m_vbl_disable(0), m_count(0), m_clutoffs(0), m_timer(nullptr),
-	m_assembled_tag(util::string_format("%s:%s", tag, SPECPDQ_SCREEN_NAME)),
 	m_width(0), m_height(0), m_patofsx(0), m_patofsy(0), m_vram_addr(0), m_vram_src(0),
 	m_palette(*this, "palette")
 {
-	static_set_screen(*this, m_assembled_tag.c_str());
+	set_screen(*this, SPECPDQ_SCREEN_NAME);
 }
 
 //-------------------------------------------------
@@ -103,8 +102,6 @@ void nubus_specpdq_device::device_start()
 {
 	uint32_t slotspace;
 
-	// set_nubus_device makes m_slot valid
-	set_nubus_device();
 	install_declaration_rom(this, SPECPDQ_ROM_REGION);
 
 	slotspace = get_slotspace();
@@ -113,8 +110,8 @@ void nubus_specpdq_device::device_start()
 
 	m_vram.resize(VRAM_SIZE);
 	m_vram32 = (uint32_t *)&m_vram[0];
-	m_nubus->install_device(slotspace, slotspace+VRAM_SIZE-1, read32_delegate(FUNC(nubus_specpdq_device::vram_r), this), write32_delegate(FUNC(nubus_specpdq_device::vram_w), this));
-	m_nubus->install_device(slotspace+0x400000, slotspace+0xfbffff, read32_delegate(FUNC(nubus_specpdq_device::specpdq_r), this), write32_delegate(FUNC(nubus_specpdq_device::specpdq_w), this));
+	nubus().install_device(slotspace, slotspace+VRAM_SIZE-1, read32_delegate(FUNC(nubus_specpdq_device::vram_r), this), write32_delegate(FUNC(nubus_specpdq_device::vram_w), this));
+	nubus().install_device(slotspace+0x400000, slotspace+0xfbffff, read32_delegate(FUNC(nubus_specpdq_device::specpdq_r), this), write32_delegate(FUNC(nubus_specpdq_device::specpdq_w), this));
 
 	m_timer = timer_alloc(0, nullptr);
 	m_timer->adjust(screen().time_until_pos(843, 0), 0);

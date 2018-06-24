@@ -137,15 +137,31 @@ READ8_MEMBER( towns_state::towns_gfx_high_r )
 
 WRITE8_MEMBER( towns_state::towns_gfx_high_w )
 {
-	m_towns_gfxvram[offset] = data;
+	u8 mask = m_vram_mask[offset & 3];
+	u8 mem = m_towns_gfxvram[offset];
+	m_towns_gfxvram[offset] = (mem & ~mask) | (data & mask);
 }
+
+READ8_MEMBER( towns_state::towns_gfx_packed_r )
+{
+	return m_towns_gfxvram[bitswap<19>(offset,2,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,1,0)];
+}
+
+WRITE8_MEMBER( towns_state::towns_gfx_packed_w )
+{
+	u8 mask = m_vram_mask[offset & 3];
+	offset = bitswap<19>(offset,2,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,1,0);
+	u8 mem = m_towns_gfxvram[offset];
+	m_towns_gfxvram[offset] = (mem & ~mask) | (data & mask);
+}
+
 
 READ8_MEMBER( towns_state::towns_gfx_r )
 {
 	uint8_t ret = 0;
 
 	if(m_towns_mainmem_enable != 0)
-		return m_messram->pointer()[offset+0xc0000];
+		return m_ram->pointer()[offset+0xc0000];
 
 	offset = offset << 2;
 
@@ -168,7 +184,7 @@ WRITE8_MEMBER( towns_state::towns_gfx_w )
 {
 	if(m_towns_mainmem_enable != 0)
 	{
-		m_messram->pointer()[offset+0xc0000] = data;
+		m_ram->pointer()[offset+0xc0000] = data;
 		return;
 	}
 	offset = offset << 2;
@@ -334,7 +350,7 @@ WRITE8_MEMBER( towns_state::towns_video_cff80_w )
 READ8_MEMBER( towns_state::towns_video_cff80_mem_r )
 {
 	if(m_towns_mainmem_enable != 0)
-		return m_messram->pointer()[offset+0xcff80];
+		return m_ram->pointer()[offset+0xcff80];
 
 	return towns_video_cff80_r(space,offset);
 }
@@ -343,7 +359,7 @@ WRITE8_MEMBER( towns_state::towns_video_cff80_mem_w )
 {
 	if(m_towns_mainmem_enable != 0)
 	{
-		m_messram->pointer()[offset+0xcff80] = data;
+		m_ram->pointer()[offset+0xcff80] = data;
 		return;
 	}
 	towns_video_cff80_w(space,offset,data);
@@ -414,6 +430,14 @@ READ8_MEMBER(towns_state::towns_video_440_r)
 		case 0x12:
 			if(LOG_VID) logerror("SPR: reading register %i (0x452) [%02x]\n",m_video.towns_sprite_sel,m_video.towns_sprite_reg[m_video.towns_sprite_sel]);
 			return m_video.towns_sprite_reg[m_video.towns_sprite_sel];
+		case 0x18:
+			return m_vram_mask_addr;
+		case 0x1a:
+		case 0x1b:
+		{
+			int idx = (m_vram_mask_addr << 1) + offset - 0x1a;
+			return m_vram_mask[idx];
+		}
 		//default:
 			//if(LOG_VID) logerror("VID: read port %04x\n",offset+0x440);
 	}
@@ -453,6 +477,16 @@ WRITE8_MEMBER(towns_state::towns_video_440_w)
 			logerror("SPR: writing register %i (0x452) [%02x]\n",m_video.towns_sprite_sel,data);
 			m_video.towns_sprite_reg[m_video.towns_sprite_sel] = data;
 			break;
+		case 0x18:
+			m_vram_mask_addr = data & 1;
+			break;
+		case 0x1a:
+		case 0x1b:
+		{
+			int idx = (m_vram_mask_addr << 1) + offset - 0x1a;
+			m_vram_mask[idx] = data;
+			break;
+		}
 		default:
 			if(LOG_VID) logerror("VID: wrote 0x%02x to port %04x\n",data,offset+0x440);
 	}
@@ -499,10 +533,8 @@ void towns_state::towns_update_palette()
 	switch(m_video.towns_video_reg[1] & 0x30)  // Palette select
 	{
 		case 0x00:
-			m_palette16_0->set_pen_color(entry, r, g, b);
-			break;
 		case 0x20:
-			m_palette16_1->set_pen_color(entry, r, g, b);
+			m_palette16[(m_video.towns_video_reg[1] & 0x20) >> 5]->set_pen_color(entry, r, g, b);
 			break;
 		case 0x10:
 		case 0x30:
@@ -528,10 +560,8 @@ READ8_MEMBER(towns_state::towns_video_fd90_r)
 
 	if(m_video.towns_video_reg[1] & 0x10)
 		pal = m_palette;
-	else if(m_video.towns_video_reg[1] & 0x20)
-		pal = m_palette16_1;
 	else
-		pal = m_palette16_0;
+		pal = m_palette16[(m_video.towns_video_reg[1] & 0x20) >> 5];
 //    if(LOG_VID) logerror("VID: read port %04x\n",offset+0xfd90);
 	switch(offset)
 	{
@@ -632,7 +662,7 @@ READ8_MEMBER(towns_state::towns_video_unknown_r)
  */
 READ8_MEMBER(towns_state::towns_spriteram_low_r)
 {
-	uint8_t* RAM = m_messram->pointer();
+	uint8_t* RAM = m_ram->pointer();
 	uint8_t* ROM = m_user->base();
 
 	if(offset < 0x1000)
@@ -670,7 +700,7 @@ READ8_MEMBER(towns_state::towns_spriteram_low_r)
 
 WRITE8_MEMBER(towns_state::towns_spriteram_low_w)
 {
-	uint8_t* RAM = m_messram->pointer();
+	uint8_t* RAM = m_ram->pointer();
 
 	if(offset < 0x1000)
 	{  // 0xc8000-0xc8fff
@@ -1032,6 +1062,7 @@ void towns_state::towns_crtc_draw_scan_layer_hicolour(bitmap_rgb32 &bitmap,const
 	uint32_t scroll;
 	int pixel;
 	int page = 0;
+	bool sphscroll = !(m_video.towns_crtc_reg[28] & (layer ? 0x20 : 0x10));
 
 	if(m_video.towns_video_reg[0] & 0x10)
 	{
@@ -1042,7 +1073,7 @@ void towns_state::towns_crtc_draw_scan_layer_hicolour(bitmap_rgb32 &bitmap,const
 	}
 	else
 		linesize = m_video.towns_crtc_reg[20] * 8;
-	
+
 	if(m_video.towns_display_page_sel != 0)
 	{
 		off = 0x20000;
@@ -1056,7 +1087,7 @@ void towns_state::towns_crtc_draw_scan_layer_hicolour(bitmap_rgb32 &bitmap,const
 	{
 		if(!(m_video.towns_video_reg[0] & 0x10))
 			return;
-		if(!(m_video.towns_crtc_reg[28] & 0x10))
+		if(!sphscroll)
 			off += (m_video.towns_crtc_reg[21]) << 2;  // initial offset
 		else
 		{
@@ -1068,7 +1099,7 @@ void towns_state::towns_crtc_draw_scan_layer_hicolour(bitmap_rgb32 &bitmap,const
 	}
 	else
 	{
-		if(!(m_video.towns_crtc_reg[28] & 0x20))
+		if(!sphscroll)
 			off += (m_video.towns_crtc_reg[17]) << 2;  // initial offset
 		else
 		{
@@ -1098,7 +1129,7 @@ void towns_state::towns_crtc_draw_scan_layer_hicolour(bitmap_rgb32 &bitmap,const
 					| ((colour & 0x03e0) << 14);
 		}
 		off+=2;
-		if ((off - (page * 0x20000)) % linesize == 0)
+		if ((off - (page * 0x20000)) % linesize == 0 && sphscroll)
 			off -= linesize;
 	}
 }
@@ -1113,6 +1144,7 @@ void towns_state::towns_crtc_draw_scan_layer_256(bitmap_rgb32 &bitmap,const rect
 	uint32_t scroll;
 	int pixel;
 	int page = 0;
+	bool sphscroll = !(m_video.towns_crtc_reg[28] & 0x10);
 
 	if(m_video.towns_display_page_sel != 0)
 	{
@@ -1120,28 +1152,35 @@ void towns_state::towns_crtc_draw_scan_layer_256(bitmap_rgb32 &bitmap,const rect
 		page = 1;
 	}
 
-	linesize = m_video.towns_crtc_reg[20] * 8;
-	
-	if(!(m_video.towns_crtc_reg[28] & 0x20))
-		off += m_video.towns_crtc_reg[17] << 3;  // initial offset
+	linesize = m_video.towns_crtc_reg[20] * 4;
+
+	if(!sphscroll)
+		off += m_video.towns_crtc_reg[17] << 2;  // initial offset
 	else
 	{
-		scroll = ((m_video.towns_crtc_reg[17] & 0xfc00) << 3) | (((m_video.towns_crtc_reg[17] & 0x3ff) << 3));
+		scroll = ((m_video.towns_crtc_reg[17] & 0xfc00) << 2) | (((m_video.towns_crtc_reg[17] & 0x3ff) << 2));
 		off += scroll;
 	}
 	hzoom = (m_video.towns_crtc_reg[27] & 0x000f) + 1;
-	off += (m_video.towns_crtc_reg[9] - m_video.towns_crtc_reg[18]) / hzoom;
+	int subpix = (m_video.towns_crtc_reg[9] - m_video.towns_crtc_reg[18]) / hzoom;
 
 	off += line * linesize;
+	off += (subpix >> 1) & ~3;
+	subpix = subpix & 7;
 
 	for(x=rect->min_x;x<rect->max_x;x+=hzoom)
 	{
-		off &= 0x7ffff;  // 256 color mode is single-layer only
-		colour = m_towns_gfxvram[off];
+		off &= 0x3ffff;
+		colour = m_towns_gfxvram[off+(subpix >= 4 ? (subpix & 3)+0x40000 : subpix)];
 		for (pixel = 0; pixel < hzoom; pixel++)
 			bitmap.pix32(scanline, x+pixel) = m_palette->pen(colour);
-		off++;
-		if ((off - (page * 0x20000)) % linesize == 0)
+		subpix++;
+		if(subpix == 8)
+		{
+			off += 4;
+			subpix = 0;
+		}
+		if ((off - (page * 0x20000)) % linesize == 0 && subpix == 0 && sphscroll)
 			off -= linesize;
 	}
 }
@@ -1156,7 +1195,8 @@ void towns_state::towns_crtc_draw_scan_layer_16(bitmap_rgb32 &bitmap,const recta
 	uint32_t scroll;
 	int pixel;
 	int page = 0;
-	palette_device* pal = (layer == 0) ? m_palette16_0 : m_palette16_1;
+	palette_device* pal = m_palette16[layer];
+	bool sphscroll = !(m_video.towns_crtc_reg[28] & (layer ? 0x20 : 0x10));
 
 	if(m_video.towns_display_page_sel != 0)
 	{
@@ -1178,7 +1218,7 @@ void towns_state::towns_crtc_draw_scan_layer_16(bitmap_rgb32 &bitmap,const recta
 	{
 		if(!(m_video.towns_video_reg[0] & 0x10))
 			return;
-		if(!(m_video.towns_crtc_reg[28] & 0x10))
+		if(!sphscroll)
 			off += m_video.towns_crtc_reg[21] << 2;  // initial offset
 		else
 		{
@@ -1190,7 +1230,7 @@ void towns_state::towns_crtc_draw_scan_layer_16(bitmap_rgb32 &bitmap,const recta
 	}
 	else
 	{
-		if(!(m_video.towns_crtc_reg[28] & 0x20))
+		if(!sphscroll)
 			off += m_video.towns_crtc_reg[17] << 2;  // initial offset
 		else
 		{
@@ -1222,7 +1262,7 @@ void towns_state::towns_crtc_draw_scan_layer_16(bitmap_rgb32 &bitmap,const recta
 				bitmap.pix32(scanline, x+pixel) = pal->pen(colour);
 		}
 		off++;
-		if ((off - (page * 0x20000)) % linesize == 0)
+		if ((off - (page * 0x20000)) % linesize == 0 && sphscroll)
 			off -= linesize;
 	}
 }

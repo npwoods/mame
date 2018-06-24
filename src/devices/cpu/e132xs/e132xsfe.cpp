@@ -14,9 +14,9 @@
 
 #define FE_FP ((m_cpu->m_core->global_regs[1] & 0xfe000000) >> 25)
 #define FE_FL (m_cpu->m_core->fl_lut[((m_cpu->m_core->global_regs[1] >> 21) & 0xf)])
-#define FE_DST_CODE	((op & 0xf0) >> 4)
-#define FE_SRC_CODE	(op & 0x0f)
-#define SR_CODE		(1 << 1)
+#define FE_DST_CODE ((op & 0xf0) >> 4)
+#define FE_SRC_CODE (op & 0x0f)
+#define SR_CODE     (1 << 1)
 
 /***************************************************************************
     INSTRUCTION PARSERS
@@ -46,17 +46,17 @@ inline uint32_t e132xs_frontend::imm_length(opcode_desc &desc, uint16_t op)
 
 inline uint16_t e132xs_frontend::read_word(opcode_desc &desc)
 {
-	return m_cpu->m_direct->read_word(desc.physpc, m_cpu->m_core->opcodexor);
+	return m_cpu->m_pr16(desc.physpc);
 }
 
 inline uint16_t e132xs_frontend::read_imm1(opcode_desc &desc)
 {
-	return m_cpu->m_direct->read_word(desc.physpc + 2, m_cpu->m_core->opcodexor);
+	return m_cpu->m_pr16(desc.physpc + 2);
 }
 
 inline uint16_t e132xs_frontend::read_imm2(opcode_desc &desc)
 {
-	return m_cpu->m_direct->read_word(desc.physpc + 4, m_cpu->m_core->opcodexor);
+	return m_cpu->m_pr16(desc.physpc + 4);
 }
 
 inline uint32_t e132xs_frontend::read_ldstxx_imm(opcode_desc &desc)

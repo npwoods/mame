@@ -49,7 +49,8 @@ ticket_dispenser_device::ticket_dispenser_device(const machine_config &mconfig, 
 		m_ticketnotdispensed(0),
 		m_status(0),
 		m_power(0),
-		m_timer(nullptr)
+		m_timer(nullptr),
+		m_output(*this, "led2") // TODO: probably shouldn't be hardcoded
 {
 }
 
@@ -61,36 +62,6 @@ ticket_dispenser_device::ticket_dispenser_device(const machine_config &mconfig, 
 ticket_dispenser_device::~ticket_dispenser_device()
 {
 }
-
-
-//**************************************************************************
-//  CONFIGURATION HELPERS
-//**************************************************************************
-
-//-------------------------------------------------
-//  static_set_period - configure the clock period
-//  for dispensing
-//-------------------------------------------------
-
-void ticket_dispenser_device::static_set_period(device_t &device, const attotime &period)
-{
-	downcast<ticket_dispenser_device &>(device).m_period = period;
-}
-
-
-//-------------------------------------------------
-//  static_set_senses - configure the senses of
-//  the motor and status bits
-//-------------------------------------------------
-
-void ticket_dispenser_device::static_set_senses(device_t &device, uint8_t motor_sense, uint8_t status_sense, bool hopper_type)
-{
-	ticket_dispenser_device &ticket = downcast<ticket_dispenser_device &>(device);
-	ticket.m_motor_sense = motor_sense;
-	ticket.m_status_sense = status_sense;
-	ticket.m_hopper_type = hopper_type;
-}
-
 
 
 //**************************************************************************
@@ -132,7 +103,7 @@ WRITE_LINE_MEMBER( ticket_dispenser_device::motor_w )
 			{
 				LOG(("%s: Ticket Power Off\n", machine().describe_context()));
 				m_timer->adjust(attotime::never);
-				machine().output().set_led_value(2, 0);
+				m_output = 0;
 			}
 			m_power = false;
 		}
@@ -155,6 +126,8 @@ void ticket_dispenser_device::device_start()
 	m_ticketnotdispensed = !m_ticketdispensed;
 
 	m_timer = timer_alloc();
+
+	m_output.resolve();
 
 	save_item(NAME(m_status));
 	save_item(NAME(m_power));
@@ -190,11 +163,11 @@ void ticket_dispenser_device::device_timer(emu_timer &timer, device_timer_id id,
 		m_status = !m_status;
 		LOG(("%s: Ticket Power Off\n", machine().describe_context()));
 		m_timer->adjust(attotime::never);
-		machine().output().set_led_value(2, 0);
+		m_output = 0;
 	}
 
-	// update LED status (fixme: should map to an output)
-	machine().output().set_led_value(2, (m_status == m_ticketdispensed));
+	// update output status
+	m_output = m_status == m_ticketdispensed;
 
 	// if we just dispensed, increment global count
 	if (m_status == m_ticketdispensed)

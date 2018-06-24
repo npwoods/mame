@@ -25,6 +25,10 @@ public:
 
 	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
+	void vp60(machine_config &config);
+	void io_map(address_map &map);
+	void kbd_map(address_map &map);
+	void mem_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 	required_region_ptr<u8> m_p_chargen;
@@ -35,32 +39,35 @@ u32 vp60_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const
 	return 0;
 }
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 8, vp60_state )
-	AM_RANGE(0x0000, 0x2fff) AM_ROM AM_REGION("maincpu", 0)
-ADDRESS_MAP_END
+void vp60_state::mem_map(address_map &map)
+{
+	map(0x0000, 0x2fff).rom().region("maincpu", 0);
+}
 
-static ADDRESS_MAP_START( io_map, AS_PROGRAM, 8, vp60_state )
-	AM_RANGE(0x8000, 0x87ff) AM_RAM
-ADDRESS_MAP_END
+void vp60_state::io_map(address_map &map)
+{
+	map(0x8000, 0x87ff).ram();
+}
 
-static ADDRESS_MAP_START( kbd_map, AS_PROGRAM, 8, vp60_state )
-	AM_RANGE(0x000, 0x3ff) AM_ROM AM_REGION("keyboard", 0)
-ADDRESS_MAP_END
+void vp60_state::kbd_map(address_map &map)
+{
+	map(0x000, 0x3ff).rom().region("keyboard", 0);
+}
 
 static INPUT_PORTS_START( vp60 )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( vp60 )
-	MCFG_CPU_ADD("maincpu", I8051, XTAL_10_920MHz)
-	MCFG_CPU_PROGRAM_MAP(mem_map)
-	MCFG_CPU_IO_MAP(io_map)
+MACHINE_CONFIG_START(vp60_state::vp60)
+	MCFG_DEVICE_ADD("maincpu", I8051, XTAL(10'920'000))
+	MCFG_DEVICE_PROGRAM_MAP(mem_map)
+	MCFG_DEVICE_IO_MAP(io_map)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_RAW_PARAMS(XTAL_25_92MHz, 1350, 0, 1056, 320, 0, 300) // dimensions guessed
+	MCFG_SCREEN_RAW_PARAMS(XTAL(25'920'000), 1350, 0, 1056, 320, 0, 300) // dimensions guessed
 	MCFG_SCREEN_UPDATE_DRIVER(vp60_state, screen_update)
 
-	MCFG_CPU_ADD("kbdcpu", I8035, XTAL_3_579545MHz) // 48-300-010 XTAL
-	MCFG_CPU_PROGRAM_MAP(kbd_map)
+	MCFG_DEVICE_ADD("kbdcpu", I8035, XTAL(3'579'545)) // 48-300-010 XTAL
+	MCFG_DEVICE_PROGRAM_MAP(kbd_map)
 MACHINE_CONFIG_END
 
 
@@ -86,4 +93,4 @@ ROM_START( vp60 )
 	ROM_LOAD( "195.kbd",    0x0000, 0x0400, CRC(14885da3) SHA1(3b06f658af1a62b28e62d8b3a557b74169917a12) )
 ROM_END
 
-COMP( 1982, vp60, 0, 0, vp60, vp60, vp60_state, 0, "ADDS", "Viewpoint 60", MACHINE_IS_SKELETON )
+COMP( 1982, vp60, 0, 0, vp60, vp60, vp60_state, empty_init, "ADDS", "Viewpoint 60", MACHINE_IS_SKELETON )

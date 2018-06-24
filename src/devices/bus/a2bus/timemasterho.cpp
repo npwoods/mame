@@ -93,12 +93,12 @@ ioport_constructor a2bus_timemasterho_device::device_input_ports() const
 //  device_add_mconfig - add device configuration
 //-------------------------------------------------
 
-MACHINE_CONFIG_MEMBER( a2bus_timemasterho_device::device_add_mconfig )
+MACHINE_CONFIG_START(a2bus_timemasterho_device::device_add_mconfig)
 	MCFG_DEVICE_ADD(TIMEMASTER_PIA_TAG, PIA6821, 1021800)
-	MCFG_PIA_WRITEPA_HANDLER(WRITE8(a2bus_timemasterho_device, pia_out_a))
-	MCFG_PIA_WRITEPB_HANDLER(WRITE8(a2bus_timemasterho_device, pia_out_b))
-	MCFG_PIA_IRQA_HANDLER(WRITELINE(a2bus_timemasterho_device, pia_irqa_w))
-	MCFG_PIA_IRQB_HANDLER(WRITELINE(a2bus_timemasterho_device, pia_irqb_w))
+	MCFG_PIA_WRITEPA_HANDLER(WRITE8(*this, a2bus_timemasterho_device, pia_out_a))
+	MCFG_PIA_WRITEPB_HANDLER(WRITE8(*this, a2bus_timemasterho_device, pia_out_b))
+	MCFG_PIA_IRQA_HANDLER(WRITELINE(*this, a2bus_timemasterho_device, pia_irqa_w))
+	MCFG_PIA_IRQB_HANDLER(WRITELINE(*this, a2bus_timemasterho_device, pia_irqb_w))
 
 	MCFG_DEVICE_ADD(TIMEMASTER_M5832_TAG, MSM5832, 32768)
 MACHINE_CONFIG_END
@@ -138,9 +138,6 @@ a2bus_timemasterho_device::a2bus_timemasterho_device(const machine_config &mconf
 
 void a2bus_timemasterho_device::device_start()
 {
-	// set_a2bus_device makes m_slot valid
-	set_a2bus_device();
-
 	m_rom = device().machine().root_device().memregion(this->subtag(TIMEMASTER_ROM_REGION).c_str())->base();
 }
 
@@ -227,7 +224,7 @@ WRITE8_MEMBER(a2bus_timemasterho_device::pia_out_b)
 	// if it's a read, poke it into the PIA
 	if ((data>>5) & 1)
 	{
-		m_pia->porta_w(m_msm5832->data_r(space, 0));
+		m_pia->write_porta(m_msm5832->data_r(space, 0));
 	}
 }
 

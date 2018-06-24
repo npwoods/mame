@@ -5,10 +5,18 @@
 
     74LS157/74HCT157 Quad 2 to 1-Line Data Selectors/Multiplexers (TTL)
 
-    Often used to help feed 8-bit ROM data into a MSM5205, and for many
-    other purposes.
+    Often used to help feed 8-bit ROM data into a MSM5205 (which may
+    require additional pullups for CMOS compatibility), and for many other
+    purposes.
 
     74LS158 has inverted outputs; 74LS157 is non-inverting.
+
+    74LS257 and 74LS258 have three-state outputs with an active-low enable,
+    making these devices popular for bus-compatible applications which the
+    emulation here is not particularly suitable for. When pin 15 is tied to
+    GND, however, these devices become pin-compatible replacements for
+    74LS157 and 74LS158; this substitution is somewhat common on arcade
+    bootlegs.
 
 ***************************************************************************/
 
@@ -84,12 +92,7 @@ void ls157_device::device_start()
 //  a_w -- write nibble to A1-A4
 //-------------------------------------------------
 
-WRITE8_MEMBER(ls157_device::a_w)
-{
-	a_w(data);
-}
-
-void ls157_device::a_w(u8 data)
+void ls157_device::write_a(u8 data)
 {
 	m_a = data & m_data_mask;
 	update_output();
@@ -100,12 +103,7 @@ void ls157_device::a_w(u8 data)
 //  b_w -- write nibble to B1-B4
 //-------------------------------------------------
 
-WRITE8_MEMBER(ls157_device::b_w)
-{
-	b_w(data);
-}
-
-void ls157_device::b_w(u8 data)
+void ls157_device::write_b(u8 data)
 {
 	m_b = data & m_data_mask;
 	update_output();
@@ -117,12 +115,7 @@ void ls157_device::b_w(u8 data)
 //  low nibble to B1-B4
 //-------------------------------------------------
 
-WRITE8_MEMBER(ls157_device::ab_w)
-{
-	ab_w(data);
-}
-
-void ls157_device::ab_w(u8 data)
+void ls157_device::write_ab(u8 data)
 {
 	assert(m_data_mask == 0x0f);
 	m_a = data >> 4;
@@ -136,12 +129,7 @@ void ls157_device::ab_w(u8 data)
 //  low nibble to A1-A4
 //-------------------------------------------------
 
-WRITE8_MEMBER(ls157_device::ba_w)
-{
-	ba_w(data);
-}
-
-void ls157_device::ba_w(u8 data)
+void ls157_device::write_ba(u8 data)
 {
 	assert(m_data_mask == 0x0f);
 	m_b = data >> 4;
@@ -155,12 +143,7 @@ void ls157_device::ba_w(u8 data)
 //  A1-A4 and write odd-numbered bits to B1-B4
 //-------------------------------------------------
 
-WRITE8_MEMBER(ls157_device::interleave_w)
-{
-	interleave_w(data);
-}
-
-void ls157_device::interleave_w(u8 data)
+void ls157_device::write_interleave(u8 data)
 {
 	assert(m_data_mask == 0x0f);
 	m_b = bitswap<4>(data, 7, 5, 3, 1);

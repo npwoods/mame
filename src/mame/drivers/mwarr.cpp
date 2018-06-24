@@ -43,12 +43,13 @@ Notes:
 #include "emu.h"
 #include "cpu/m68000/m68000.h"
 #include "sound/okim6295.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
 
-#define MASTER_CLOCK     XTAL_12MHz
-#define SOUND_CLOCK      XTAL_45MHz
+#define MASTER_CLOCK     XTAL(12'000'000)
+#define SOUND_CLOCK      XTAL(45'000'000)
 
 
 class mwarr_state : public driver_device
@@ -114,6 +115,9 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
+	void mwarr(machine_config &config);
+	void mwarr_map(address_map &map);
+	void oki2_map(address_map &map);
 };
 
 
@@ -209,35 +213,37 @@ WRITE16_MEMBER(mwarr_state::mwarr_brightness_w)
  *
  *************************************/
 
-static ADDRESS_MAP_START( mwarr_map, AS_PROGRAM, 16, mwarr_state )
-	AM_RANGE(0x000000, 0x0fffff) AM_ROM
-	AM_RANGE(0x100000, 0x1007ff) AM_RAM_WRITE(bg_videoram_w) AM_SHARE("bg_videoram")
-	AM_RANGE(0x100800, 0x100fff) AM_RAM_WRITE(mlow_videoram_w) AM_SHARE("mlow_videoram")
-	AM_RANGE(0x101000, 0x1017ff) AM_RAM_WRITE(mhigh_videoram_w) AM_SHARE("mhigh_videoram")
-	AM_RANGE(0x101800, 0x1027ff) AM_RAM_WRITE(tx_videoram_w) AM_SHARE("tx_videoram")
-	AM_RANGE(0x103000, 0x1033ff) AM_RAM AM_SHARE("bg_scrollram")
-	AM_RANGE(0x103400, 0x1037ff) AM_RAM AM_SHARE("mlow_scrollram")
-	AM_RANGE(0x103800, 0x103bff) AM_RAM AM_SHARE("mhigh_scrollram")
-	AM_RANGE(0x103c00, 0x103fff) AM_RAM AM_SHARE("vidattrram")
-	AM_RANGE(0x104000, 0x104fff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
-	AM_RANGE(0x108000, 0x108fff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0x110000, 0x110001) AM_READ_PORT("P1_P2")
-	AM_RANGE(0x110002, 0x110003) AM_READ_PORT("SYSTEM")
-	AM_RANGE(0x110004, 0x110005) AM_READ_PORT("DSW")
-	AM_RANGE(0x110010, 0x110011) AM_WRITE(oki1_bank_w)
-	AM_RANGE(0x110014, 0x110015) AM_WRITE(mwarr_brightness_w)
-	AM_RANGE(0x110016, 0x110017) AM_WRITE(sprites_commands_w)
-	AM_RANGE(0x110000, 0x11ffff) AM_RAM AM_SHARE("mwarr_ram")
-	AM_RANGE(0x180000, 0x180001) AM_DEVREADWRITE8("oki1", okim6295_device, read, write, 0x00ff)
-	AM_RANGE(0x190000, 0x190001) AM_DEVREADWRITE8("oki2", okim6295_device, read, write, 0x00ff)
-ADDRESS_MAP_END
+void mwarr_state::mwarr_map(address_map &map)
+{
+	map(0x000000, 0x0fffff).rom();
+	map(0x100000, 0x1007ff).ram().w(FUNC(mwarr_state::bg_videoram_w)).share("bg_videoram");
+	map(0x100800, 0x100fff).ram().w(FUNC(mwarr_state::mlow_videoram_w)).share("mlow_videoram");
+	map(0x101000, 0x1017ff).ram().w(FUNC(mwarr_state::mhigh_videoram_w)).share("mhigh_videoram");
+	map(0x101800, 0x1027ff).ram().w(FUNC(mwarr_state::tx_videoram_w)).share("tx_videoram");
+	map(0x103000, 0x1033ff).ram().share("bg_scrollram");
+	map(0x103400, 0x1037ff).ram().share("mlow_scrollram");
+	map(0x103800, 0x103bff).ram().share("mhigh_scrollram");
+	map(0x103c00, 0x103fff).ram().share("vidattrram");
+	map(0x104000, 0x104fff).ram().w(m_palette, FUNC(palette_device::write16)).share("palette");
+	map(0x108000, 0x108fff).ram().share("spriteram");
+	map(0x110000, 0x11ffff).ram().share("mwarr_ram");
+	map(0x110000, 0x110001).portr("P1_P2");
+	map(0x110002, 0x110003).portr("SYSTEM");
+	map(0x110004, 0x110005).portr("DSW");
+	map(0x110010, 0x110011).w(FUNC(mwarr_state::oki1_bank_w));
+	map(0x110014, 0x110015).w(FUNC(mwarr_state::mwarr_brightness_w));
+	map(0x110016, 0x110017).w(FUNC(mwarr_state::sprites_commands_w));
+	map(0x180001, 0x180001).rw("oki1", FUNC(okim6295_device::read), FUNC(okim6295_device::write));
+	map(0x190001, 0x190001).rw("oki2", FUNC(okim6295_device::read), FUNC(okim6295_device::write));
+}
 
-static ADDRESS_MAP_START( oki2_map, 0, 8, mwarr_state)
+void mwarr_state::oki2_map(address_map &map)
+{
 	/* $00000-$20000 stays the same in all sound banks, */
 	/* the second half of the bank is what gets switched */
-	AM_RANGE(0x00000, 0x1ffff) AM_ROM AM_REGION("oki2", 0)
-	AM_RANGE(0x20000, 0x3ffff) AM_ROMBANK("okibank")
-ADDRESS_MAP_END
+	map(0x00000, 0x1ffff).rom().region("oki2", 0);
+	map(0x20000, 0x3ffff).bankr("okibank");
+}
 
 
 /*************************************
@@ -269,7 +275,7 @@ static INPUT_PORTS_START( mwarr )
 	PORT_BIT( 0x0001, IP_ACTIVE_LOW, IPT_COIN1 )
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen")
-	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_SPECIAL ) // otherwise it doesn't boot
+	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_CUSTOM ) // otherwise it doesn't boot
 	PORT_BIT( 0xfff0, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START("DSW")
@@ -360,7 +366,7 @@ static const gfx_layout mwarr_6bpp_sprites =
 	32*8
 };
 
-static GFXDECODE_START( mwarr )
+static GFXDECODE_START( gfx_mwarr )
 	GFXDECODE_ENTRY( "gfx1", 0, mwarr_6bpp_sprites,  1024, 16 )
 	GFXDECODE_ENTRY( "gfx2", 0, mwarr_tile8_layout,  384,  8 )
 	GFXDECODE_ENTRY( "gfx3", 0, mwarr_tile16_layout,  256,  8 )
@@ -562,12 +568,12 @@ void mwarr_state::machine_reset()
 	m_which = 0;
 }
 
-static MACHINE_CONFIG_START( mwarr )
+MACHINE_CONFIG_START(mwarr_state::mwarr)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68000, MASTER_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(mwarr_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", mwarr_state,  irq4_line_hold)
+	MCFG_DEVICE_ADD("maincpu", M68000, MASTER_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(mwarr_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", mwarr_state,  irq4_line_hold)
 
 
 	/* video hardware */
@@ -579,17 +585,17 @@ static MACHINE_CONFIG_START( mwarr )
 	MCFG_SCREEN_UPDATE_DRIVER(mwarr_state, screen_update_mwarr)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", mwarr)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_mwarr)
 	MCFG_PALETTE_ADD("palette", 0x800)
 	MCFG_PALETTE_FORMAT(xBBBBBGGGGGRRRRR)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 
-	MCFG_OKIM6295_ADD("oki1", SOUND_CLOCK/48 , PIN7_HIGH)
+	MCFG_DEVICE_ADD("oki1", OKIM6295, SOUND_CLOCK/48 , okim6295_device::PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
-	MCFG_OKIM6295_ADD("oki2", SOUND_CLOCK/48 , PIN7_HIGH)
+	MCFG_DEVICE_ADD("oki2", OKIM6295, SOUND_CLOCK/48 , okim6295_device::PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 	MCFG_DEVICE_ADDRESS_MAP(0, oki2_map)
 MACHINE_CONFIG_END
@@ -655,4 +661,4 @@ ROM_END
  *
  *************************************/
 
-GAME( 199?, mwarr, 0, mwarr, mwarr, mwarr_state, 0, ROT0,  "Elettronica Video-Games S.R.L.", "Mighty Warriors", MACHINE_SUPPORTS_SAVE )
+GAME( 199?, mwarr, 0, mwarr, mwarr, mwarr_state, empty_init, ROT0,  "Elettronica Video-Games S.R.L.", "Mighty Warriors", MACHINE_SUPPORTS_SAVE )

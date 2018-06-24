@@ -45,6 +45,9 @@ public:
 	DECLARE_WRITE8_MEMBER(delta1_io1_w);
 	DECLARE_READ8_MEMBER(delta1_io0_r);
 	DECLARE_READ8_MEMBER(delta1_io1_r);
+	void delta1_io(address_map &map);
+	void delta1_map(address_map &map);
+	void delta1(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -116,17 +119,19 @@ READ8_MEMBER(novagf8_state::delta1_io1_r)
 
 // Delta-1
 
-static ADDRESS_MAP_START( delta1_map, AS_PROGRAM, 8, novagf8_state )
-	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
-	AM_RANGE(0x0000, 0x0fff) AM_MIRROR(0x1000) AM_ROM // _A13
-	AM_RANGE(0x2000, 0x20ff) AM_MIRROR(0x1f00) AM_RAM // A13
-ADDRESS_MAP_END
+void novagf8_state::delta1_map(address_map &map)
+{
+	map.global_mask(0x3fff);
+	map(0x0000, 0x0fff).mirror(0x1000).rom(); // _A13
+	map(0x2000, 0x20ff).mirror(0x1f00).ram(); // A13
+}
 
-static ADDRESS_MAP_START( delta1_io, AS_IO, 8, novagf8_state )
-	AM_RANGE(0x0, 0x0) AM_READWRITE(delta1_io0_r, delta1_io0_w )
-	AM_RANGE(0x1, 0x1) AM_READWRITE(delta1_io1_r, delta1_io1_w )
-	AM_RANGE(0xc, 0xf) AM_DEVREADWRITE("f3853", f3853_device, read, write )
-ADDRESS_MAP_END
+void novagf8_state::delta1_io(address_map &map)
+{
+	map(0x0, 0x0).rw(FUNC(novagf8_state::delta1_io0_r), FUNC(novagf8_state::delta1_io0_w));
+	map(0x1, 0x1).rw(FUNC(novagf8_state::delta1_io1_r), FUNC(novagf8_state::delta1_io1_w));
+	map(0xc, 0xf).rw("f3853", FUNC(f3853_device::read), FUNC(f3853_device::write));
+}
 
 
 
@@ -185,12 +190,12 @@ F3853_INTERRUPT_REQ_CB(novagf8_state::f3853_interrupt)
 	m_maincpu->set_input_line(F8_INPUT_LINE_INT_REQ, level ? ASSERT_LINE : CLEAR_LINE);
 }
 
-static MACHINE_CONFIG_START( delta1 )
+MACHINE_CONFIG_START(novagf8_state::delta1)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", F8, 2000000) // LC circuit, measured 2MHz
-	MCFG_CPU_PROGRAM_MAP(delta1_map)
-	MCFG_CPU_IO_MAP(delta1_io)
+	MCFG_DEVICE_ADD("maincpu", F8, 2000000) // LC circuit, measured 2MHz
+	MCFG_DEVICE_PROGRAM_MAP(delta1_map)
+	MCFG_DEVICE_IO_MAP(delta1_io)
 
 	MCFG_DEVICE_ADD("f3853", F3853, 2000000)
 	MCFG_F3853_EXT_INPUT_CB(novagf8_state, f3853_interrupt)
@@ -216,5 +221,5 @@ ROM_END
     Drivers
 ******************************************************************************/
 
-//    YEAR  NAME      PARENT  CMP MACHINE  INPUT    STATE          INIT  COMPANY, FULLNAME, FLAGS
-CONS( 1979, ccdelta1, 0,       0, delta1,  delta1,  novagf8_state, 0,    "Novag", "Chess Champion: Delta-1", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW | MACHINE_NOT_WORKING )
+//    YEAR  NAME      PARENT  COMPAT  MACHINE  INPUT   CLASS          INIT        COMPANY  FULLNAME                   FLAGS
+CONS( 1979, ccdelta1, 0,      0,      delta1,  delta1, novagf8_state, empty_init, "Novag", "Chess Champion: Delta-1", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW | MACHINE_NOT_WORKING )

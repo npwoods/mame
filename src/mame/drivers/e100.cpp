@@ -7,12 +7,12 @@
  * See didact.cpp
  *
  * The Esselte 100 was an original design with a CRT and a full Keyboard that also had a BASIC interpreter
- * extended with commands suitable for educational experiments using the exapansion bus and its built in 
+ * extended with commands suitable for educational experiments using the exapansion bus and its built in
  * io control capabilities.
  *
  * The Esselte 1000 was an educational package based on Apple II plus software and litterature but the relation
- * to Didact is at this point unknown so it is probably a pure Esselte software production. If this branded 
- * distribution is recovered it will be added as a clone of the Apple II driver or just as softlist item. 
+ * to Didact is at this point unknown so it is probably a pure Esselte software production. If this branded
+ * distribution is recovered it will be added as a clone of the Apple II driver or just as softlist item.
  *
  * Misc links about the boards supported by this driver.
  *-----------------------------------------------------
@@ -37,6 +37,7 @@
 // Features
 #include "imagedev/cassette.h"
 #include "bus/rs232/rs232.h"
+#include "emupal.h"
 #include "screen.h"
 
 //**************************************************************************
@@ -131,7 +132,7 @@ class e100_state : public driver_device // public didact_state
 {
 public:
 	e100_state(const machine_config &mconfig, device_type type, const char * tag)
-	//		: didact_state(mconfig, type, tag)
+	//      : didact_state(mconfig, type, tag)
 		: driver_device(mconfig, type, tag)
 		,m_maincpu(*this, "maincpu")
 		,m_kbd_74145(*this, "kbd_74145")
@@ -178,6 +179,8 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( pia1_ca2_w);
 	DECLARE_WRITE_LINE_MEMBER( pia1_cb2_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(rtc_w);
+	void e100(machine_config &config);
+	void e100_map(address_map &map);
 protected:
 	required_ioport m_io_line0;
 	required_ioport m_io_line1;
@@ -421,13 +424,14 @@ WRITE_LINE_MEMBER(e100_state::pia1_cb2_w)
 }
 
 // This map is derived from info in "TEMAL 100 - teknisk manual Esselte 100"
-static ADDRESS_MAP_START( e100_map, AS_PROGRAM, 8, e100_state )
-	AM_RANGE(0x0000, 0x1fff) AM_RAM
-	AM_RANGE(0x8000, 0x87ff) AM_ROM AM_REGION("roms", 0)
-	AM_RANGE(0xc000, 0xc3ff) AM_RAM AM_SHARE("videoram")
-	AM_RANGE(0xc800, 0xc81f) AM_READWRITE(pia_r, pia_w) AM_MIRROR(0x07e0)
-	AM_RANGE(0xd000, 0xffff) AM_ROM AM_REGION("roms", 0x1000)
-ADDRESS_MAP_END
+void e100_state::e100_map(address_map &map)
+{
+	map(0x0000, 0x1fff).ram();
+	map(0x8000, 0x87ff).rom().region("roms", 0);
+	map(0xc000, 0xc3ff).ram().share("videoram");
+	map(0xc800, 0xc81f).rw(FUNC(e100_state::pia_r), FUNC(e100_state::pia_w)).mirror(0x07e0);
+	map(0xd000, 0xffff).rom().region("roms", 0x1000);
+}
 
 /* E100 Input ports
  * Four e100 keys are not mapped yet,
@@ -539,9 +543,9 @@ static INPUT_PORTS_START( e100 )
 	PORT_BIT(0x80, IP_ACTIVE_LOW,   IPT_KEYBOARD)                               PORT_CODE(KEYCODE_9_PAD)        PORT_CHAR(UCHAR_MAMEKEY(9_PAD))
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( e100 )
-	MCFG_CPU_ADD("maincpu", M6802, XTAL_4MHz)
-	MCFG_CPU_PROGRAM_MAP(e100_map)
+MACHINE_CONFIG_START(e100_state::e100)
+	MCFG_DEVICE_ADD("maincpu", M6802, XTAL(4'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(e100_map)
 
 	/* Devices */
 	MCFG_DEVICE_ADD("kbd_74145", TTL74145, 0)
@@ -562,21 +566,21 @@ static MACHINE_CONFIG_START( e100 )
 	/* 0xF896 0xC818 (PIA1 Control B) = 0x34 - CB2 is low and lock DDRB */
 	/* 0xF896 0xC818 (PIA2 Control B) = 0x34 - CB2 is low and lock DDRB */
 	MCFG_DEVICE_ADD(PIA1_TAG, PIA6821, 0)
-	MCFG_PIA_WRITEPA_HANDLER(WRITE8(e100_state, pia1_kbA_w))
-	MCFG_PIA_READPA_HANDLER(READ8(e100_state, pia1_kbA_r))
-	MCFG_PIA_WRITEPB_HANDLER(WRITE8(e100_state, pia1_kbB_w))
-	MCFG_PIA_READPB_HANDLER(READ8(e100_state, pia1_kbB_r))
-	MCFG_PIA_READCA1_HANDLER(READLINE(e100_state, pia1_ca1_r))
-	MCFG_PIA_READCB1_HANDLER(READLINE(e100_state, pia1_cb1_r))
-	MCFG_PIA_CA2_HANDLER(WRITELINE(e100_state, pia1_ca2_w))
-	MCFG_PIA_CB2_HANDLER(WRITELINE(e100_state, pia1_cb2_w))
+	MCFG_PIA_WRITEPA_HANDLER(WRITE8(*this, e100_state, pia1_kbA_w))
+	MCFG_PIA_READPA_HANDLER(READ8(*this, e100_state, pia1_kbA_r))
+	MCFG_PIA_WRITEPB_HANDLER(WRITE8(*this, e100_state, pia1_kbB_w))
+	MCFG_PIA_READPB_HANDLER(READ8(*this, e100_state, pia1_kbB_r))
+	MCFG_PIA_READCA1_HANDLER(READLINE(*this, e100_state, pia1_ca1_r))
+	MCFG_PIA_READCB1_HANDLER(READLINE(*this, e100_state, pia1_cb1_r))
+	MCFG_PIA_CA2_HANDLER(WRITELINE(*this, e100_state, pia1_ca2_w))
+	MCFG_PIA_CB2_HANDLER(WRITELINE(*this, e100_state, pia1_cb2_w))
 
 	/* The optional second PIA enables the expansion port on CA1 and a software RTC with 50Hz resolution */
 	MCFG_DEVICE_ADD(PIA2_TAG, PIA6821, 0)
 	MCFG_PIA_IRQA_HANDLER(INPUTLINE("maincpu", M6800_IRQ_LINE))
 
 	/* Serial port support */
-	MCFG_RS232_PORT_ADD("rs232", default_rs232_devices, nullptr)
+	MCFG_DEVICE_ADD("rs232", RS232_PORT, default_rs232_devices, nullptr)
 
 	/* Cassette support - E100 uses 300 baud Kansas City Standard with 1200/2400 Hz modulation */
 	/* NOTE on usage: mame e100 -window -cass <wav file> -ui_active
@@ -591,7 +595,7 @@ static MACHINE_CONFIG_START( e100 )
 
 	/* screen TODO: simplify the screen config, look at zx.cpp */
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_RAW_PARAMS(XTAL_4MHz/2, 265, 0, 265, 265, 0, 265)
+	MCFG_SCREEN_RAW_PARAMS(XTAL(4'000'000)/2, 265, 0, 265, 265, 0, 265)
 	MCFG_SCREEN_UPDATE_DRIVER(e100_state, screen_update)
 	MCFG_SCREEN_PALETTE("palette")
 	MCFG_PALETTE_ADD_MONOCHROME("palette")
@@ -607,22 +611,22 @@ ROM_START( e100 )
 
 	/* TODO: Get the original ROMs */
 	ROM_SYSTEM_BIOS(0, "rev1-basic", "Esselte 100 rev1 BASIC")
-	ROMX_LOAD( "e100r1U201.bin", 0x1000, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1U202.bin", 0x1800, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1U203.bin", 0x2000, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1U204.bin", 0x2800, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1U205.bin", 0x3000, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1U206.bin", 0x3800, 0x0800, NO_DUMP, ROM_BIOS(1) )
+	ROMX_LOAD( "e100r1u201.bin", 0x1000, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u202.bin", 0x1800, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u203.bin", 0x2000, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u204.bin", 0x2800, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u205.bin", 0x3000, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u206.bin", 0x3800, 0x0800, NO_DUMP, ROM_BIOS(0) )
 
 	/* This is a prototype ROM, commercial relase not verified. The prototype also have different keyboard and supports
 	   more ram so might need to be split out as a clone later */
 	ROM_SYSTEM_BIOS(1, "rev2-basic", "Esselte 100 rev2 BASIC")
-	ROMX_LOAD( "e100r2U201.bin", 0x0000, 0x2000, CRC(53513b67) SHA1(a91c5c32aead82dcc87db5d818ff286a7fc6a5c8), ROM_BIOS(2) )
-	ROMX_LOAD( "e100r2U202.bin", 0x2000, 0x2000, CRC(eab3adf2) SHA1(ff3f5f5c8ea8732702a39cff76d0706ab6b751ee), ROM_BIOS(2) )
+	ROMX_LOAD( "e100r2u201.bin", 0x0000, 0x2000, CRC(53513b67) SHA1(a91c5c32aead82dcc87db5d818ff286a7fc6a5c8), ROM_BIOS(1) )
+	ROMX_LOAD( "e100r2u202.bin", 0x2000, 0x2000, CRC(eab3adf2) SHA1(ff3f5f5c8ea8732702a39cff76d0706ab6b751ee), ROM_BIOS(1) )
 
 	ROM_REGION(0x0800, "chargen",0)
-	ROM_LOAD( "e100U506.bin", 0x0000, 0x0800, CRC(fff9f288) SHA1(2dfb3eb551fe1ef67da328f61ef51ae8d1abdfb8) )
+	ROM_LOAD( "e100u506.bin", 0x0000, 0x0800, CRC(fff9f288) SHA1(2dfb3eb551fe1ef67da328f61ef51ae8d1abdfb8) )
 ROM_END
 
-//    YEAR  NAME        PARENT      COMPAT  MACHINE     INPUT   CLASS         INIT        COMPANY             FULLNAME            FLAGS
-COMP( 1982, e100,       0,          0,      e100,       e100,   e100_state,   0,          "Didact AB",        "Esselte 100",      MACHINE_NO_SOUND_HW | MACHINE_SUPPORTS_SAVE)
+//    YEAR  NAME  PARENT  COMPAT  MACHINE  INPUT  CLASS       INIT        COMPANY      FULLNAME       FLAGS
+COMP( 1982, e100, 0,      0,      e100,    e100,  e100_state, empty_init, "Didact AB", "Esselte 100", MACHINE_NO_SOUND_HW | MACHINE_SUPPORTS_SAVE)

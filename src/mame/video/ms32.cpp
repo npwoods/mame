@@ -420,8 +420,8 @@ uint32_t ms32_state::screen_update_ms32(screen_device &screen, bitmap_rgb32 &bit
 	else
 		rot_pri++;
 
-//	popmessage("%02x %02x %02x",m_priram[0x2b00 / 2],m_priram[0x2e00 / 2],m_priram[0x3a00 / 2]);
-	
+//  popmessage("%02x %02x %02x",m_priram[0x2b00 / 2],m_priram[0x2e00 / 2],m_priram[0x3a00 / 2]);
+
 	// tile-tile mixing
 	for(int prin=0;prin<3;prin++)
 	{
@@ -442,7 +442,7 @@ uint32_t ms32_state::screen_update_ms32(screen_device &screen, bitmap_rgb32 &bit
 			m_tx_tilemap->draw(screen, m_temp_bitmap_tilemaps, cliprect, 0, 1 << 2);
 	}
 
-	// tile-sprite mixing 
+	// tile-sprite mixing
 	/* this mixing isn't 100% accurate, it should be using ALL the data in
 	   the priority ram, probably for per-pixel / pen mixing, or more levels
 	   than are supported here..  I don't know, it will need hw tests I think */
@@ -554,6 +554,7 @@ uint32_t ms32_state::screen_update_ms32(screen_device &screen, bitmap_rgb32 &bit
 				else if (primask == 0xc0)
 				{
 					dstptr_bitmap[xx] = paldata[machine().rand()&0xfff];
+					popmessage("unhandled priority type %02x, contact MAMEdev",primask);
 				}
 				else if (primask == 0xf0)
 				{
@@ -684,11 +685,17 @@ uint32_t ms32_state::screen_update_ms32(screen_device &screen, bitmap_rgb32 &bit
 						dstptr_bitmap[xx] = paldata[src_tile]; // assumed
 					}
 				}
-
+				else if(primask == 0xf8) // gratia ending
+				{
+					if (spridat & 0xff && src_tilepri == 0x02)
+						dstptr_bitmap[xx] = paldata[spridat];
+					else
+						dstptr_bitmap[xx] = paldata[src_tile];
+				}
 				else
 				{
 					dstptr_bitmap[xx] = 0;
-					logerror("unhandled priority type %02x\n",primask);
+					popmessage("unhandled priority type %02x, contact MAMEdev",primask);
 				}
 
 

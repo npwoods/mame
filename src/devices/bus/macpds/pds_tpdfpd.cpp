@@ -58,7 +58,7 @@ DEFINE_DEVICE_TYPE(PDS_SEDISPLAY, macpds_sedisplay_device, "pds_sefp", "Radius S
 //  device_add_mconfig - add device configuration
 //-------------------------------------------------
 
-MACHINE_CONFIG_MEMBER( macpds_sedisplay_device::device_add_mconfig )
+MACHINE_CONFIG_START(macpds_sedisplay_device::device_add_mconfig)
 	MCFG_SCREEN_ADD( SEDISPLAY_SCREEN_NAME, RASTER)
 	MCFG_SCREEN_UPDATE_DEVICE(DEVICE_SELF, macpds_sedisplay_device, screen_update)
 	MCFG_SCREEN_SIZE(1280, 960)
@@ -92,10 +92,9 @@ macpds_sedisplay_device::macpds_sedisplay_device(const machine_config &mconfig, 
 	device_t(mconfig, type, tag, owner, clock),
 	device_video_interface(mconfig, *this),
 	device_macpds_card_interface(mconfig, *this),
-	m_vram(nullptr), m_vbl_disable(0), m_count(0), m_clutoffs(0), m_timer(nullptr),
-	m_assembled_tag(util::string_format("%s:%s", tag, SEDISPLAY_SCREEN_NAME))
+	m_vram(nullptr), m_vbl_disable(0), m_count(0), m_clutoffs(0), m_timer(nullptr)
 {
-	static_set_screen(*this, m_assembled_tag.c_str());
+	set_screen(*this, SEDISPLAY_SCREEN_NAME);
 }
 
 //-------------------------------------------------

@@ -161,7 +161,7 @@ WRITE16_MEMBER(pgm_asic3_state::pgm_asic3_w)
 
 /* Oriental Legend INIT */
 
-DRIVER_INIT_MEMBER(pgm_asic3_state,orlegend)
+void pgm_asic3_state::init_orlegend()
 {
 	pgm_basic_init();
 
@@ -220,6 +220,6 @@ INPUT_PORTS_START( orlegendk )
 INPUT_PORTS_END
 
 
-MACHINE_CONFIG_START( pgm_asic3 )
-	MCFG_FRAGMENT_ADD(pgmbase)
+MACHINE_CONFIG_START(pgm_asic3_state::pgm_asic3)
+	pgmbase(config);
 MACHINE_CONFIG_END

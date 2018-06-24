@@ -234,9 +234,13 @@ void mame_menubar::build_file_menu()
 	// save screen snapshot
 	file_menu.append(_("Save Screen Snapshot(s)"), &video_manager::save_active_screen_snapshots, machine().video(), IPT_UI_SNAPSHOT);
 
-	// record movie
-	menu_item &record_movie_menu = file_menu.append(_("Record Movie"), &video_manager::toggle_record_movie, machine().video(), IPT_UI_RECORD_MOVIE);
-	record_movie_menu.set_checked(machine().video().is_recording());
+	// record AVI
+	menu_item &record_avi_menu = file_menu.append(_("Record AVI"), [this] { machine().video().toggle_record_movie(video_manager::movie_format::MF_AVI); }, IPT_UI_RECORD_AVI);
+	record_avi_menu.set_checked(machine().video().is_recording());
+
+	// record MNG
+	menu_item &record_mng_menu = file_menu.append(_("Record MNG"), [this] { machine().video().toggle_record_movie(video_manager::movie_format::MF_MNG); }, IPT_UI_RECORD_MNG);
+	record_mng_menu.set_checked(machine().video().is_recording());
 
 	// save state
 	file_menu.append(_("Save State..."), &mame_ui_manager::start_save_state, ui(), IPT_UI_SAVE_STATE);
@@ -313,7 +317,7 @@ void mame_menubar::build_device_slot_menu(menu_item &menu, const device_slot_int
 {
 	// get information about this slot's value
 	const std::string &current_option_value = machine().options().slot_option(slot.slot_name()).value();
-	device_slot_option *current_option = slot.option(current_option_value.c_str());
+	const device_slot_interface::slot_option *current_option = slot.option(current_option_value.c_str());
 
 	std::string dev_menu_text = string_format(current_option ? "%s: %s" : "%s",
 		slot.slot_name(),

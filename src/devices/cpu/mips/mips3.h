@@ -18,7 +18,6 @@
 #include "divtlb.h"
 #include "cpu/drcfe.h"
 #include "cpu/drcuml.h"
-#include "cpu/drcumlsh.h"
 
 
 // NEC VR4300 series is MIPS III with 32-bit address bus and slightly custom COP0/TLB
@@ -43,6 +42,7 @@ DECLARE_DEVICE_TYPE(QED5271BE, qed5271be_device)
 DECLARE_DEVICE_TYPE(QED5271LE, qed5271le_device)
 DECLARE_DEVICE_TYPE(RM7000BE,  rm7000be_device)
 DECLARE_DEVICE_TYPE(RM7000LE,  rm7000le_device)
+DECLARE_DEVICE_TYPE(R5900LE,   r5900le_device)
 
 
 /***************************************************************************
@@ -226,25 +226,16 @@ struct mips3_tlb_entry
 	uint64_t          entry_lo[2];
 };
 
-/* internal compiler state */
-struct compiler_state
-{
-	uint32_t              cycles;                     /* accumulated cycles */
-	uint8_t               checkints;                  /* need to check interrupts before next instruction */
-	uint8_t               checksoftints;              /* need to check software interrupts before next instruction */
-	uml::code_label  labelnum;                   /* index for local labels */
-};
-
 #define MIPS3_MAX_TLB_ENTRIES       48
 
 #define MCFG_MIPS3_ICACHE_SIZE(_size) \
-	mips3_device::set_icache_size(*device, _size);
+	downcast<mips3_device &>(*device).set_icache_size(_size);
 
 #define MCFG_MIPS3_DCACHE_SIZE(_size) \
-	mips3_device::set_dcache_size(*device, _size);
+	downcast<mips3_device &>(*device).set_dcache_size(_size);
 
 #define MCFG_MIPS3_SYSTEM_CLOCK(_clock) \
-	mips3_device::set_system_clock(*device, _clock);
+	downcast<mips3_device &>(*device).set_system_clock(_clock);
 
 
 class mips3_frontend;
@@ -270,6 +261,7 @@ protected:
 		MIPS3_TYPE_R5000,
 		MIPS3_TYPE_VR5500,
 		MIPS3_TYPE_QED5271,
+		MIPS3_TYPE_R5900,
 		MIPS3_TYPE_RM7000
 	};
 
@@ -277,9 +269,9 @@ public:
 	// construction/destruction
 	mips3_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, mips3_flavor flavor, endianness_t endiannes);
 
-	static void set_icache_size(device_t &device, size_t icache_size) { downcast<mips3_device &>(device).c_icache_size = icache_size; }
-	static void set_dcache_size(device_t &device, size_t dcache_size) { downcast<mips3_device &>(device).c_dcache_size = dcache_size; }
-	static void set_system_clock(device_t &device, uint32_t system_clock) { downcast<mips3_device &>(device).c_system_clock = system_clock; }
+	void set_icache_size(size_t icache_size) { c_icache_size = icache_size; }
+	void set_dcache_size(size_t dcache_size) { c_dcache_size = dcache_size; }
+	void set_system_clock(uint32_t system_clock) { c_system_clock = system_clock; }
 
 	TIMER_CALLBACK_MEMBER(compare_int_callback);
 
@@ -312,79 +304,86 @@ protected:
 	virtual void state_string_export(const device_state_entry &entry, std::string &str) const override;
 
 	// device_disasm_interface overrides
-	virtual util::disasm_interface *create_disassembler() override;
+	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 
 private:
 	struct internal_mips3_state
 	{
 		/* core registers */
-		uint32_t          pc;
-		int             icount;
-		uint64_t          r[35];
+		uint32_t		pc;
+		int				icount;
+		uint64_t		r[35];
+
+		/* upper 64 bits of 128-bit GPRs (R5900 only) */
+		uint64_t		rh[35];
 
 		/* COP registers */
-		uint64_t          cpr[3][32];
-		uint64_t          ccr[3][32];
-		uint32_t          llbit;
+		uint64_t		cpr[3][32];
+		uint64_t		ccr[3][32];
+		uint32_t		llbit;
 
-		uint32_t          mode;                       /* current global mode */
+		/* VU0 registers (R5900 only) */
+		float			vfr[32][4];
+		uint32_t		vcr[32];
+
+		uint32_t		mode;                       /* current global mode */
 
 		/* parameters for subroutines */
-		uint64_t          numcycles;                  /* return value from gettotalcycles */
-		const char *    format;                     /* format string for print_debug */
-		uint32_t          arg0;                       /* print_debug argument 1 */
-		uint32_t          arg1;                       /* print_debug argument 2 */
+		uint64_t		numcycles;                  /* return value from gettotalcycles */
+		const char *	format;                     /* format string for print_debug */
+		uint32_t		arg0;                       /* print_debug argument 1 */
+		uint32_t		arg1;                       /* print_debug argument 2 */
 
-		uint64_t          count_zero_time;
-		uint32_t          compare_armed;
-		uint32_t          jmpdest;                    /* destination jump target */
-
+		uint64_t		count_zero_time;
+		uint32_t		compare_armed;
+		uint32_t		jmpdest;                    /* destination jump target */
 	};
 
 	address_space_config m_program_config;
-	mips3_flavor m_flavor;
+	mips3_flavor	m_flavor;
 
 	/* core state */
 	internal_mips3_state *m_core;
 
 	/* internal stuff */
-	uint32_t      m_ppc;
-	uint32_t      m_nextpc;
-	uint32_t      m_pcbase;
-	uint8_t       m_cf[4][8];
-	bool        m_delayslot;
-	int         m_op;
-	int         m_interrupt_cycles;
-	uint32_t      m_ll_value;
-	uint64_t      m_lld_value;
-	uint32_t      m_badcop_value;
+	uint32_t      	m_ppc;
+	uint32_t      	m_nextpc;
+	uint32_t      	m_pcbase;
+	uint8_t       	m_cf[4][8];
+	bool        	m_delayslot;
+	int         	m_op;
+	int         	m_interrupt_cycles;
+	uint32_t      	m_ll_value;
+	uint64_t      	m_lld_value;
+	uint32_t      	m_badcop_value;
 
 	/* endian-dependent load/store */
 	typedef void (mips3_device::*loadstore_func)(uint32_t op);
-	loadstore_func m_lwl;
-	loadstore_func m_lwr;
-	loadstore_func m_swl;
-	loadstore_func m_swr;
-	loadstore_func m_ldl;
-	loadstore_func m_ldr;
-	loadstore_func m_sdl;
-	loadstore_func m_sdr;
+	loadstore_func	m_lwl;
+	loadstore_func	m_lwr;
+	loadstore_func	m_swl;
+	loadstore_func	m_swr;
+	loadstore_func	m_ldl;
+	loadstore_func	m_ldr;
+	loadstore_func	m_sdl;
+	loadstore_func	m_sdr;
 
-	address_space *m_program;
-	direct_read_data<0> *m_direct;
-	uint32_t          c_system_clock;
-	uint32_t          m_cpu_clock;
+	address_space *	m_program;
+	std::function<u32 (offs_t)> m_pr32;
+	std::function<const void * (offs_t)> m_prptr;
+	uint32_t		c_system_clock;
+	uint32_t		m_cpu_clock;
 	emu_timer *     m_compare_int_timer;
 
 	/* derived info based on flavor */
-	uint32_t          m_pfnmask;
-	uint8_t           m_tlbentries;
+	uint32_t		m_pfnmask;
+	uint8_t			m_tlbentries;
 
 	/* memory accesses */
-	bool            m_bigendian;
-	uint32_t          m_byte_xor;
-	uint32_t          m_word_xor;
+	bool			m_bigendian;
+	uint32_t        m_byte_xor;
+	uint32_t        m_word_xor;
 	data_accessors  m_memory;
 
 	/* cache memory */
@@ -395,35 +394,35 @@ private:
 	mips3_tlb_entry m_tlb[MIPS3_MAX_TLB_ENTRIES];
 
 	/* fast RAM */
-	uint32_t              m_fastram_select;
+	uint32_t        m_fastram_select;
 	struct
 	{
-		offs_t              start;                      /* start of the RAM block */
-		offs_t              end;                        /* end of the RAM block */
-		bool                readonly;                   /* true if read-only */
-		void *              base;                       /* base in memory where the RAM lives */
-		uint8_t *             offset_base8;               /* base in memory where the RAM lives, 8-bit pointer, with the start offset pre-applied */
-		uint16_t *            offset_base16;              /* base in memory where the RAM lives, 16-bit pointer, with the start offset pre-applied  */
-		uint32_t *            offset_base32;              /* base in memory where the RAM lives, 32-bit pointer, with the start offset pre-applied  */
-	}       m_fastram[MIPS3_MAX_FASTRAM];
+		offs_t		start;                      /* start of the RAM block */
+		offs_t		end;                        /* end of the RAM block */
+		bool		readonly;                   /* true if read-only */
+		void *		base;                       /* base in memory where the RAM lives */
+		uint8_t *	offset_base8;               /* base in memory where the RAM lives, 8-bit pointer, with the start offset pre-applied */
+		uint16_t *	offset_base16;              /* base in memory where the RAM lives, 16-bit pointer, with the start offset pre-applied  */
+		uint32_t *	offset_base32;              /* base in memory where the RAM lives, 32-bit pointer, with the start offset pre-applied  */
+	}               m_fastram[MIPS3_MAX_FASTRAM];
 
-	uint32_t m_debugger_temp;
+	uint32_t		m_debugger_temp;
 
 	/* core state */
-	drc_cache           m_cache;                      /* pointer to the DRC code cache */
-	std::unique_ptr<drcuml_state>      m_drcuml;                     /* DRC UML generator state */
-	std::unique_ptr<mips3_frontend>    m_drcfe;                      /* pointer to the DRC front-end state */
-	uint32_t              m_drcoptions;                 /* configurable DRC options */
+	drc_cache       m_cache;                    /* pointer to the DRC code cache */
+	std::unique_ptr<drcuml_state>      m_drcuml;/* DRC UML generator state */
+	std::unique_ptr<mips3_frontend>    m_drcfe; /* pointer to the DRC front-end state */
+	uint32_t        m_drcoptions;               /* configurable DRC options */
 
 	/* internal stuff */
-	uint8_t               m_cache_dirty;                /* true if we need to flush the cache */
+	uint8_t         m_cache_dirty;              /* true if we need to flush the cache */
 
 	/* tables */
-	uint8_t               m_fpmode[4];                  /* FPU mode table */
+	uint8_t         m_fpmode[4];                /* FPU mode table */
 
 	/* register mappings */
-	uml::parameter   m_regmap[34];                 /* parameter to register mappings for all 32 integer registers */
-	uml::parameter   m_regmaplo[34];               /* parameter to register mappings for all 32 integer registers */
+	uml::parameter  m_regmap[34];               /* parameter to register mappings for all 32 integer registers */
+	uml::parameter  m_regmaplo[34];             /* parameter to register mappings for all 32 integer registers */
 
 	/* subroutines */
 	uml::code_handle *   m_entry;                      /* entry point */
@@ -446,14 +445,14 @@ private:
 	uml::code_handle *   m_exception_norecover[18/*EXCEPTION_COUNT*/];   /* array of no-recover exception handlers */
 
 	/* hotspots */
-	uint32_t              m_hotspot_select;
+	uint32_t        m_hotspot_select;
 	struct
 	{
-		offs_t              pc;                         /* PC to consider */
-		uint32_t              opcode;                     /* required opcode at that PC */
-		uint32_t              cycles;                     /* number of cycles to eat when hit */
-	}       m_hotspot[MIPS3_MAX_HOTSPOTS];
-	bool m_isdrc;
+		offs_t      pc;                         /* PC to consider */
+		uint32_t    opcode;                     /* required opcode at that PC */
+		uint32_t    cycles;                     /* number of cycles to eat when hit */
+	}               m_hotspot[MIPS3_MAX_HOTSPOTS];
+	bool            m_isdrc;
 
 
 	void generate_exception(int exception, int backup);
@@ -512,6 +511,9 @@ private:
 
 	void handle_special(uint32_t op);
 	void handle_regimm(uint32_t op);
+	virtual void handle_extra_special(uint32_t op);
+	virtual void handle_extra_regimm(uint32_t op);
+	virtual void handle_idt(uint32_t op);
 
 	void lwl_be(uint32_t op);
 	void lwr_be(uint32_t op);
@@ -529,8 +531,8 @@ private:
 	void swr_le(uint32_t op);
 	void sdl_le(uint32_t op);
 	void sdr_le(uint32_t op);
-	void load_fast_iregs(drcuml_block *block);
-	void save_fast_iregs(drcuml_block *block);
+	void load_fast_iregs(drcuml_block &block);
+	void save_fast_iregs(drcuml_block &block);
 	void code_flush_cache();
 	void code_compile_block(uint8_t mode, offs_t pc);
 public:
@@ -540,38 +542,49 @@ public:
 	void func_printf_probe();
 	void func_unimplemented();
 private:
+	/* internal compiler state */
+	struct compiler_state
+	{
+		compiler_state &operator=(compiler_state &) = delete;
+
+		uint32_t         cycles;                     /* accumulated cycles */
+		uint8_t          checkints;                  /* need to check interrupts before next instruction */
+		uint8_t          checksoftints;              /* need to check software interrupts before next instruction */
+		uml::code_label  labelnum;                   /* index for local labels */
+	};
+
 	void static_generate_entry_point();
 	void static_generate_nocode_handler();
 	void static_generate_out_of_cycles();
 	void static_generate_tlb_mismatch();
 	void static_generate_exception(uint8_t exception, int recover, const char *name);
-	void static_generate_memory_accessor(int mode, int size, int iswrite, int ismasked, const char *name, uml::code_handle **handleptr);
+	void static_generate_memory_accessor(int mode, int size, int iswrite, int ismasked, const char *name, uml::code_handle *&handleptr);
 
-	void generate_update_mode(drcuml_block *block);
-	void generate_update_cycles(drcuml_block *block, compiler_state *compiler, uml::parameter param, bool allow_exception);
-	void generate_checksum_block(drcuml_block *block, compiler_state *compiler, const opcode_desc *seqhead, const opcode_desc *seqlast);
-	void generate_sequence_instruction(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	void generate_delay_slot_and_branch(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, uint8_t linkreg);
+	void generate_update_mode(drcuml_block &block);
+	void generate_update_cycles(drcuml_block &block, compiler_state &compiler, uml::parameter param, bool allow_exception);
+	void generate_checksum_block(drcuml_block &block, compiler_state &compiler, const opcode_desc *seqhead, const opcode_desc *seqlast);
+	void generate_sequence_instruction(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
+	void generate_delay_slot_and_branch(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc, uint8_t linkreg);
 
-	bool generate_opcode(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	bool generate_special(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	bool generate_regimm(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	bool generate_idt(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
+	bool generate_opcode(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
+	bool generate_special(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
+	bool generate_regimm(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
+	bool generate_idt(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
 
-	bool generate_set_cop0_reg(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, uint8_t reg);
-	bool generate_get_cop0_reg(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, uint8_t reg);
-	bool generate_cop0(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	bool generate_cop1(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	bool generate_cop1x(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
+	bool generate_set_cop0_reg(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc, uint8_t reg);
+	bool generate_get_cop0_reg(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc, uint8_t reg);
+	bool generate_cop0(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
+	bool generate_cop1(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
+	bool generate_cop1x(drcuml_block &block, compiler_state &compiler, const opcode_desc *desc);
 
-	void check_cop0_access(drcuml_block *block);
-	void check_cop1_access(drcuml_block *block);
-	void generate_badcop(drcuml_block *block, const int cop);
+	void check_cop0_access(drcuml_block &block);
+	void check_cop1_access(drcuml_block &block);
+	void generate_badcop(drcuml_block &block, const int cop);
 
-	void log_add_disasm_comment(drcuml_block *block, uint32_t pc, uint32_t op);
+	void log_add_disasm_comment(drcuml_block &block, uint32_t pc, uint32_t op);
 	const char *log_desc_flags_to_string(uint32_t flags);
-	void log_register_list(drcuml_state *drcuml, const char *string, const uint32_t *reglist, const uint32_t *regnostarlist);
-	void log_opcode_desc(drcuml_state *drcuml, const opcode_desc *desclist, int indent);
+	void log_register_list(const char *string, const uint32_t *reglist, const uint32_t *regnostarlist);
+	void log_opcode_desc(const opcode_desc *desclist, int indent);
 
 };
 
@@ -718,6 +731,23 @@ public:
 	vr5500le_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 		: mips3_device(mconfig, VR5500LE, tag, owner, clock, MIPS3_TYPE_R5000, ENDIANNESS_LITTLE)
 	{ }
+};
+
+class r5900le_device : public mips3_device
+{
+public:
+	// construction/destruction
+	r5900le_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+		: mips3_device(mconfig, R5900LE, tag, owner, clock, MIPS3_TYPE_R5900, ENDIANNESS_LITTLE)
+	{ }
+
+protected:
+	// device_disasm_interface overrides
+	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
+
+	void handle_extra_special(uint32_t op) override;
+	void handle_extra_regimm(uint32_t op) override;
+	void handle_idt(uint32_t op) override;
 };
 
 class qed5271be_device : public mips3_device

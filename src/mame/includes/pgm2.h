@@ -17,6 +17,7 @@
 #include "machine/timer.h"
 #include "machine/atmel_arm_aic.h"
 #include "machine/pgm2_memcard.h"
+#include "emupal.h"
 
 struct kov3_module_key
 {
@@ -88,14 +89,15 @@ public:
 	DECLARE_WRITE32_MEMBER(encryption_do_w);
 	DECLARE_WRITE32_MEMBER(sprite_encryption_w);
 
-	DECLARE_DRIVER_INIT(kov2nl);
-	DECLARE_DRIVER_INIT(orleg2);
-	DECLARE_DRIVER_INIT(ddpdojt);
-	DECLARE_DRIVER_INIT(kov3);
-	DECLARE_DRIVER_INIT(kov3_104);
-	DECLARE_DRIVER_INIT(kov3_102);
-	DECLARE_DRIVER_INIT(kov3_100);
-	DECLARE_DRIVER_INIT(kof98umh);
+	void init_kov2nl();
+	void init_orleg2();
+	void init_ddpdojt();
+	void init_kov3();
+	void init_kov3_104();
+	void init_kov3_102();
+	void init_kov3_101();
+	void init_kov3_100();
+	void init_kof98umh();
 
 	uint32_t screen_update_pgm2(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	DECLARE_WRITE_LINE_MEMBER(screen_vblank_pgm2);
@@ -104,6 +106,14 @@ public:
 	INTERRUPT_GEN_MEMBER(igs_interrupt);
 	TIMER_DEVICE_CALLBACK_MEMBER(igs_interrupt2);
 
+	void pgm2_ramrom(machine_config &config);
+	void pgm2_lores(machine_config &config);
+	void pgm2(machine_config &config);
+	void pgm2_hires(machine_config &config);
+	void pgm2_map(address_map &map);
+	void pgm2_module_rom_map(address_map &map);
+	void pgm2_ram_rom_map(address_map &map);
+	void pgm2_rom_map(address_map &map);
 private:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;

@@ -42,7 +42,7 @@ main ram and the buffer.
 *****************************************************************************/
 
 DEFINE_DEVICE_TYPE(K053244, k05324x_device, "k05324x", "K053244/053245 Sprite Generator")
-device_type const K053245 = K053244;
+decltype(K053244) K053245 = K053244;
 
 const gfx_layout k05324x_device::spritelayout =
 {
@@ -96,16 +96,15 @@ k05324x_device::k05324x_device(const machine_config &mconfig, const char *tag, d
 {
 }
 
-void k05324x_device::set_bpp(device_t &device, int bpp)
+void k05324x_device::set_bpp(int bpp)
 {
-	k05324x_device &dev = downcast<k05324x_device &>(device);
 	switch(bpp)
 	{
 		case 4:
-			device_gfx_interface::static_set_info(dev, gfxinfo);
+			set_info(gfxinfo);
 			break;
 		case 6:
-			device_gfx_interface::static_set_info(dev, gfxinfo_6bpp);
+			set_info(gfxinfo_6bpp);
 			break;
 		default:
 			fatalerror("Unsupported bpp\n");

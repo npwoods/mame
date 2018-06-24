@@ -252,18 +252,30 @@ Notes:
 class twinkle_state : public driver_device
 {
 public:
-	twinkle_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	twinkle_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_audiocpu(*this, "audiocpu"),
 		m_am53cf96(*this, "am53cf96"),
 		m_ata(*this, "ata"),
 		m_waveram(*this, "rfsnd"),
+		m_led_displays(*this, "led%u", 0U),
+		m_spotlights(*this, "spotlight%u", 0U),
+		m_main_leds(*this, "main_led%u", 0U),
+		m_key_leds(*this, "key%u-%u", 1U, 1U),
+		m_spu_leds(*this, "spu_led%u", 0U),
 		m_spu_ata_dma(0),
 		m_spu_ata_dmarq(0),
 		m_wave_bank(0)
 	{
 	}
+
+	void twinklex(machine_config &config);
+	void twinklei(machine_config &config);
+	void twinkle(machine_config &config);
+
+protected:
+	virtual void machine_start() override;
 
 	DECLARE_WRITE8_MEMBER(twinkle_io_w);
 	DECLARE_READ8_MEMBER(twinkle_io_r);
@@ -288,12 +300,22 @@ public:
 	void scsi_dma_read( uint32_t *p_n_psxram, uint32_t n_address, int32_t n_size );
 	void scsi_dma_write( uint32_t *p_n_psxram, uint32_t n_address, int32_t n_size );
 
+	void main_map(address_map &map);
+	void rf5c400_map(address_map &map);
+	void sound_map(address_map &map);
+
 private:
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
 	required_device<am53cf96_device> m_am53cf96;
 	required_device<ata_interface_device> m_ata;
 	required_shared_ptr<uint16_t> m_waveram;
+
+	output_finder<9> m_led_displays;
+	output_finder<8> m_spotlights;
+	output_finder<9> m_main_leds;
+	output_finder<2, 7> m_key_leds;
+	output_finder<8> m_spu_leds;
 
 	uint16_t m_spu_ctrl;      // SPU board control register
 	uint8_t m_spu_shared[0x400];  // SPU/PSX shared dual-ported RAM
@@ -314,6 +336,8 @@ private:
 	int m_output_bits;
 	int m_output_cs;
 	int m_output_clock;
+
+	static void cdrom_config(device_t *device);
 };
 
 #define LED_A1 0x0001
@@ -480,6 +504,35 @@ static const uint16_t asciicharset[]=
 	0, //
 };
 
+void twinkle_state::machine_start()
+{
+	m_led_displays.resolve();
+	m_spotlights.resolve();
+	m_main_leds.resolve();
+	m_key_leds.resolve();
+	m_spu_leds.resolve();
+
+	save_item(NAME(m_spu_ctrl));
+	save_item(NAME(m_spu_shared));
+	save_item(NAME(m_spu_ata_dma));
+	save_item(NAME(m_spu_ata_dmarq));
+	save_item(NAME(m_wave_bank));
+
+	save_item(NAME(m_io_offset));
+	save_item(NAME(m_output_last));
+	save_item(NAME(m_sector_buffer));
+
+	save_item(NAME(m_serial_shift));
+	save_item(NAME(m_serial_bits));
+	save_item(NAME(m_serial_cs));
+	save_item(NAME(m_serial_clock));
+
+	save_item(NAME(m_output_shift));
+	save_item(NAME(m_output_bits));
+	save_item(NAME(m_output_cs));
+	save_item(NAME(m_output_clock));
+}
+
 WRITE8_MEMBER(twinkle_state::twinkle_io_w)
 {
 	switch( offset )
@@ -526,18 +579,18 @@ WRITE8_MEMBER(twinkle_state::twinkle_io_w)
 			case 0x6f:
 			case 0x77:
 			case 0x7f:
-				output().set_indexed_value( "led", ( m_io_offset - 0x3f ) / 8, asciicharset[ ( data ^ 0xff ) & 0x7f ] );
+				m_led_displays[(m_io_offset - 0x3f) / 8] = asciicharset[(data ^ 0xff) & 0x7f];
 				break;
 
 			case 0x87:
-				output().set_indexed_value( "spotlight", 0, ( ~data >> 3 ) & 1 );
-				output().set_indexed_value( "spotlight", 1, ( ~data >> 2 ) & 1 );
-				output().set_indexed_value( "spotlight", 2, ( ~data >> 1 ) & 1 );
-				output().set_indexed_value( "spotlight", 3, ( ~data >> 0 ) & 1 );
-				output().set_indexed_value( "spotlight", 4, ( ~data >> 4 ) & 1 );
-				output().set_indexed_value( "spotlight", 5, ( ~data >> 5 ) & 1 );
-				output().set_indexed_value( "spotlight", 6, ( ~data >> 6 ) & 1 );
-				output().set_indexed_value( "spotlight", 7, ( ~data >> 7 ) & 1 );
+				m_spotlights[0] = BIT(~data, 3);
+				m_spotlights[1] = BIT(~data, 2);
+				m_spotlights[2] = BIT(~data, 1);
+				m_spotlights[3] = BIT(~data, 0);
+				m_spotlights[4] = BIT(~data, 4);
+				m_spotlights[5] = BIT(~data, 5);
+				m_spotlights[6] = BIT(~data, 6);
+				m_spotlights[7] = BIT(~data, 7);
 				break;
 
 			case 0x8f:
@@ -671,15 +724,15 @@ WRITE16_MEMBER(twinkle_state::twinkle_output_w)
 
 WRITE16_MEMBER(twinkle_state::led_w)
 {
-	output().set_indexed_value("main_led", 0, (~data >> 0) & 1);
-	output().set_indexed_value("main_led", 1, (~data >> 1) & 1);
-	output().set_indexed_value("main_led", 2, (~data >> 2) & 1);
-	output().set_indexed_value("main_led", 3, (~data >> 3) & 1);
-	output().set_indexed_value("main_led", 4, (~data >> 4) & 1);
-	output().set_indexed_value("main_led", 5, (~data >> 5) & 1);
-	output().set_indexed_value("main_led", 6, (~data >> 6) & 1);
-	output().set_indexed_value("main_led", 7, (~data >> 7) & 1);
-	output().set_indexed_value("main_led", 8, (~data >> 8) & 1);
+	m_main_leds[0] = BIT(~data, 0);
+	m_main_leds[1] = BIT(~data, 1);
+	m_main_leds[2] = BIT(~data, 2);
+	m_main_leds[3] = BIT(~data, 3);
+	m_main_leds[4] = BIT(~data, 4);
+	m_main_leds[5] = BIT(~data, 5);
+	m_main_leds[6] = BIT(~data, 6);
+	m_main_leds[7] = BIT(~data, 7);
+	m_main_leds[8] = BIT(~data, 8);
 
 	if ((data & 0xfe00) != 0xfe00)
 	{
@@ -690,20 +743,20 @@ WRITE16_MEMBER(twinkle_state::led_w)
 WRITE16_MEMBER(twinkle_state::key_led_w)
 {
 	// words are written using a byte write
-	output().set_indexed_value("key1-", 1, (data >> 0) & 1);
-	output().set_indexed_value("key1-", 2, (data >> 1) & 1);
-	output().set_indexed_value("key1-", 3, (data >> 2) & 1);
-	output().set_indexed_value("key1-", 4, (data >> 3) & 1);
-	output().set_indexed_value("key1-", 5, (data >> 4) & 1);
-	output().set_indexed_value("key1-", 6, (data >> 5) & 1);
-	output().set_indexed_value("key1-", 7, (data >> 6) & 1);
-	output().set_indexed_value("key2-", 1, (data >> 7) & 1);
-	output().set_indexed_value("key2-", 2, (data >> 8) & 1);
-	output().set_indexed_value("key2-", 3, (data >> 9) & 1);
-	output().set_indexed_value("key2-", 4, (data >> 10) & 1);
-	output().set_indexed_value("key2-", 5, (data >> 11) & 1);
-	output().set_indexed_value("key2-", 6, (data >> 12) & 1);
-	output().set_indexed_value("key2-", 7, (data >> 13) & 1);
+	m_key_leds[0][0] = BIT(data, 0);
+	m_key_leds[0][1] = BIT(data, 1);
+	m_key_leds[0][2] = BIT(data, 2);
+	m_key_leds[0][3] = BIT(data, 3);
+	m_key_leds[0][4] = BIT(data, 4);
+	m_key_leds[0][5] = BIT(data, 5);
+	m_key_leds[0][6] = BIT(data, 6);
+	m_key_leds[1][0] = BIT(data, 7);
+	m_key_leds[1][1] = BIT(data, 8);
+	m_key_leds[1][2] = BIT(data, 9);
+	m_key_leds[1][3] = BIT(data, 10);
+	m_key_leds[1][4] = BIT(data, 11);
+	m_key_leds[1][5] = BIT(data, 12);
+	m_key_leds[1][6] = BIT(data, 13);
 	output().set_value("unknown3", (data >> 14) & 1);
 	output().set_value("unknown4", (data >> 15) & 1);
 }
@@ -761,24 +814,25 @@ READ8_MEMBER(twinkle_state::shared_psx_r)
 	return result;
 }
 
-static ADDRESS_MAP_START( main_map, AS_PROGRAM, 32, twinkle_state )
-	AM_RANGE(0x1f000000, 0x1f0007ff) AM_READWRITE8(shared_psx_r, shared_psx_w, 0x00ff00ff)
-	AM_RANGE(0x1f200000, 0x1f20001f) AM_DEVREADWRITE8("am53cf96", am53cf96_device, read, write, 0x00ff00ff)
-	AM_RANGE(0x1f20a01c, 0x1f20a01f) AM_WRITENOP /* scsi? */
-	AM_RANGE(0x1f210000, 0x1f2107ff) AM_DEVREADWRITE8("fdc37c665gt", fdc37c665gt_device, read, write, 0x00ff00ff)
-	AM_RANGE(0x1f218000, 0x1f218003) AM_DEVWRITE8("watchdog", watchdog_timer_device, reset_w, 0x000000ff) /* LTC1232 */
-	AM_RANGE(0x1f220000, 0x1f220003) AM_WRITE8(twinkle_io_w, 0x00ff00ff)
-	AM_RANGE(0x1f220004, 0x1f220007) AM_READ8(twinkle_io_r, 0x00ff00ff)
-	AM_RANGE(0x1f230000, 0x1f230003) AM_WRITE16(led_w, 0x0000ffff)
-	AM_RANGE(0x1f240000, 0x1f240003) AM_READ_PORT("IN6")
-	AM_RANGE(0x1f250000, 0x1f250003) AM_WRITE16(key_led_w, 0x0000ffff)
-	AM_RANGE(0x1f260000, 0x1f260003) AM_WRITE16(serial_w, 0x0000ffff)
-	AM_RANGE(0x1f270000, 0x1f270003) AM_WRITE_PORT("OUTSEC")
-	AM_RANGE(0x1f280000, 0x1f280003) AM_READ_PORT("INSEC")
-	AM_RANGE(0x1f290000, 0x1f29007f) AM_DEVREADWRITE8("rtc", rtc65271_device, rtc_r, rtc_w, 0x00ff00ff)
-	AM_RANGE(0x1f2a0000, 0x1f2a007f) AM_DEVREADWRITE8("rtc", rtc65271_device, xram_r, xram_w, 0x00ff00ff)
-	AM_RANGE(0x1f2b0000, 0x1f2b00ff) AM_WRITE16(twinkle_output_w, 0xffffffff)
-ADDRESS_MAP_END
+void twinkle_state::main_map(address_map &map)
+{
+	map(0x1f000000, 0x1f0007ff).rw(FUNC(twinkle_state::shared_psx_r), FUNC(twinkle_state::shared_psx_w)).umask32(0x00ff00ff);
+	map(0x1f200000, 0x1f20001f).rw(m_am53cf96, FUNC(am53cf96_device::read), FUNC(am53cf96_device::write)).umask32(0x00ff00ff);
+	map(0x1f20a01c, 0x1f20a01f).nopw(); /* scsi? */
+	map(0x1f210000, 0x1f2107ff).rw("fdc37c665gt", FUNC(fdc37c665gt_device::read), FUNC(fdc37c665gt_device::write)).umask32(0x00ff00ff);
+	map(0x1f218000, 0x1f218000).w("watchdog", FUNC(watchdog_timer_device::reset_w)); /* LTC1232 */
+	map(0x1f220000, 0x1f220003).w(FUNC(twinkle_state::twinkle_io_w)).umask32(0x00ff00ff);
+	map(0x1f220004, 0x1f220007).r(FUNC(twinkle_state::twinkle_io_r)).umask32(0x00ff00ff);
+	map(0x1f230000, 0x1f230001).w(FUNC(twinkle_state::led_w));
+	map(0x1f240000, 0x1f240003).portr("IN6");
+	map(0x1f250000, 0x1f250001).w(FUNC(twinkle_state::key_led_w));
+	map(0x1f260000, 0x1f260001).w(FUNC(twinkle_state::serial_w));
+	map(0x1f270000, 0x1f270003).portw("OUTSEC");
+	map(0x1f280000, 0x1f280003).portr("INSEC");
+	map(0x1f290000, 0x1f29007f).rw("rtc", FUNC(rtc65271_device::rtc_r), FUNC(rtc65271_device::rtc_w)).umask32(0x00ff00ff);
+	map(0x1f2a0000, 0x1f2a007f).rw("rtc", FUNC(rtc65271_device::xram_r), FUNC(rtc65271_device::xram_w)).umask32(0x00ff00ff);
+	map(0x1f2b0000, 0x1f2b00ff).w(FUNC(twinkle_state::twinkle_output_w));
+}
 
 /* SPU board */
 
@@ -900,36 +954,38 @@ WRITE16_MEMBER(twinkle_state::shared_68k_w)
 WRITE16_MEMBER(twinkle_state::spu_led_w)
 {
 	// upper 8 bits are occassionally written as all zeros
-	output().set_indexed_value("spu_led", 0, (~data >> 0) & 1);
-	output().set_indexed_value("spu_led", 1, (~data >> 1) & 1);
-	output().set_indexed_value("spu_led", 2, (~data >> 2) & 1);
-	output().set_indexed_value("spu_led", 3, (~data >> 3) & 1);
-	output().set_indexed_value("spu_led", 4, (~data >> 4) & 1);
-	output().set_indexed_value("spu_led", 5, (~data >> 5) & 1);
-	output().set_indexed_value("spu_led", 6, (~data >> 6) & 1);
-	output().set_indexed_value("spu_led", 7, (~data >> 7) & 1);
+	m_spu_leds[0] = BIT(~data, 0);
+	m_spu_leds[1] = BIT(~data, 1);
+	m_spu_leds[2] = BIT(~data, 2);
+	m_spu_leds[3] = BIT(~data, 3);
+	m_spu_leds[4] = BIT(~data, 4);
+	m_spu_leds[5] = BIT(~data, 5);
+	m_spu_leds[6] = BIT(~data, 6);
+	m_spu_leds[7] = BIT(~data, 7);
 }
 
-static ADDRESS_MAP_START( sound_map, AS_PROGRAM, 16, twinkle_state )
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAM
-	AM_RANGE(0x200000, 0x200001) AM_READ_PORT("SPU_DSW")
-	AM_RANGE(0x220000, 0x220001) AM_WRITE(spu_led_w)
-	AM_RANGE(0x230000, 0x230003) AM_WRITE(twinkle_spu_ctrl_w)
-	AM_RANGE(0x240000, 0x240003) AM_WRITE(spu_ata_dma_low_w) AM_READNOP
-	AM_RANGE(0x250000, 0x250003) AM_WRITE(spu_ata_dma_high_w) AM_READNOP
-	AM_RANGE(0x260000, 0x260001) AM_WRITE(spu_wavebank_w) AM_READNOP
-	AM_RANGE(0x280000, 0x280fff) AM_READWRITE(shared_68k_r, shared_68k_w)
-	AM_RANGE(0x300000, 0x30000f) AM_DEVREADWRITE("ata", ata_interface_device, read_cs0, write_cs0)
+void twinkle_state::sound_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x13ffff).ram();
+	map(0x200000, 0x200001).portr("SPU_DSW");
+	map(0x220000, 0x220001).w(FUNC(twinkle_state::spu_led_w));
+	map(0x230000, 0x230003).w(FUNC(twinkle_state::twinkle_spu_ctrl_w));
+	map(0x240000, 0x240003).w(FUNC(twinkle_state::spu_ata_dma_low_w)).nopr();
+	map(0x250000, 0x250003).w(FUNC(twinkle_state::spu_ata_dma_high_w)).nopr();
+	map(0x260000, 0x260001).w(FUNC(twinkle_state::spu_wavebank_w)).nopr();
+	map(0x280000, 0x280fff).rw(FUNC(twinkle_state::shared_68k_r), FUNC(twinkle_state::shared_68k_w));
+	map(0x300000, 0x30000f).rw(m_ata, FUNC(ata_interface_device::cs0_r), FUNC(ata_interface_device::cs0_w));
 	// 34000E = ???
-	AM_RANGE(0x34000e, 0x34000f) AM_WRITENOP
-	AM_RANGE(0x400000, 0x400fff) AM_DEVREADWRITE("rfsnd", rf5c400_device, rf5c400_r, rf5c400_w)
-	AM_RANGE(0x800000, 0xffffff) AM_READWRITE(twinkle_waveram_r, twinkle_waveram_w)
-ADDRESS_MAP_END
+	map(0x34000e, 0x34000f).nopw();
+	map(0x400000, 0x400fff).rw("rfsnd", FUNC(rf5c400_device::rf5c400_r), FUNC(rf5c400_device::rf5c400_w));
+	map(0x800000, 0xffffff).rw(FUNC(twinkle_state::twinkle_waveram_r), FUNC(twinkle_state::twinkle_waveram_w));
+}
 
-static ADDRESS_MAP_START(rf5c400_map, 0, 16, twinkle_state)
-	AM_RANGE(0x0000000, 0x1ffffff) AM_RAM AM_SHARE("rfsnd")
-ADDRESS_MAP_END
+void twinkle_state::rf5c400_map(address_map &map)
+{
+	map(0x0000000, 0x1ffffff).ram().share("rfsnd");
+}
 
 /* SCSI */
 
@@ -1010,27 +1066,28 @@ void twinkle_state::scsi_dma_write( uint32_t *p_n_psxram, uint32_t n_address, in
 }
 
 
-static MACHINE_CONFIG_START( cdrom_config )
-	MCFG_DEVICE_MODIFY( "cdda" )
-	MCFG_SOUND_ROUTE( 0, "^^^^speakerleft", 1.0 )
-	MCFG_SOUND_ROUTE( 1, "^^^^speakerright", 1.0 )
-MACHINE_CONFIG_END
+void twinkle_state::cdrom_config(device_t *device)
+{
+	device = device->subdevice("cdda");
+	MCFG_SOUND_ROUTE( 0, "^^speakerleft", 1.0 )
+	MCFG_SOUND_ROUTE( 1, "^^speakerright", 1.0 )
+}
 
-static MACHINE_CONFIG_START( twinkle )
+MACHINE_CONFIG_START(twinkle_state::twinkle)
 	/* basic machine hardware */
-	MCFG_CPU_ADD( "maincpu", CXD8530CQ, XTAL_67_7376MHz )
-	MCFG_CPU_PROGRAM_MAP( main_map )
+	MCFG_DEVICE_ADD( "maincpu", CXD8530CQ, XTAL(67'737'600) )
+	MCFG_DEVICE_PROGRAM_MAP( main_map )
 
 	MCFG_RAM_MODIFY("maincpu:ram")
 	MCFG_RAM_DEFAULT_SIZE("4M")
 
-	MCFG_PSX_DMA_CHANNEL_READ( "maincpu", 5, psxdma_device::read_delegate(&twinkle_state::scsi_dma_read, (twinkle_state *) owner ) )
-	MCFG_PSX_DMA_CHANNEL_WRITE( "maincpu", 5, psxdma_device::write_delegate(&twinkle_state::scsi_dma_write, (twinkle_state *) owner ) )
+	MCFG_PSX_DMA_CHANNEL_READ( "maincpu", 5, psxdma_device::read_delegate(&twinkle_state::scsi_dma_read, this ) )
+	MCFG_PSX_DMA_CHANNEL_WRITE( "maincpu", 5, psxdma_device::write_delegate(&twinkle_state::scsi_dma_write, this ) )
 
-	MCFG_CPU_ADD("audiocpu", M68000, 32000000/2)    /* 16.000 MHz */
-	MCFG_CPU_PROGRAM_MAP( sound_map )
-	MCFG_CPU_PERIODIC_INT_DRIVER(twinkle_state, irq1_line_assert, 60)
-	MCFG_CPU_PERIODIC_INT_DRIVER(twinkle_state, irq2_line_assert, 60)
+	MCFG_DEVICE_ADD("audiocpu", M68000, 32000000/2)    /* 16.000 MHz */
+	MCFG_DEVICE_PROGRAM_MAP( sound_map )
+	MCFG_DEVICE_PERIODIC_INT_DRIVER(twinkle_state, irq1_line_assert, 60)
+	MCFG_DEVICE_PERIODIC_INT_DRIVER(twinkle_state, irq2_line_assert, 60)
 
 	MCFG_WATCHDOG_ADD("watchdog")
 	MCFG_WATCHDOG_TIME_INIT(attotime::from_msec(1200)) /* check TD pin on LTC1232 */
@@ -1041,52 +1098,55 @@ static MACHINE_CONFIG_START( twinkle )
 
 	MCFG_DEVICE_ADD("am53cf96", AM53CF96, 0)
 	MCFG_LEGACY_SCSI_PORT("scsi")
-	MCFG_AM53CF96_IRQ_HANDLER(DEVWRITELINE("maincpu:irq", psxirq_device, intin10))
+	MCFG_AM53CF96_IRQ_HANDLER(WRITELINE("maincpu:irq", psxirq_device, intin10))
 
 	MCFG_ATA_INTERFACE_ADD("ata", ata_devices, "hdd", nullptr, true)
-	MCFG_ATA_INTERFACE_IRQ_HANDLER(WRITELINE(twinkle_state, spu_ata_irq))
-	MCFG_ATA_INTERFACE_DMARQ_HANDLER(WRITELINE(twinkle_state, spu_ata_dmarq))
+	MCFG_ATA_INTERFACE_IRQ_HANDLER(WRITELINE(*this, twinkle_state, spu_ata_irq))
+	MCFG_ATA_INTERFACE_DMARQ_HANDLER(WRITELINE(*this, twinkle_state, spu_ata_dmarq))
 
 	MCFG_DEVICE_ADD("rtc", RTC65271, 0)
 
-	MCFG_DEVICE_ADD("fdc37c665gt", FDC37C665GT, XTAL_24MHz)
+	MCFG_DEVICE_ADD("fdc37c665gt", FDC37C665GT, XTAL(24'000'000))
 
 	MCFG_DEVICE_ADD("rs232", RS232_PORT, 0)
 	MCFG_SLOT_OPTION_ADD("xvd701", JVC_XVD701)
 //  MCFG_SLOT_OPTION_ADD("xvs1100", JVC_XVS1100) // 8th mix only
 	MCFG_SLOT_DEFAULT_OPTION("xvd701")
-	MCFG_RS232_RXD_HANDLER(DEVWRITELINE("fdc37c665gt:uart2", ins8250_uart_device, rx_w))
-	MCFG_RS232_DCD_HANDLER(DEVWRITELINE("fdc37c665gt:uart2", ins8250_uart_device, dcd_w))
-	MCFG_RS232_DSR_HANDLER(DEVWRITELINE("fdc37c665gt:uart2", ins8250_uart_device, dsr_w))
-	MCFG_RS232_RI_HANDLER(DEVWRITELINE("fdc37c665gt:uart2", ins8250_uart_device, ri_w))
-	MCFG_RS232_CTS_HANDLER(DEVWRITELINE("fdc37c665gt:uart2", ins8250_uart_device, cts_w))
+	MCFG_RS232_RXD_HANDLER(WRITELINE("fdc37c665gt:uart2", ins8250_uart_device, rx_w))
+	MCFG_RS232_DCD_HANDLER(WRITELINE("fdc37c665gt:uart2", ins8250_uart_device, dcd_w))
+	MCFG_RS232_DSR_HANDLER(WRITELINE("fdc37c665gt:uart2", ins8250_uart_device, dsr_w))
+	MCFG_RS232_RI_HANDLER(WRITELINE("fdc37c665gt:uart2", ins8250_uart_device, ri_w))
+	MCFG_RS232_CTS_HANDLER(WRITELINE("fdc37c665gt:uart2", ins8250_uart_device, cts_w))
 
 	MCFG_DEVICE_MODIFY("fdc37c665gt:uart2")
-	MCFG_INS8250_OUT_TX_CB(DEVWRITELINE("^rs232", rs232_port_device, write_txd))
-	MCFG_INS8250_OUT_DTR_CB(DEVWRITELINE("^rs232", rs232_port_device, write_dtr))
-	MCFG_INS8250_OUT_RTS_CB(DEVWRITELINE("^rs232", rs232_port_device, write_rts))
+	MCFG_INS8250_OUT_TX_CB(WRITELINE("rs232", rs232_port_device, write_txd))
+	MCFG_INS8250_OUT_DTR_CB(WRITELINE("rs232", rs232_port_device, write_dtr))
+	MCFG_INS8250_OUT_RTS_CB(WRITELINE("rs232", rs232_port_device, write_rts))
 
 	/* video hardware */
-	MCFG_PSXGPU_ADD( "maincpu", "gpu", CXD8561Q, 0x200000, XTAL_53_693175MHz )
+	MCFG_PSXGPU_ADD( "maincpu", "gpu", CXD8561Q, 0x200000, XTAL(53'693'175) )
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_STEREO("speakerleft", "speakerright")
+	SPEAKER(config, "speakerleft").front_left();
+	SPEAKER(config, "speakerright").front_right();
 
-	MCFG_SPU_ADD( "spu", XTAL_67_7376MHz/2 )
+	MCFG_SPU_ADD( "spu", XTAL(67'737'600)/2 )
 	MCFG_SOUND_ROUTE( 0, "speakerleft", 0.75 )
 	MCFG_SOUND_ROUTE( 1, "speakerright", 0.75 )
 
-	MCFG_RF5C400_ADD("rfsnd", XTAL_33_8688MHz/2);
+	MCFG_DEVICE_ADD("rfsnd", RF5C400, XTAL(33'868'800)/2);
 	MCFG_DEVICE_ADDRESS_MAP(0, rf5c400_map)
 	MCFG_SOUND_ROUTE(0, "speakerleft", 1.0)
 	MCFG_SOUND_ROUTE(1, "speakerright", 1.0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( twinklex, twinkle )
+MACHINE_CONFIG_START(twinkle_state::twinklex)
+	twinkle(config);
 	MCFG_X76F041_ADD( "security" )
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( twinklei, twinkle )
+MACHINE_CONFIG_START(twinkle_state::twinklei)
+	twinkle(config);
 	MCFG_I2CMEM_ADD( "security" )
 	MCFG_I2CMEM_DATA_SIZE( 0x100 )
 MACHINE_CONFIG_END
@@ -1160,7 +1220,7 @@ static INPUT_PORTS_START( twinklex )
 	PORT_BIT( 0x00000004, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("security", x76f041_device, write_cs)
 
 	PORT_MODIFY("INSEC")
-	PORT_BIT( 0x00001000, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_READ_LINE_DEVICE_MEMBER("security", x76f041_device, read_sda)
+	PORT_BIT( 0x00001000, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("security", x76f041_device, read_sda)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( twinklei )
@@ -1416,7 +1476,7 @@ ROM_START( bmiidxc2 )
 	ROM_LOAD( "984a02", 0x000000, 0x000224, BAD_DUMP CRC(5b08e1ef) SHA1(d43ad5d958313ccb2420246621d9180230b4782d) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
-	DISK_IMAGE_READONLY( "ge984a01(bm)", 0, SHA1(03b083ba09652dfab6f328000c3c9de2a7a4e618) )
+	DISK_IMAGE_READONLY( "ge984a01,bm", 0, SHA1(03b083ba09652dfab6f328000c3c9de2a7a4e618) )
 
 	DISK_REGION( "cdrom1" ) // video CD
 	DISK_IMAGE_READONLY( "ge984a04", 0, NO_DUMP )
@@ -1425,20 +1485,20 @@ ROM_START( bmiidxc2 )
 	DISK_IMAGE_READONLY( "983hdda01", 0, SHA1(bcbbf55acf8bebc5773ffc5769420a0129f4da57) )
 ROM_END
 
-GAMEL( 1999, gq863,    0,       twinkle,  twinkle,  twinkle_state, 0,        ROT0, "Konami", "Twinkle System", MACHINE_IS_BIOS_ROOT, layout_bmiidx )
+GAMEL( 1999, gq863,    0,       twinkle,  twinkle,  twinkle_state, empty_init, ROT0, "Konami", "Twinkle System", MACHINE_IS_BIOS_ROOT, layout_bmiidx )
 
-GAMEL( 1999, bmiidx,   gq863,   twinklex, twinklex, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX (863 JAB)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 1999, bmiidxa,  bmiidx,  twinklex, twinklex, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX (863 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 1999, bmiidxc,  gq863,   twinklex, twinklex, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX with DDR 2nd Club Version (896 JAB)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 1999, bmiidxca, bmiidxc, twinklex, twinklex, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX with DDR 2nd Club Version (896 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 1999, bmiidxs,  gq863,   twinklex, twinklex, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX Substream (983 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 1999, bmiidxc2, gq863,   twinklex, twinklex, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX Substream with DDR 2nd Club Version 2 (984 A01 BM)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
-GAMEL( 1999, bmiidx2,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 2nd style (GC985 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 2000, bmiidx3,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 3rd style (GC992 JAC)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 2000, bmiidx3a, bmiidx3, twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 3rd style (GC992 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 2000, bmiidx4,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 4th style (GCA03 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
-GAMEL( 2001, bmiidx5,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 5th style (GCA17 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
-GAMEL( 2001, bmiidx6,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 6th style (GCB4U JAB)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
-GAMEL( 2001, bmiidx6a, bmiidx6, twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 6th style (GCB4U JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
-GAMEL( 2002, bmiidx7,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 7th style (GCB44 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
-GAMEL( 2002, bmiidx8,  gq863,   twinklei, twinklei, twinkle_state, 0,        ROT0, "Konami", "beatmania IIDX 8th style (GCC44 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
+GAMEL( 1999, bmiidx,   gq863,   twinklex, twinklex, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX (863 JAB)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 1999, bmiidxa,  bmiidx,  twinklex, twinklex, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX (863 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 1999, bmiidxc,  gq863,   twinklex, twinklex, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX with DDR 2nd Club Version (896 JAB)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 1999, bmiidxca, bmiidxc, twinklex, twinklex, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX with DDR 2nd Club Version (896 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 1999, bmiidxs,  gq863,   twinklex, twinklex, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX Substream (983 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 1999, bmiidxc2, gq863,   twinklex, twinklex, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX Substream with DDR 2nd Club Version 2 (984 A01 BM)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
+GAMEL( 1999, bmiidx2,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 2nd style (GC985 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 2000, bmiidx3,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 3rd style (GC992 JAC)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 2000, bmiidx3a, bmiidx3, twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 3rd style (GC992 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 2000, bmiidx4,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 4th style (GCA03 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
+GAMEL( 2001, bmiidx5,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 5th style (GCA17 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING, layout_bmiidx )
+GAMEL( 2001, bmiidx6,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 6th style (GCB4U JAB)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
+GAMEL( 2001, bmiidx6a, bmiidx6, twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 6th style (GCB4U JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
+GAMEL( 2002, bmiidx7,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 7th style (GCB44 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )
+GAMEL( 2002, bmiidx8,  gq863,   twinklei, twinklei, twinkle_state, empty_init, ROT0, "Konami", "beatmania IIDX 8th style (GCC44 JAA)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS, layout_bmiidx )

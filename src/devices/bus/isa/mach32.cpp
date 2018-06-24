@@ -47,15 +47,11 @@ mach32_device::mach32_device(const machine_config &mconfig, device_type type, co
 {
 }
 
-MACHINE_CONFIG_MEMBER( mach32_device::device_add_mconfig )
+MACHINE_CONFIG_START(mach32_device::device_add_mconfig)
 	MCFG_DEVICE_ADD("8514a", ATIMACH32_8514A, 0)
-	MCFG_EEPROM_SERIAL_93C56_ADD("ati_eeprom")
+	downcast<ibm8514a_device*>(device)->set_vga(DEVICE_SELF);
+	MCFG_DEVICE_ADD("ati_eeprom", EEPROM_SERIAL_93C56_16BIT)
 MACHINE_CONFIG_END
-
-void mach32_8514a_device::device_config_complete()
-{
-	m_vga = dynamic_cast<svga_device*>(owner());
-}
 
 void mach32_8514a_device::device_start()
 {
@@ -85,6 +81,32 @@ READ16_MEMBER(mach32_8514a_device::mach32_config1_r)
 }
 
 
+/* 7AEE (W)   Mach 32
+ * bits    0-2  Monitor Alias - Monitor ID
+ * bit       3  Enable reporting of Monitor Alias
+ * bits    4-5  Pixel Width (0=4bpp, 1=8bpp, 2=16bpp, 3=24bpp)
+ * bits    6-7  16bpp colour mode (0=555, 1=565, 2=655, 3=664)
+ * bit       8  Multiplex pixels - processes 4 pixels in parallel by the DAC
+ * bit       9  24bpp config (0=3Bytes/pixel, 1=4Bytes/pixel)
+ * bit      10  24bpp colour order (0=RGB, LSB reserved in 4Bpp, 1=BGR, MSB reserved in 4Bpp)
+ * bit      11  Display pixel size to be written
+ * bits  12-13  DAC extended address inputs RS2,RS3
+ * bit      14  Enabled 8-bit DAC (0=6-bit)
+ * bit      15  Draw pixel size to be written
+ * If bits 11 and 15 are both 0, then for compatibility, both will be written
+ */
+WRITE16_MEMBER(mach32_8514a_device::mach32_ge_ext_config_w)
+{
+	if(offset == 1)
+	{
+		COMBINE_DATA(&mach8.ge_ext_config);
+		if(data & 0x0800)
+			display_mode_change = true;
+		if(!(data & 0x8000) && (!(data & 0x0800)))
+			display_mode_change = true;
+	}
+}
+
 void mach32_8514a_device::device_reset()
 {
 }
@@ -104,6 +126,51 @@ void mach32_device::device_reset()
 	ati_vga_device::device_reset();
 }
 
+void mach32_device::ati_define_video_mode()
+{
+	uint16_t config = m_8514a->get_ext_config();
+
+	if(ati.ext_reg[0x30] & 0x20)
+	{
+		if(m_8514a->has_display_mode_changed())
+		{
+			svga.rgb8_en = 0;
+			svga.rgb15_en = 0;
+			svga.rgb16_en = 0;
+			svga.rgb32_en = 0;
+
+			switch(config & 0x0030)  // pixel depth
+			{
+				case 0x0000:
+					break;
+				case 0x0010:
+					svga.rgb8_en = 1;
+					break;
+				case 0x0020:
+					svga.rgb15_en = 1;
+					break;
+				case 0x0030:
+					svga.rgb32_en = 1;
+					break;
+			}
+		}
+	}
+	else
+	{
+		ati_vga_device::ati_define_video_mode();
+		return;
+	}
+
+	set_dot_clock();
+}
+
+uint16_t mach32_device::offset()
+{
+	if(get_video_depth() >= 15)
+		return ati_vga_device::offset() << 1;
+	return ati_vga_device::offset();
+}
+
 uint32_t mach32_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	ati_vga_device::screen_update(screen,bitmap,cliprect);
@@ -120,8 +187,8 @@ uint32_t mach32_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 
 	if(depth == 8)
 	{
-		colour0 = m_palette->pen(m_cursor_colour0_b);
-		colour1 = m_palette->pen(m_cursor_colour1_b);
+		colour0 = pen(m_cursor_colour0_b);
+		colour1 = pen(m_cursor_colour1_b);
 	}
 	else  // 16/24/32bpp
 	{
@@ -266,15 +333,11 @@ mach64_device::mach64_device(const machine_config &mconfig, device_type type, co
 {
 }
 
-MACHINE_CONFIG_MEMBER( mach64_device::device_add_mconfig )
+MACHINE_CONFIG_START(mach64_device::device_add_mconfig)
 	MCFG_DEVICE_ADD("8514a", ATIMACH64_8514A, 0)
-	MCFG_EEPROM_SERIAL_93C56_ADD("ati_eeprom")
+	downcast<ibm8514a_device*>(device)->set_vga(DEVICE_SELF);
+	MCFG_DEVICE_ADD("ati_eeprom", EEPROM_SERIAL_93C56_16BIT)
 MACHINE_CONFIG_END
-
-void mach64_8514a_device::device_config_complete()
-{
-	m_vga = dynamic_cast<svga_device*>(owner());
-}
 
 void mach64_8514a_device::device_start()
 {

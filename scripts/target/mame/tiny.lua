@@ -21,6 +21,7 @@ CPUS["M6502"] = true
 CPUS["MCS48"] = true
 CPUS["MCS51"] = true
 CPUS["M6800"] = true
+CPUS["M6805"] = true
 CPUS["M6809"] = true
 CPUS["M680X0"] = true
 CPUS["TMS9900"] = true
@@ -54,6 +55,7 @@ SOUNDS["VOLT_REG"] = true
 --------------------------------------------------
 
 MACHINES["6821PIA"] = true
+MACHINES["ADC0808"] = true
 MACHINES["TTL74148"] = true
 MACHINES["TTL74153"] = true
 MACHINES["TTL74157"] = true
@@ -66,8 +68,11 @@ MACHINES["Z80PIO"] = true
 MACHINES["68681"] = true
 MACHINES["BANKDEV"] = true
 MACHINES["GEN_LATCH"] = true
+MACHINES["INPUT_MERGER"] = true
+MACHINES["OUTPUT_LATCH"] = true
 MACHINES["TICKET"] = true
 MACHINES["WATCHDOG"] = true
+MACHINES["Z80DAISY"] = true
 
 
 --------------------------------------------------

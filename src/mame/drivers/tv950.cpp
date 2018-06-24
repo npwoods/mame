@@ -51,7 +51,7 @@
 #define RS232A_TAG  "rs232a"
 #define RS232B_TAG  "rs232b"
 
-#define MASTER_CLOCK XTAL_23_814MHz
+#define MASTER_CLOCK XTAL(23'814'000)
 
 class tv950_state : public driver_device
 {
@@ -75,6 +75,8 @@ public:
 	DECLARE_WRITE8_MEMBER(row_addr_w);
 	DECLARE_WRITE_LINE_MEMBER(via_crtc_reset_w);
 
+	void tv950(machine_config &config);
+	void tv950_mem(address_map &map);
 private:
 	uint8_t m_via_row;
 	uint8_t m_attr_row;
@@ -90,19 +92,20 @@ private:
 	int m_row;
 };
 
-static ADDRESS_MAP_START(tv950_mem, AS_PROGRAM, 8, tv950_state)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0x07ff) AM_RAM
-	AM_RANGE(0x2000, 0x3fff) AM_RAM AM_SHARE("vram") // VRAM
-	AM_RANGE(0x8100, 0x8100) AM_DEVREADWRITE(CRTC_TAG, r6545_1_device, status_r, address_w)
-	AM_RANGE(0x8101, 0x8101) AM_DEVREADWRITE(CRTC_TAG, r6545_1_device, register_r, register_w)
-	AM_RANGE(0x9000, 0x9000) AM_WRITE(row_addr_w)
-	AM_RANGE(0x9300, 0x9303) AM_DEVREADWRITE(ACIA1_TAG, mos6551_device, read, write)
-	AM_RANGE(0x9500, 0x9503) AM_DEVREADWRITE(ACIA2_TAG, mos6551_device, read, write)
-	AM_RANGE(0x9900, 0x9903) AM_DEVREADWRITE(ACIA3_TAG, mos6551_device, read, write)
-	AM_RANGE(0xb100, 0xb10f) AM_DEVREADWRITE(VIA_TAG, via6522_device, read, write)
-	AM_RANGE(0xe000, 0xffff) AM_ROM AM_REGION("maincpu", 0)
-ADDRESS_MAP_END
+void tv950_state::tv950_mem(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0x07ff).ram();
+	map(0x2000, 0x3fff).ram().share("vram"); // VRAM
+	map(0x8100, 0x8100).rw(m_crtc, FUNC(r6545_1_device::status_r), FUNC(r6545_1_device::address_w));
+	map(0x8101, 0x8101).rw(m_crtc, FUNC(r6545_1_device::register_r), FUNC(r6545_1_device::register_w));
+	map(0x9000, 0x9000).w(FUNC(tv950_state::row_addr_w));
+	map(0x9300, 0x9303).rw(ACIA1_TAG, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
+	map(0x9500, 0x9503).rw(ACIA2_TAG, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
+	map(0x9900, 0x9903).rw(ACIA3_TAG, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
+	map(0xb100, 0xb10f).rw(m_via, FUNC(via6522_device::read), FUNC(via6522_device::write));
+	map(0xe000, 0xffff).rom().region("maincpu", 0);
+}
 
 
 /* Input ports */
@@ -267,10 +270,10 @@ MC6845_UPDATE_ROW( tv950_state::crtc_update_row )
 	m_row = (m_row + 1) % 250;
 }
 
-static MACHINE_CONFIG_START( tv950 )
+MACHINE_CONFIG_START(tv950_state::tv950)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M6502, MASTER_CLOCK/14)
-	MCFG_CPU_PROGRAM_MAP(tv950_mem)
+	MCFG_DEVICE_ADD("maincpu", M6502, MASTER_CLOCK/14)
+	MCFG_DEVICE_PROGRAM_MAP(tv950_mem)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_RAW_PARAMS(MASTER_CLOCK, 1200, 0, 1120, 370, 0, 250 )   // not real values
@@ -282,17 +285,17 @@ static MACHINE_CONFIG_START( tv950 )
 	MCFG_MC6845_CHAR_WIDTH(14)
 	MCFG_MC6845_UPDATE_ROW_CB(tv950_state, crtc_update_row)
 	MCFG_MC6845_ADDR_CHANGED_CB(tv950_state, crtc_update_addr)
-	MCFG_MC6845_OUT_HSYNC_CB(DEVWRITELINE(VIA_TAG, via6522_device, write_pb6))
-	MCFG_MC6845_OUT_VSYNC_CB(WRITELINE(tv950_state, crtc_vs_w))
+	MCFG_MC6845_OUT_HSYNC_CB(WRITELINE(VIA_TAG, via6522_device, write_pb6))
+	MCFG_MC6845_OUT_VSYNC_CB(WRITELINE(*this, tv950_state, crtc_vs_w))
 	MCFG_VIDEO_SET_SCREEN(nullptr)
 
 	MCFG_DEVICE_ADD(VIA_TAG, VIA6522, MASTER_CLOCK/14)
 	MCFG_VIA6522_IRQ_HANDLER(INPUTLINE("maincpu", M6502_NMI_LINE))
-	MCFG_VIA6522_WRITEPA_HANDLER(WRITE8(tv950_state, via_a_w))
-	MCFG_VIA6522_WRITEPB_HANDLER(WRITE8(tv950_state, via_b_w))
-	MCFG_VIA6522_READPB_HANDLER(READ8(tv950_state, via_b_r))
-	MCFG_VIA6522_CA2_HANDLER(WRITELINE(tv950_state, via_crtc_reset_w))
-	//MCFG_VIA6522_CB2_HANDLER(WRITELINE(tv950_state, via_blink_rate_w))
+	MCFG_VIA6522_WRITEPA_HANDLER(WRITE8(*this, tv950_state, via_a_w))
+	MCFG_VIA6522_WRITEPB_HANDLER(WRITE8(*this, tv950_state, via_b_w))
+	MCFG_VIA6522_READPB_HANDLER(READ8(*this, tv950_state, via_b_r))
+	MCFG_VIA6522_CA2_HANDLER(WRITELINE(*this, tv950_state, via_crtc_reset_w))
+	//MCFG_VIA6522_CB2_HANDLER(WRITELINE(*this, tv950_state, via_blink_rate_w))
 
 	MCFG_DEVICE_ADD(ACIA1_TAG, MOS6551, 0)
 	MCFG_MOS6551_XTAL(MASTER_CLOCK/13)
@@ -303,7 +306,7 @@ static MACHINE_CONFIG_START( tv950 )
 	MCFG_DEVICE_ADD(ACIA3_TAG, MOS6551, 0)
 	MCFG_MOS6551_XTAL(MASTER_CLOCK/13)
 
-	MCFG_DEVICE_ADD("kbd", I8748, XTAL_5_7143MHz)
+	MCFG_DEVICE_ADD("kbd", I8748, XTAL(5'714'300))
 MACHINE_CONFIG_END
 
 /* ROM definition */
@@ -329,5 +332,5 @@ ROM_START( tv950 )
 ROM_END
 
 /* Driver */
-//    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT  STATE        INIT  COMPANY      FULLNAME  FLAGS
-COMP( 1981, tv950,  0,      0,      tv950,   tv950, tv950_state, 0,    "TeleVideo", "Model 950 Video Display Terminal",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+//    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  CLASS        INIT        COMPANY      FULLNAME                            FLAGS
+COMP( 1981, tv950, 0,      0,      tv950,   tv950, tv950_state, empty_init, "TeleVideo", "Model 950 Video Display Terminal", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
