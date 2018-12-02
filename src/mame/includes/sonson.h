@@ -5,22 +5,30 @@
     Son Son
 
 *************************************************************************/
+#ifndef MAME_INCLUDES_SONSON_H
+#define MAME_INCLUDES_SONSON_H
+
+#pragma once
 
 #include "emupal.h"
 
 class sonson_state : public driver_device
 {
 public:
-	sonson_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	sonson_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_videoram(*this, "videoram"),
 		m_colorram(*this, "colorram"),
 		m_spriteram(*this, "spriteram"),
 		m_audiocpu(*this, "audiocpu"),
 		m_maincpu(*this, "maincpu"),
 		m_gfxdecode(*this, "gfxdecode"),
-		m_palette(*this, "palette") { }
+		m_palette(*this, "palette")
+	{ }
 
+	void sonson(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
@@ -46,7 +54,9 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
-	void sonson(machine_config &config);
+
 	void main_map(address_map &map);
 	void sound_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_SONSON_H

@@ -16,7 +16,7 @@ newoption {
 	description = "Choose GCC flavor",
 	allowed = {
 		{ "android-arm",   "Android - ARM"          },
-		{ "android-arm64", "Android - ARM64"          },
+		{ "android-arm64", "Android - ARM64"        },
 		{ "android-mips",  "Android - MIPS"         },
 		{ "android-mips64","Android - MIPS64"       },
 		{ "android-x86",   "Android - x86"          },
@@ -1077,7 +1077,7 @@ function toolchain(_buildDir, _subDir)
 	configuration { "osx*", "x64" }
 		objdir (_buildDir .. "osx_clang" .. "/obj")
 		buildoptions {
-			"-m64",
+			"-m64", "-DHAVE_IMMINTRIN_H=1",
 		}
 
 	configuration { "osx*", "x64", "Release" }

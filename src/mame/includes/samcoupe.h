@@ -15,6 +15,7 @@
 
 #include "bus/centronics/ctronics.h"
 #include "imagedev/cassette.h"
+#include "imagedev/floppy.h"
 #include "machine/msm6242.h"
 #include "machine/ram.h"
 #include "machine/wd_fdc.h"
@@ -45,13 +46,6 @@
 class samcoupe_state :  public driver_device
 {
 public:
-	enum
-	{
-		TIMER_IRQ_OFF,
-		TIMER_MOUSE_RESET,
-		TIMER_VIDEO_UPDATE
-	};
-
 	samcoupe_state(const machine_config &mconfig, device_type type, const char *tag)
 			: driver_device(mconfig, type, tag),
 			m_maincpu(*this, "maincpu"),
@@ -89,6 +83,16 @@ public:
 		sam_bank_read_ptr[3] = nullptr;
 		sam_bank_write_ptr[3] = nullptr;
 	}
+
+	void samcoupe(machine_config &config);
+
+private:
+	enum
+	{
+		TIMER_IRQ_OFF,
+		TIMER_MOUSE_RESET,
+		TIMER_VIDEO_UPDATE
+	};
 
 	virtual void video_start() override;
 
@@ -200,10 +204,10 @@ public:
 
 	int m_lpt1_busy;
 	int m_lpt2_busy;
-	void samcoupe(machine_config &config);
+
 	void samcoupe_io(address_map &map);
 	void samcoupe_mem(address_map &map);
-protected:
+
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 };
 

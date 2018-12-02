@@ -79,7 +79,6 @@
 #include "includes/foodf.h"
 #include "cpu/m68000/m68000.h"
 #include "machine/adc0808.h"
-#include "machine/atarigen.h"
 #include "machine/watchdog.h"
 #include "sound/pokey.h"
 #include "speaker.h"
@@ -127,7 +126,8 @@ TIMER_DEVICE_CALLBACK_MEMBER(foodf_state::scanline_update_timer)
 	   mystery yet */
 
 	/* INT 1 is on 32V */
-	scanline_int_gen(*m_maincpu);
+	m_scanline_int_state = true;
+	update_interrupts();
 
 	/* advance to the next interrupt */
 	scanline += 64;
@@ -139,9 +139,24 @@ TIMER_DEVICE_CALLBACK_MEMBER(foodf_state::scanline_update_timer)
 }
 
 
+WRITE_LINE_MEMBER(foodf_state::video_int_write_line)
+{
+	if (state)
+	{
+		m_video_int_state = true;
+		update_interrupts();
+	}
+}
+
+
 void foodf_state::machine_start()
 {
-	atarigen_state::machine_start();
+	m_scanline_int_state = false;
+	m_video_int_state = false;
+
+	save_item(NAME(m_scanline_int_state));
+	save_item(NAME(m_video_int_state));
+
 	m_leds.resolve();
 }
 
@@ -165,10 +180,16 @@ WRITE8_MEMBER(foodf_state::digital_w)
 
 	m_nvram->store(data & 0x02);
 
-	if (!(data & 0x04))
-		scanline_int_ack_w(space,0,0);
-	if (!(data & 0x08))
-		video_int_ack_w(space,0,0);
+	if (!BIT(data, 2))
+	{
+		m_scanline_int_state = false;
+		update_interrupts();
+	}
+	if (!BIT(data, 3))
+	{
+		m_video_int_state = false;
+		update_interrupts();
+	}
 
 	m_leds[0] = BIT(data, 4);
 	m_leds[1] = BIT(data, 5);
@@ -322,16 +343,15 @@ MACHINE_CONFIG_START(foodf_state::foodf)
 	MCFG_DEVICE_ADD("maincpu", M68000, MASTER_CLOCK/2)
 	MCFG_DEVICE_PROGRAM_MAP(main_map)
 
-	MCFG_DEVICE_ADD("adc", ADC0809, MASTER_CLOCK/16)
-	MCFG_ADC0808_IN0_CB(IOPORT("STICK1_Y"))
-	MCFG_ADC0808_IN1_CB(IOPORT("STICK0_Y"))
-	MCFG_ADC0808_IN2_CB(IOPORT("STICK1_X"))
-	MCFG_ADC0808_IN3_CB(IOPORT("STICK0_X"))
+	adc0809_device &adc(ADC0809(config, "adc", MASTER_CLOCK/16));
+	adc.in_callback<0>().set_ioport("STICK1_Y");
+	adc.in_callback<1>().set_ioport("STICK0_Y");
+	adc.in_callback<2>().set_ioport("STICK1_X");
+	adc.in_callback<3>().set_ioport("STICK0_X");
 
-	MCFG_X2212_ADD_AUTOSAVE("nvram")
+	X2212(config, "nvram").set_auto_save(true);
 
-	MCFG_WATCHDOG_ADD("watchdog")
-	MCFG_WATCHDOG_VBLANK_INIT("screen", 8)
+	WATCHDOG_TIMER(config, "watchdog").set_vblank_count(m_screen, 8);
 
 	MCFG_TIMER_DRIVER_ADD(m_scan_timer, foodf_state, scanline_update_timer)
 

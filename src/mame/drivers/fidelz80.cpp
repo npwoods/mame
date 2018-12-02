@@ -523,6 +523,22 @@ public:
 		m_beeper(*this, "beeper")
 	{ }
 
+	void cc10(machine_config &config);
+	void vcc(machine_config &config);
+
+	void bcc(machine_config &config);
+
+	void scc(machine_config &config);
+
+	void vsc(machine_config &config);
+
+	void vbrc(machine_config &config);
+
+	void dsc(machine_config &config);
+
+	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
+
+private:
 	// devices/pointers
 	optional_device<i8041_device> m_mcu;
 	optional_device<z80pio_device> m_z80pio;
@@ -533,8 +549,6 @@ public:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_on) { m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE); }
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_off) { m_maincpu->set_input_line(INPUT_LINE_IRQ0, CLEAR_LINE); }
-
-	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
 	// CC10 and VCC/UVC
 	void vcc_prepare_display();
@@ -550,22 +564,18 @@ public:
 	void cc10_map(address_map &map);
 	void vcc_io(address_map &map);
 	void vcc_map(address_map &map);
-	void cc10(machine_config &config);
-	void vcc(machine_config &config);
 
 	// BCC
 	DECLARE_READ8_MEMBER(bcc_input_r);
 	DECLARE_WRITE8_MEMBER(bcc_control_w);
 	void bcc_io(address_map &map);
 	void bcc_map(address_map &map);
-	void bcc(machine_config &config);
 
 	// SCC
 	DECLARE_READ8_MEMBER(scc_input_r);
 	DECLARE_WRITE8_MEMBER(scc_control_w);
 	void scc_io(address_map &map);
 	void scc_map(address_map &map);
-	void scc(machine_config &config);
 
 	// VSC
 	void vsc_prepare_display();
@@ -579,7 +589,6 @@ public:
 	DECLARE_WRITE8_MEMBER(vsc_pio_portb_w);
 	void vsc_io(address_map &map);
 	void vsc_map(address_map &map);
-	void vsc(machine_config &config);
 
 	// VBRC
 	void vbrc_prepare_display();
@@ -588,17 +597,15 @@ public:
 	DECLARE_READ_LINE_MEMBER(vbrc_mcu_t0_r);
 	DECLARE_READ_LINE_MEMBER(vbrc_mcu_t1_r);
 	DECLARE_READ8_MEMBER(vbrc_mcu_p2_r);
-	DECLARE_WRITE8_MEMBER(vbrc_ioexp_port_w);
+	template<int P> void vbrc_ioexp_port_w(uint8_t data);
 	void vbrc_main_io(address_map &map);
 	void vbrc_main_map(address_map &map);
-	void vbrc(machine_config &config);
 
 	// DSC
 	void dsc_prepare_display();
 	DECLARE_WRITE8_MEMBER(dsc_control_w);
 	DECLARE_WRITE8_MEMBER(dsc_select_w);
 	DECLARE_READ8_MEMBER(dsc_input_r);
-	void dsc(machine_config &config);
 	void dsc_map(address_map &map);
 };
 
@@ -1043,10 +1050,11 @@ WRITE8_MEMBER(fidelz80_state::vbrc_speech_w)
 
 // I8243 I/O expander
 
-WRITE8_MEMBER(fidelz80_state::vbrc_ioexp_port_w)
+template<int P>
+void fidelz80_state::vbrc_ioexp_port_w(uint8_t data)
 {
 	// P4-P7: digit segment data
-	m_7seg_data = (m_7seg_data & ~(0xf << (4*offset))) | ((data & 0xf) << (4*offset));
+	m_7seg_data = (m_7seg_data & ~(0xf << (4*P))) | ((data & 0xf) << (4*P));
 	vbrc_prepare_display();
 }
 
@@ -1064,7 +1072,7 @@ READ8_MEMBER(fidelz80_state::vbrc_mcu_p2_r)
 {
 	// P20-P23: I8243 P2
 	// P24-P27: multiplexed inputs (active low)
-	return (m_i8243->p2_r(space, offset) & 0x0f) | (read_inputs(8) << 4 ^ 0xf0);
+	return (m_i8243->p2_r() & 0x0f) | (read_inputs(8) << 4 ^ 0xf0);
 }
 
 READ_LINE_MEMBER(fidelz80_state::vbrc_mcu_t0_r)
@@ -1196,7 +1204,7 @@ READ8_MEMBER(fidelz80_state::vsc_io_trampoline_r)
 {
 	u8 data = 0xff; // open bus
 	if (~offset & 4)
-		data &= m_ppi8255->read(space, offset & 3);
+		data &= m_ppi8255->read(offset & 3);
 	if (~offset & 8)
 		data &= m_z80pio->read(space, offset & 3);
 
@@ -1206,7 +1214,7 @@ READ8_MEMBER(fidelz80_state::vsc_io_trampoline_r)
 WRITE8_MEMBER(fidelz80_state::vsc_io_trampoline_w)
 {
 	if (~offset & 4)
-		m_ppi8255->write(space, offset & 3, data);
+		m_ppi8255->write(offset & 3, data);
 	if (~offset & 8)
 		m_z80pio->write(space, offset & 3, data);
 }
@@ -1660,7 +1668,7 @@ MACHINE_CONFIG_START(fidelz80_state::bcc)
 	MCFG_DEVICE_IO_MAP(bcc_io)
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_bcc)
+	config.set_default_layout(layout_fidel_bcc);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -1677,7 +1685,7 @@ MACHINE_CONFIG_START(fidelz80_state::scc)
 	MCFG_DEVICE_IO_MAP(scc_io)
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_sc8)
+	config.set_default_layout(layout_fidel_sc8);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -1693,17 +1701,17 @@ MACHINE_CONFIG_START(fidelz80_state::cc10)
 	MCFG_DEVICE_PROGRAM_MAP(cc10_map)
 	MCFG_DEVICE_IO_MAP(vcc_io)
 
-	MCFG_DEVICE_ADD("ppi8255", I8255, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, fidelz80_state, cc10_ppi_porta_w))
-	MCFG_I8255_TRISTATE_PORTA_CB(CONSTANT(0))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("LEVEL"))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, fidelz80_state, vcc_ppi_portb_w))
-	MCFG_I8255_IN_PORTC_CB(READ8(*this, fidelz80_state, vcc_ppi_portc_r))
-	MCFG_I8255_TRISTATE_PORTB_CB(CONSTANT(0))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, fidelz80_state, vcc_ppi_portc_w))
+	I8255(config, m_ppi8255);
+	m_ppi8255->out_pa_callback().set(FUNC(fidelz80_state::cc10_ppi_porta_w));
+	m_ppi8255->tri_pa_callback().set_constant(0);
+	m_ppi8255->in_pb_callback().set_ioport("LEVEL");
+	m_ppi8255->out_pb_callback().set(FUNC(fidelz80_state::vcc_ppi_portb_w));
+	m_ppi8255->in_pc_callback().set(FUNC(fidelz80_state::vcc_ppi_portc_r));
+	m_ppi8255->tri_pb_callback().set_constant(0);
+	m_ppi8255->out_pc_callback().set(FUNC(fidelz80_state::vcc_ppi_portc_w));
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_cc)
+	config.set_default_layout(layout_fidel_cc);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -1719,17 +1727,17 @@ MACHINE_CONFIG_START(fidelz80_state::vcc)
 	MCFG_DEVICE_PROGRAM_MAP(vcc_map)
 	MCFG_DEVICE_IO_MAP(vcc_io)
 
-	MCFG_DEVICE_ADD("ppi8255", I8255, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, fidelz80_state, vcc_ppi_porta_w))
-	MCFG_I8255_TRISTATE_PORTA_CB(CONSTANT(0))
-	MCFG_I8255_IN_PORTB_CB(READ8(*this, fidelz80_state, vcc_ppi_portb_r))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, fidelz80_state, vcc_ppi_portb_w))
-	MCFG_I8255_TRISTATE_PORTB_CB(CONSTANT(0))
-	MCFG_I8255_IN_PORTC_CB(READ8(*this, fidelz80_state, vcc_ppi_portc_r))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, fidelz80_state, vcc_ppi_portc_w))
+	I8255(config, m_ppi8255);
+	m_ppi8255->out_pa_callback().set(FUNC(fidelz80_state::vcc_ppi_porta_w));
+	m_ppi8255->tri_pa_callback().set_constant(0);
+	m_ppi8255->in_pb_callback().set(FUNC(fidelz80_state::vcc_ppi_portb_r));
+	m_ppi8255->out_pb_callback().set(FUNC(fidelz80_state::vcc_ppi_portb_w));
+	m_ppi8255->tri_pb_callback().set_constant(0);
+	m_ppi8255->in_pc_callback().set(FUNC(fidelz80_state::vcc_ppi_portc_r));
+	m_ppi8255->out_pc_callback().set(FUNC(fidelz80_state::vcc_ppi_portc_w));
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_vcc)
+	config.set_default_layout(layout_fidel_vcc);
 
 	MCFG_MACHINE_START_OVERRIDE(fidelz80_state,vcc)
 
@@ -1748,18 +1756,18 @@ MACHINE_CONFIG_START(fidelz80_state::vsc)
 	MCFG_DEVICE_IO_MAP(vsc_io)
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(fidelz80_state, nmi_line_pulse, 587) // 555 timer, measured
 
-	MCFG_DEVICE_ADD("ppi8255", I8255, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, fidelz80_state, vsc_ppi_porta_w))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, fidelz80_state, vsc_ppi_portb_w))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, fidelz80_state, vsc_ppi_portc_w))
+	I8255(config, m_ppi8255);
+	m_ppi8255->out_pa_callback().set(FUNC(fidelz80_state::vsc_ppi_porta_w));
+	m_ppi8255->out_pb_callback().set(FUNC(fidelz80_state::vsc_ppi_portb_w));
+	m_ppi8255->out_pc_callback().set(FUNC(fidelz80_state::vsc_ppi_portc_w));
 
-	MCFG_DEVICE_ADD("z80pio", Z80PIO, 3.9_MHz_XTAL)
-	MCFG_Z80PIO_IN_PA_CB(READ8(*this, fidelz80_state, vsc_pio_porta_r))
-	MCFG_Z80PIO_IN_PB_CB(READ8(*this, fidelz80_state, vsc_pio_portb_r))
-	MCFG_Z80PIO_OUT_PB_CB(WRITE8(*this, fidelz80_state, vsc_pio_portb_w))
+	Z80PIO(config, m_z80pio, 3.9_MHz_XTAL);
+	m_z80pio->in_pa_callback().set(FUNC(fidelz80_state::vsc_pio_porta_r));
+	m_z80pio->in_pb_callback().set(FUNC(fidelz80_state::vsc_pio_portb_r));
+	m_z80pio->out_pb_callback().set(FUNC(fidelz80_state::vsc_pio_portb_w));
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_vsc)
+	config.set_default_layout(layout_fidel_vsc);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -1779,15 +1787,19 @@ MACHINE_CONFIG_START(fidelz80_state::vbrc)
 	MCFG_DEVICE_ADD("mcu", I8041, 5_MHz_XTAL)
 	MCFG_MCS48_PORT_P1_OUT_CB(WRITE8(*this, fidelz80_state, vbrc_mcu_p1_w))
 	MCFG_MCS48_PORT_P2_IN_CB(READ8(*this, fidelz80_state, vbrc_mcu_p2_r))
-	MCFG_MCS48_PORT_P2_OUT_CB(WRITE8("i8243", i8243_device, p2_w))
-	MCFG_MCS48_PORT_PROG_OUT_CB(WRITELINE("i8243", i8243_device, prog_w))
+	MCFG_MCS48_PORT_P2_OUT_CB(WRITE8(m_i8243, i8243_device, p2_w))
+	MCFG_MCS48_PORT_PROG_OUT_CB(WRITELINE(m_i8243, i8243_device, prog_w))
 	MCFG_MCS48_PORT_T0_IN_CB(READLINE(*this, fidelz80_state, vbrc_mcu_t0_r))
 	MCFG_MCS48_PORT_T1_IN_CB(READLINE(*this, fidelz80_state, vbrc_mcu_t1_r))
 
-	MCFG_I8243_ADD("i8243", NOOP, WRITE8(*this, fidelz80_state, vbrc_ioexp_port_w))
+	I8243(config, m_i8243);
+	m_i8243->p4_out_cb().set(FUNC(fidelz80_state::vbrc_ioexp_port_w<0>));
+	m_i8243->p5_out_cb().set(FUNC(fidelz80_state::vbrc_ioexp_port_w<1>));
+	m_i8243->p6_out_cb().set(FUNC(fidelz80_state::vbrc_ioexp_port_w<2>));
+	m_i8243->p7_out_cb().set(FUNC(fidelz80_state::vbrc_ioexp_port_w<3>));
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_vbrc)
+	config.set_default_layout(layout_fidel_vbrc);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -1806,7 +1818,7 @@ MACHINE_CONFIG_START(fidelz80_state::dsc)
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_off", fidelz80_state, irq_off, attotime::from_hz(523))
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", fidelbase_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_fidel_dsc)
+	config.set_default_layout(layout_fidel_dsc);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();

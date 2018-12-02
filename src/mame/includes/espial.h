@@ -6,6 +6,10 @@
  Espial hardware games (drivers: espial.cpp)
 
 ***************************************************************************/
+#ifndef MAME_INCLUDES_ESPIAL_H
+#define MAME_INCLUDES_ESPIAL_H
+
+#pragma once
 
 #include "machine/gen_latch.h"
 #include "machine/timer.h"
@@ -14,8 +18,8 @@
 class espial_state : public driver_device
 {
 public:
-	espial_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	espial_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_videoram(*this, "videoram"),
 		m_attributeram(*this, "attributeram"),
 		m_scrollram(*this, "scrollram"),
@@ -27,8 +31,13 @@ public:
 		m_audiocpu(*this, "audiocpu"),
 		m_gfxdecode(*this, "gfxdecode"),
 		m_palette(*this, "palette"),
-		m_soundlatch(*this, "soundlatch") { }
+		m_soundlatch(*this, "soundlatch")
+	{ }
 
+	void espial(machine_config &config);
+	void netwars(machine_config &config);
+
+private:
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_attributeram;
 	required_shared_ptr<uint8_t> m_scrollram;
@@ -71,10 +80,10 @@ public:
 	INTERRUPT_GEN_MEMBER(espial_sound_nmi_gen);
 	TIMER_DEVICE_CALLBACK_MEMBER(espial_scanline);
 	void draw_sprites( bitmap_ind16 &bitmap, const rectangle &cliprect );
-	void espial(machine_config &config);
-	void netwars(machine_config &config);
 	void espial_map(address_map &map);
 	void espial_sound_io_map(address_map &map);
 	void espial_sound_map(address_map &map);
 	void netwars_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_ESPIAL_H

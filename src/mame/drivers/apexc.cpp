@@ -8,6 +8,7 @@
     see cpu/apexc.c for background and tech info
 */
 
+#include "emu.h"
 #include "includes/apexc.h"
 
 /*static*/ const device_timer_id apexc_state::TIMER_POLL_INPUTS = 1;
@@ -217,9 +218,9 @@ void apexc_state::check_inputs()
 
 	if (control_transitions & panel_mem)
 	{   /* read/write memory */
-		if (control_keys & panel_write)	/* write memory */
+		if (control_keys & panel_write) /* write memory */
 			m_maincpu->space(AS_PROGRAM).write_dword(m_maincpu->pc(), m_panel_data_reg);
-		else							/* read memory */
+		else                            /* read memory */
 			m_panel_data_reg = m_maincpu->space(AS_PROGRAM).read_dword(m_maincpu->pc());
 	}
 

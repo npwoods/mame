@@ -207,7 +207,7 @@ protected:
 	DECLARE_VIDEO_START(flytiger)
 	{
 		m_paletteram_flytiger = make_unique_clear<uint8_t[]>(0x1000);
-		save_pointer(NAME(m_paletteram_flytiger.get()), 0x1000);
+		save_pointer(NAME(m_paletteram_flytiger), 0x1000);
 
 		m_palette_bank = 0;
 
@@ -279,7 +279,7 @@ protected:
 	DECLARE_VIDEO_START(pollux)
 	{
 		m_paletteram_flytiger = make_unique_clear<uint8_t[]>(0x1000);
-		save_pointer(NAME(m_paletteram_flytiger.get()), 0x1000);
+		save_pointer(NAME(m_paletteram_flytiger), 0x1000);
 
 		m_palette_bank = 0;
 
@@ -691,7 +691,7 @@ void dooyong_68k_state::draw_sprites(screen_device &screen, bitmap_ind16 &bitmap
 			int const color = buffered_spriteram[offs+7] & 0x000f;
 			//TODO: This priority mechanism works for known games, but seems a bit strange.
 			//Are we missing something?  (The obvious spare palette bit isn't it.)
-			int const pri = (((color == 0x00) || (color == 0x0f)) ? 0xfc : 0xf0);
+			int const pri = GFX_PMASK_4 | (((color == 0x00) || (color == 0x0f)) ? GFX_PMASK_2 : 0);
 			int const width = buffered_spriteram[offs+1] & 0x000f;
 			int const height = (buffered_spriteram[offs+1] & 0x00f0) >> 4;
 
@@ -753,12 +753,12 @@ uint32_t popbingo_state::screen_update_popbingo(screen_device &screen, bitmap_in
 	m_bg_bitmap[1].fill(m_palette->black_pen(), cliprect);
 	m_bg[1]->draw(screen, m_bg_bitmap[1], cliprect, 0, 1);
 
-	for (int y = cliprect.min_y; cliprect.max_y >= y; y++)
+	for (int y = cliprect.top(); cliprect.bottom() >= y; y++)
 	{
 		uint16_t const *const bg_src(&m_bg_bitmap[0].pix16(y, 0));
 		uint16_t const *const bg2_src(&m_bg_bitmap[1].pix16(y, 0));
 		uint16_t *const dst(&bitmap.pix16(y, 0));
-		for (int x = cliprect.min_x; cliprect.max_x >= x; x++)
+		for (int x = cliprect.left(); cliprect.right() >= x; x++)
 			dst[x] = 0x100U | (bg_src[x] << 4) | bg2_src[x];
 	}
 
@@ -1434,28 +1434,28 @@ MACHINE_CONFIG_START(dooyong_z80_ym2203_state::sound_2203)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD("ym1", YM2203, 1500000)
-	MCFG_YM2203_IRQ_HANDLER(WRITELINE("soundirq", input_merger_any_high_device, in_w<0>))
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, dooyong_z80_ym2203_state, unk_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
+	ym2203_device &ym1(YM2203(config, "ym1", 1500000));
+	ym1.irq_handler().set("soundirq", FUNC(input_merger_any_high_device::in_w<0>));
+	ym1.port_a_read_callback().set(FUNC(dooyong_z80_ym2203_state::unk_r));
+	ym1.add_route(ALL_OUTPUTS, "mono", 0.40);
 
-	MCFG_DEVICE_ADD("ym2", YM2203, 1500000)
-	MCFG_YM2203_IRQ_HANDLER(WRITELINE("soundirq", input_merger_any_high_device, in_w<1>))
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, dooyong_z80_ym2203_state, unk_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
+	ym2203_device &ym2(YM2203(config, "ym2", 1500000));
+	ym2.irq_handler().set("soundirq", FUNC(input_merger_any_high_device::in_w<1>));
+	ym2.port_a_read_callback().set(FUNC(dooyong_z80_ym2203_state::unk_r));
+	ym2.add_route(ALL_OUTPUTS, "mono", 0.40);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(dooyong_z80_state::sound_2151)
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, 3.579'545_MHz_XTAL)
-	MCFG_YM2151_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(0, "mono", 0.50)
-	MCFG_SOUND_ROUTE(1, "mono", 0.50)
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", 3.579'545_MHz_XTAL));
+	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
+	ymsnd.add_route(0, "mono", 0.50);
+	ymsnd.add_route(1, "mono", 0.50);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 1_MHz_XTAL, okim6295_device::PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.60)
@@ -1464,12 +1464,12 @@ MACHINE_CONFIG_END
 MACHINE_CONFIG_START(dooyong_state::sound_2151_4mhz)
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, 16_MHz_XTAL/4)  /* 4MHz (16MHz/4 for most, 8Mhz/2 for Super-X) */
-	MCFG_YM2151_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(0, "mono", 0.50)
-	MCFG_SOUND_ROUTE(1, "mono", 0.50)
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", 16_MHz_XTAL/4));  /* 4MHz (16MHz/4 for most, 8Mhz/2 for Super-X) */
+	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
+	ymsnd.add_route(0, "mono", 0.50);
+	ymsnd.add_route(1, "mono", 0.50);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 16_MHz_XTAL/16, okim6295_device::PIN7_HIGH)  /* 1MHz (16MHz/16 for most, 8Mhz/8 for Super-X) */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.60)
@@ -1515,17 +1515,17 @@ MACHINE_CONFIG_START(dooyong_z80_ym2203_state::lastday)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD("ym1", YM2203, 16_MHz_XTAL/4)  /* 4MHz verified for Last Day / D-day */
-	MCFG_YM2203_IRQ_HANDLER(WRITELINE("soundirq", input_merger_any_high_device, in_w<0>))
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, dooyong_z80_ym2203_state, unk_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
+	ym2203_device &ym1(YM2203(config, "ym1", 16_MHz_XTAL/4));  /* 4MHz verified for Last Day / D-day */
+	ym1.irq_handler().set("soundirq", FUNC(input_merger_any_high_device::in_w<0>));
+	ym1.port_a_read_callback().set(FUNC(dooyong_z80_ym2203_state::unk_r));
+	ym1.add_route(ALL_OUTPUTS, "mono", 0.40);
 
-	MCFG_DEVICE_ADD("ym2", YM2203, 16_MHz_XTAL/4)  /* 4MHz verified for Last Day / D-day */
-	MCFG_YM2203_IRQ_HANDLER(WRITELINE("soundirq", input_merger_any_high_device, in_w<1>))
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, dooyong_z80_ym2203_state, unk_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
+	ym2203_device &ym2(YM2203(config, "ym2", 16_MHz_XTAL/4));  /* 4MHz verified for Last Day / D-day */
+	ym2.irq_handler().set("soundirq", FUNC(input_merger_any_high_device::in_w<1>));
+	ym2.port_a_read_callback().set(FUNC(dooyong_z80_ym2203_state::unk_r));
+	ym2.add_route(ALL_OUTPUTS, "mono", 0.40);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(dooyong_z80_ym2203_state::gulfstrm)

@@ -5,6 +5,10 @@
     Pirate Ship Higemaru
 
 *************************************************************************/
+#ifndef MAME_INCLUDES_HIGEMARU_H
+#define MAME_INCLUDES_HIGEMARU_H
+
+#pragma once
 
 #include "machine/timer.h"
 #include "emupal.h"
@@ -12,15 +16,19 @@
 class higemaru_state : public driver_device
 {
 public:
-	higemaru_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	higemaru_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_videoram(*this, "videoram"),
 		m_colorram(*this, "colorram"),
 		m_spriteram(*this, "spriteram"),
 		m_maincpu(*this, "maincpu"),
 		m_gfxdecode(*this, "gfxdecode"),
-		m_palette(*this, "palette") { }
+		m_palette(*this, "palette")
+	{ }
 
+	void higemaru(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
@@ -40,6 +48,7 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
-	void higemaru(machine_config &config);
 	void higemaru_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_HIGEMARU_H

@@ -48,15 +48,17 @@ public:
 		, m_terminal(*this, "terminal")
 	{ }
 
+	void sacstate(machine_config &config);
+
+private:
 	DECLARE_READ8_MEMBER(port00_r);
 	DECLARE_READ8_MEMBER(port01_r);
 	DECLARE_READ8_MEMBER(port04_r);
 	DECLARE_WRITE8_MEMBER(port08_w);
 	void kbd_put(u8 data);
-	void sacstate(machine_config &config);
 	void sacstate_io(address_map &map);
 	void sacstate_mem(address_map &map);
-private:
+
 	uint8_t m_term_data;
 	uint8_t m_val;
 	virtual void machine_reset() override;
@@ -104,7 +106,6 @@ void sacstate_state::sacstate_mem(address_map &map)
 void sacstate_state::sacstate_io(address_map &map)
 {
 	map.unmap_value_high();
-	map.global_mask(0xff);
 	map(0x00, 0x00).r(FUNC(sacstate_state::port00_r));
 	map(0x01, 0x01).r(FUNC(sacstate_state::port01_r));
 	map(0x04, 0x04).r(FUNC(sacstate_state::port04_r));
@@ -139,7 +140,7 @@ MACHINE_CONFIG_START(sacstate_state::sacstate)
 	MCFG_DEVICE_IO_MAP(sacstate_io)
 
 	/* video hardware */
-	MCFG_DEVICE_ADD("terminal", GENERIC_TERMINAL, 0)
+	MCFG_DEVICE_ADD(m_terminal, GENERIC_TERMINAL, 0)
 	MCFG_GENERIC_TERMINAL_KEYBOARD_CB(PUT(sacstate_state, kbd_put))
 MACHINE_CONFIG_END
 

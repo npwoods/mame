@@ -46,6 +46,9 @@ public:
 		, m_palette(*this, "palette")
 	{ }
 
+	void cupsocbl(machine_config &config);
+
+private:
 	// devices
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
@@ -75,17 +78,15 @@ public:
 	TILE_GET_INFO_MEMBER(get_sc2_tileinfo);
 	TILE_GET_INFO_MEMBER(get_sc3_tileinfo);
 
-	void cupsocbl(machine_config &config);
 	void cupsocbl_mem(address_map &map);
 	void cupsocbl_sound_mem(address_map &map);
-protected:
+
 	// driver_device overrides
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
 	virtual void video_start() override;
 
-private:
 	void draw_sprites(screen_device &screen, bitmap_ind16 &bitmap,const rectangle &cliprect);
 	uint16_t m_layer_disable;
 };
@@ -579,10 +580,10 @@ MACHINE_CONFIG_START(seicupbl_state::cupsocbl)
 	MCFG_SCREEN_UPDATE_DRIVER(seicupbl_state, screen_update)
 	MCFG_SCREEN_PALETTE("palette")
 
-	//MCFG_DEVICE_ADD("crtc", SEIBU_CRTC, 0)
-	//MCFG_SEIBU_CRTC_LAYER_EN_CB(WRITE16(*this, seicupbl_state, tilemap_enable_w))
-	//MCFG_SEIBU_CRTC_LAYER_SCROLL_CB(WRITE16(*this, seicupbl_state, tile_scroll_w))
-	//MCFG_SEIBU_CRTC_REG_1A_CB(WRITE16(*this, seicupbl_state, tile_vreg_1a_w))
+	//seibu_crtc_device &crtc(SEIBU_CRTC(config, "crtc", 0));
+	//crtc.layer_en_callback().set(FUNC(seicupbl_state::tilemap_enable_w));
+	//crtc.layer_scroll_callback().set(FUNC(seicupbl_state::tile_scroll_w));
+	//crtc.reg_1a_callback().set(FUNC(seicupbl_state::tile_vreg_1a_w));
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_seicupbl_csb)
 
@@ -594,8 +595,8 @@ MACHINE_CONFIG_START(seicupbl_state::cupsocbl)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
+	GENERIC_LATCH_8(config, m_soundlatch);
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 1000000, okim6295_device::PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)

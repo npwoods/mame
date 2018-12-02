@@ -64,6 +64,11 @@ public:
 		m_gfxdecode(*this, "gfxdecode"),
 		m_palette(*this, "palette")  { }
 
+	void hitpoker(machine_config &config);
+
+	void init_hitpoker();
+
+private:
 	required_shared_ptr<uint8_t> m_sys_regs;
 
 	uint8_t m_pic_data;
@@ -87,13 +92,11 @@ public:
 	DECLARE_WRITE8_MEMBER(hitpoker_pic_w);
 	DECLARE_WRITE_LINE_MEMBER(hitpoker_irq);
 	DECLARE_READ8_MEMBER(irq_clear_r);
-	void init_hitpoker();
 	virtual void video_start() override;
 	uint32_t screen_update_hitpoker(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
-	void hitpoker(machine_config &config);
 	void hitpoker_io(address_map &map);
 	void hitpoker_map(address_map &map);
 };
@@ -465,7 +468,7 @@ MACHINE_CONFIG_START(hitpoker_state::hitpoker)
 	MCFG_DEVICE_IO_MAP(hitpoker_io)
 	MCFG_MC68HC11_CONFIG(0, 0x100, 0x01)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -476,20 +479,21 @@ MACHINE_CONFIG_START(hitpoker_state::hitpoker)
 	MCFG_SCREEN_UPDATE_DRIVER(hitpoker_state, screen_update_hitpoker)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_MC6845_ADD("crtc", H46505, "screen", CRTC_CLOCK/2)  /* hand tuned to get ~60 fps */
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(8)
-	MCFG_MC6845_OUT_VSYNC_CB(WRITELINE(*this, hitpoker_state, hitpoker_irq))
+	h46505_device &crtc(H46505(config, "crtc", CRTC_CLOCK/2));  /* hand tuned to get ~60 fps */
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(8);
+	crtc.out_vsync_callback().set(FUNC(hitpoker_state::hitpoker_irq));
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_hitpoker)
 	MCFG_PALETTE_ADD("palette", 0x800)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", YM2149, 1500000)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW1"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW2"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	ym2149_device &aysnd(YM2149(config, "aysnd", 1500000));
+	aysnd.port_a_read_callback().set_ioport("DSW1");
+	aysnd.port_b_read_callback().set_ioport("DSW2");
+	aysnd.add_route(ALL_OUTPUTS, "mono", 0.50);
 MACHINE_CONFIG_END
 
 void hitpoker_state::init_hitpoker()

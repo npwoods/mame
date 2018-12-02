@@ -56,15 +56,15 @@ To Do:
 READ16_MEMBER(realbrk_state::realbrk_dsw_r)
 {
 	uint16_t sel = ~m_dsw_select[0];
-	if (sel & 0x01) return  (ioport("SW1")->read() & 0x00ff) << 8;      // DSW1 low bits
-	if (sel & 0x02) return  (ioport("SW2")->read() & 0x00ff) << 8;      // DSW2 low bits
-	if (sel & 0x04) return  (ioport("SW3")->read() & 0x00ff) << 8;      // DSW3 low bits
-	if (sel & 0x08) return  (ioport("SW4")->read() & 0x00ff) << 8;      // DSW4 low bits
+	if (sel & 0x01) return  (m_dsw_io[0]->read() & 0x00ff) << 8;      // DSW1 low bits
+	if (sel & 0x02) return  (m_dsw_io[1]->read() & 0x00ff) << 8;      // DSW2 low bits
+	if (sel & 0x04) return  (m_dsw_io[2]->read() & 0x00ff) << 8;      // DSW3 low bits
+	if (sel & 0x08) return  (m_dsw_io[3]->read() & 0x00ff) << 8;      // DSW4 low bits
 
-	if (sel & 0x10) return  ((ioport("SW1")->read() & 0x0300) << 0) |   // DSWs high 2 bits
-							((ioport("SW2")->read() & 0x0300) << 2) |
-							((ioport("SW3")->read() & 0x0300) << 4) |
-							((ioport("SW4")->read() & 0x0300) << 6) ;
+	if (sel & 0x10) return  ((m_dsw_io[0]->read() & 0x0300) << 0) |   // DSWs high 2 bits
+							((m_dsw_io[1]->read() & 0x0300) << 2) |
+							((m_dsw_io[2]->read() & 0x0300) << 4) |
+							((m_dsw_io[3]->read() & 0x0300) << 6) ;
 
 	logerror("CPU #0 PC %06X: read with unknown dsw_select = %02x\n",m_maincpu->pc(),m_dsw_select[0]);
 	return 0xffff;
@@ -76,14 +76,14 @@ READ16_MEMBER(realbrk_state::pkgnsh_input_r)
 	{
 		case 0x00/2: return 0xffff;
 		case 0x02/2: return 0xffff;
-		case 0x04/2: return ioport("IN0")->read();      /*Service buttons*/
-		case 0x06/2: return ioport("SW1")->read();      /*DIP 2*/
-		case 0x08/2: return ioport("SW2")->read();      /*DIP 1*/
-		case 0x0a/2: return ioport("SW3")->read();      /*DIP 1+2 Hi-Bits*/
-		case 0x0c/2: return ioport("PADDLE1")->read();  /*Handle 1p*/
-		case 0x0e/2: return ioport("P1")->read();           /*Buttons 1p*/
-		case 0x10/2: return ioport("PADDLE2")->read();  /*Handle 2p*/
-		case 0x12/2: return ioport("P2")->read();           /*Buttons 2p*/
+		case 0x04/2: return m_in_io[0]->read();      /*Service buttons*/
+		case 0x06/2: return m_dsw_io[0]->read();      /*DIP 2*/
+		case 0x08/2: return m_dsw_io[1]->read();      /*DIP 1*/
+		case 0x0a/2: return m_dsw_io[2]->read();      /*DIP 1+2 Hi-Bits*/
+		case 0x0c/2: return m_paddle_io[0]->read();  /*Handle 1p*/
+		case 0x0e/2: return m_player_io[0]->read();           /*Buttons 1p*/
+		case 0x10/2: return m_paddle_io[1]->read();  /*Handle 2p*/
+		case 0x12/2: return m_player_io[1]->read();           /*Buttons 2p*/
 	}
 	return 0xffff;
 }
@@ -95,22 +95,22 @@ READ16_MEMBER(realbrk_state::pkgnshdx_input_r)
 	switch(offset)
 	{
 		case 0x00/2: return 0xffff;
-		case 0x02/2: return ioport("IN0")->read();  /*Service buttons*/
+		case 0x02/2: return m_in_io[0]->read();  /*Service buttons*/
 		/*DSW,same handling as realbrk*/
 		case 0x04/2:
-			if (sel & 0x01) return  (ioport("SW1")->read() & 0x00ff) << 8;      // DSW1 low bits
-			if (sel & 0x02) return  (ioport("SW2")->read() & 0x00ff) << 8;      // DSW2 low bits
-			if (sel & 0x04) return  (ioport("SW3")->read() & 0x00ff) << 8;      // DSW3 low bits
-			if (sel & 0x08) return  (ioport("SW4")->read() & 0x00ff) << 8;      // DSW4 low bits
+			if (sel & 0x01) return  (m_dsw_io[0]->read() & 0x00ff) << 8;      // DSW1 low bits
+			if (sel & 0x02) return  (m_dsw_io[1]->read() & 0x00ff) << 8;      // DSW2 low bits
+			if (sel & 0x04) return  (m_dsw_io[2]->read() & 0x00ff) << 8;      // DSW3 low bits
+			if (sel & 0x08) return  (m_dsw_io[3]->read() & 0x00ff) << 8;      // DSW4 low bits
 
-			if (sel & 0x10) return  ((ioport("SW1")->read() & 0x0300) << 0) |   // DSWs high 2 bits
-									((ioport("SW2")->read() & 0x0300) << 2) |
-									((ioport("SW3")->read() & 0x0300) << 4) |
-									((ioport("SW4")->read() & 0x0300) << 6) ;
+			if (sel & 0x10) return  ((m_dsw_io[0]->read() & 0x0300) << 0) |   // DSWs high 2 bits
+									((m_dsw_io[1]->read() & 0x0300) << 2) |
+									((m_dsw_io[2]->read() & 0x0300) << 4) |
+									((m_dsw_io[3]->read() & 0x0300) << 6) ;
 
 			return 0xffff;
-		case 0x06/2: return ioport("P2")->read();/*Buttons+Handle 2p*/
-		case 0x08/2: return ioport("P1")->read();/*Buttons+Handle 1p*/
+		case 0x06/2: return m_player_io[1]->read();/*Buttons+Handle 2p*/
+		case 0x08/2: return m_player_io[0]->read();/*Buttons+Handle 1p*/
 		case 0x0a/2: return 0xffff;
 		case 0x0c/2: return 0xffff;
 		case 0x0e/2: return 0xffff;
@@ -148,6 +148,13 @@ WRITE16_MEMBER(realbrk_state::backup_ram_w)
 	COMBINE_DATA(&m_backup_ram[offset]);
 }
 
+template<int Layer>
+WRITE16_MEMBER(realbrk_state::vram_w)
+{
+	COMBINE_DATA(&m_vram[Layer][offset]);
+	m_tilemap[Layer]->mark_tile_dirty(offset/2);
+}
+
 /***************************************************************************
 
                                 Memory Maps
@@ -160,8 +167,8 @@ void realbrk_state::base_mem(address_map &map)
 	map(0x000000, 0x0fffff).rom();                                         // ROM
 	map(0x200000, 0x203fff).ram().share("spriteram"); // Sprites
 	map(0x400000, 0x40ffff).ram().w(m_palette, FUNC(palette_device::write16)).share("palette");   // Palette
-	map(0x600000, 0x601fff).ram().w(FUNC(realbrk_state::vram_0_w)).share("vram_0");  // Background   (0)
-	map(0x602000, 0x603fff).ram().w(FUNC(realbrk_state::vram_1_w)).share("vram_1");  // Background   (1)
+	map(0x600000, 0x601fff).ram().w(FUNC(realbrk_state::vram_w<0>)).share("vram_0");  // Background   (0)
+	map(0x602000, 0x603fff).ram().w(FUNC(realbrk_state::vram_w<1>)).share("vram_1");  // Background   (1)
 	map(0x604000, 0x604fff).ram().w(FUNC(realbrk_state::vram_2_w)).share("vram_2");  // Text         (2)
 	map(0x605000, 0x61ffff).ram();                                         //
 	map(0x606000, 0x60600f).ram().w(FUNC(realbrk_state::vregs_w)).share("vregs");    // Scroll + Video Regs
@@ -763,13 +770,13 @@ WRITE_LINE_MEMBER(realbrk_state::vblank_irq)
 MACHINE_CONFIG_START(realbrk_state::realbrk)
 
 	/* basic machine hardware */
-	MCFG_DEVICE_ADD("maincpu",M68000, XTAL(32'000'000) / 2)          /* !! TMP68301 !! */
+	MCFG_DEVICE_ADD(m_maincpu, M68000, XTAL(32'000'000) / 2)          /* !! TMP68301 !! */
 	MCFG_DEVICE_PROGRAM_MAP(realbrk_mem)
 	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DEVICE("tmp68301",tmp68301_device,irq_callback)
 
-	MCFG_DEVICE_ADD("tmp68301", TMP68301, 0)
-	MCFG_TMP68301_CPU("maincpu")
-	MCFG_TMP68301_OUT_PARALLEL_CB(WRITE16(*this, realbrk_state,realbrk_flipscreen_w))
+	TMP68301(config, m_tmp68301, 0);
+	m_tmp68301->set_cputag(m_maincpu);
+	m_tmp68301->out_parallel_callback().set(FUNC(realbrk_state::realbrk_flipscreen_w));
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -803,8 +810,7 @@ MACHINE_CONFIG_START(realbrk_state::pkgnsh)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(pkgnsh_mem)
 
-	MCFG_DEVICE_MODIFY("tmp68301")
-	MCFG_TMP68301_OUT_PARALLEL_CB(NOOP)
+	m_tmp68301->out_parallel_callback().set_nop();
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(realbrk_state::pkgnshdx)

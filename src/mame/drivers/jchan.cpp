@@ -113,7 +113,7 @@ CG24143/CG24173 - Fujitsu custom graphics generators
           VSync - 59.6010Hz
           HSync - 15.55610kHz
 
-Eproms:
+EPROMs:
 Location    Rom Type    PCB Label
 ---------------------------------
 U164        27C2001     SPA-7A
@@ -183,6 +183,11 @@ public:
 		, m_ctrl(*this, "ctrl")
 	{ }
 
+	void jchan(machine_config &config);
+
+	void init_jchan();
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_subcpu;
 	required_device<palette_device> m_palette;
@@ -206,13 +211,11 @@ public:
 	template<int Chip> DECLARE_WRITE16_MEMBER(sknsspr_sprite32_w);
 	template<int Chip> DECLARE_WRITE16_MEMBER(sknsspr_sprite32regs_w);
 
-	void init_jchan();
 	virtual void video_start() override;
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	TIMER_DEVICE_CALLBACK_MEMBER(vblank);
-	void jchan(machine_config &config);
 	void jchan_main(address_map &map);
 	void jchan_sub(address_map &map);
 };
@@ -273,10 +276,10 @@ void jchan_state::video_start()
 	m_spritegen[1]->skns_sprite_kludge(0,0);
 
 	save_item(NAME(m_irq_sub_enable));
-	save_pointer(NAME(m_sprite_ram32[0].get()), 0x4000/4);
-	save_pointer(NAME(m_sprite_ram32[1].get()), 0x4000/4);
-	save_pointer(NAME(m_sprite_regs32[0].get()), 0x40/4);
-	save_pointer(NAME(m_sprite_regs32[1].get()), 0x40/4);
+	save_pointer(NAME(m_sprite_ram32[0]), 0x4000/4);
+	save_pointer(NAME(m_sprite_ram32[1]), 0x4000/4);
+	save_pointer(NAME(m_sprite_regs32[0]), 0x40/4);
+	save_pointer(NAME(m_sprite_regs32[1]), 0x40/4);
 }
 
 
@@ -305,7 +308,6 @@ uint32_t jchan_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 
 	for (int chip = 0; chip < 2; chip++)
 	{
-		m_sprite_bitmap[chip]->fill(0, cliprect);
 		m_spritegen[chip]->skns_draw_sprites(*m_sprite_bitmap[chip], cliprect, m_sprite_ram32[chip].get(), 0x4000, m_sprite_regs32[chip].get() );
 	}
 
@@ -610,7 +612,7 @@ MACHINE_CONFIG_START(jchan_state::jchan)
 	MCFG_DEVICE_ADD("sub", M68000, 16000000)
 	MCFG_DEVICE_PROGRAM_MAP(jchan_sub)
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_jchan)
 
@@ -625,17 +627,17 @@ MACHINE_CONFIG_START(jchan_state::jchan)
 	MCFG_PALETTE_ADD("palette", 0x10000)
 	MCFG_PALETTE_FORMAT(xGGGGGRRRRRBBBBB)
 
-	MCFG_DEVICE_ADD("view2", KANEKO_TMAP, 0)
-	MCFG_KANEKO_TMAP_GFX_REGION(0)
-	MCFG_KANEKO_TMAP_OFFSET(33, 11, 320, 240)
-	MCFG_KANEKO_TMAP_GFXDECODE("gfxdecode")
+	KANEKO_TMAP(config, m_view2);
+	m_view2->set_gfx_region(0);
+	m_view2->set_offset(33, 11, 320, 240);
+	m_view2->set_gfxdecode_tag("gfxdecode");
 
 	MCFG_DEVICE_ADD("spritegen1", SKNS_SPRITE, 0)
 	MCFG_DEVICE_ADD("spritegen2", SKNS_SPRITE, 0)
 
 	MCFG_DEVICE_ADD("toybox", KANEKO_TOYBOX, "eeprom", "DSW1", "mcuram", "mcudata")
 
-	MCFG_DEVICE_ADD("eeprom", EEPROM_SERIAL_93C46_16BIT)
+	EEPROM_93C46_16BIT(config, "eeprom");
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();
@@ -646,7 +648,7 @@ MACHINE_CONFIG_START(jchan_state::jchan)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-/* rom loading */
+/* ROM loading */
 
 ROM_START( jchan )
 	ROM_REGION( 0x200000, "maincpu", 0 ) /* 68000 Code */
@@ -688,7 +690,7 @@ ROM_START( jchan )
 ROM_END
 
 
-ROM_START( jchan2 ) /* Some kind of semi-sequel? MASK ROMs dumped and confirmed to be the same */
+ROM_START( jchan2 ) /* Some kind of semi-sequel? Mask ROMs dumped and confirmed to be the same */
 	ROM_REGION( 0x200000, "maincpu", 0 ) /* 68000 Code */
 	ROM_LOAD16_BYTE( "j2p1x1.u67", 0x000001, 0x080000, CRC(5448c4bc) SHA1(447835275d5454f86a51879490a6b22b06a23e81) )
 	ROM_LOAD16_BYTE( "j2p1x2.u68", 0x000000, 0x080000, CRC(52104ab9) SHA1(d6647e628662bdb832270540ece18b265b7ce62d) )

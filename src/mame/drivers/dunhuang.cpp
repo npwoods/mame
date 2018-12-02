@@ -80,6 +80,9 @@ public:
 		m_dsw(*this, {"DSW1", "DSW2", "DSW3", "DSW4", "DSW5"}),
 		m_service(*this, "SERVICE") { }
 
+	void dunhuang(machine_config &config);
+
+private:
 	DECLARE_WRITE8_MEMBER(pos_x_w);
 	DECLARE_WRITE8_MEMBER(pos_y_w);
 	DECLARE_WRITE8_MEMBER(tile_w);
@@ -103,16 +106,13 @@ public:
 	DECLARE_READ8_MEMBER(dsw_r);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void dunhuang(machine_config &config);
 	void dunhuang_io_map(address_map &map);
 	void dunhuang_map(address_map &map);
 	void ramdac_map(address_map &map);
-protected:
+
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
-
-private:
 
 	/* video-related */
 	tilemap_t         *m_tmap;
@@ -812,8 +812,7 @@ MACHINE_CONFIG_START(dunhuang_state::dunhuang)
 	MCFG_DEVICE_IO_MAP(dunhuang_io_map)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", dunhuang_state, irq0_line_hold)
 
-	MCFG_WATCHDOG_ADD("watchdog")
-	MCFG_WATCHDOG_TIME_INIT(attotime::from_seconds(5))
+	WATCHDOG_TIMER(config, "watchdog").set_time(attotime::from_seconds(5));
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -827,18 +826,18 @@ MACHINE_CONFIG_START(dunhuang_state::dunhuang)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_dunhuang)
 	MCFG_PALETTE_ADD("palette", 0x100)
 
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette") // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, m_palette)); // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac.set_addrmap(0, &dunhuang_state::ramdac_map);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM2413, 3579545)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.80)
+	YM2413(config, "ymsnd", 3579545).add_route(ALL_OUTPUTS, "mono", 0.80);
 
-	MCFG_DEVICE_ADD("ay8910", AY8910, 12000000/8)
-	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, dunhuang_state, dsw_r))
-	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(*this, dunhuang_state, input_w))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)
+	ay8910_device &ay8910(AY8910(config, "ay8910", 12000000/8));
+	ay8910.port_b_read_callback().set(FUNC(dunhuang_state::dsw_r));
+	ay8910.port_a_write_callback().set(FUNC(dunhuang_state::input_w));
+	ay8910.add_route(ALL_OUTPUTS, "mono", 0.30);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 12000000/8, okim6295_device::PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.80)

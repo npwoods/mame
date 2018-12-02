@@ -326,16 +326,16 @@ MACHINE_CONFIG_START(pandoras_state::pandoras)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))  /* 100 CPU slices per frame - needed for correct synchronization of the sound CPUs */
 
-	MCFG_DEVICE_ADD("mainlatch", LS259, 0) // C3
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(*this, pandoras_state, cpua_irq_enable_w)) // ENA
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(NOOP) // OFSET - unknown
-	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(*this, pandoras_state, coin_counter_1_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(*this, pandoras_state, coin_counter_2_w))
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(*this, pandoras_state, flipscreen_w)) // FLIP
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(*this, pandoras_state, cpub_irq_enable_w)) // ENB
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(INPUTLINE("sub", INPUT_LINE_RESET)) MCFG_DEVCB_INVERT // RESETB
+	ls259_device &mainlatch(LS259(config, "mainlatch")); // C3
+	mainlatch.q_out_cb<0>().set(FUNC(pandoras_state::cpua_irq_enable_w)); // ENA
+	mainlatch.q_out_cb<1>().set_nop(); // OFSET - unknown
+	mainlatch.q_out_cb<2>().set(FUNC(pandoras_state::coin_counter_1_w));
+	mainlatch.q_out_cb<3>().set(FUNC(pandoras_state::coin_counter_2_w));
+	mainlatch.q_out_cb<5>().set(FUNC(pandoras_state::flipscreen_w)); // FLIP
+	mainlatch.q_out_cb<6>().set(FUNC(pandoras_state::cpub_irq_enable_w)); // ENB
+	mainlatch.q_out_cb<7>().set_inputline(m_subcpu, INPUT_LINE_RESET).invert(); // RESETB
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -355,13 +355,13 @@ MACHINE_CONFIG_START(pandoras_state::pandoras)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch2")
+	GENERIC_LATCH_8(config, "soundlatch");
+	GENERIC_LATCH_8(config, "soundlatch2");
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, SOUND_CLOCK/8)
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, pandoras_state, pandoras_portA_r))   // not used
-	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, pandoras_state, pandoras_portB_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.4)
+	ay8910_device &aysnd(AY8910(config, "aysnd", SOUND_CLOCK/8));
+	aysnd.port_a_read_callback().set(FUNC(pandoras_state::pandoras_portA_r));   // not used
+	aysnd.port_b_read_callback().set(FUNC(pandoras_state::pandoras_portB_r));
+	aysnd.add_route(ALL_OUTPUTS, "speaker", 0.4);
 
 	MCFG_DEVICE_ADD("dac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.12) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)

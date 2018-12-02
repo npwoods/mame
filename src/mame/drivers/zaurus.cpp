@@ -1425,6 +1425,9 @@ public:
 		, m_ram(*this, "ram")
 	{ }
 
+	void zaurus(machine_config &config);
+
+private:
 	// devices
 	required_device<pxa255_periphs_device> m_pxa_periphs;
 	required_device<cpu_device> m_maincpu;
@@ -1438,9 +1441,8 @@ public:
 	// screen updates
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	void zaurus(machine_config &config);
 	void zaurus_map(address_map &map);
-protected:
+
 	// driver_device overrides
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
@@ -1503,7 +1505,7 @@ void zaurus_state::machine_reset()
 /* TODO: Hack */
 TIMER_DEVICE_CALLBACK_MEMBER(zaurus_state::rtc_irq_callback)
 {
-	#if 0
+#if 0
 	m_rtc_tick++;
 	m_rtc_tick&=1;
 
@@ -1511,14 +1513,16 @@ TIMER_DEVICE_CALLBACK_MEMBER(zaurus_state::rtc_irq_callback)
 		pxa255_set_irq_line(PXA255_INT_RTC_HZ,1);
 	else
 		pxa255_set_irq_line(PXA255_INT_RTC_HZ,0);
-	#endif
+#else
+	(void)m_rtc_tick;
+#endif
 }
 
 // TODO: main CPU differs greatly between versions!
 MACHINE_CONFIG_START(zaurus_state::zaurus)
 
 	/* basic machine hardware */
-	MCFG_DEVICE_ADD("maincpu",PXA255,MAIN_CLOCK)
+	MCFG_DEVICE_ADD(m_maincpu,PXA255,MAIN_CLOCK)
 	MCFG_DEVICE_PROGRAM_MAP(zaurus_map)
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("rtc_timer", zaurus_state, rtc_irq_callback, attotime::from_hz(XTAL(32'768)))
@@ -1535,10 +1539,9 @@ MACHINE_CONFIG_START(zaurus_state::zaurus)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-//  MCFG_DEVICE_ADD("aysnd", AY8910, MAIN_CLOCK/4)
-//  MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)
+//  AY8910(config, "aysnd", MAIN_CLOCK/4).add_route(ALL_OUTPUTS, "mono", 0.30);
 
-	MCFG_DEVICE_ADD("pxa_periphs", PXA255_PERIPHERALS, MAIN_CLOCK, "maincpu")
+	PXA255_PERIPHERALS(config, m_pxa_periphs, MAIN_CLOCK, m_maincpu);
 MACHINE_CONFIG_END
 
 

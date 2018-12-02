@@ -32,9 +32,9 @@ public:
 		m_oki(*this, "oki"),
 		m_eeprom(*this, "eeprom"),
 		m_flash(*this, "flash"),
-		m_rtc(*this, "rtc"),
 		m_dispenser(*this, "dispenser"),
 
+		m_x1_bank(*this,"x1_bank_%u", 1U),
 		m_nvram(*this, "nvram"),
 		m_spriteram(*this, "spriteram", 0),
 		m_tileram(*this, "tileram", 0),
@@ -43,12 +43,33 @@ public:
 		m_lamps(*this, "lamp%u", 0U)
 	{ }
 
+	void seta2(machine_config &config);
+	void grdians(machine_config &config);
+	void myangel(machine_config &config);
+	void penbros(machine_config &config);
+	void pzlbowl(machine_config &config);
+	void myangel2(machine_config &config);
+	void reelquak(machine_config &config);
+	void ablastb(machine_config &config);
+	void gundamex(machine_config &config);
+	void telpacfl(machine_config &config);
+	void samshoot(machine_config &config);
+	void namcostr(machine_config &config);
+
+	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
+
+	DECLARE_WRITE_LINE_MEMBER(screen_vblank);
+
 	DECLARE_WRITE16_MEMBER(spriteram16_word_w);
 	DECLARE_READ16_MEMBER(spriteram16_word_r);
 	DECLARE_WRITE16_MEMBER(vregs_w);
 	DECLARE_READ32_MEMBER(oki_read);
 	DECLARE_WRITE32_MEMBER(oki_write);
-	DECLARE_WRITE16_MEMBER(sound_bank_w);
+	DECLARE_WRITE8_MEMBER(sound_bank_w);
+
+	void init_namcostr();
+
+protected:
 
 	DECLARE_WRITE16_MEMBER(grdians_lockout_w);
 
@@ -72,30 +93,15 @@ public:
 	DECLARE_READ16_MEMBER(gundamex_eeprom_r);
 	DECLARE_WRITE16_MEMBER(gundamex_eeprom_w);
 
-
 	DECLARE_VIDEO_START(yoffset);
 	DECLARE_VIDEO_START(xoffset);
 	DECLARE_VIDEO_START(xoffset1);
 
-	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank);
 	void draw_sprites(bitmap_ind16 &bitmap,const rectangle &cliprect);
 
 	INTERRUPT_GEN_MEMBER(seta2_interrupt);
 	INTERRUPT_GEN_MEMBER(samshoot_interrupt);
 
-	void seta2(machine_config &config);
-	void grdians(machine_config &config);
-	void myangel(machine_config &config);
-	void penbros(machine_config &config);
-	void pzlbowl(machine_config &config);
-	void myangel2(machine_config &config);
-	void reelquak(machine_config &config);
-	void ablastb(machine_config &config);
-	void gundamex(machine_config &config);
-	void telpacfl(machine_config &config);
-	void samshoot(machine_config &config);
-	void namcostr(machine_config &config);
 	void ablastb_map(address_map &map);
 	void grdians_map(address_map &map);
 	void gundamex_map(address_map &map);
@@ -109,9 +115,9 @@ public:
 	void reelquak_map(address_map &map);
 	void samshoot_map(address_map &map);
 	void telpacfl_map(address_map &map);
+	void x1_map(address_map &map);
 
-protected:
-	virtual void machine_start() override { m_leds.resolve(); m_lamps.resolve(); }
+	virtual void machine_start() override;
 	virtual void video_start() override;
 
 	required_device<cpu_device> m_maincpu;
@@ -124,9 +130,9 @@ protected:
 	optional_device<okim9810_device> m_oki;
 	optional_device<eeprom_serial_93cxx_device> m_eeprom;
 	optional_device<intelfsh16_device> m_flash;
-	optional_device<upd4992_device> m_rtc;
 	optional_device<ticket_dispenser_device> m_dispenser;
 
+	optional_memory_bank_array<8> m_x1_bank;
 	optional_shared_ptr<uint16_t> m_nvram;
 	optional_shared_ptr<uint16_t> m_spriteram;
 	optional_shared_ptr<uint16_t> m_tileram;
@@ -171,11 +177,10 @@ public:
 	void init_funcube();
 	void init_funcube2();
 
-protected:
+private:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-private:
 	DECLARE_READ32_MEMBER(funcube_nvram_dword_r);
 	DECLARE_WRITE32_MEMBER(funcube_nvram_dword_w);
 	DECLARE_READ32_MEMBER(funcube_debug_r);
@@ -207,11 +212,15 @@ class staraudi_state : public seta2_state
 public:
 	staraudi_state(const machine_config &mconfig, device_type type, const char *tag) :
 		seta2_state(mconfig, type, tag),
+		m_rtc(*this, "rtc"),
 		m_rgbram(*this, "rgbram", 0)
 	{
 	}
 	static constexpr feature_type unemulated_features() { return feature::CAMERA | feature::PRINTER; }
 
+	void staraudi(machine_config &config);
+
+private:
 	DECLARE_WRITE16_MEMBER(staraudi_camera_w);
 	DECLARE_WRITE16_MEMBER(staraudi_lamps1_w);
 	DECLARE_WRITE16_MEMBER(staraudi_lamps2_w);
@@ -220,16 +229,15 @@ public:
 
 	uint32_t staraudi_screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void staraudi(machine_config &config);
 	void staraudi_map(address_map &map);
-protected:
+
 	virtual void driver_start() override;
 
 	void staraudi_debug_outputs();
 
-private:
 	void draw_rgbram(bitmap_ind16 &bitmap);
 
+	required_device<upd4992_device> m_rtc;
 	required_shared_ptr<uint16_t> m_rgbram;
 
 	uint16_t m_lamps1 = 0, m_lamps2 = 0, m_cam = 0;

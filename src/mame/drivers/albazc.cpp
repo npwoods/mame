@@ -37,7 +37,7 @@ public:
 
 	void hanaroku(machine_config &config);
 
-protected:
+private:
 	/* video-related */
 	DECLARE_WRITE8_MEMBER(hanaroku_out_0_w);
 	DECLARE_WRITE8_MEMBER(hanaroku_out_1_w);
@@ -49,7 +49,6 @@ protected:
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void hanaroku_map(address_map &map);
 
-private:
 	required_shared_ptr<uint8_t> m_spriteram1;
 	required_shared_ptr<uint8_t> m_spriteram2;
 	required_shared_ptr<uint8_t> m_spriteram3;
@@ -286,7 +285,7 @@ MACHINE_CONFIG_START(albazc_state::hanaroku)
 	MCFG_DEVICE_PROGRAM_MAP(hanaroku_map)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", albazc_state,  irq0_line_hold)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	MCFG_TICKET_DISPENSER_ADD("hopper", attotime::from_msec(50), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH )
 
@@ -307,10 +306,10 @@ MACHINE_CONFIG_START(albazc_state::hanaroku)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 1500000) /* ? MHz */
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW1"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW2"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	ay8910_device &aysnd(AY8910(config, "aysnd", 1500000)); /* ? MHz */
+	aysnd.port_a_read_callback().set_ioport("DSW1");
+	aysnd.port_b_read_callback().set_ioport("DSW2");
+	aysnd.add_route(ALL_OUTPUTS, "mono", 0.50);
 MACHINE_CONFIG_END
 
 

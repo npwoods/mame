@@ -13,6 +13,7 @@
 
 #include "cpu/mcs48/mcs48.h"
 #include "cpu/z80/z80.h"
+#include "imagedev/floppy.h"
 #include "machine/am9517a.h"
 #include "machine/dmv_keyb.h"
 #include "machine/pit8253.h"
@@ -73,6 +74,9 @@ public:
 		, m_leds(*this, "led%u", 1U)
 	{ }
 
+	void dmv(machine_config &config);
+
+private:
 	void update_halt_line();
 
 	DECLARE_WRITE8_MEMBER(leds_w);
@@ -142,16 +146,13 @@ public:
 	UPD7220_DISPLAY_PIXELS_MEMBER( hgdc_display_pixels );
 	UPD7220_DRAW_TEXT_LINE_MEMBER( hgdc_draw_text );
 
-	void dmv(machine_config &config);
 	void dmv_io(address_map &map);
 	void dmv_mem(address_map &map);
 	void upd7220_map(address_map &map);
 
-protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-private:
 	required_device<cpu_device> m_maincpu;
 	required_device<screen_device> m_screen;
 	required_device<upd7220_device> m_hgdc;
@@ -798,40 +799,40 @@ MACHINE_CONFIG_START(dmv_state::dmv)
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_dmv)
 	MCFG_PALETTE_ADD_3BIT_RGB("palette")
-	MCFG_DEFAULT_LAYOUT(layout_dmv)
+	config.set_default_layout(layout_dmv);
 
 	// devices
-	MCFG_DEVICE_ADD("upd7220", UPD7220, XTAL(5'000'000)/2) // unk clock
-	MCFG_DEVICE_ADDRESS_MAP(0, upd7220_map)
-	MCFG_UPD7220_DISPLAY_PIXELS_CALLBACK_OWNER(dmv_state, hgdc_display_pixels)
-	MCFG_UPD7220_DRAW_TEXT_CALLBACK_OWNER(dmv_state, hgdc_draw_text)
+	UPD7220(config, m_hgdc, XTAL(5'000'000)/2); // unk clock
+	m_hgdc->set_addrmap(0, &dmv_state::upd7220_map);
+	m_hgdc->set_display_pixels_callback(FUNC(dmv_state::hgdc_display_pixels), this);
+	m_hgdc->set_draw_text_callback(FUNC(dmv_state::hgdc_draw_text), this);
 
-	MCFG_DEVICE_ADD( "dma8237", AM9517A, XTAL(4'000'000) )
-	MCFG_I8237_OUT_HREQ_CB(WRITELINE(*this, dmv_state, dma_hrq_changed))
-	MCFG_I8237_OUT_EOP_CB(WRITELINE(*this, dmv_state, dmac_eop))
-	MCFG_I8237_IN_MEMR_CB(READ8(*this, dmv_state, program_r))
-	MCFG_I8237_OUT_MEMW_CB(WRITE8(*this, dmv_state, program_w))
-	MCFG_I8237_IN_IOR_0_CB(LOGGER("Read DMA CH1"))
-	MCFG_I8237_OUT_IOW_0_CB(LOGGER("Write DMA CH1"))
-	MCFG_I8237_IN_IOR_1_CB(LOGGER("Read DMA CH2"))
-	MCFG_I8237_OUT_IOW_1_CB(LOGGER("Write DMA CH2"))
-	MCFG_I8237_IN_IOR_2_CB(READ8("upd7220", upd7220_device, dack_r))
-	MCFG_I8237_OUT_IOW_2_CB(WRITE8("upd7220", upd7220_device, dack_w))
-	MCFG_I8237_IN_IOR_3_CB(READ8("i8272", i8272a_device, mdma_r))
-	MCFG_I8237_OUT_IOW_3_CB(WRITE8("i8272", i8272a_device, mdma_w))
-	MCFG_I8237_OUT_DACK_3_CB(WRITELINE(*this, dmv_state, dmac_dack3))
+	AM9517A(config, m_dmac, 4_MHz_XTAL);
+	m_dmac->out_hreq_callback().set(FUNC(dmv_state::dma_hrq_changed));
+	m_dmac->out_eop_callback().set(FUNC(dmv_state::dmac_eop));
+	m_dmac->in_memr_callback().set(FUNC(dmv_state::program_r));
+	m_dmac->out_memw_callback().set(FUNC(dmv_state::program_w));
+	m_dmac->in_ior_callback<0>().set_log("Read DMA CH1");
+	m_dmac->out_iow_callback<0>().set_log("Write DMA CH1");
+	m_dmac->in_ior_callback<1>().set_log("Read DMA CH2");
+	m_dmac->out_iow_callback<1>().set_log("Write DMA CH2");
+	m_dmac->in_ior_callback<2>().set(m_hgdc, FUNC(upd7220_device::dack_r));
+	m_dmac->out_iow_callback<2>().set(m_hgdc, FUNC(upd7220_device::dack_w));
+	m_dmac->in_ior_callback<3>().set(m_fdc, FUNC(i8272a_device::mdma_r));
+	m_dmac->out_iow_callback<3>().set(m_fdc, FUNC(i8272a_device::mdma_w));
+	m_dmac->out_dack_callback<3>().set(FUNC(dmv_state::dmac_dack3));
 
-	MCFG_I8272A_ADD( "i8272", true )
-	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE(*this, dmv_state, fdc_irq))
-	MCFG_UPD765_DRQ_CALLBACK(WRITELINE("dma8237", am9517a_device, dreq3_w))
+	I8272A(config, m_fdc, true);
+	m_fdc->intrq_wr_callback().set(FUNC(dmv_state::fdc_irq));
+	m_fdc->drq_wr_callback().set(m_dmac, FUNC(am9517a_device::dreq3_w));
 	MCFG_FLOPPY_DRIVE_ADD("i8272:0", dmv_floppies, "525dd", dmv_state::floppy_formats)
 	MCFG_FLOPPY_DRIVE_ADD("i8272:1", dmv_floppies, "525dd", dmv_state::floppy_formats)
 
-	MCFG_DEVICE_ADD("pit8253", PIT8253, 0)
-	MCFG_PIT8253_CLK0(50)
-	MCFG_PIT8253_OUT0_HANDLER(WRITELINE(*this, dmv_state, pit_out0))
-	MCFG_PIT8253_CLK2(XTAL(24'000'000) / 3 / 16)
-	MCFG_PIT8253_OUT2_HANDLER(WRITELINE(*this, dmv_state, timint_w))
+	PIT8253(config, m_pit, 0);
+	m_pit->set_clk<0>(50);
+	m_pit->out_handler<0>().set(FUNC(dmv_state::pit_out0));
+	m_pit->set_clk<2>(XTAL(24'000'000) / 3 / 16);
+	m_pit->out_handler<2>().set(FUNC(dmv_state::timint_w));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

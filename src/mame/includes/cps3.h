@@ -22,12 +22,12 @@ public:
 		, m_palette(*this, "palette")
 		, m_cps3sound(*this, "cps3sound")
 		, m_simm{{*this, "simm1.%u", 0U},
-		         {*this, "simm2.%u", 0U},
-		         {*this, "simm3.%u", 0U},
-		         {*this, "simm4.%u", 0U},
-		         {*this, "simm5.%u", 0U},
-		         {*this, "simm6.%u", 0U},
-		         {*this, "simm7.%u", 0U}}
+				 {*this, "simm2.%u", 0U},
+				 {*this, "simm3.%u", 0U},
+				 {*this, "simm4.%u", 0U},
+				 {*this, "simm5.%u", 0U},
+				 {*this, "simm6.%u", 0U},
+				 {*this, "simm7.%u", 0U}}
 		, m_mainram(*this, "mainram")
 		, m_spriteram(*this, "spriteram")
 		, m_colourram(*this, "colourram")
@@ -135,6 +135,7 @@ public:
 	SH2_DMA_KLUDGE_CB(dma_callback);
 	virtual void machine_reset() override;
 	virtual void video_start() override;
+	void draw_fg_layer(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_cps3(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(cps3_vbl_interrupt);
 	INTERRUPT_GEN_MEMBER(cps3_other_interrupt);

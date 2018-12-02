@@ -42,6 +42,9 @@ public:
 	{
 	}
 
+	void tk80bs(machine_config &config);
+
+private:
 	DECLARE_READ8_MEMBER(ppi_custom_r);
 	DECLARE_WRITE8_MEMBER(ppi_custom_w);
 	void kbd_put(u8 data);
@@ -49,9 +52,8 @@ public:
 	DECLARE_READ8_MEMBER(port_b_r);
 	uint32_t screen_update_tk80bs(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	required_shared_ptr<uint8_t> m_p_videoram;
-	void tk80bs(machine_config &config);
 	void tk80bs_mem(address_map &map);
-private:
+
 	uint8_t m_term_data;
 	required_device<cpu_device> m_maincpu;
 	required_device<i8255_device> m_ppi;
@@ -86,11 +88,11 @@ READ8_MEMBER( tk80bs_state::ppi_custom_r )
 	switch(offset)
 	{
 		case 1:
-			return m_ppi->read(space, 2);
+			return m_ppi->read(2);
 		case 2:
-			return m_ppi->read(space, 1);
+			return m_ppi->read(1);
 		default:
-			return m_ppi->read(space, offset);
+			return m_ppi->read(offset);
 	}
 }
 
@@ -99,13 +101,13 @@ WRITE8_MEMBER( tk80bs_state::ppi_custom_w )
 	switch(offset)
 	{
 		case 1:
-			m_ppi->write(space, 2, data);
+			m_ppi->write(2, data);
 			break;
 		case 2:
-			m_ppi->write(space, 1, data);
+			m_ppi->write(1, data);
 			break;
 		default:
-			m_ppi->write(space, offset, data);
+			m_ppi->write(offset, data);
 	}
 }
 
@@ -188,9 +190,9 @@ MACHINE_CONFIG_START(tk80bs_state::tk80bs)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_tk80bs)
 
 	/* Devices */
-	MCFG_DEVICE_ADD("ppi", I8255, 0)
-	MCFG_I8255_IN_PORTA_CB(READ8(*this, tk80bs_state, port_a_r))
-	MCFG_I8255_IN_PORTB_CB(READ8(*this, tk80bs_state, port_b_r))
+	I8255(config, m_ppi);
+	m_ppi->in_pa_callback().set(FUNC(tk80bs_state::port_a_r));
+	m_ppi->in_pb_callback().set(FUNC(tk80bs_state::port_b_r));
 
 	MCFG_DEVICE_ADD("keyboard", GENERIC_KEYBOARD, 0)
 	MCFG_GENERIC_KEYBOARD_CB(PUT(tk80bs_state, kbd_put))

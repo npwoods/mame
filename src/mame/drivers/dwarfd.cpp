@@ -317,6 +317,14 @@ public:
 		m_dsw2(*this, "DSW2")
 	{ }
 
+	void dwarfd(machine_config &config);
+	void pokeresp(machine_config &config);
+	void qc(machine_config &config);
+
+	void init_qc();
+	void init_dwarfd();
+
+private:
 	/* video-related */
 	int m_crt_access;
 	bool m_back_color;
@@ -337,17 +345,12 @@ public:
 	DECLARE_READ8_MEMBER(qc_b8_r);
 	DECLARE_WRITE_LINE_MEMBER(dwarfd_sod_callback);
 	DECLARE_WRITE_LINE_MEMBER(drq_w);
-	void init_qc();
-	void init_dwarfd();
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	DECLARE_PALETTE_INIT(dwarfd);
 	I8275_DRAW_CHARACTER_MEMBER(display_pixels);
 	I8275_DRAW_CHARACTER_MEMBER(pesp_display_pixels);
 	I8275_DRAW_CHARACTER_MEMBER(qc_display_pixels);
-	void dwarfd(machine_config &config);
-	void pokeresp(machine_config &config);
-	void qc(machine_config &config);
 	void io_map(address_map &map);
 	void mem_map(address_map &map);
 	void pokeresp_map(address_map &map);
@@ -757,10 +760,10 @@ MACHINE_CONFIG_START(dwarfd_state::dwarfd)
 	MCFG_PALETTE_INIT_OWNER(dwarfd_state, dwarfd)
 
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("aysnd", AY8910, 1500000)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("IN2"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("IN1"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	ay8910_device &aysnd(AY8910(config, "aysnd", 1500000));
+	aysnd.port_a_read_callback().set_ioport("IN2");
+	aysnd.port_b_read_callback().set_ioport("IN1");
+	aysnd.add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(dwarfd_state::pokeresp)

@@ -54,9 +54,9 @@ public:
 		m_gfxdecode(*this, "gfxdecode"),
 		m_ay8910(*this, "ay8910") { }
 
-void init_dynadice();
+	void dynadice(machine_config &config);
 
-void dynadice(machine_config &config);
+	void init_dynadice();
 
 protected:
 	virtual void machine_start() override;
@@ -271,7 +271,7 @@ MACHINE_CONFIG_START(dynadice_state::dynadice)
 	MCFG_DEVICE_IO_MAP(dynadice_sound_io_map)
 
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -287,10 +287,9 @@ MACHINE_CONFIG_START(dynadice_state::dynadice)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD(m_ay8910, AY8910, 2000000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	AY8910(config, m_ay8910, 2000000).add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 ROM_START( dynadice )

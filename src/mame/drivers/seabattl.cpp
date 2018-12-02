@@ -62,6 +62,9 @@ public:
 		m_palette(*this, "palette")
 	{ }
 
+	void seabattl(machine_config &config);
+
+private:
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	DECLARE_WRITE8_MEMBER(seabattl_videoram_w);
 	DECLARE_WRITE8_MEMBER(seabattl_colorram_w);
@@ -80,16 +83,13 @@ public:
 
 	DECLARE_PALETTE_INIT(seabattl);
 	uint32_t screen_update_seabattl(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void seabattl(machine_config &config);
 	void seabattl_data_map(address_map &map);
 	void seabattl_map(address_map &map);
 
-protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 
-private:
 	required_device<cpu_device> m_maincpu;
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
@@ -488,9 +488,9 @@ MACHINE_CONFIG_START(seabattl_state::seabattl)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", seabattl_state, seabattl_interrupt)
 	MCFG_S2650_SENSE_INPUT(READLINE("screen", screen_device, vblank))
 
-	MCFG_DEVICE_ADD("s2636", S2636, 0)
-	MCFG_S2636_OFFSETS(-13, -29)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.10)
+	S2636(config, m_s2636, 0);
+	m_s2636->set_offsets(-13, -29);
+	m_s2636->add_route(ALL_OUTPUTS, "mono", 0.10);
 
 	MCFG_DEVICE_ADD("sc_thousand", DM9368, 0)
 	MCFG_DM9368_UPDATE_CALLBACK(WRITE8(*this, seabattl_state, digit_w<0>))

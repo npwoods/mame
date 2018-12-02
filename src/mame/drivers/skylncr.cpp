@@ -161,6 +161,18 @@ public:
 		m_lamps(*this, "lamp%u", 1U)
 	{ }
 
+	void neraidou(machine_config &config);
+	void sstar97(machine_config &config);
+	void bdream97(machine_config &config);
+	void skylncr(machine_config &config);
+	void mbutrfly(machine_config &config);
+
+	void init_miaction();
+	void init_sonikfig();
+
+	READ_LINE_MEMBER(mbutrfly_prot_r);
+
+private:
 	DECLARE_WRITE8_MEMBER(skylncr_videoram_w);
 	DECLARE_WRITE8_MEMBER(skylncr_colorram_w);
 	DECLARE_WRITE8_MEMBER(reeltiles_1_w);
@@ -179,10 +191,8 @@ public:
 	DECLARE_READ8_MEMBER(ret_ff);
 	DECLARE_WRITE8_MEMBER(skylncr_nmi_enable_w);
 	DECLARE_WRITE8_MEMBER(mbutrfly_prot_w);
-	READ_LINE_MEMBER(mbutrfly_prot_r);
 	DECLARE_READ8_MEMBER(bdream97_opcode_r);
-	void init_miaction();
-	void init_sonikfig();
+
 	TILE_GET_INFO_MEMBER(get_tile_info);
 	TILE_GET_INFO_MEMBER(get_reel_1_tile_info);
 	TILE_GET_INFO_MEMBER(get_reel_2_tile_info);
@@ -190,11 +200,6 @@ public:
 	TILE_GET_INFO_MEMBER(get_reel_4_tile_info);
 	uint32_t screen_update_skylncr(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(skylncr_vblank_interrupt);
-	void neraidou(machine_config &config);
-	void sstar97(machine_config &config);
-	void bdream97(machine_config &config);
-	void skylncr(machine_config &config);
-	void mbutrfly(machine_config &config);
 	void bdream97_opcode_map(address_map &map);
 	void io_map_mbutrfly(address_map &map);
 	void io_map_skylncr(address_map &map);
@@ -202,7 +207,6 @@ public:
 	void ramdac2_map(address_map &map);
 	void ramdac_map(address_map &map);
 
-protected:
 	virtual void machine_start() override { m_lamps.resolve(); }
 	virtual void video_start() override;
 
@@ -1649,18 +1653,18 @@ MACHINE_CONFIG_START(skylncr_state::skylncr)
 	MCFG_DEVICE_IO_MAP(io_map_skylncr)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", skylncr_state,  skylncr_vblank_interrupt)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* 1x M5M82C255, or 2x PPI8255 */
-	MCFG_DEVICE_ADD("ppi8255_0", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("IN1"))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("IN2"))
-	MCFG_I8255_IN_PORTC_CB(IOPORT("DSW1"))
+	i8255_device &ppi0(I8255A(config, "ppi8255_0"));
+	ppi0.in_pa_callback().set_ioport("IN1");
+	ppi0.in_pb_callback().set_ioport("IN2");
+	ppi0.in_pc_callback().set_ioport("DSW1");
 
-	MCFG_DEVICE_ADD("ppi8255_1", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("DSW2"))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("IN3"))
-	MCFG_I8255_IN_PORTC_CB(IOPORT("IN4"))
+	i8255_device &ppi1(I8255A(config, "ppi8255_1"));
+	ppi1.in_pa_callback().set_ioport("DSW2");
+	ppi1.in_pb_callback().set_ioport("IN3");
+	ppi1.in_pc_callback().set_ioport("IN4");
 
 	MCFG_TICKET_DISPENSER_ADD("hopper", attotime::from_msec(HOPPER_PULSE), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH)
 
@@ -1676,18 +1680,20 @@ MACHINE_CONFIG_START(skylncr_state::skylncr)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_skylncr)
 	MCFG_PALETTE_ADD("palette", 0x200)
 
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette")
-	MCFG_RAMDAC_COLOR_BASE(0)
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, m_palette));
+	ramdac.set_addrmap(0, &skylncr_state::ramdac_map);
+	ramdac.set_color_base(0);
 
-	MCFG_RAMDAC_ADD("ramdac2", ramdac2_map, "palette")
-	MCFG_RAMDAC_COLOR_BASE(0x100)
+	ramdac_device &ramdac2(RAMDAC(config, "ramdac2", 0, m_palette));
+	ramdac2.set_addrmap(0, &skylncr_state::ramdac2_map);
+	ramdac2.set_color_base(0x100);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("aysnd", AY8910, MASTER_CLOCK/8)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW3"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW4"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	ay8910_device &aysnd(AY8910(config, "aysnd", MASTER_CLOCK/8));
+	aysnd.port_a_read_callback().set_ioport("DSW3");
+	aysnd.port_b_read_callback().set_ioport("DSW4");
+	aysnd.add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 

@@ -328,13 +328,11 @@ MACHINE_CONFIG_START(matmania_state::matmania)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
-	MCFG_DEVICE_ADD("ay1", AY8910, 1500000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.3)
+	AY8910(config, "ay1", 1500000).add_route(ALL_OUTPUTS, "speaker", 0.3);
 
-	MCFG_DEVICE_ADD("ay2", AY8910, 1500000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.3)
+	AY8910(config, "ay2", 1500000).add_route(ALL_OUTPUTS, "speaker", 0.3);
 
 	MCFG_DEVICE_ADD("dac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.4) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
@@ -349,7 +347,7 @@ MACHINE_CONFIG_START(matmania_state::maniach)
 	MCFG_DEVICE_PROGRAM_MAP(maniach_map)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", matmania_state,  irq0_line_hold)
 
-	MCFG_DEVICE_ADD("audiocpu", M6809, 1500000)    /* 1.5 MHz ???? */
+	MCFG_DEVICE_ADD("audiocpu", MC6809E, 1500000)    /* 1.5 MHz ???? (HD68A09EP) */
 	MCFG_DEVICE_PROGRAM_MAP(maniach_sound_map)
 
 	MCFG_DEVICE_ADD("mcu", TAITO68705_MCU, 1500000*2)  /* (don't know really how fast, but it doesn't need to even be this fast) */
@@ -372,7 +370,7 @@ MACHINE_CONFIG_START(matmania_state::maniach)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("ymsnd", YM3526, 3600000)
 	MCFG_YM3526_IRQ_HANDLER(INPUTLINE("audiocpu", M6809_FIRQ_LINE))

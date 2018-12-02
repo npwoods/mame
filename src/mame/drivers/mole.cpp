@@ -66,6 +66,9 @@ public:
 		m_gfxdecode(*this, "gfxdecode")
 	{ }
 
+	void mole(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 
@@ -86,7 +89,6 @@ public:
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 	uint32_t screen_update_mole(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void mole(machine_config &config);
 	void mole_map(address_map &map);
 };
 
@@ -343,8 +345,7 @@ MACHINE_CONFIG_START(mole_state::mole)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 2000000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	AY8910(config, "aysnd", 2000000).add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 

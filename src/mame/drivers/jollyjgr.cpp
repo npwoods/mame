@@ -141,6 +141,10 @@ public:
 		m_bm_palette(*this, "bm_palette")
 	{ }
 
+	void fspider(machine_config &config);
+	void jollyjgr(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
@@ -175,8 +179,6 @@ public:
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
 	required_device<palette_device> m_bm_palette;
-	void fspider(machine_config &config);
-	void jollyjgr(machine_config &config);
 	void fspider_map(address_map &map);
 	void jollyjgr_map(address_map &map);
 };
@@ -702,8 +704,7 @@ MACHINE_CONFIG_START(jollyjgr_state::jollyjgr)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, XTAL(3'579'545)/2) /* 1.7897725MHz verified */
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.45)
+	AY8910(config, "aysnd", XTAL(3'579'545)/2).add_route(ALL_OUTPUTS, "mono", 0.45); /* 1.7897725MHz verified */
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(jollyjgr_state::fspider)

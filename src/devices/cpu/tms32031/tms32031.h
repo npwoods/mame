@@ -95,16 +95,16 @@ enum
 	downcast<tms3203x_device &>(*device).set_mcbl_mode(_mode);
 
 #define MCFG_TMS3203X_XF0_CB(_devcb) \
-	devcb = &downcast<tms3203x_device &>(*device).set_xf0_callback(DEVCB_##_devcb);
+	downcast<tms3203x_device &>(*device).set_xf0_callback(DEVCB_##_devcb);
 
 #define MCFG_TMS3203X_XF1_CB(_devcb) \
-	devcb = &downcast<tms3203x_device &>(*device).set_xf1_callback(DEVCB_##_devcb);
+	downcast<tms3203x_device &>(*device).set_xf1_callback(DEVCB_##_devcb);
 
 #define MCFG_TMS3203X_IACK_CB(_devcb) \
-	devcb = &downcast<tms3203x_device &>(*device).set_iack_callback(DEVCB_##_devcb);
+	downcast<tms3203x_device &>(*device).set_iack_callback(DEVCB_##_devcb);
 
 #define MCFG_TMS3203X_HOLDA_CB(_devcb) \
-	devcb = &downcast<tms3203x_device &>(*device).set_holda_callback(DEVCB_##_devcb);
+	downcast<tms3203x_device &>(*device).set_holda_callback(DEVCB_##_devcb);
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -189,6 +189,9 @@ protected:
 
 	// device_disasm_interface overrides
 	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
+
+	// internal memory handlers
+	DECLARE_READ32_MEMBER(bootrom_r);
 
 	// internal peripheral device handlers
 	DECLARE_READ32_MEMBER(primary_bus_control_r) { return m_primary_bus_control; }

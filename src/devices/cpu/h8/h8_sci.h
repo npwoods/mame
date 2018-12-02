@@ -25,10 +25,10 @@
 	downcast<h8_sci_device *>(device)->set_external_clock_period(_period);
 
 #define MCFG_H8_SCI_TX_CALLBACK(_devcb) \
-	devcb = &downcast<h8_sci_device &>(*device).set_tx_cb(DEVCB_##_devcb);
+	downcast<h8_sci_device &>(*device).set_tx_cb(DEVCB_##_devcb);
 
 #define MCFG_H8_SCI_CLK_CALLBACK(_devcb) \
-	devcb = &downcast<h8_sci_device &>(*device).set_clk_cb(DEVCB_##_devcb);
+	downcast<h8_sci_device &>(*device).set_clk_cb(DEVCB_##_devcb);
 
 class h8_sci_device : public device_t {
 public:
@@ -36,6 +36,8 @@ public:
 
 	void set_info(const char *intc, int eri, int rxi, int txi, int tei);
 	void set_external_clock_period(const attotime &_period);
+
+	void force(u8 data) { rdr = data; intc->internal_interrupt(rxi_int); }
 
 	DECLARE_WRITE8_MEMBER(smr_w);
 	DECLARE_READ8_MEMBER(smr_r);
@@ -56,6 +58,8 @@ public:
 
 	template <class Object> devcb_base &set_tx_cb(Object &&cb) { return tx_cb.set_callback(std::forward<Object>(cb)); }
 	template <class Object> devcb_base &set_clk_cb(Object &&cb) { return clk_cb.set_callback(std::forward<Object>(cb)); }
+	auto tx_handler() { return tx_cb.bind(); }
+	auto clk_handler() { return clk_cb.bind(); }
 
 	uint64_t internal_update(uint64_t current_time);
 

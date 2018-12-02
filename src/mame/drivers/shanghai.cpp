@@ -40,13 +40,15 @@ public:
 		m_screen(*this,"screen")
 		{ }
 
+	void shanghai(machine_config &config);
+	void shangha2(machine_config &config);
+	void kothello(machine_config &config);
+
+private:
 	DECLARE_WRITE8_MEMBER(shanghai_coin_w);
 	DECLARE_PALETTE_INIT(shanghai);
 	INTERRUPT_GEN_MEMBER(half_vblank_irq);
 
-	void shanghai(machine_config &config);
-	void shangha2(machine_config &config);
-	void kothello(machine_config &config);
 	void hd63484_map(address_map &map);
 	void kothello_map(address_map &map);
 	void kothello_sound_map(address_map &map);
@@ -54,7 +56,7 @@ public:
 	void shangha2_portmap(address_map &map);
 	void shanghai_map(address_map &map);
 	void shanghai_portmap(address_map &map);
-private:
+
 	required_device<cpu_device> m_maincpu;
 	required_device<screen_device> m_screen;
 };
@@ -422,13 +424,13 @@ MACHINE_CONFIG_START(shanghai_state::shanghai)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM2203, XTAL(16'000'000)/4)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW1"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW2"))
-	MCFG_SOUND_ROUTE(0, "mono", 0.15)
-	MCFG_SOUND_ROUTE(1, "mono", 0.15)
-	MCFG_SOUND_ROUTE(2, "mono", 0.15)
-	MCFG_SOUND_ROUTE(3, "mono", 0.80)
+	ym2203_device &ymsnd(YM2203(config, "ymsnd", XTAL(16'000'000)/4));
+	ymsnd.port_a_read_callback().set_ioport("DSW1");
+	ymsnd.port_b_read_callback().set_ioport("DSW2");
+	ymsnd.add_route(0, "mono", 0.15);
+	ymsnd.add_route(1, "mono", 0.15);
+	ymsnd.add_route(2, "mono", 0.15);
+	ymsnd.add_route(3, "mono", 0.80);
 MACHINE_CONFIG_END
 
 
@@ -457,13 +459,13 @@ MACHINE_CONFIG_START(shanghai_state::shangha2)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM2203, XTAL(16'000'000)/4)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW1"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW2"))
-	MCFG_SOUND_ROUTE(0, "mono", 0.15)
-	MCFG_SOUND_ROUTE(1, "mono", 0.15)
-	MCFG_SOUND_ROUTE(2, "mono", 0.15)
-	MCFG_SOUND_ROUTE(3, "mono", 0.80)
+	ym2203_device &ymsnd(YM2203(config, "ymsnd", XTAL(16'000'000)/4));
+	ymsnd.port_a_read_callback().set_ioport("DSW1");
+	ymsnd.port_b_read_callback().set_ioport("DSW2");
+	ymsnd.add_route(0, "mono", 0.15);
+	ymsnd.add_route(1, "mono", 0.15);
+	ymsnd.add_route(2, "mono", 0.15);
+	ymsnd.add_route(3, "mono", 0.80);
 MACHINE_CONFIG_END
 
 
@@ -476,6 +478,7 @@ MACHINE_CONFIG_START(shanghai_state::kothello)
 
 	MCFG_DEVICE_ADD("audiocpu", Z80, XTAL(16'000'000)/4)
 	MCFG_DEVICE_PROGRAM_MAP(kothello_sound_map)
+	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DEVICE("seibu_sound", seibu_sound_device, im0_vector_cb)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(12000))
 
@@ -498,20 +501,20 @@ MACHINE_CONFIG_START(shanghai_state::kothello)
 	SPEAKER(config, "mono").front_center();
 
 	/* same as standard seibu ym2203, but also reads "DSW" */
-	MCFG_DEVICE_ADD("ymsnd", YM2203, XTAL(16'000'000)/4)
-	MCFG_YM2203_IRQ_HANDLER(WRITELINE("seibu_sound", seibu_sound_device, fm_irqhandler))
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW1"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW2"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.15)
+	ym2203_device &ymsnd(YM2203(config, "ymsnd", XTAL(16'000'000)/4));
+	ymsnd.irq_handler().set("seibu_sound", FUNC(seibu_sound_device::fm_irqhandler));
+	ymsnd.port_a_read_callback().set_ioport("DSW1");
+	ymsnd.port_b_read_callback().set_ioport("DSW2");
+	ymsnd.add_route(ALL_OUTPUTS, "mono", 0.15);
 
-	MCFG_DEVICE_ADD("seibu_sound", SEIBU_SOUND, 0)
-	MCFG_SEIBU_SOUND_CPU("audiocpu")
-	MCFG_SEIBU_SOUND_ROMBANK("seibu_bank1")
-	MCFG_SEIBU_SOUND_YM_READ_CB(READ8("ymsnd", ym2203_device, read))
-	MCFG_SEIBU_SOUND_YM_WRITE_CB(WRITE8("ymsnd", ym2203_device, write))
+	seibu_sound_device &seibu_sound(SEIBU_SOUND(config, "seibu_sound", 0));
+	seibu_sound.int_callback().set_inputline("audiocpu", 0);
+	seibu_sound.set_rom_tag("audiocpu");
+	seibu_sound.set_rombank_tag("seibu_bank1");
+	seibu_sound.ym_read_callback().set("ymsnd", FUNC(ym2203_device::read));
+	seibu_sound.ym_write_callback().set("ymsnd", FUNC(ym2203_device::write));
 
-	MCFG_DEVICE_ADD("adpcm", SEIBU_ADPCM, 8000) // actually MSM5205
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.80)
+	SEIBU_ADPCM(config, "adpcm", 8000).add_route(ALL_OUTPUTS, "mono", 0.80); // actually MSM5205
 MACHINE_CONFIG_END
 
 /***************************************************************************

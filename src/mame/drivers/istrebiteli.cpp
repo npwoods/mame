@@ -363,19 +363,19 @@ WRITE8_MEMBER(istrebiteli_state::road_ctrl_w)
 
 READ8_MEMBER(istrebiteli_state::ppi0_r)
 {
-	return m_ppi0->read(space, offset ^ 3) ^ 0xff;
+	return m_ppi0->read(offset ^ 3) ^ 0xff;
 }
 WRITE8_MEMBER(istrebiteli_state::ppi0_w)
 {
-	m_ppi0->write(space, offset ^ 3, data ^ 0xff);
+	m_ppi0->write(offset ^ 3, data ^ 0xff);
 }
 READ8_MEMBER(istrebiteli_state::ppi1_r)
 {
-	return m_ppi1->read(space, offset ^ 3) ^ 0xff;
+	return m_ppi1->read(offset ^ 3) ^ 0xff;
 }
 WRITE8_MEMBER(istrebiteli_state::ppi1_w)
 {
-	m_ppi1->write(space, offset ^ 3, data ^ 0xff);
+	m_ppi1->write(offset ^ 3, data ^ 0xff);
 }
 
 WRITE8_MEMBER(istrebiteli_state::sound_w)
@@ -509,12 +509,12 @@ static INPUT_PORTS_START( moto )
 	PORT_START("IN0")
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) // handle left
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT)  // handle right
-	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_UP)	  // speed 30
+	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_UP)    // speed 30
 	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN)  // speed 80
 	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_BUTTON1)        // speed 120, 3 above bits encode 0 30 50 80 100 120 speeds
 	PORT_BIT(0x20, IP_ACTIVE_HIGH, IPT_BUTTON2)       // skip RAM test
 	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_BUTTON3)        // handle full left/right
-	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_BUTTON4)	      // brake
+	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_BUTTON4)        // brake
 
 	PORT_START("IN1")
 	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_START1)  // coin, TODO check why it is locked
@@ -585,15 +585,15 @@ MACHINE_CONFIG_START(istrebiteli_state::istreb)
 	MCFG_DEVICE_PROGRAM_MAP(mem_map)
 	MCFG_DEVICE_IO_MAP(io_map)
 
-	MCFG_DEVICE_ADD("ppi0", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("IN1"))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("IN0"))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, istrebiteli_state, sound_w))
+	i8255_device &ppi0(I8255A(config, "ppi0"));
+	ppi0.in_pa_callback().set_ioport("IN1");
+	ppi0.in_pb_callback().set_ioport("IN0");
+	ppi0.out_pc_callback().set(FUNC(istrebiteli_state::sound_w));
 
-	MCFG_DEVICE_ADD("ppi1", I8255A, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, istrebiteli_state, spr0_ctrl_w))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, istrebiteli_state, spr1_ctrl_w))
-	MCFG_I8255_IN_PORTC_CB(IOPORT("IN2"))
+	i8255_device &ppi1(I8255A(config, "ppi1"));
+	ppi1.out_pa_callback().set(FUNC(istrebiteli_state::spr0_ctrl_w));
+	ppi1.out_pb_callback().set(FUNC(istrebiteli_state::spr1_ctrl_w));
+	ppi1.in_pc_callback().set_ioport("IN2");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -617,14 +617,14 @@ MACHINE_CONFIG_START(istrebiteli_state::motogonki)
 	MCFG_DEVICE_PROGRAM_MAP(moto_mem_map)
 	MCFG_DEVICE_IO_MAP(moto_io_map)
 
-	MCFG_DEVICE_ADD("ppi0", I8255A, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, istrebiteli_state, spr0_ctrl_w))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, istrebiteli_state, spr1_ctrl_w))
+	i8255_device &ppi0(I8255A(config, "ppi0"));
+	ppi0.out_pa_callback().set(FUNC(istrebiteli_state::spr0_ctrl_w));
+	ppi0.out_pb_callback().set(FUNC(istrebiteli_state::spr1_ctrl_w));
 
-	MCFG_DEVICE_ADD("ppi1", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("IN0"))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, istrebiteli_state, road_ctrl_w))
-	MCFG_I8255_IN_PORTC_CB(IOPORT("IN1"))
+	i8255_device &ppi1(I8255A(config, "ppi1"));
+	ppi1.in_pa_callback().set_ioport("IN0");
+	ppi1.out_pb_callback().set(FUNC(istrebiteli_state::road_ctrl_w));
+	ppi1.in_pc_callback().set_ioport("IN1");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)

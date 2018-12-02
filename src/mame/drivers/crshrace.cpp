@@ -415,23 +415,23 @@ MACHINE_CONFIG_START(crshrace_state::crshrace)
 
 
 	/* video hardware */
-	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(60)
-	MCFG_SCREEN_SIZE(64*8, 32*8)
-	MCFG_SCREEN_VISIBLE_AREA(0*8, 40*8-1, 0*8, 28*8-1)
-	MCFG_SCREEN_UPDATE_DRIVER(crshrace_state, screen_update_crshrace)
-	MCFG_SCREEN_VBLANK_CALLBACK(WRITELINE("spriteram", buffered_spriteram16_device, vblank_copy_rising))
-	MCFG_DEVCB_CHAIN_OUTPUT(WRITELINE("spriteram2", buffered_spriteram16_device, vblank_copy_rising))
-	MCFG_SCREEN_PALETTE("palette")
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_refresh_hz(60);
+	screen.set_size(64*8, 32*8);
+	screen.set_visarea(0*8, 40*8-1, 0*8, 28*8-1);
+	screen.set_screen_update(FUNC(crshrace_state::screen_update_crshrace));
+	screen.screen_vblank().set(m_spriteram, FUNC(buffered_spriteram16_device::vblank_copy_rising));
+	screen.screen_vblank().append(m_spriteram2, FUNC(buffered_spriteram16_device::vblank_copy_rising));
+	screen.set_palette(m_palette);
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_crshrace)
 	MCFG_PALETTE_ADD("palette", 2048)
 	MCFG_PALETTE_FORMAT(xGGGGGBBBBBRRRRR)
 
-	MCFG_DEVICE_ADD("vsystem_spr", VSYSTEM_SPR, 0)
-	MCFG_VSYSTEM_SPR_SET_TILE_INDIRECT( crshrace_state, crshrace_tile_callback )
-	MCFG_VSYSTEM_SPR_SET_GFXREGION(2)
-	MCFG_VSYSTEM_SPR_GFXDECODE("gfxdecode")
+	VSYSTEM_SPR(config, m_spr, 0);
+	m_spr->set_tile_indirect_cb(FUNC(crshrace_state::crshrace_tile_callback), this);
+	m_spr->set_gfx_region(2);
+	m_spr->set_gfxdecode_tag(m_gfxdecode);
 
 	MCFG_DEVICE_ADD("spriteram", BUFFERED_SPRITERAM16)
 	MCFG_DEVICE_ADD("spriteram2", BUFFERED_SPRITERAM16)
@@ -444,9 +444,9 @@ MACHINE_CONFIG_START(crshrace_state::crshrace)
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
-	MCFG_GENERIC_LATCH_SEPARATE_ACKNOWLEDGE(true)
+	GENERIC_LATCH_8(config, m_soundlatch);
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_soundlatch->set_separate_acknowledge(true);
 
 	MCFG_DEVICE_ADD("ymsnd", YM2610, 8000000)
 	MCFG_YM2610_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
@@ -553,5 +553,5 @@ void crshrace_state::init_crshrace2()
 }
 
 
-GAME( 1993, crshrace,  0,        crshrace, crshrace,  crshrace_state, init_crshrace,  ROT270, "Video System Co.", "Lethal Crash Race (set 1)", MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )
-GAME( 1993, crshrace2, crshrace, crshrace, crshrace2, crshrace_state, init_crshrace2, ROT270, "Video System Co.", "Lethal Crash Race (set 2)", MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )
+GAME( 1993, crshrace,  0,        crshrace, crshrace,  crshrace_state, init_crshrace,  ROT270, "Video System Co.", "Lethal Crash Race / Bakuretsu Crash Race (set 1)", MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )
+GAME( 1993, crshrace2, crshrace, crshrace, crshrace2, crshrace_state, init_crshrace2, ROT270, "Video System Co.", "Lethal Crash Race / Bakuretsu Crash Race (set 2)", MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )

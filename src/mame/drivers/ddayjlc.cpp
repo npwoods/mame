@@ -84,6 +84,13 @@ public:
 		m_palette(*this, "palette"),
 		m_soundlatch(*this, "soundlatch") { }
 
+	void ddayjlc(machine_config &config);
+
+	void init_ddayjlc();
+	DECLARE_CUSTOM_INPUT_MEMBER(prot_r);
+
+private:
+
 	DECLARE_WRITE8_MEMBER(prot_w);
 	DECLARE_WRITE8_MEMBER(char_bank_w);
 	DECLARE_WRITE8_MEMBER(bgvram_w);
@@ -97,23 +104,18 @@ public:
 	DECLARE_WRITE8_MEMBER(flip_screen_w);
 	DECLARE_WRITE8_MEMBER(i8257_CH0_w);
 	DECLARE_WRITE8_MEMBER(i8257_LMSR_w);
-	DECLARE_CUSTOM_INPUT_MEMBER(prot_r);
-	void init_ddayjlc();
 	TILE_GET_INFO_MEMBER(get_tile_info_bg);
 	TILE_GET_INFO_MEMBER(get_tile_info_fg);
 	DECLARE_PALETTE_INIT(ddayjlc);
 	uint32_t screen_update_ddayjlc(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
-	void ddayjlc(machine_config &config);
 	void main_map(address_map &map);
 	void sound_map(address_map &map);
 
-protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 
-private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_mainram;
 	required_shared_ptr<uint8_t> m_spriteram;
@@ -624,14 +626,13 @@ MACHINE_CONFIG_START(ddayjlc_state::ddayjlc)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
-	MCFG_DEVICE_ADD("ay1", AY8910, 12000000/6)
-	MCFG_AY8910_PORT_A_READ_CB(READ8("soundlatch", generic_latch_8_device, read))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	ay8910_device &ay1(AY8910(config, "ay1", 12000000/6));
+	ay1.port_a_read_callback().set(m_soundlatch, FUNC(generic_latch_8_device::read));
+	ay1.add_route(ALL_OUTPUTS, "mono", 1.0);
 
-	MCFG_DEVICE_ADD("ay2", AY8910, 12000000/6)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	AY8910(config, "ay2", 12000000/6).add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 

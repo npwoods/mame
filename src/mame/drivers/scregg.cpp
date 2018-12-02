@@ -66,16 +66,20 @@ public:
 	scregg_state(const machine_config &mconfig, device_type type, const char *tag)
 		: btime_state(mconfig, type, tag) { }
 
+	void scregg(machine_config &config);
+	void dommy(machine_config &config);
+
+	void init_rockduck();
+
+private:
 	DECLARE_WRITE8_MEMBER(scregg_irqack_w);
 	DECLARE_READ8_MEMBER(scregg_irqack_r);
 
-	void init_rockduck();
 	DECLARE_MACHINE_START(scregg);
 	DECLARE_MACHINE_RESET(scregg);
 	TIMER_DEVICE_CALLBACK_MEMBER(scregg_interrupt);
-	void scregg(machine_config &config);
-	void dommy(machine_config &config);
 	void dommy_map(address_map &map);
+
 	void eggs_map(address_map &map);
 };
 
@@ -288,11 +292,9 @@ MACHINE_CONFIG_START(scregg_state::dommy)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ay1", AY8910, XTAL(12'000'000)/8)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.23)
+	AY8910(config, "ay1", XTAL(12'000'000)/8).add_route(ALL_OUTPUTS, "mono", 0.23);
 
-	MCFG_DEVICE_ADD("ay2", AY8910, XTAL(12'000'000)/8)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.23)
+	AY8910(config, "ay2", XTAL(12'000'000)/8).add_route(ALL_OUTPUTS, "mono", 0.23);
 MACHINE_CONFIG_END
 
 
@@ -320,11 +322,9 @@ MACHINE_CONFIG_START(scregg_state::scregg)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ay1", AY8910, XTAL(12'000'000)/8)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.23)
+	AY8910(config, "ay1", XTAL(12'000'000)/8).add_route(ALL_OUTPUTS, "mono", 0.23);
 
-	MCFG_DEVICE_ADD("ay2", AY8910, XTAL(12'000'000)/8)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.23)
+	AY8910(config, "ay2", XTAL(12'000'000)/8).add_route(ALL_OUTPUTS, "mono", 0.23);
 MACHINE_CONFIG_END
 
 

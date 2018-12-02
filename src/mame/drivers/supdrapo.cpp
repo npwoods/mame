@@ -84,6 +84,9 @@ public:
 		m_videoram(*this, "videoram"),
 		m_char_bank(*this, "char_bank") { }
 
+	void supdrapo(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<watchdog_timer_device> m_watchdog;
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -110,7 +113,6 @@ public:
 	DECLARE_PALETTE_INIT(supdrapo);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void supdrapo(machine_config &config);
 	void sdpoker_mem(address_map &map);
 };
 
@@ -459,9 +461,9 @@ MACHINE_CONFIG_START(supdrapo_state::supdrapo)
 	MCFG_DEVICE_PROGRAM_MAP(sdpoker_mem)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", supdrapo_state,  irq0_line_hold)
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, m_watchdog);
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -478,10 +480,10 @@ MACHINE_CONFIG_START(supdrapo_state::supdrapo)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, SND_CLOCK)  /* guess */
-	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(*this, supdrapo_state, ay8910_outputa_w))
-	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(*this, supdrapo_state, ay8910_outputb_w))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	ay8910_device &aysnd(AY8910(config, "aysnd", SND_CLOCK));  /* guess */
+	aysnd.port_a_write_callback().set(FUNC(supdrapo_state::ay8910_outputa_w));
+	aysnd.port_b_write_callback().set(FUNC(supdrapo_state::ay8910_outputb_w));
+	aysnd.add_route(ALL_OUTPUTS, "mono", 0.50);
 MACHINE_CONFIG_END
 
 

@@ -84,7 +84,9 @@ public:
 
 	void meijinsn(machine_config &config);
 
-protected:
+	void meijinsn_map(address_map &map);
+
+private:
 	DECLARE_WRITE16_MEMBER(sound_w);
 	DECLARE_READ16_MEMBER(alpha_mcu_r);
 	DECLARE_PALETTE_INIT(meijinsn);
@@ -94,11 +96,9 @@ protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
-	void meijinsn_map(address_map &map);
 	void meijinsn_sound_io_map(address_map &map);
 	void meijinsn_sound_map(address_map &map);
 
-private:
 	required_device<cpu_device> m_maincpu;
 	required_device<generic_latch_8_device> m_soundlatch;
 	/* memory pointers */
@@ -387,12 +387,11 @@ MACHINE_CONFIG_START(meijinsn_state::meijinsn)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 2000000)
-	MCFG_AY8910_PORT_A_READ_CB(READ8("soundlatch", generic_latch_8_device, read))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.75)
-
+	ay8910_device &aysnd(AY8910(config, "aysnd", 2000000));
+	aysnd.port_a_read_callback().set(m_soundlatch, FUNC(generic_latch_8_device::read));
+	aysnd.add_route(ALL_OUTPUTS, "mono", 0.75);
 MACHINE_CONFIG_END
 
 

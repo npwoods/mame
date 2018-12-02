@@ -219,7 +219,27 @@ newoption {
 
 newoption {
 	trigger = "ARCHOPTS",
-	description = "ARCHOPTS.",
+	description = "Additional options for target C/C++/Objective-C/Objective-C++ compilers and linker.",
+}
+
+newoption {
+	trigger = "ARCHOPTS_C",
+	description = "Additional options for target C++ compiler.",
+}
+
+newoption {
+	trigger = "ARCHOPTS_CXX",
+	description = "Additional options for target C++ compiler.",
+}
+
+newoption {
+	trigger = "ARCHOPTS_OBJC",
+	description = "Additional options for target Objective-C compiler.",
+}
+
+newoption {
+	trigger = "ARCHOPTS_OBJCXX",
+	description = "Additional options for target Objective-C++ compiler.",
 }
 
 newoption {
@@ -468,7 +488,6 @@ configuration { "vs*" }
 	flags {
 		"NoPCH",
 		"ExtraWarnings",
-		"NoEditAndContinue",
 	}
 	if not _OPTIONS["NOWERROR"] then
 		flags{
@@ -480,12 +499,14 @@ configuration { "vs*" }
 configuration { "Debug", "vs*" }
 	flags {
 		"Symbols",
-		"NoIncrementalLink",
+		"NoMultiProcessorCompilation",
 	}
 
 configuration { "Release", "vs*" }
 	flags {
 		"Optimize",
+		"NoEditAndContinue",
+		"NoIncrementalLink",
 	}
 
 -- Force VS2015/17 targets to use bundled SDL2
@@ -868,6 +889,30 @@ if _OPTIONS["ARCHOPTS"] then
 	}
 end
 
+if _OPTIONS["ARCHOPTS_C"] then
+	buildoptions_c {
+		_OPTIONS["ARCHOPTS_C"]
+	}
+end
+
+if _OPTIONS["ARCHOPTS_CXX"] then
+	buildoptions_cpp {
+		_OPTIONS["ARCHOPTS_CXX"]
+	}
+end
+
+if _OPTIONS["ARCHOPTS_OBJC"] then
+	buildoptions_objc {
+		_OPTIONS["ARCHOPTS_OBJC"]
+	}
+end
+
+if _OPTIONS["ARCHOPTS_OBJCXX"] then
+	buildoptions_objcpp {
+		_OPTIONS["ARCHOPTS_OBJCXX"]
+	}
+end
+
 if _OPTIONS["SHLIB"] then
 	buildoptions {
 		"-fPIC"
@@ -1015,6 +1060,11 @@ end
 					"-Wno-extern-c-compat",
 					"-Wno-unknown-attributes",
 					"-Wno-ignored-qualifiers"
+				}
+			end
+			if (version >= 60000) then
+				buildoptions {
+					"-Wno-pragma-pack" -- clang 6.0 complains when the packing change lifetime is not contained within a header file.
 				}
 			end
 		else
@@ -1272,6 +1322,7 @@ end
 			"/wd4510", -- warning C4510: 'xxx' : default constructor could not be generated
 			"/wd4512", -- warning C4512: 'xxx' : assignment operator could not be generated
 			"/wd4514", -- warning C4514: 'xxx' : unreferenced inline function has been removed
+			"/wd4521", -- warning C4521: 'xxx' : multiple copy constructors specified
 			"/wd4571", -- warning C4611: interaction between '_setjmp' and C++ object destruction is non-portable
 			"/wd4610", -- warning C4619: #pragma warning : there is no warning number 'xxx'
 			"/wd4611", -- warning C4571: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught

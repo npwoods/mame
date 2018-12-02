@@ -73,6 +73,9 @@ public:
 		m_palette(*this, "palette"),
 		m_soundlatch(*this, "soundlatch") { }
 
+	void diverboy(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint16_t> m_spriteram;
 
@@ -91,7 +94,6 @@ public:
 	virtual void video_start() override;
 	uint32_t screen_update_diverboy(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites(  bitmap_ind16 &bitmap, const rectangle &cliprect );
-	void diverboy(machine_config &config);
 	void diverboy_map(address_map &map);
 	void snd_map(address_map &map);
 };
@@ -297,7 +299,7 @@ MACHINE_CONFIG_START(diverboy_state::diverboy)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 1320000, okim6295_device::PIN7_HIGH) // clock frequency & pin 7 not verified
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)

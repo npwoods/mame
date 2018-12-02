@@ -35,8 +35,8 @@
 class dragrace_state : public driver_device
 {
 public:
-	dragrace_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	dragrace_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_playfield_ram(*this, "playfield_ram"),
 		m_position_ram(*this, "position_ram"),
 		m_discrete(*this, "discrete"),
@@ -49,7 +49,7 @@ public:
 
 	void dragrace(machine_config &config);
 
-protected:
+private:
 	DECLARE_WRITE8_MEMBER(speed1_w);
 	DECLARE_WRITE8_MEMBER(speed2_w);
 	DECLARE_READ8_MEMBER(dragrace_input_r);
@@ -66,7 +66,6 @@ protected:
 	virtual void video_start() override;
 	void dragrace_map(address_map &map);
 
-private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_playfield_ram;
 	required_shared_ptr<uint8_t> m_position_ram;

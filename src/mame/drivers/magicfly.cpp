@@ -465,6 +465,11 @@ public:
 		m_dac(*this, "dac"),
 		m_gfxdecode(*this, "gfxdecode") { }
 
+	void bchance(machine_config &config);
+	void magicfly(machine_config &config);
+	void _7mezzo(machine_config &config);
+
+private:
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
 	tilemap_t *m_bg_tilemap;
@@ -483,9 +488,6 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<dac_bit_interface> m_dac;
 	required_device<gfxdecode_device> m_gfxdecode;
-	void bchance(machine_config &config);
-	void magicfly(machine_config &config);
-	void _7mezzo(machine_config &config);
 	void magicfly_map(address_map &map);
 };
 
@@ -944,7 +946,7 @@ MACHINE_CONFIG_START(magicfly_state::magicfly)
 	MCFG_DEVICE_ADD("maincpu", M6502, MASTER_CLOCK / 16) /* guess */
 	MCFG_DEVICE_PROGRAM_MAP(magicfly_map)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -959,10 +961,11 @@ MACHINE_CONFIG_START(magicfly_state::magicfly)
 	MCFG_PALETTE_ADD("palette", 32)
 	MCFG_PALETTE_INIT_OWNER(magicfly_state, magicfly)
 
-	MCFG_MC6845_ADD("crtc", MC6845, "screen", MASTER_CLOCK / 16) /* guess */
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(8)
-	MCFG_MC6845_OUT_VSYNC_CB(INPUTLINE("maincpu", INPUT_LINE_NMI))
+	mc6845_device &crtc(MC6845(config, "crtc", MASTER_CLOCK/16)); /* guess */
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(8);
+	crtc.out_vsync_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();

@@ -270,20 +270,19 @@ MACHINE_CONFIG_START(gotcha_state::gotcha)
 	MCFG_DEVICE_PROGRAM_MAP(sound_map)
 
 	/* video hardware */
-	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(55)
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(0))
-	MCFG_SCREEN_SIZE(40*8, 32*8)
-	MCFG_SCREEN_VISIBLE_AREA(0*8, 40*8-1, 1*8, 31*8-1)
-	MCFG_SCREEN_UPDATE_DRIVER(gotcha_state, screen_update_gotcha)
-	MCFG_SCREEN_PALETTE("palette")
-	MCFG_SCREEN_VBLANK_CALLBACK(HOLDLINE("maincpu", M68K_IRQ_6))
-	MCFG_DEVCB_CHAIN_OUTPUT(INPUTLINE("audiocpu", INPUT_LINE_NMI)) // ?
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_refresh_hz(55);
+	screen.set_vblank_time(ATTOSECONDS_IN_USEC(0));
+	screen.set_size(40*8, 32*8);
+	screen.set_visarea(0*8, 40*8-1, 1*8, 31*8-1);
+	screen.set_screen_update(FUNC(gotcha_state::screen_update_gotcha));
+	screen.set_palette("palette");
+	screen.screen_vblank().set_inputline(m_maincpu, M68K_IRQ_6, HOLD_LINE);
+	screen.screen_vblank().append_inputline(m_audiocpu, INPUT_LINE_NMI); // ?
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_gotcha)
 	MCFG_PALETTE_ADD("palette", 768)
 	MCFG_PALETTE_FORMAT(xRRRRRGGGGGBBBBB)
-
 
 	MCFG_DEVICE_ADD("spritegen", DECO_SPRITE, 0)
 	MCFG_DECO_SPRITE_GFX_REGION(1)
@@ -294,12 +293,12 @@ MACHINE_CONFIG_START(gotcha_state::gotcha)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, 14318180/4)
-	MCFG_YM2151_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(0, "mono", 0.80)
-	MCFG_SOUND_ROUTE(1, "mono", 0.80)
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", 14318180/4));
+	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
+	ymsnd.add_route(0, "mono", 0.80);
+	ymsnd.add_route(1, "mono", 0.80);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 1000000, okim6295_device::PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.60)

@@ -35,6 +35,7 @@
 
 #include "emu.h"
 #include "cpu/m68000/m68000.h"
+#include "imagedev/floppy.h"
 #include "machine/keyboard.h"
 #include "machine/upd765.h"
 #include "sound/spkrdev.h"
@@ -57,6 +58,9 @@ public:
 		, m_p_chargen(*this, "chargen")
 	{ }
 
+	void dim68k(machine_config &config);
+
+private:
 	DECLARE_READ16_MEMBER( dim68k_duart_r );
 	DECLARE_READ16_MEMBER( dim68k_fdc_r );
 	DECLARE_READ16_MEMBER( dim68k_game_switches_r );
@@ -73,9 +77,8 @@ public:
 	void kbd_put(u8 data);
 	MC6845_UPDATE_ROW(crtc_update_row);
 
-	void dim68k(machine_config &config);
 	void dim68k_mem(address_map &map);
-private:
+
 	bool m_speaker_bit;
 	u8 m_video_control;
 	u8 m_term_data;
@@ -329,14 +332,15 @@ MACHINE_CONFIG_START(dim68k_state::dim68k)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 
 	/* Devices */
-	MCFG_UPD765A_ADD("fdc", true, true) // these options unknown
+	UPD765A(config, "fdc", true, true); // these options unknown
 	MCFG_FLOPPY_DRIVE_ADD("fdc:0", dim68k_floppies, "525hd", floppy_image_device::default_floppy_formats)
 	MCFG_FLOPPY_DRIVE_ADD("fdc:1", dim68k_floppies, "525hd", floppy_image_device::default_floppy_formats)
 
-	MCFG_MC6845_ADD("crtc", MC6845, "screen", 1790000)
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(8)
-	MCFG_MC6845_UPDATE_ROW_CB(dim68k_state, crtc_update_row)
+	MC6845(config, m_crtc, 1790000);
+	m_crtc->set_screen("screen");
+	m_crtc->set_show_border_area(false);
+	m_crtc->set_char_width(8);
+	m_crtc->set_update_row_callback(FUNC(dim68k_state::crtc_update_row), this);
 
 	MCFG_DEVICE_ADD("keyboard", GENERIC_KEYBOARD, 0)
 	MCFG_GENERIC_KEYBOARD_CB(PUT(dim68k_state, kbd_put))

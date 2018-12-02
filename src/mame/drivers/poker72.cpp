@@ -37,13 +37,17 @@ public:
 		m_gfxdecode(*this, "gfxdecode"),
 		m_palette(*this, "palette")  { }
 
+	void poker72(machine_config &config);
+
+	void init_poker72();
+
+private:
 	required_shared_ptr<uint8_t> m_vram;
 	required_shared_ptr<uint8_t> m_pal;
 	uint8_t m_tile_bank;
 	DECLARE_WRITE8_MEMBER(poker72_paletteram_w);
 	DECLARE_WRITE8_MEMBER(output_w);
 	DECLARE_WRITE8_MEMBER(tile_bank_w);
-	void init_poker72();
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(poker72);
@@ -51,7 +55,6 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
-	void poker72(machine_config &config);
 	void poker72_map(address_map &map);
 };
 
@@ -391,10 +394,10 @@ MACHINE_CONFIG_START(poker72_state::poker72)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ay", AY8910, 8000000/8) /* ? Mhz */
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("SW2"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("SW3"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	ay8910_device &ay(AY8910(config, "ay", 8000000/8)); /* ? Mhz */
+	ay.port_a_read_callback().set_ioport("SW2");
+	ay.port_b_read_callback().set_ioport("SW3");
+	ay.add_route(ALL_OUTPUTS, "mono", 0.50);
 MACHINE_CONFIG_END
 
 

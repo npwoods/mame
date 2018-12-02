@@ -5,7 +5,7 @@
 
   yet another Data East / Tumble Pop derived hardware
   this one seems similar to (but not identical to)
-  the crospang.c hardware from F2 system
+  the crospang.cpp hardware from F2 system
   also very close to gotcha.c, which was also a Para
   board.
 
@@ -48,7 +48,13 @@ public:
 			m_fg_videoram(*this, "fg_videoram"),
 			m_spriteram(*this, "spriteram") { }
 
+	void puzzlovek(machine_config &config);
+	void puzzlove(machine_config &config);
+	void silvmil(machine_config &config);
 
+	void init_silvmil();
+
+private:
 	/* devices */
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -124,7 +130,6 @@ public:
 	}
 
 
-	void init_silvmil();
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 	TILEMAP_MAPPER_MEMBER(deco16_scan_rows);
@@ -133,9 +138,7 @@ public:
 	virtual void video_start() override;
 	uint32_t screen_update_silvmil(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void tumblepb_gfx1_rearrange();
-	void puzzlovek(machine_config &config);
-	void puzzlove(machine_config &config);
-	void silvmil(machine_config &config);
+
 	void silvmil_map(address_map &map);
 	void silvmil_sound_map(address_map &map);
 };
@@ -436,11 +439,11 @@ MACHINE_CONFIG_START(silvmil_state::silvmil)
 
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, XTAL(14'318'181)/4) /* Verified */
-	MCFG_YM2151_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", XTAL(14'318'181)/4)); /* Verified */
+	ymsnd.irq_handler().set_inputline("audiocpu", 0);
+	ymsnd.add_route(ALL_OUTPUTS, "mono", 0.25);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, XTAL(4'096'000)/4, okim6295_device::PIN7_HIGH) /* Verified */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
@@ -460,13 +463,11 @@ MACHINE_CONFIG_START(silvmil_state::puzzlove)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START(silvmil_state::puzzlovek)
+void silvmil_state::puzzlovek(machine_config &config)
+{
 	puzzlove(config);
-	MCFG_DEVICE_REMOVE("ymsnd")
-	MCFG_DEVICE_ADD("ymsnd", YM2151, XTAL(15'000'000)/4) /* Verified */
-	MCFG_YM2151_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
-MACHINE_CONFIG_END
+	subdevice<ym2151_device>("ymsnd")->set_clock(XTAL(15'000'000)/4); /* Verified */
+}
 
 
 ROM_START( silvmil )

@@ -252,11 +252,6 @@ dgc (dg(no!spam)cx@mac.com)
 class dectalk_state : public driver_device
 {
 public:
-	enum
-	{
-		TIMER_OUTFIFO_READ
-	};
-
 	dectalk_state(const machine_config &mconfig, device_type type, const char *tag)
 		: driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
@@ -266,6 +261,14 @@ public:
 		m_dac(*this, "dac")
 	{
 	}
+
+	void dectalk(machine_config &config);
+
+private:
+	enum
+	{
+		TIMER_OUTFIFO_READ
+	};
 
 	// input fifo, between m68k and tms32010
 	uint16_t m_infifo[32]; // technically eight 74LS224 4bit*16stage FIFO chips, arranged as a 32 stage, 16-bit wide fifo
@@ -321,11 +324,10 @@ public:
 	uint16_t dsp_outfifo_r();
 	DECLARE_WRITE_LINE_MEMBER(dectalk_reset);
 
-	void dectalk(machine_config &config);
 	void m68k_mem(address_map &map);
 	void tms32010_io(address_map &map);
 	void tms32010_mem(address_map &map);
-protected:
+
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 };
 
@@ -878,7 +880,7 @@ MACHINE_CONFIG_START(dectalk_state::dectalk)
 	/* basic machine hardware */
 	MCFG_DEVICE_ADD("maincpu", M68000, XTAL(20'000'000)/2) /* E74 20MHz OSC (/2) */
 	MCFG_DEVICE_PROGRAM_MAP(m68k_mem)
-	MCFG_DEVICE_ADD("duart", SCN2681, XTAL(3'686'400)) // MC2681 DUART ; Y3 3.6864MHz xtal */
+	MCFG_DEVICE_ADD(m_duart, SCN2681, XTAL(3'686'400)) // MC2681 DUART ; Y3 3.6864MHz xtal */
 	MCFG_MC68681_IRQ_CALLBACK(WRITELINE(*this, dectalk_state, duart_irq_handler))
 	MCFG_MC68681_A_TX_CALLBACK(WRITELINE(*this, dectalk_state, duart_txa))
 	MCFG_MC68681_B_TX_CALLBACK(WRITELINE("rs232", rs232_port_device, write_txd))
@@ -895,7 +897,7 @@ MACHINE_CONFIG_START(dectalk_state::dectalk)
 	MCFG_QUANTUM_PERFECT_CPU("dsp")
 #endif
 
-	MCFG_X2212_ADD("x2212")
+	X2212(config, "x2212");
 
 	/* video hardware */
 
@@ -907,8 +909,8 @@ MACHINE_CONFIG_START(dectalk_state::dectalk)
 
 	/* Y2 is a 3.579545 MHz xtal for the dtmf decoder chip */
 
-	MCFG_DEVICE_ADD("rs232", RS232_PORT, default_rs232_devices, "terminal")
-	MCFG_RS232_RXD_HANDLER(WRITELINE("duart", scn2681_device, rx_b_w))
+	rs232_port_device &rs232(RS232_PORT(config, "rs232", default_rs232_devices, "terminal"));
+	rs232.rxd_handler().set(m_duart, FUNC(scn2681_device::rx_b_w));
 MACHINE_CONFIG_END
 
 

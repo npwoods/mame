@@ -828,7 +828,7 @@ MACHINE_CONFIG_START(cybertnk_state::cybertnk)
 	MCFG_QUANTUM_TIME(attotime::from_hz(60000))//arbitrary value,needed to get the communication to work
 
 	/* video hardware */
-	MCFG_DEFAULT_LAYOUT(layout_dualhsxs)
+	config.set_default_layout(layout_dualhsxs);
 
 	MCFG_SCREEN_ADD("lscreen", RASTER)
 	MCFG_SCREEN_REFRESH_RATE(60)
@@ -854,8 +854,8 @@ MACHINE_CONFIG_START(cybertnk_state::cybertnk)
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(HOLDLINE("audiocpu", 0))
+	GENERIC_LATCH_8(config, m_soundlatch);
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, 0, HOLD_LINE);
 
 	// Splited output per chip
 	MCFG_DEVICE_ADD("ym1", Y8950, XTAL(3'579'545))

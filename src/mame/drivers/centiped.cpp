@@ -419,9 +419,7 @@ each direction to assign the boundries.
 
 #include "cpu/m6502/m6502.h"
 #include "cpu/s2650/s2650.h"
-#include "machine/74259.h"
 #include "machine/watchdog.h"
-#include "machine/atari_vg.h"
 #include "sound/sn76496.h"
 #include "sound/pokey.h"
 #include "speaker.h"
@@ -457,6 +455,9 @@ MACHINE_RESET_MEMBER(centiped_state,centiped)
 {
 	m_maincpu->set_input_line(0, CLEAR_LINE);
 	m_prg_bank = 0;
+
+	if (m_earom.found())
+		earom_control_w(machine().dummy_space(), 0, 0);
 }
 
 
@@ -647,6 +648,32 @@ WRITE_LINE_MEMBER(centiped_state::bullsdrt_coin_count_w)
 
 /*************************************
  *
+ *  High score EAROM
+ *
+ *************************************/
+
+READ8_MEMBER(centiped_state::earom_read)
+{
+	return m_earom->data();
+}
+
+WRITE8_MEMBER(centiped_state::earom_write)
+{
+	m_earom->set_address(offset & 0x3f);
+	m_earom->set_data(data);
+}
+
+WRITE8_MEMBER(centiped_state::earom_control_w)
+{
+	// CK = DB0, C1 = /DB1, C2 = DB2, CS1 = DB3, /CS2 = GND
+	m_earom->set_control(BIT(data, 3), 1, !BIT(data, 1), BIT(data, 2));
+	m_earom->set_clk(BIT(data, 0));
+}
+
+
+
+/*************************************
+ *
  *  Centipede CPU memory handlers
  *
  *************************************/
@@ -664,9 +691,9 @@ void centiped_state::centiped_base_map(address_map &map)
 	map(0x0c02, 0x0c02).r(FUNC(centiped_state::centiped_IN2_r));
 	map(0x0c03, 0x0c03).portr("IN3");
 	map(0x1400, 0x140f).w(FUNC(centiped_state::centiped_paletteram_w)).share("paletteram");
-	map(0x1600, 0x163f).nopr().w("earom", FUNC(atari_vg_earom_device::write));
-	map(0x1680, 0x1680).w("earom", FUNC(atari_vg_earom_device::ctrl_w));
-	map(0x1700, 0x173f).r("earom", FUNC(atari_vg_earom_device::read));
+	map(0x1600, 0x163f).nopr().w(FUNC(centiped_state::earom_write));
+	map(0x1680, 0x1680).w(FUNC(centiped_state::earom_control_w));
+	map(0x1700, 0x173f).r(FUNC(centiped_state::earom_read));
 	map(0x1800, 0x1800).w(FUNC(centiped_state::irq_ack_w));
 	map(0x1c00, 0x1c07).nopr().w("outlatch", FUNC(ls259_device::write_d7));
 	map(0x2000, 0x2000).w("watchdog", FUNC(watchdog_timer_device::reset_w));
@@ -706,9 +733,9 @@ void centiped_state::centipdb_map(address_map &map)
 	map(0x1000, 0x1001).mirror(0x4000).w(m_aysnd, FUNC(ay8910_device::data_address_w));
 	map(0x1001, 0x1001).mirror(0x4000).r(m_aysnd, FUNC(ay8910_device::data_r));
 	map(0x1400, 0x140f).mirror(0x4000).w(FUNC(centiped_state::centiped_paletteram_w)).share("paletteram");
-	map(0x1600, 0x163f).mirror(0x4000).w("earom", FUNC(atari_vg_earom_device::write));
-	map(0x1680, 0x1680).mirror(0x4000).w("earom", FUNC(atari_vg_earom_device::ctrl_w));
-	map(0x1700, 0x173f).mirror(0x4000).r("earom", FUNC(atari_vg_earom_device::read));
+	map(0x1600, 0x163f).mirror(0x4000).w(FUNC(centiped_state::earom_write));
+	map(0x1680, 0x1680).mirror(0x4000).w(FUNC(centiped_state::earom_control_w));
+	map(0x1700, 0x173f).mirror(0x4000).r(FUNC(centiped_state::earom_read));
 	map(0x1800, 0x1800).mirror(0x4000).w(FUNC(centiped_state::irq_ack_w));
 	map(0x1c00, 0x1c07).mirror(0x4000).w("outlatch", FUNC(ls259_device::write_d7));
 	map(0x2000, 0x27ff).rom();
@@ -764,13 +791,13 @@ void centiped_state::milliped_map(address_map &map)
 	map(0x2001, 0x2001).r(FUNC(centiped_state::milliped_IN1_r));
 	map(0x2010, 0x2010).r(FUNC(centiped_state::milliped_IN2_r));
 	map(0x2011, 0x2011).portr("IN3");
-	map(0x2030, 0x2030).r("earom", FUNC(atari_vg_earom_device::read));
+	map(0x2030, 0x2030).r(FUNC(centiped_state::earom_read));
 	map(0x2480, 0x249f).w(FUNC(centiped_state::milliped_paletteram_w)).share("paletteram");
 	map(0x2500, 0x2507).w("outlatch", FUNC(ls259_device::write_d7));
 	map(0x2600, 0x2600).w(FUNC(centiped_state::irq_ack_w));
 	map(0x2680, 0x2680).w("watchdog", FUNC(watchdog_timer_device::reset_w));
-	map(0x2700, 0x2700).w("earom", FUNC(atari_vg_earom_device::ctrl_w));
-	map(0x2780, 0x27bf).w("earom", FUNC(atari_vg_earom_device::write));
+	map(0x2700, 0x2700).w(FUNC(centiped_state::earom_control_w));
+	map(0x2780, 0x27bf).w(FUNC(centiped_state::earom_write));
 	map(0x4000, 0x7fff).rom();
 }
 
@@ -909,14 +936,14 @@ void centiped_state::mazeinv_map(address_map &map)
 	map(0x2010, 0x2010).portr("IN2");
 	map(0x2011, 0x2011).portr("IN3");
 	map(0x2020, 0x2020).r(FUNC(centiped_state::mazeinv_input_r));
-	map(0x2030, 0x2030).r("earom", FUNC(atari_vg_earom_device::read));
+	map(0x2030, 0x2030).r(FUNC(centiped_state::earom_read));
 	map(0x2480, 0x249f).w(FUNC(centiped_state::mazeinv_paletteram_w)).share("paletteram");
 	map(0x2500, 0x2507).w("outlatch", FUNC(ls259_device::write_d7));
 	map(0x2580, 0x2583).w(FUNC(centiped_state::mazeinv_input_select_w));
 	map(0x2600, 0x2600).w(FUNC(centiped_state::irq_ack_w));
 	map(0x2680, 0x2680).w("watchdog", FUNC(watchdog_timer_device::reset_w));
-	map(0x2700, 0x2700).w("earom", FUNC(atari_vg_earom_device::ctrl_w));
-	map(0x2780, 0x27bf).w("earom", FUNC(atari_vg_earom_device::write));
+	map(0x2700, 0x2700).w(FUNC(centiped_state::earom_control_w));
+	map(0x2780, 0x27bf).w(FUNC(centiped_state::earom_write));
 	map(0x3000, 0x7fff).rom();
 }
 
@@ -935,8 +962,8 @@ void centiped_state::bullsdrt_map(address_map &map)
 	map(0x1080, 0x1080).mirror(0x6000).r(FUNC(centiped_state::centiped_IN0_r));
 	map(0x1081, 0x1081).mirror(0x6000).portr("IN1");
 	map(0x1082, 0x1082).mirror(0x6000).r(FUNC(centiped_state::centiped_IN2_r));
-	map(0x1200, 0x123f).mirror(0x6000).rw("earom", FUNC(atari_vg_earom_device::read), FUNC(atari_vg_earom_device::write));
-	map(0x1280, 0x1280).mirror(0x6000).w("earom", FUNC(atari_vg_earom_device::ctrl_w));
+	map(0x1200, 0x123f).mirror(0x6000).rw(FUNC(centiped_state::earom_read), FUNC(centiped_state::earom_write));
+	map(0x1280, 0x1280).mirror(0x6000).w(FUNC(centiped_state::earom_control_w));
 	map(0x1300, 0x1300).mirror(0x6000).portr("DSW2");
 	map(0x1400, 0x140f).mirror(0x6000).w(FUNC(centiped_state::centiped_paletteram_w)).share("paletteram");
 	map(0x1480, 0x1487).mirror(0x6000).w("outlatch", FUNC(ls259_device::write_d7));
@@ -1719,16 +1746,16 @@ MACHINE_CONFIG_START(centiped_state::centiped_base)
 	MCFG_MACHINE_START_OVERRIDE(centiped_state,centiped)
 	MCFG_MACHINE_RESET_OVERRIDE(centiped_state,centiped)
 
-	MCFG_ATARIVGEAROM_ADD("earom")
+	MCFG_DEVICE_ADD("earom", ER2055)
 
-	MCFG_DEVICE_ADD("outlatch", LS259, 0)
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(*this, centiped_state, coin_counter_left_w))
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(*this, centiped_state, coin_counter_center_w))
-	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(*this, centiped_state, coin_counter_right_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("led0")) MCFG_DEVCB_INVERT // LED 1
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(OUTPUT("led1")) MCFG_DEVCB_INVERT // LED 2
+	LS259(config, m_outlatch);
+	m_outlatch->q_out_cb<0>().set(FUNC(centiped_state::coin_counter_left_w));
+	m_outlatch->q_out_cb<1>().set(FUNC(centiped_state::coin_counter_center_w));
+	m_outlatch->q_out_cb<2>().set(FUNC(centiped_state::coin_counter_right_w));
+	m_outlatch->q_out_cb<3>().set_output("led0").invert(); // LED 1
+	m_outlatch->q_out_cb<4>().set_output("led1").invert(); // LED 2
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* timer */
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("32v", centiped_state, generate_interrupt, "screen", 0, 16)
@@ -1753,8 +1780,8 @@ MACHINE_CONFIG_START(centiped_state::centiped)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(centiped_map)
 
-	MCFG_DEVICE_MODIFY("outlatch") // M10
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, centiped_state, flip_screen_w))
+	// M10
+	m_outlatch->q_out_cb<7>().set(FUNC(centiped_state::flip_screen_w));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -1780,15 +1807,12 @@ MACHINE_CONFIG_START(centiped_state::caterplr)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(caterplr_map)
 
-	MCFG_DEVICE_MODIFY("outlatch")
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, centiped_state, flip_screen_w))
+	m_outlatch->q_out_cb<7>().set(FUNC(centiped_state::flip_screen_w));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 12096000/8)
-
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	AY8910(config, m_aysnd, 12096000/8).add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 
@@ -1799,15 +1823,14 @@ MACHINE_CONFIG_START(centiped_state::centipdb)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(centipdb_map)
 
-	MCFG_DEVICE_MODIFY("outlatch")
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, centiped_state, flip_screen_w))
+	m_outlatch->q_out_cb<7>().set(FUNC(centiped_state::flip_screen_w));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 12096000/8)
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, centiped_state, caterplr_unknown_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 2.0)
+	AY8910(config, m_aysnd, 12096000/8);
+	m_aysnd->port_a_read_callback().set(FUNC(centiped_state::caterplr_unknown_r));
+	m_aysnd->add_route(ALL_OUTPUTS, "mono", 2.0);
 MACHINE_CONFIG_END
 
 
@@ -1819,15 +1842,13 @@ MACHINE_CONFIG_START(centiped_state::magworm)
 	MCFG_DEVICE_PROGRAM_MAP(magworm_map)
 	MCFG_MACHINE_RESET_OVERRIDE(centiped_state,magworm)
 
-	MCFG_DEVICE_MODIFY("outlatch") // 12A
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, centiped_state, flip_screen_w))
+	// 12A
+	m_outlatch->q_out_cb<7>().set(FUNC(centiped_state::flip_screen_w));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8912, 12096000/8) // AY-3-8912 at 2/3H
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 2.0)
-
+	AY8912(config, m_aysnd, 12096000/8).add_route(ALL_OUTPUTS, "mono", 2.0); // AY-3-8912 at 2/3H
 MACHINE_CONFIG_END
 
 
@@ -1838,10 +1859,10 @@ MACHINE_CONFIG_START(centiped_state::milliped)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(milliped_map)
 
-	MCFG_DEVICE_MODIFY("outlatch") // 12E
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(*this, centiped_state, input_select_w)) // TBEN
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(*this, centiped_state, flip_screen_w))
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, centiped_state, control_select_w)) // CNTRLSEL
+	// 12E
+	m_outlatch->q_out_cb<5>().set(FUNC(centiped_state::input_select_w)); // TBEN
+	m_outlatch->q_out_cb<6>().set(FUNC(centiped_state::flip_screen_w));
+	m_outlatch->q_out_cb<7>().set(FUNC(centiped_state::control_select_w)); // CNTRLSEL
 
 	/* video hardware */
 	MCFG_GFXDECODE_MODIFY("gfxdecode", gfx_milliped)
@@ -1873,7 +1894,7 @@ MACHINE_CONFIG_START(centiped_state::multiped)
 	MCFG_DEVICE_PROGRAM_MAP(multiped_map)
 
 	MCFG_DEVICE_REMOVE("earom")
-	MCFG_DEVICE_ADD("eeprom", EEPROM_SERIAL_93C46_8BIT)
+	EEPROM_93C46_8BIT(config, "eeprom");
 MACHINE_CONFIG_END
 
 
@@ -1884,10 +1905,12 @@ MACHINE_CONFIG_START(centiped_state::warlords)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(warlords_map)
 
+	MCFG_DEVICE_REMOVE("earom")
+
 	// these extra LEDs also appear on Centipede schematics
-	MCFG_DEVICE_MODIFY("outlatch") // P9
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(OUTPUT("led2")) MCFG_DEVCB_INVERT // LED 3
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(OUTPUT("led3")) MCFG_DEVCB_INVERT // LED 4
+	// P9
+	m_outlatch->q_out_cb<5>().set_output("led2").invert(); // LED 3
+	m_outlatch->q_out_cb<6>().set_output("led3").invert(); // LED 4
 
 	/* video hardware */
 	MCFG_GFXDECODE_MODIFY("gfxdecode", gfx_warlords)
@@ -1918,8 +1941,7 @@ MACHINE_CONFIG_START(centiped_state::mazeinv)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(mazeinv_map)
 
-	MCFG_DEVICE_MODIFY("outlatch")
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(NOOP)
+	m_outlatch->q_out_cb<7>().set_nop();
 
 	MCFG_SCREEN_MODIFY("screen")
 	MCFG_SCREEN_UPDATE_DRIVER(centiped_state, screen_update_centiped)
@@ -1934,15 +1956,15 @@ MACHINE_CONFIG_START(centiped_state::bullsdrt)
 	MCFG_DEVICE_IO_MAP(bullsdrt_port_map)
 	MCFG_DEVICE_DATA_MAP(bullsdrt_data_map)
 
-	MCFG_ATARIVGEAROM_ADD("earom")
+	MCFG_DEVICE_ADD("earom", ER2055)
 
-	MCFG_DEVICE_ADD("outlatch", LS259, 0)
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(*this, centiped_state, bullsdrt_coin_count_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("led0")) MCFG_DEVCB_INVERT
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(OUTPUT("led1")) MCFG_DEVCB_INVERT
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, centiped_state, flip_screen_w))
+	LS259(config, m_outlatch);
+	m_outlatch->q_out_cb<1>().set(FUNC(centiped_state::bullsdrt_coin_count_w));
+	m_outlatch->q_out_cb<3>().set_output("led0").invert();
+	m_outlatch->q_out_cb<4>().set_output("led1").invert();
+	m_outlatch->q_out_cb<7>().set(FUNC(centiped_state::flip_screen_w));
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -2110,6 +2132,21 @@ ROM_START( centipdb )
 	ROM_LOAD( "136001-213.p4", 0x0000, 0x0100, CRC(6fa3093a) SHA1(2b7aeca74c1ae4156bf1878453a047330f96f0a8) )
 ROM_END
 
+ROM_START( centipdb2 ) // Single PCB with hand-written "Millipede", but is a Centipede bootleg instead
+	ROM_REGION( 0x10000, "maincpu", 0 ) // all 2716
+	ROM_LOAD( "mp1.d1",  0x2000, 0x0800, CRC(b17b8e0b) SHA1(01944cf040cf23aeb4c50d4f2e63181e08a07310) )
+	ROM_LOAD( "mp2.e1",  0x2800, 0x0800, CRC(7684398e) SHA1(eea8e05506a7af2fec55c2689e3caafc62ea524f) )
+	ROM_LOAD( "mp3.h1",  0x3000, 0x0800, CRC(74580fe4) SHA1(35b8a8675e4e020e234e51c3e4bd4ee5c24b79d2) )
+	ROM_LOAD( "mp4.j1",  0x3800, 0x0800, CRC(849b1614) SHA1(9060e39ec1d5c66e26c8d28a86818bcc1801c610) )
+	ROM_LOAD( "mp5.k1",  0x6000, 0x0800, CRC(9d3ad0e5) SHA1(ad7520b3c95d729bfd022553817f868485e9a191) )
+
+	ROM_REGION( 0x1000, "gfx1", 0 ) // all 2716
+	ROM_LOAD( "mp6.f7",  0x0000, 0x0800, CRC(880acfb9) SHA1(6c862352c329776f2f9974a0df9dbe41f9dbc361) )
+	ROM_LOAD( "mp7.j7",  0x0800, 0x0800, CRC(b1397029) SHA1(974c03d29aeca672fffa4dfc00a06be6a851aacb) )
+
+	ROM_REGION( 0x0100, "proms", 0 )
+	ROM_LOAD( "82s129.p4", 0x0000, 0x0100, CRC(6fa3093a) SHA1(2b7aeca74c1ae4156bf1878453a047330f96f0a8) )
+ROM_END
 
 ROM_START( millpac )
 	ROM_REGION( 0x10000, "maincpu", 0 )
@@ -2302,7 +2339,8 @@ GAME( 1980, centiped3, centiped, centiped,  centiped,  centiped_state, empty_ini
 GAME( 1980, centiped2, centiped, centiped,  centiped,  centiped_state, empty_init,    ROT270, "Atari", "Centipede (revision 2)", MACHINE_SUPPORTS_SAVE )
 GAME( 1980, centiped1, centiped, centiped,  centiped,  centiped_state, empty_init,    ROT270, "Atari", "Centipede (revision 1)", MACHINE_SUPPORTS_SAVE )
 GAME( 1980, centipedj, centiped, centipedj, centipedj, centiped_state, empty_init,    ROT270, "Atari", "Centipede (Japan, revision 3)", MACHINE_SUPPORTS_SAVE )
-GAME( 1980, centipdb,  centiped, centipdb,  centiped,  centiped_state, empty_init,    ROT270, "bootleg", "Centipede (bootleg)", MACHINE_SUPPORTS_SAVE )
+GAME( 1980, centipdb,  centiped, centipdb,  centiped,  centiped_state, empty_init,    ROT270, "bootleg", "Centipede (bootleg, set 1)", MACHINE_SUPPORTS_SAVE )
+GAME( 1980, centipdb2, centiped, centipdb,  centiped,  centiped_state, empty_init,    ROT270, "bootleg", "Centipede (bootleg, set 2)", MACHINE_SUPPORTS_SAVE )
 GAME( 1989, centipdd,  centiped, centiped,  centiped,  centiped_state, empty_init,    ROT270, "hack (Two-Bit Score)", "Centipede Dux (hack)", MACHINE_SUPPORTS_SAVE )
 GAME( 1980, caterplr,  centiped, caterplr,  caterplr,  centiped_state, empty_init,    ROT270, "bootleg (Olympia)", "Caterpillar (bootleg of Centipede)", MACHINE_SUPPORTS_SAVE )
 GAME( 1980, millpac,   centiped, centipdb,  centiped,  centiped_state, empty_init,    ROT270, "bootleg? (Valadon Automation)", "Millpac (bootleg of Centipede)", MACHINE_SUPPORTS_SAVE )

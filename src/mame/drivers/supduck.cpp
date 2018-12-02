@@ -49,6 +49,9 @@ public:
 			m_soundlatch(*this, "soundlatch")
 	{ }
 
+	void supduck(machine_config &config);
+
+private:
 	// devices
 	required_device<cpu_device> m_maincpu;
 	required_device<z80_device> m_audiocpu;
@@ -82,11 +85,9 @@ public:
 
 	DECLARE_WRITE8_MEMBER(okibank_w);
 
-	void supduck(machine_config &config);
 	void main_map(address_map &map);
 	void oki_map(address_map &map);
 	void sound_map(address_map &map);
-protected:
 
 	// driver_device overrides
 	virtual void machine_start() override;
@@ -473,7 +474,7 @@ MACHINE_CONFIG_START(supduck_state::supduck)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, XTAL(8'000'000)/8, okim6295_device::PIN7_HIGH) // 1MHz - Verified on PCB, pin 7 not verified
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)

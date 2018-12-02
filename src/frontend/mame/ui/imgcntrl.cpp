@@ -147,6 +147,88 @@ void menu_control_device_image::handle()
 		m_state = SELECT_FILE;
 		break;
 
+	case START_SOFTLIST:
+		m_sld = nullptr;
+		menu::stack_push<menu_software>(ui(), container(), m_image.image_interface(), &m_sld);
+		m_state = SELECT_SOFTLIST;
+		break;
+
+	case START_OTHER_PART:
+		m_submenu_result.swparts = menu_software_parts::result::INVALID;
+		menu::stack_push<menu_software_parts>(ui(), container(), m_swi, m_swp->interface().c_str(), &m_swp, true, m_submenu_result.swparts);
+		m_state = SELECT_OTHER_PART;
+		break;
+
+	case SELECT_SOFTLIST:
+		if (!m_sld)
+		{
+			stack_pop();
+			break;
+		}
+		m_software_info_name.clear();
+		menu::stack_push_special_main<menu_software_list>(ui(), container(), m_sld, m_image.image_interface(), m_software_info_name);
+		m_state = SELECT_PARTLIST;
+		break;
+
+	case SELECT_PARTLIST:
+		m_swi = m_sld->find(m_software_info_name.c_str());
+		if (!m_swi)
+			m_state = START_SOFTLIST;
+		else if (m_swi->has_multiple_parts(m_image.image_interface()))
+		{
+			m_submenu_result.swparts = menu_software_parts::result::INVALID;
+			m_swp = nullptr;
+			menu::stack_push<menu_software_parts>(ui(), container(), m_swi, m_image.image_interface(), &m_swp, false, m_submenu_result.swparts);
+			m_state = SELECT_ONE_PART;
+		}
+		else
+		{
+			m_swp = m_swi->find_part("", m_image.image_interface());
+			load_software_part();
+		}
+		break;
+
+	case SELECT_ONE_PART:
+		switch(m_submenu_result.swparts) {
+		case menu_software_parts::result::ENTRY: {
+			load_software_part();
+			break;
+		}
+
+		default: // return to list
+			m_state = SELECT_SOFTLIST;
+			break;
+
+		}
+		break;
+
+	case SELECT_OTHER_PART:
+		switch(m_submenu_result.swparts) {
+		case menu_software_parts::result::ENTRY:
+			load_software_part();
+			break;
+
+		case menu_software_parts::result::FMGR:
+			m_state = START_FILE;
+			handle();
+			break;
+
+		case menu_software_parts::result::EMPTY:
+			m_image.unload();
+			stack_pop();
+			break;
+
+		case menu_software_parts::result::SWLIST:
+			m_state = START_SOFTLIST;
+			handle();
+			break;
+
+		case menu_software_parts::result::INVALID: // return to system
+			stack_pop();
+			break;
+
+		}
+		break;
 
 	case SELECT_FILE:
 		switch(m_submenu_result.filesel)

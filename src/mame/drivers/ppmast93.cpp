@@ -152,6 +152,9 @@ public:
 		m_bgram(*this, "bgram"),
 		m_fgram(*this, "fgram") { }
 
+	void ppmast93(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 
@@ -172,7 +175,6 @@ public:
 	virtual void video_start() override;
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void ppmast93(machine_config &config);
 	void ppmast93_cpu1_io(address_map &map);
 	void ppmast93_cpu1_map(address_map &map);
 	void ppmast93_cpu2_io(address_map &map);
@@ -398,7 +400,7 @@ MACHINE_CONFIG_START(ppmast93_state::ppmast93)
 
 	SPEAKER(config, "speaker").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
 	MCFG_DEVICE_ADD("ymsnd", YM2413, 5000000/2)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 1.0)

@@ -204,9 +204,11 @@ public:
 		driver_device(mconfig, type, tag)
 	{ }
 
-	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	void hp9845a(machine_config &config);
 	void hp9835a(machine_config &config);
+
+private:
+	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 };
 
 static INPUT_PORTS_START( hp9845 )
@@ -504,7 +506,7 @@ void hp9845_base_state::machine_reset()
 	m_irh_pending = 0;
 	m_pa = 0;
 
-	sts_w(GVIDEO_PA , true);
+	set_sts(GVIDEO_PA , true);
 
 	memset(&m_kb_state[ 0 ] , 0 , sizeof(m_kb_state));
 	m_kb_scancode = 0x7f;
@@ -558,10 +560,10 @@ void hp9845_base_state::update_irq()
 
 WRITE8_MEMBER(hp9845_base_state::irq_w)
 {
-	irq_w((uint8_t)offset , data != 0);
+	set_irq(uint8_t(offset) , data != 0);
 }
 
-void hp9845_base_state::irq_w(uint8_t sc , int state)
+void hp9845_base_state::set_irq(uint8_t sc , int state)
 {
 	unsigned bit_n = sc % 8;
 
@@ -591,10 +593,10 @@ void hp9845_base_state::update_flg_sts()
 
 WRITE8_MEMBER(hp9845_base_state::sts_w)
 {
-	sts_w((uint8_t)offset , data != 0);
+	set_sts(uint8_t(offset) , data != 0);
 }
 
-void hp9845_base_state::sts_w(uint8_t sc , int state)
+void hp9845_base_state::set_sts(uint8_t sc , int state)
 {
 	if (state) {
 		BIT_SET(m_sts_status, sc);
@@ -608,10 +610,10 @@ void hp9845_base_state::sts_w(uint8_t sc , int state)
 
 WRITE8_MEMBER(hp9845_base_state::flg_w)
 {
-	flg_w((uint8_t)offset , data != 0);
+	set_flg(uint8_t(offset) , data != 0);
 }
 
-void hp9845_base_state::flg_w(uint8_t sc , int state)
+void hp9845_base_state::set_flg(uint8_t sc , int state)
 {
 	if (state) {
 		BIT_SET(m_flg_status, sc);
@@ -735,7 +737,7 @@ WRITE16_MEMBER(hp9845_base_state::kb_irq_clear_w)
 void hp9845_base_state::update_kb_prt_irq()
 {
 	bool state = BIT(m_kb_status , 0) || m_prt_irl;
-	irq_w(0 , state);
+	set_irq(0 , state);
 }
 
 TIMER_DEVICE_CALLBACK_MEMBER(hp9845_base_state::beeper_off)
@@ -759,42 +761,42 @@ WRITE_LINE_MEMBER(hp9845_base_state::prt_irl_w)
 
 WRITE_LINE_MEMBER(hp9845_base_state::prt_flg_w)
 {
-	flg_w(PRINTER_PA , state);
+	set_flg(PRINTER_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::prt_sts_w)
 {
-	sts_w(PRINTER_PA , state);
+	set_sts(PRINTER_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::t14_irq_w)
 {
-	irq_w(T14_PA , state);
+	set_irq(T14_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::t14_flg_w)
 {
-	flg_w(T14_PA , state);
+	set_flg(T14_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::t14_sts_w)
 {
-	sts_w(T14_PA , state);
+	set_sts(T14_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::t15_irq_w)
 {
-	irq_w(T15_PA , state);
+	set_irq(T15_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::t15_flg_w)
 {
-	flg_w(T15_PA , state);
+	set_flg(T15_PA , state);
 }
 
 WRITE_LINE_MEMBER(hp9845_base_state::t15_sts_w)
 {
-	sts_w(T15_PA , state);
+	set_sts(T15_PA , state);
 }
 
 INPUT_CHANGED_MEMBER(hp9845_base_state::togglekey_changed)
@@ -833,6 +835,9 @@ class hp9845b_state : public hp9845_base_state
 public:
 	hp9845b_state(const machine_config &mconfig, device_type type, const char *tag);
 
+	void hp9845b(machine_config &config);
+
+private:
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
 	virtual void machine_start() override;
@@ -845,8 +850,6 @@ public:
 
 	DECLARE_WRITE_LINE_MEMBER(vblank_w);
 
-	void hp9845b(machine_config &config);
-protected:
 	void set_graphic_mode(bool graphic);
 	void set_video_mar(uint16_t mar);
 	void video_fill_buff(bool buff_idx);
@@ -1345,11 +1348,11 @@ void hp9845b_state::update_graphic_bits()
 			m_gv_fsm_state == GV_STAT_WAIT_DS_1 ||
 			m_gv_fsm_state == GV_STAT_WAIT_DS_2;
 
-		flg_w(GVIDEO_PA , gv_ready);
+		set_flg(GVIDEO_PA , gv_ready);
 
 		bool irq = m_gv_int_en && !m_gv_dma_en && gv_ready;
 
-		irq_w(GVIDEO_PA , irq);
+		set_irq(GVIDEO_PA , irq);
 
 		bool dmar = gv_ready && m_gv_dma_en;
 
@@ -2062,6 +2065,9 @@ class hp9845c_state : public hp9845ct_base_state
 public:
 	hp9845c_state(const machine_config &mconfig, device_type type, const char *tag);
 
+	void hp9845c(machine_config &config);
+
+private:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
@@ -2070,8 +2076,6 @@ public:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline_timer);
 
-	void hp9845c(machine_config &config);
-protected:
 	virtual void set_graphic_mode(bool graphic , bool alpha) override;
 	void video_render_buff(unsigned video_scanline , unsigned line_in_row, bool buff_idx);
 	void graphic_video_render(unsigned video_scanline);
@@ -2771,11 +2775,11 @@ void hp9845c_state::update_graphic_bits()
 			m_gv_fsm_state == GV_STAT_WAIT_TRIG_1;
 	}
 
-	flg_w(GVIDEO_PA , gv_ready);
+	set_flg(GVIDEO_PA , gv_ready);
 
 	bool irq = m_gv_int_en && !m_gv_dma_en && gv_ready;
 
-	irq_w(GVIDEO_PA , irq);
+	set_irq(GVIDEO_PA , irq);
 
 	bool dmar = gv_ready && m_gv_dma_en;
 
@@ -2799,6 +2803,9 @@ class hp9845t_state : public hp9845ct_base_state
 public:
 	hp9845t_state(const machine_config &mconfig, device_type type, const char *tag);
 
+	void hp9845t(machine_config &config);
+
+private:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
@@ -2807,8 +2814,6 @@ public:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline_timer);
 
-	void hp9845t(machine_config &config);
-protected:
 	virtual void set_graphic_mode(bool graphic , bool alpha) override;
 	void video_render_buff(unsigned video_scanline , unsigned line_in_row, bool buff_idx);
 	void graphic_video_render(unsigned video_scanline);
@@ -3616,11 +3621,11 @@ void hp9845t_state::update_graphic_bits()
 	// Fix for this problem is in commit 27004d00
 	// My apologies to Tony Duell for doubting at one point the correctness
 	// of his 98780A schematics.. :)
-	flg_w(GVIDEO_PA , gv_ready);
+	set_flg(GVIDEO_PA , gv_ready);
 
 	bool irq = m_gv_int_en && !m_gv_dma_en && gv_ready;
 
-	irq_w(GVIDEO_PA , irq);
+	set_irq(GVIDEO_PA , irq);
 
 	bool dmar = gv_ready && m_gv_dma_en;
 
@@ -3732,15 +3737,19 @@ void hp9845_base_state::ppu_io_map(address_map &map)
 }
 
 MACHINE_CONFIG_START(hp9845_base_state::hp9845_base)
-	MCFG_DEVICE_ADD("lpu", HP_5061_3001, 5700000)
-	MCFG_DEVICE_PROGRAM_MAP(global_mem_map)
-	MCFG_HPHYBRID_SET_9845_BOOT(true)
-	MCFG_DEVICE_ADD("ppu", HP_5061_3001, 5700000)
-	MCFG_DEVICE_PROGRAM_MAP(global_mem_map)
-	MCFG_DEVICE_IO_MAP(ppu_io_map)
-	MCFG_HPHYBRID_SET_9845_BOOT(true)
-	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DRIVER(hp9845_base_state , irq_callback)
-	MCFG_HPHYBRID_PA_CHANGED(WRITE8(*this, hp9845_base_state , pa_w))
+	HP_5061_3001(config , m_lpu , 5700000);
+	m_lpu->set_addrmap(AS_PROGRAM , &hp9845_base_state::global_mem_map);
+	m_lpu->set_9845_boot_mode(true);
+	m_lpu->set_rw_cycles(6 , 6);
+	m_lpu->set_relative_mode(true);
+	HP_5061_3001(config , m_ppu , 5700000);
+	m_ppu->set_addrmap(AS_PROGRAM , &hp9845_base_state::global_mem_map);
+	m_ppu->set_addrmap(AS_IO , &hp9845_base_state::ppu_io_map);
+	m_ppu->set_9845_boot_mode(true);
+	m_ppu->set_rw_cycles(6 , 6);
+	m_ppu->set_relative_mode(true);
+	m_ppu->set_irq_acknowledge_callback(FUNC(hp9845_base_state::irq_callback));
+	m_ppu->pa_changed_cb().set(FUNC(hp9845_base_state::pa_w));
 
 	// video hardware
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -3758,14 +3767,14 @@ MACHINE_CONFIG_START(hp9845_base_state::hp9845_base)
 	MCFG_TIMER_DRIVER_ADD("beep_timer" , hp9845_base_state , beeper_off);
 
 	// Tape controller
-	MCFG_DEVICE_ADD("t15" , HP_TACO , 4000000)
-	MCFG_TACO_IRQ_HANDLER(WRITELINE(*this, hp9845_base_state , t15_irq_w))
-	MCFG_TACO_FLG_HANDLER(WRITELINE(*this, hp9845_base_state , t15_flg_w))
-	MCFG_TACO_STS_HANDLER(WRITELINE(*this, hp9845_base_state , t15_sts_w))
-	MCFG_DEVICE_ADD("t14" , HP_TACO , 4000000)
-	MCFG_TACO_IRQ_HANDLER(WRITELINE(*this, hp9845_base_state , t14_irq_w))
-	MCFG_TACO_FLG_HANDLER(WRITELINE(*this, hp9845_base_state , t14_flg_w))
-	MCFG_TACO_STS_HANDLER(WRITELINE(*this, hp9845_base_state , t14_sts_w))
+	hp_taco_device &t15(HP_TACO(config , "t15" , 4000000));
+	t15.irq().set(FUNC(hp9845_base_state::t15_irq_w));
+	t15.flg().set(FUNC(hp9845_base_state::t15_flg_w));
+	t15.sts().set(FUNC(hp9845_base_state::t15_sts_w));
+	hp_taco_device &t14(HP_TACO(config , "t14" , 4000000));
+	t14.irq().set(FUNC(hp9845_base_state::t14_irq_w));
+	t14.flg().set(FUNC(hp9845_base_state::t14_flg_w));
+	t14.sts().set(FUNC(hp9845_base_state::t14_sts_w));
 
 	// In real machine there were 8 slots for LPU ROMs and 8 slots for PPU ROMs in
 	// right-hand side and left-hand side drawers, respectively.
@@ -3807,9 +3816,7 @@ MACHINE_CONFIG_START(hp9845_base_state::hp9845_base)
 	MCFG_HP9845_IO_FLG_CB(WRITE8(*this, hp9845_base_state , flg_w))
 
 	// LPU memory options
-	MCFG_RAM_ADD(RAM_TAG)
-	MCFG_RAM_DEFAULT_SIZE("192K")
-	MCFG_RAM_EXTRA_OPTIONS("64K, 320K, 448K")
+	RAM(config, RAM_TAG).set_default_size("192K").set_extra_options("64K, 320K, 448K");
 
 	// Internal printer
 	MCFG_DEVICE_ADD("printer" , HP9845_PRINTER , 0)
@@ -3830,7 +3837,7 @@ MACHINE_CONFIG_START(hp9845b_state::hp9845b)
 	MCFG_PALETTE_ADD("palette", 4)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", hp9845b_state, scanline_timer, "screen", 0, 1)
 
-	MCFG_DEFAULT_LAYOUT(layout_hp9845b)
+	config.set_default_layout(layout_hp9845b);
 
 	MCFG_SOFTWARE_LIST_ADD("optrom_list", "hp9845b_rom")
 

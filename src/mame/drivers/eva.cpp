@@ -39,6 +39,11 @@ public:
 		m_tms6100(*this, "tms6100")
 	{ }
 
+	void tms5110_route(machine_config &config);
+	void eva11(machine_config &config);
+	void eva24(machine_config &config);
+
+private:
 	// devices
 	required_device<cpu_device> m_maincpu;
 	required_device<tms5110_device> m_tms5100;
@@ -56,11 +61,6 @@ public:
 	DECLARE_WRITE16_MEMBER(eva11_write_o);
 	DECLARE_WRITE16_MEMBER(eva11_write_r);
 
-	void tms5110_route(machine_config &config);
-	void eva11(machine_config &config);
-	void eva24(machine_config &config);
-
-protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 };
@@ -161,11 +161,11 @@ MACHINE_CONFIG_START(eva_state::tms5110_route)
 
 	/* sound hardware */
 	MCFG_DEVICE_MODIFY("tms5100")
-	MCFG_TMS5110_M0_CB(WRITELINE("tms6100", tms6100_device, m0_w))
-	MCFG_TMS5110_M1_CB(WRITELINE("tms6100", tms6100_device, m1_w))
-	MCFG_TMS5110_ADDR_CB(WRITE8("tms6100", tms6100_device, add_w))
-	MCFG_TMS5110_DATA_CB(READLINE("tms6100", tms6100_device, data_line_r))
-	MCFG_TMS5110_ROMCLK_CB(WRITELINE("tms6100", tms6100_device, clk_w))
+	MCFG_TMS5110_M0_CB(WRITELINE(m_tms6100, tms6100_device, m0_w))
+	MCFG_TMS5110_M1_CB(WRITELINE(m_tms6100, tms6100_device, m1_w))
+	MCFG_TMS5110_ADDR_CB(WRITE8(m_tms6100, tms6100_device, add_w))
+	MCFG_TMS5110_DATA_CB(READLINE(m_tms6100, tms6100_device, data_line_r))
+	MCFG_TMS5110_ROMCLK_CB(WRITELINE(m_tms6100, tms6100_device, clk_w))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.5)
 MACHINE_CONFIG_END
 
@@ -179,7 +179,7 @@ MACHINE_CONFIG_START(eva_state::eva24)
 	MCFG_COP400_READ_G_CB(READ8(*this, eva_state, eva24_read_g))
 
 	/* sound hardware */
-	MCFG_DEVICE_ADD("tms6100", TMS6100, 640_kHz_XTAL/4)
+	TMS6100(config, m_tms6100, 640_kHz_XTAL/4);
 
 	SPEAKER(config, "mono").front_center();
 	MCFG_DEVICE_ADD("tms5100", TMS5110A, 640_kHz_XTAL)
@@ -195,7 +195,7 @@ MACHINE_CONFIG_START(eva_state::eva11)
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(*this, eva_state, eva11_write_r))
 
 	/* sound hardware */
-	MCFG_DEVICE_ADD("tms6100", TMS6100, 640_kHz_XTAL/4)
+	TMS6100(config, m_tms6100, 640_kHz_XTAL/4);
 
 	SPEAKER(config, "mono").front_center();
 	MCFG_DEVICE_ADD("tms5100", TMS5110A, 640_kHz_XTAL)

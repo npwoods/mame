@@ -5,14 +5,18 @@
     1943
 
 ***************************************************************************/
+#ifndef MAME_INCLUDES_1943_H
+#define MAME_INCLUDES_1943_H
+
+#pragma once
 
 #include "emupal.h"
 
 class _1943_state : public driver_device
 {
 public:
-	_1943_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	_1943_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_videoram(*this, "videoram"),
 		m_colorram(*this, "colorram"),
@@ -24,6 +28,12 @@ public:
 		m_palette(*this, "palette")
 	{ }
 
+	void _1943(machine_config &config);
+
+	void init_1943b();
+	void init_1943();
+
+private:
 	/* devices / memory pointers */
 	required_device<cpu_device> m_maincpu;
 	required_shared_ptr<uint8_t> m_videoram;
@@ -54,8 +64,7 @@ public:
 	DECLARE_WRITE8_MEMBER(c1943_colorram_w);
 	DECLARE_WRITE8_MEMBER(c1943_c804_w);
 	DECLARE_WRITE8_MEMBER(c1943_d806_w);
-	void init_1943b();
-	void init_1943();
+
 	TILE_GET_INFO_MEMBER(c1943_get_bg2_tile_info);
 	TILE_GET_INFO_MEMBER(c1943_get_bg_tile_info);
 	TILE_GET_INFO_MEMBER(c1943_get_fg_tile_info);
@@ -64,8 +73,10 @@ public:
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(1943);
 	uint32_t screen_update_1943(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void draw_sprites( bitmap_ind16 &bitmap, const rectangle &cliprect, int priority );
-	void _1943(machine_config &config);
+	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect, int priority);
+
 	void c1943_map(address_map &map);
 	void sound_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_1943_H

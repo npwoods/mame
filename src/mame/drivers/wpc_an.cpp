@@ -34,8 +34,11 @@ public:
 	void wpc_an_dd(machine_config &config);
 	void wpc_an(machine_config &config);
 	void wpc_an_base(machine_config &config);
+
+	void init_wpc_an();
+
+private:
 	void wpc_an_map(address_map &map);
-protected:
 
 	// devices
 	required_device<cpu_device> m_maincpu;
@@ -51,8 +54,7 @@ protected:
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 	static const device_timer_id TIMER_VBLANK = 0;
 	static const device_timer_id TIMER_IRQ = 1;
-public:
-	void init_wpc_an();
+
 	DECLARE_READ8_MEMBER(ram_r);
 	DECLARE_WRITE8_MEMBER(ram_w);
 	DECLARE_WRITE_LINE_MEMBER(wpcsnd_reply_w);
@@ -64,7 +66,7 @@ public:
 	DECLARE_WRITE8_MEMBER(wpc_sound_data_w);
 	DECLARE_WRITE8_MEMBER(wpc_sound_s11_w);
 	DECLARE_WRITE8_MEMBER(wpc_rombank_w);
-private:
+
 	uint16_t m_vblank_count;
 	uint32_t m_irq_count;
 	uint8_t m_bankmask;
@@ -341,27 +343,29 @@ MACHINE_CONFIG_START(wpc_an_state::wpc_an_base)
 	MCFG_WPC_SOUND_DATA(READ8(*this, wpc_an_state,wpc_sound_data_r),WRITE8(*this, wpc_an_state,wpc_sound_data_w))
 	MCFG_WPC_SOUND_S11C(WRITE8(*this, wpc_an_state,wpc_sound_s11_w))
 
-	MCFG_DEFAULT_LAYOUT(layout_wpc_an)
+	config.set_default_layout(layout_wpc_an);
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START(wpc_an_state::wpc_an)
+void wpc_an_state::wpc_an(machine_config &config)
+{
 	wpc_an_base(config);
 
 	SPEAKER(config, "speaker").front_center();
-	MCFG_DEVICE_ADD("wpcsnd", WPCSND)
-	MCFG_WPC_ROM_REGION("sound1")
-	MCFG_WPC_SOUND_REPLY_CALLBACK(WRITELINE(*this, wpc_an_state,wpcsnd_reply_w))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 1.0)
-MACHINE_CONFIG_END
+	WPCSND(config, m_wpcsnd);
+	m_wpcsnd->set_romregion("sound1");
+	m_wpcsnd->reply_callback().set(FUNC(wpc_an_state::wpcsnd_reply_w));
+	m_wpcsnd->add_route(ALL_OUTPUTS, "speaker", 1.0);
+}
 
-MACHINE_CONFIG_START(wpc_an_state::wpc_an_dd)
+void wpc_an_state::wpc_an_dd(machine_config &config)
+{
 	wpc_an_base(config);
 
 	SPEAKER(config, "speaker").front_center();
-	MCFG_DEVICE_ADD("bg", S11C_BG)
-	MCFG_S11C_BG_ROM_REGION(":sound1")
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 1.0)
-MACHINE_CONFIG_END
+	S11C_BG(config, m_bg);
+	m_bg->set_romregion("sound1");
+	m_bg->add_route(ALL_OUTPUTS, "speaker", 1.0);
+}
 
 /*-----------------
 /  Dr. Dude #2016

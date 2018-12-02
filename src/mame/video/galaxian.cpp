@@ -1,5 +1,5 @@
 // license:BSD-3-Clause
-// copyright-holders:Aaron Giles, Couriersud
+// copyright-holders:Aaron Giles, Couriersud, Robbbert
 /***************************************************************************
 
     Galaxian-derived video hardware
@@ -379,13 +379,13 @@ void galaxian_state::video_start()
 	if (!m_sfx_tilemap)
 	{
 		/* normal galaxian hardware is row-based and individually scrolling columns */
-		m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(galaxian_state::bg_get_tile_info),this), TILEMAP_SCAN_ROWS, GALAXIAN_XSCALE*8,8, 32,32);
+		m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(galaxian_state::bg_get_tile_info),this), TILEMAP_SCAN_ROWS, m_x_scale*8,8, 32,32);
 		m_bg_tilemap->set_scroll_cols(32);
 	}
 	else
 	{
 		/* sfx hardware is column-based and individually scrolling rows */
-		m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(galaxian_state::bg_get_tile_info),this), TILEMAP_SCAN_COLS, GALAXIAN_XSCALE*8,8, 32,32);
+		m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(galaxian_state::bg_get_tile_info),this), TILEMAP_SCAN_COLS, m_x_scale*8,8, 32,32);
 		m_bg_tilemap->set_scroll_rows(32);
 	}
 	m_bg_tilemap->set_transparent_pen(0);
@@ -510,7 +510,7 @@ WRITE8_MEMBER(galaxian_state::galaxian_objram_w)
 			if (!m_sfx_tilemap)
 				m_bg_tilemap->set_scrolly(offset >> 1, data);
 			else
-				m_bg_tilemap->set_scrollx(offset >> 1, GALAXIAN_XSCALE*data);
+				m_bg_tilemap->set_scrollx(offset >> 1, m_x_scale*data);
 		}
 
 		/* odd entries control the color base for the row */
@@ -540,8 +540,8 @@ void galaxian_state::sprites_draw(bitmap_rgb32 &bitmap, const rectangle &cliprec
 
 	/* 16 of the 256 pixels of the sprites are hard-clipped at the line buffer */
 	/* according to the schematics, it should be the first 16 pixels */
-	clip.min_x = std::max(clip.min_x, (!m_flipscreen_x) * (16 + hoffset) * GALAXIAN_XSCALE);
-	clip.max_x = std::min(clip.max_x, (256 - m_flipscreen_x * (16 + hoffset)) * GALAXIAN_XSCALE - 1);
+	clip.min_x = std::max(clip.min_x, (!m_flipscreen_x) * (16 + hoffset) * m_x_scale);
+	clip.max_x = std::min(clip.max_x, (256 - m_flipscreen_x * (16 + hoffset)) * m_x_scale - 1);
 
 	/* The line buffer is only written if it contains a '0' currently; */
 	/* it is cleared during the visible area, and populated during HBLANK */
@@ -583,7 +583,7 @@ void galaxian_state::sprites_draw(bitmap_rgb32 &bitmap, const rectangle &cliprec
 				m_gfxdecode->gfx(1)->transpen(bitmap,clip,
 				code, color,
 				flipx, flipy,
-				GALAXIAN_H0START + GALAXIAN_XSCALE * sx, sy, 0);
+				m_h0_start + m_x_scale * sx, sy, 0);
 	}
 }
 
@@ -895,7 +895,7 @@ void galaxian_state::stars_draw_row(bitmap_rgb32 &bitmap, int maxx, int y, uint3
 		if (star_offs >= STAR_RNG_PERIOD)
 			star_offs = 0;
 		if (enable_star && (star & 0x80) != 0 && (star & starmask) != 0)
-			bitmap.pix32(y, GALAXIAN_XSCALE*x + 0) = m_star_color[star & 0x3f];
+			bitmap.pix32(y, m_x_scale*x + 0) = m_star_color[star & 0x3f];
 
 		/* second RNG clock: two pixels */
 		star = m_stars[star_offs++];
@@ -903,8 +903,8 @@ void galaxian_state::stars_draw_row(bitmap_rgb32 &bitmap, int maxx, int y, uint3
 			star_offs = 0;
 		if (enable_star && (star & 0x80) != 0 && (star & starmask) != 0)
 		{
-			bitmap.pix32(y, GALAXIAN_XSCALE*x + 1) = m_star_color[star & 0x3f];
-			bitmap.pix32(y, GALAXIAN_XSCALE*x + 2) = m_star_color[star & 0x3f];
+			bitmap.pix32(y, m_x_scale*x + 1) = m_star_color[star & 0x3f];
+			bitmap.pix32(y, m_x_scale*x + 2) = m_star_color[star & 0x3f];
 		}
 	}
 }
@@ -916,6 +916,14 @@ void galaxian_state::stars_draw_row(bitmap_rgb32 &bitmap, int maxx, int y, uint3
  *  Background rendering
  *
  *************************************/
+
+void galaxian_state::null_draw_background(bitmap_rgb32 &bitmap, const rectangle &cliprect)
+{
+	/* erase the background to black */
+	bitmap.fill(rgb_t::black(), cliprect);
+}
+
+
 
 void galaxian_state::galaxian_draw_background(bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
@@ -946,24 +954,24 @@ void galaxian_state::background_draw_colorsplit(bitmap_rgb32 &bitmap, const rect
 	if (m_flipscreen_x)
 	{
 		rectangle draw = cliprect;
-		draw.max_x = std::min(draw.max_x, split_flipped * GALAXIAN_XSCALE - 1);
+		draw.max_x = std::min(draw.max_x, split_flipped * m_x_scale - 1);
 		if (draw.min_x <= draw.max_x)
 			bitmap.fill(rgb_t::black(), draw);
 
 		draw = cliprect;
-		draw.min_x = std::max(draw.min_x, split_flipped * GALAXIAN_XSCALE);
+		draw.min_x = std::max(draw.min_x, split_flipped * m_x_scale);
 		if (draw.min_x <= draw.max_x)
 			bitmap.fill(color, draw);
 	}
 	else
 	{
 		rectangle draw = cliprect;
-		draw.max_x = std::min(draw.max_x, split * GALAXIAN_XSCALE - 1);
+		draw.max_x = std::min(draw.max_x, split * m_x_scale - 1);
 		if (draw.min_x <= draw.max_x)
 			bitmap.fill(color, draw);
 
 		draw = cliprect;
-		draw.min_x = std::max(draw.min_x, split * GALAXIAN_XSCALE);
+		draw.min_x = std::max(draw.min_x, split * m_x_scale);
 		if (draw.min_x <= draw.max_x)
 			bitmap.fill(rgb_t::black(), draw);
 	}
@@ -1033,7 +1041,7 @@ void galaxian_state::jumpbug_draw_background(bitmap_rgb32 &bitmap, const rectang
 		for (y = cliprect.min_y; y <= cliprect.max_y; y++)
 		{
 			uint32_t star_offs = m_star_rng_origin + y * 512;
-			stars_draw_row(bitmap, 240, y, star_offs, 0xff);
+			stars_draw_row(bitmap, 232, y, star_offs, 0xff); // verified on a real PCB
 		}
 	}
 }
@@ -1052,6 +1060,14 @@ void galaxian_state::turtles_draw_background(bitmap_rgb32 &bitmap, const rectang
 }
 
 
+void galaxian_state::sfx_draw_background(bitmap_rgb32 &bitmap, const rectangle &cliprect)
+{
+	/* current schematics are unreadable, assuming like Turtles */
+	bitmap.fill(rgb_t(m_background_red * 0x55, m_background_green * 0x47, m_background_blue * 0x55), cliprect);
+	scramble_draw_stars(bitmap, cliprect, 256);
+}
+
+
 void galaxian_state::frogger_draw_background(bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	/* according to schematics it is at 128+8; but it has been verified different on real machine.
@@ -1059,11 +1075,6 @@ void galaxian_state::frogger_draw_background(bitmap_rgb32 &bitmap, const rectang
 	background_draw_colorsplit(bitmap, cliprect, rgb_t(0,0,0x47), 128, 128);
 }
 
-void galaxian_state::quaak_draw_background(bitmap_rgb32 &bitmap, const rectangle &cliprect)
-{
-	/* color split point verified on real machine */
-	background_draw_colorsplit(bitmap, cliprect, rgb_t(0,0,0x47), 128, 128);
-}
 
 #ifdef UNUSED_FUNCTION
 int galaxian_state::flip_and_clip(rectangle &draw, int xstart, int xend, const rectangle &cliprect)
@@ -1071,13 +1082,13 @@ int galaxian_state::flip_and_clip(rectangle &draw, int xstart, int xend, const r
 	draw = cliprect;
 	if (!m_flipscreen_x)
 	{
-		draw.min_x = xstart * GALAXIAN_XSCALE;
-		draw.max_x = xend * GALAXIAN_XSCALE + (GALAXIAN_XSCALE - 1);
+		draw.min_x = xstart * m_x_scale;
+		draw.max_x = xend * m_x_scale + (m_x_scale - 1);
 	}
 	else
 	{
-		draw.min_x = (xend ^ 255) * GALAXIAN_XSCALE;
-		draw.max_x = (xstart ^ 255) * GALAXIAN_XSCALE + (GALAXIAN_XSCALE - 1);
+		draw.min_x = (xend ^ 255) * m_x_scale;
+		draw.max_x = (xstart ^ 255) * m_x_scale + (m_x_scale - 1);
 	}
 	draw &= cliprect;
 	return (draw.min_x <= draw.max_x);
@@ -1126,8 +1137,8 @@ inline void galaxian_state::galaxian_draw_pixel(bitmap_rgb32 &bitmap, const rect
 {
 	if (y >= cliprect.min_y && y <= cliprect.max_y)
 	{
-		x *= GALAXIAN_XSCALE;
-		x += GALAXIAN_H0START;
+		x *= m_x_scale;
+		x += m_h0_start;
 		if (x >= cliprect.min_x && x <= cliprect.max_x)
 			bitmap.pix32(y, x) = color;
 
@@ -1191,11 +1202,14 @@ void galaxian_state::scramble_draw_bullet(bitmap_rgb32 &bitmap, const rectangle 
 {
 	/*
 	    Scramble only has "shells", which begin displaying when the counter
-	    reaches $FA, and stop displaying one pixel clock layer. All shells are
-	    rendered as yellow.
+	    reaches $FA, and stop displaying two pixel clock layers, as verified
+	    on real hardware.
+
+	    All shells are rendered as yellow.
 	*/
-	x -= 6;
-	galaxian_draw_pixel(bitmap, cliprect, y, x, rgb_t(0xff,0xff,0x00));
+	x -= 4;
+	galaxian_draw_pixel(bitmap, cliprect, y, --x, rgb_t(0xff, 0xff, 0x00));
+	galaxian_draw_pixel(bitmap, cliprect, y, --x, rgb_t(0xff, 0xff, 0x00));
 }
 
 
@@ -1345,3 +1359,79 @@ void galaxian_state::jumpbug_extend_sprite_info(const uint8_t *base, uint8_t *sx
 						((~m_gfxbank[4] & 0x01) << 6);
 	}
 }
+
+
+
+/*************************************
+ *
+ *  Four Play extensions
+ *
+ *************************************/
+
+/* gfxbank[4] is used as a cpu bank number, and gfxbank[0] for graphics banking */ 
+WRITE8_MEMBER( galaxian_state::fourplay_rombank_w )
+{
+	m_gfxbank[4] = (m_gfxbank[4] & (2 - offset)) | (data << offset);
+
+	m_gfxbank[0] = (m_gfxbank[4] == 3);	// 1 = true, 0 = false
+
+	membank("bank1")->set_entry( m_gfxbank[4] );
+}
+
+
+
+/*************************************
+ *
+ *  Video Eight extensions
+ *
+ *************************************/
+
+void galaxian_state::videight_extend_tile_info(uint16_t *code, uint8_t *color, uint8_t attrib, uint8_t x)
+{
+	*code |= (m_gfxbank[0] << 8);
+	*color |= (m_gfxbank[4] << 3);
+}
+
+void galaxian_state::videight_extend_sprite_info(const uint8_t *base, uint8_t *sx, uint8_t *sy, uint8_t *flipx, uint8_t *flipy, uint16_t *code, uint8_t *color)
+{
+	*code |= (m_gfxbank[0] << 6);
+	*color |= (m_gfxbank[4] << 3);
+}
+
+
+/* This handles the main bankswitching for code and one-bank gfx games */
+WRITE8_MEMBER( galaxian_state::videight_rombank_w )
+{
+	uint8_t gfxbanks[] = { 0, 10, 2, 8, 1, 9, 4, 11 };
+	if (offset == 2)
+		galaxian_stars_enable_w( space, 0, data );
+	else
+	{
+		m_gfxbank[4] = (m_gfxbank[4] & (6 - offset)) | (data << ((offset + 1) >> 1));
+		galaxian_gfxbank_w (space, 0, gfxbanks[m_gfxbank[4]]);
+		membank("bank1")->set_entry( m_gfxbank[4] );
+	}
+}
+
+/* This handles those games with multiple gfx banks */
+WRITE8_MEMBER( galaxian_state::videight_gfxbank_w )
+{
+	/* Moon Cresta (mooncrgx) */
+	if (( data < 2 ) && (m_gfxbank[4] == 3))
+	{
+		uint8_t gfxbanks[] = { 8, 12, 8, 14, 8, 13, 8, 15 };
+		if (!offset) m_gfxbank[3] = (m_gfxbank[3] & 6) | data;
+		if (offset == 1) m_gfxbank[3] = (m_gfxbank[3] & 5) | (data << 1);
+		if (offset == 2) m_gfxbank[3] = (m_gfxbank[3] & 3) | (data << 2);
+		galaxian_gfxbank_w(space, 0, gfxbanks[m_gfxbank[3]]);
+	}
+
+	/* Uniwar S */
+	if (( data < 2 ) && (m_gfxbank[4] == 2) && (offset == 2))
+		galaxian_gfxbank_w( space, 0, data+2 );
+
+	/* Pisces (piscesb) */
+	if (( data < 2 ) && (m_gfxbank[4] == 6) && (offset == 2))
+		galaxian_gfxbank_w( space, 0, data+4 );
+}
+

@@ -81,15 +81,15 @@ PWB403045B (C) 1997 KONAMI CO., LTD.
 |                                                          |
 |----------------------------------------------------------|
 Notes:
-      056879     - Konami custom IC, location 10E (QFP120)
-      058232     - Konami custom ceramic flat pack IC, DAC?
+      056879     - Konami custom IC, location 10E (TQFP120)
+      058232     - Konami custom ceramic flat pack IC, DAC? (SIP14)
       003461     - Konami custom IC, location 11K (QFP100)
       CN16       - 4 pin connector for CD-DA in from CDROM
       CN15       - Standard (PC-compatible) 40 pin IDE CDROM flat cable connector and 4 pin power plug connector,
                    connected to Panasonic CR-583 8-speed CDROM drive.
       LA4705     - LA4705 Power Amplifier
       DSW        - 8 position dip switch
-      BOOTROM.8Q - 16MBit MASKROM. Location 8Q (DIP42)
+      BOOTROM.8Q - 16MBit mask ROM. Location 8Q (DIP42)
                    Battle Tryst       - 636A01.8Q
                    Evil Night         -       .8Q
                    Heat Of Eleven '98 -       .8Q
@@ -194,6 +194,7 @@ Notes:
 #include "imagedev/chd_cd.h"
 #include "machine/terminal.h"
 #include "emupal.h"
+#include "romload.h"
 #include "softlist.h"
 #include "screen.h"
 
@@ -219,6 +220,12 @@ public:
 		m_maincpu(*this, "maincpu"),
 		m_subcpu(*this, "sub") { }
 
+	void m2(machine_config &config);
+	void _3do_m2(machine_config &config);
+
+	void init_m2();
+
+private:
 	required_shared_ptr<uint64_t> m_main_ram;
 	required_device<generic_terminal_device> m_terminal;
 	required_ioport m_in_country;
@@ -269,7 +276,6 @@ public:
 	DECLARE_READ8_MEMBER(id6_r);
 	DECLARE_READ8_MEMBER(id7_r);
 
-	void init_m2();
 	virtual void video_start() override;
 	virtual void machine_reset() override;
 	uint32_t screen_update_m2(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -280,8 +286,6 @@ public:
 	void cde_dma_transfer(address_space &space, int channel, int next);
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_subcpu;
-	void m2(machine_config &config);
-	void _3do_m2(machine_config &config);
 	void _3do_m2_main(address_map &map);
 	void _3do_m2_main_m(address_map &map);
 	void _3do_m2_main_s(address_map &map);
@@ -1312,7 +1316,7 @@ MACHINE_CONFIG_START(konamim2_state::m2)
 	MCFG_DEVICE_PROGRAM_MAP(m2_main_s)
 
 	// TODO: declaring as second screen causes palette confusion (wants to use palette from the other screen?)
-	MCFG_DEVICE_ADD("terminal", GENERIC_TERMINAL, 0)
+	MCFG_DEVICE_ADD(m_terminal, GENERIC_TERMINAL, 0)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)

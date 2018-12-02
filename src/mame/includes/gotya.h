@@ -1,13 +1,18 @@
 // license:BSD-3-Clause
 // copyright-holders:Zsolt Vasvari
+#ifndef MAME_INCLUDES_GOTYA_H
+#define MAME_INCLUDES_GOTYA_H
+
+#pragma once
+
 #include "sound/samples.h"
 #include "emupal.h"
 
 class gotya_state : public driver_device
 {
 public:
-	gotya_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	gotya_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_scroll(*this, "scroll"),
 		m_videoram(*this, "videoram"),
 		m_colorram(*this, "colorram"),
@@ -16,8 +21,12 @@ public:
 		m_samples(*this, "samples"),
 		m_maincpu(*this, "maincpu"),
 		m_gfxdecode(*this, "gfxdecode"),
-		m_palette(*this, "palette") { }
+		m_palette(*this, "palette")
+	{ }
 
+	void gotya(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_scroll;
 	required_shared_ptr<uint8_t> m_videoram;
@@ -51,6 +60,7 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
-	void gotya(machine_config &config);
 	void gotya_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_GOTYA_H

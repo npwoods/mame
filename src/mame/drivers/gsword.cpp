@@ -826,14 +826,13 @@ MACHINE_CONFIG_START(gsword_state::gsword)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
-	MCFG_DEVICE_ADD("ay1", AY8910, XTAL(18'000'000)/12) /* verified on pcb */
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)
+	AY8910(config, m_ay0, XTAL(18'000'000)/12).add_route(ALL_OUTPUTS, "mono", 0.30); /* verified on pcb */
 
-	MCFG_DEVICE_ADD("ay2", AY8910, 1500000)
-	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(*this, gsword_state, nmi_set_w)) /* portA write */
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)
+	AY8910(config, m_ay1, 1500000);
+	m_ay1->port_a_write_callback().set(FUNC(gsword_state::nmi_set_w));
+	m_ay1->add_route(ALL_OUTPUTS, "mono", 0.30);
 
 	MCFG_DEVICE_ADD("msm", MSM5205, XTAL(400'000)) /* verified on pcb */
 	MCFG_MSM5205_PRESCALER_SELECTOR(SEX_4B)  /* vclk input mode    */
@@ -859,19 +858,19 @@ MACHINE_CONFIG_START(josvolly_state::josvolly)
 	MCFG_MCS48_PORT_P2_IN_CB(READ8(*this, josvolly_state, mcu1_p2_r))
 	MCFG_MCS48_PORT_P2_OUT_CB(WRITE8(*this, josvolly_state, mcu1_p2_w))
 
-	MCFG_DEVICE_ADD("mcu2", I8741, 12000000/2) /* ? */
-	MCFG_MCS48_PORT_P1_IN_CB(READ8(*this, josvolly_state, mcu2_p1_r))
-	MCFG_MCS48_PORT_P1_OUT_CB(WRITE8(*this, josvolly_state, mcu2_p1_w))
-	MCFG_MCS48_PORT_P2_IN_CB(READ8(*this, josvolly_state, mcu2_p2_r))
-	MCFG_MCS48_PORT_P2_OUT_CB(WRITE8(*this, josvolly_state, mcu2_p2_w))
+	i8741_device &mcu2(I8741(config, "mcu2", 12000000/2)); /* ? */
+	mcu2.p1_in_cb().set(FUNC(josvolly_state::mcu2_p1_r));
+	mcu2.p1_out_cb().set(FUNC(josvolly_state::mcu2_p1_w));
+	mcu2.p2_in_cb().set(FUNC(josvolly_state::mcu2_p2_r));
+	mcu2.p2_out_cb().set(FUNC(josvolly_state::mcu2_p2_w));
 	// TEST0 and TEST1 are driven by P20 and P21 on the other MCU
-	MCFG_MCS48_PORT_T0_IN_CB(READ8("mcu1", i8741_device, p2_r)) MCFG_DEVCB_RSHIFT(0)
-	MCFG_MCS48_PORT_T1_IN_CB(READ8("mcu1", i8741_device, p2_r)) MCFG_DEVCB_RSHIFT(1)
+	mcu2.t0_in_cb().set("mcu1", FUNC(i8741_device::p2_r)).bit(0);
+	mcu2.t1_in_cb().set("mcu1", FUNC(i8741_device::p2_r)).bit(1);
 
-	MCFG_DEVICE_ADD("aa_007", I8255, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("IN1"))   // 1PL
-	MCFG_I8255_IN_PORTB_CB(IOPORT("IN2"))   // 2PL / ACK
-	MCFG_I8255_IN_PORTC_CB(IOPORT("IN0"))   // START
+	i8255_device &ppi(I8255(config, "aa_007"));
+	ppi.in_pa_callback().set_ioport("IN1");   // 1PL
+	ppi.in_pb_callback().set_ioport("IN2");   // 2PL / ACK
+	ppi.in_pc_callback().set_ioport("IN0");   // START
 
 	// the second MCU polls the first MCU's outputs, so it needs tight sync
 	MCFG_QUANTUM_PERFECT_CPU("mcu2")
@@ -894,11 +893,9 @@ MACHINE_CONFIG_START(josvolly_state::josvolly)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ay1", AY8910, 1500000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)
+	AY8910(config, m_ay0, 1500000).add_route(ALL_OUTPUTS, "mono", 0.30);
 
-	MCFG_DEVICE_ADD("ay2", AY8910, 1500000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)
+	AY8910(config, m_ay1, 1500000).add_route(ALL_OUTPUTS, "mono", 0.30);
 
 #if 0
 	MCFG_DEVICE_ADD("msm", MSM5205, 384000)

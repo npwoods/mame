@@ -49,7 +49,17 @@ public:
 		m_generic_paletteram_16(*this, "paletteram")
 	{ }
 
+	void neoprint(machine_config &config);
+	void nprsp(machine_config &config);
+
+	void init_98best44();
+	void init_npcartv1();
+	void init_nprsp();
+	void init_unkneo();
+
 	static constexpr feature_type unemulated_features() { return feature::CAMERA | feature::PRINTER; }
+
+private:
 
 	DECLARE_READ8_MEMBER(neoprint_calendar_r);
 	DECLARE_WRITE8_MEMBER(neoprint_calendar_w);
@@ -62,25 +72,18 @@ public:
 	DECLARE_WRITE16_MEMBER(nprsp_palette_w);
 	DECLARE_WRITE8_MEMBER(nprsp_bank_w);
 	DECLARE_READ16_MEMBER(rom_window_r);
-	void init_98best44();
-	void init_npcartv1();
-	void init_nprsp();
-	void init_unkneo();
 	DECLARE_MACHINE_RESET(nprsp);
 	uint32_t screen_update_neoprint(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_nprsp(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void neoprint(machine_config &config);
-	void nprsp(machine_config &config);
 	void neoprint_audio_io_map(address_map &map);
 	void neoprint_audio_map(address_map &map);
 	void neoprint_map(address_map &map);
 	void nprsp_map(address_map &map);
-protected:
+
 	virtual void machine_start() override;
 	virtual void video_start() override;
 
-private:
 	required_shared_ptr<uint16_t> m_npvidram;
 	required_shared_ptr<uint16_t> m_npvidregs;
 	required_device<cpu_device> m_maincpu;
@@ -506,8 +509,8 @@ MACHINE_CONFIG_START(neoprint_state::neoprint)
 	MCFG_DEVICE_PROGRAM_MAP(neoprint_audio_map)
 	MCFG_DEVICE_IO_MAP(neoprint_audio_io_map)
 
-	MCFG_UPD4990A_ADD("upd4990a", XTAL(32'768), NOOP, NOOP)
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	UPD4990A(config, m_upd4990a);
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_neoprint)
 
@@ -525,7 +528,7 @@ MACHINE_CONFIG_START(neoprint_state::neoprint)
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("ymsnd", YM2610, 24000000 / 3)
 	MCFG_YM2610_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
@@ -550,8 +553,8 @@ MACHINE_CONFIG_START(neoprint_state::nprsp)
 	MCFG_DEVICE_PROGRAM_MAP(neoprint_audio_map)
 	MCFG_DEVICE_IO_MAP(neoprint_audio_io_map)
 
-	MCFG_UPD4990A_ADD("upd4990a", XTAL(32'768), NOOP, NOOP)
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	UPD4990A(config, m_upd4990a);
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_neoprint)
 
@@ -571,7 +574,7 @@ MACHINE_CONFIG_START(neoprint_state::nprsp)
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("ymsnd", YM2610, 24000000 / 3)
 	MCFG_YM2610_IRQ_HANDLER(INPUTLINE("audiocpu", 0))

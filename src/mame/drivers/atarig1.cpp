@@ -24,6 +24,7 @@
 #include "includes/atarig1.h"
 #include "machine/eeprompar.h"
 #include "machine/watchdog.h"
+#include "emupal.h"
 #include "speaker.h"
 
 
@@ -191,7 +192,7 @@ void atarig1_state::main_map(address_map &map)
 	map(0xfd0000, 0xfd0000).r(m_jsa, FUNC(atari_jsa_ii_device::main_response_r));
 	map(0xfd8000, 0xfdffff).rw("eeprom", FUNC(eeprom_parallel_28xx_device::read), FUNC(eeprom_parallel_28xx_device::write)).umask16(0x00ff);
 /*  AM_RANGE(0xfe0000, 0xfe7fff) AM_READ(from_r)*/
-	map(0xfe8000, 0xfe89ff).ram().w(m_palette, FUNC(palette_device::write16)).share("palette");
+	map(0xfe8000, 0xfe89ff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
 	map(0xff0000, 0xffffff).ram();
 	map(0xff0000, 0xff0fff).ram().share("rle");
 	map(0xff2000, 0xff2001).w(FUNC(atarig1_state::mo_command_w)).share("mo_command");
@@ -404,15 +405,9 @@ MACHINE_CONFIG_START(atarig1_state::atarig1)
 	MCFG_MACHINE_START_OVERRIDE(atarig1_state,atarig1)
 	MCFG_MACHINE_RESET_OVERRIDE(atarig1_state,atarig1)
 
-	MCFG_DEVICE_ADD("adc", ADC0809, ATARI_CLOCK_14MHz/16)
-	MCFG_ADC0808_IN0_CB(IOPORT("ADC0"))
-	MCFG_ADC0808_IN1_CB(IOPORT("ADC1"))
-	MCFG_ADC0808_IN2_CB(IOPORT("ADC2"))
+	EEPROM_2816(config, "eeprom").lock_after_write(true);
 
-	MCFG_EEPROM_2816_ADD("eeprom")
-	MCFG_EEPROM_28XX_LOCK_AFTER_WRITE(true)
-
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_atarig1)
@@ -436,60 +431,63 @@ MACHINE_CONFIG_START(atarig1_state::atarig1)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_ATARI_JSA_II_ADD("jsa", INPUTLINE("maincpu", M68K_IRQ_2))
-	MCFG_ATARI_JSA_TEST_PORT("IN0", 14)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	ATARI_JSA_II(config, m_jsa, 0);
+	m_jsa->main_int_cb().set_inputline(m_maincpu, M68K_IRQ_2);
+	m_jsa->test_read_cb().set_ioport("IN0").bit(14);
+	m_jsa->add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(atarig1_state::hydrap)
 	atarig1(config);
+
+	ADC0809(config, m_adc, ATARI_CLOCK_14MHz/16);
+	m_adc->in_callback<0>().set_ioport("ADC0");
+	m_adc->in_callback<1>().set_ioport("ADC1");
+	m_adc->in_callback<2>().set_ioport("ADC2");
+
 	MCFG_ATARIRLE_ADD("rle", modesc_hydra)
 MACHINE_CONFIG_END
 
 
-MACHINE_CONFIG_START(atarig1_state::hydra)
+void atarig1_state::hydra(machine_config &config)
+{
 	hydrap(config);
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 116, true)
-MACHINE_CONFIG_END
+	SLAPSTIC(config, "slapstic", 116, true);
+}
 
 
 MACHINE_CONFIG_START(atarig1_state::pitfight9)
 	atarig1(config);
 	MCFG_ATARIRLE_ADD("rle", modesc_pitfight)
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 114, true)
-	MCFG_DEVICE_REMOVE("adc")
+	SLAPSTIC(config, "slapstic", 114, true);
 MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(atarig1_state::pitfight7)
 	atarig1(config);
 	MCFG_ATARIRLE_ADD("rle", modesc_pitfight)
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 112, true)
-	MCFG_DEVICE_REMOVE("adc")
+	SLAPSTIC(config, "slapstic", 112, true);
 MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(atarig1_state::pitfight)
 	atarig1(config);
 	MCFG_ATARIRLE_ADD("rle", modesc_pitfight)
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 111, true)
-	MCFG_DEVICE_REMOVE("adc")
+	SLAPSTIC(config, "slapstic", 111, true);
 MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(atarig1_state::pitfightj)
 	atarig1(config);
 	MCFG_ATARIRLE_ADD("rle", modesc_pitfight)
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 113, true)
-	MCFG_DEVICE_REMOVE("adc")
+	SLAPSTIC(config, "slapstic", 113, true);
 MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(atarig1_state::pitfightb)
 	atarig1(config);
 	MCFG_ATARIRLE_ADD("rle", modesc_pitfight)
-	MCFG_DEVICE_REMOVE("adc")
 MACHINE_CONFIG_END
 
 

@@ -102,6 +102,27 @@ public:
 		, m_leds(*this, "led%u", 0U)
 	{ }
 
+	void bishjan(machine_config &config);
+	void saklove(machine_config &config);
+	void mtrain(machine_config &config);
+	void humlan(machine_config &config);
+	void new2001(machine_config &config);
+	void expcard(machine_config &config);
+	void xplan(machine_config &config);
+	void xtrain(machine_config &config);
+
+	void init_bishjan();
+	void init_new2001();
+	void init_humlan();
+	void init_xtrain();
+	void init_expcard();
+	void init_wtrnymph();
+	void init_mtrain();
+	void init_saklove();
+	void init_xplan();
+	void init_ptrain();
+
+private:
 	DECLARE_WRITE8_MEMBER(ss9601_byte_lo_w);
 	DECLARE_WRITE8_MEMBER(ss9601_byte_lo2_w);
 	DECLARE_WRITE8_MEMBER(ss9601_videoram_0_hi_w);
@@ -154,30 +175,13 @@ public:
 	DECLARE_WRITE8_MEMBER(xtrain_outputs_w);
 	DECLARE_WRITE8_MEMBER(oki_bank_bit0_w);
 	DECLARE_WRITE8_MEMBER(oki_bank_bit4_w);
-	void init_bishjan();
-	void init_new2001();
-	void init_humlan();
-	void init_xtrain();
-	void init_expcard();
-	void init_wtrnymph();
-	void init_mtrain();
-	void init_saklove();
-	void init_xplan();
-	void init_ptrain();
+
 	TILE_GET_INFO_MEMBER(ss9601_get_tile_info_0);
 	TILE_GET_INFO_MEMBER(ss9601_get_tile_info_1);
 	DECLARE_VIDEO_START(subsino2);
 	uint32_t screen_update_subsino2(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(am188em_int0_irq);
 
-	void bishjan(machine_config &config);
-	void saklove(machine_config &config);
-	void mtrain(machine_config &config);
-	void humlan(machine_config &config);
-	void new2001(machine_config &config);
-	void expcard(machine_config &config);
-	void xplan(machine_config &config);
-	void xtrain(machine_config &config);
 	void bishjan_map(address_map &map);
 	void expcard_io(address_map &map);
 	void humlan_map(address_map &map);
@@ -192,7 +196,6 @@ public:
 	void xplan_map(address_map &map);
 	void xtrain_io(address_map &map);
 
-protected:
 	virtual void machine_start() override { m_leds.resolve(); }
 
 	layer_t m_layers[2];
@@ -220,7 +223,6 @@ protected:
 	optional_ioport m_system;
 	output_finder<9> m_leds;
 
-private:
 	inline void ss9601_get_tile_info(layer_t *l, tile_data &tileinfo, tilemap_memory_index tile_index);
 };
 
@@ -2383,7 +2385,7 @@ MACHINE_CONFIG_START(subsino2_state::bishjan)
 	MCFG_DEVICE_PROGRAM_MAP( bishjan_map )
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", subsino2_state, irq0_line_hold)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 	MCFG_TICKET_DISPENSER_ADD("hopper", attotime::from_msec(200), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH)
 
 	// video hardware
@@ -2397,7 +2399,8 @@ MACHINE_CONFIG_START(subsino2_state::bishjan)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_ss9601)
 	MCFG_PALETTE_ADD( "palette", 256 )
 
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette") // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, m_palette)); // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac.set_addrmap(0, &subsino2_state::ramdac_map);
 
 	MCFG_VIDEO_START_OVERRIDE(subsino2_state, subsino2 )
 
@@ -2434,7 +2437,7 @@ MACHINE_CONFIG_START(subsino2_state::mtrain)
 	MCFG_DEVICE_PROGRAM_MAP( mtrain_map )
 	MCFG_DEVICE_IO_MAP( mtrain_io )
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	// video hardware
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -2448,7 +2451,8 @@ MACHINE_CONFIG_START(subsino2_state::mtrain)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_ss9601)
 	MCFG_PALETTE_ADD( "palette", 256 )
 
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette") // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, m_palette)); // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac.set_addrmap(0, &subsino2_state::ramdac_map);
 
 	MCFG_VIDEO_START_OVERRIDE(subsino2_state, subsino2 )
 
@@ -2468,7 +2472,7 @@ MACHINE_CONFIG_START(subsino2_state::saklove)
 	MCFG_DEVICE_PROGRAM_MAP( saklove_map )
 	MCFG_DEVICE_IO_MAP( saklove_io )
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	// video hardware
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -2482,7 +2486,8 @@ MACHINE_CONFIG_START(subsino2_state::saklove)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_ss9601)
 	MCFG_PALETTE_ADD( "palette", 256 )
 
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette") // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, m_palette)); // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac.set_addrmap(0, &subsino2_state::ramdac_map);
 
 	MCFG_VIDEO_START_OVERRIDE(subsino2_state, subsino2 )
 
@@ -2506,7 +2511,7 @@ MACHINE_CONFIG_START(subsino2_state::xplan)
 	MCFG_DEVICE_IO_MAP( xplan_io )
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", subsino2_state, am188em_int0_irq)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	// video hardware
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -2520,7 +2525,8 @@ MACHINE_CONFIG_START(subsino2_state::xplan)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_ss9601)
 	MCFG_PALETTE_ADD( "palette", 256 )
 
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette") // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, m_palette)); // HMC HM86171 VGA 256 colour RAMDAC
+	ramdac.set_addrmap(0, &subsino2_state::ramdac_map);
 
 	MCFG_VIDEO_START_OVERRIDE(subsino2_state, subsino2 )
 
@@ -2583,8 +2589,8 @@ PCB Layout
 |------------------------------------------------------|
 Notes:
       H8/3044 - Subsino re-badged Hitachi H8/3044 HD6433044A22F Microcontroller (QFP100)
-                The H8/3044 is a H8/3002 with 24bit address bus and has 32k MASKROM and 2k RAM, clock input is 14.7MHz [44.1/3]
-                MD0,MD1 & MD2 are configured to MODE 6 16MByte Expanded Mode with the on-chip 32k MASKROM enabled.
+                The H8/3044 is a H8/3002 with 24bit address bus and has 32k mask ROM and 2k RAM, clock input is 14.7MHz [44.1/3]
+                MD0,MD1 & MD2 are configured to MODE 6 16MByte Expanded Mode with the on-chip 32k mask ROM enabled.
      CXK58257 - Sony CXK58257 32k x8 SRAM (SOP28)
       HM86171 - Hualon Microelectronics HMC HM86171 VGA 256 colour RAMDAC (DIP28)
           S-1 - ?? Probably some kind of audio OP AMP or DAC? (DIP8)

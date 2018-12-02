@@ -676,8 +676,8 @@ WRITE8_MEMBER(norautp_state::soundlamps_w)
 	m_lamps[9] = BIT(data, 1);  /* BET / COLLECT lamp */
 
 	/* the 4 MSB are for discrete sound */
-	m_discrete->write(space, NORAUTP_SND_EN, (data >> 7) & 0x01);
-	m_discrete->write(space, NORAUTP_FREQ_DATA, (data >> 4) & 0x07);
+	m_discrete->write(NORAUTP_SND_EN, (data >> 7) & 0x01);
+	m_discrete->write(NORAUTP_FREQ_DATA, (data >> 4) & 0x07);
 
 //  popmessage("sound bits 4-5-6-7: %02x, %02x, %02x, %02x", ((data >> 4) & 0x01), ((data >> 5) & 0x01), ((data >> 6) & 0x01), ((data >> 7) & 0x01));
 }
@@ -732,8 +732,8 @@ TIMER_CALLBACK_MEMBER(norautp_state::ppi2_ack)
 	m_ppi8255[2]->pc6_w(param);
 	if (param == 0)
 	{
-		uint8_t np_addr = m_ppi8255[2]->pb_r();
-		uint8_t vram_data = m_ppi8255[2]->pa_r();
+		uint8_t const np_addr = m_ppi8255[2]->pb_r();
+		uint8_t const vram_data = m_ppi8255[2]->pa_r();
 		m_np_vram[np_addr] = vram_data;
 	}
 }
@@ -1247,25 +1247,25 @@ MACHINE_CONFIG_START(norautp_state::noraut_base)
 	MCFG_DEVICE_PROGRAM_MAP(norautp_map)
 	MCFG_DEVICE_IO_MAP(norautp_portmap)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")   /* doesn't work if placed at derivative drivers */
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);   /* doesn't work if placed at derivative drivers */
 
-	MCFG_DEVICE_ADD("ppi8255_0", I8255, 0)
+	I8255(config, m_ppi8255[0], 0);
 	/* (60-63) Mode 0 - Port A set as input */
-	MCFG_I8255_IN_PORTA_CB(IOPORT("DSW1"))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, norautp_state, mainlamps_w))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, norautp_state, counterlamps_w))
+	m_ppi8255[0]->in_pa_callback().set_ioport("DSW1");
+	m_ppi8255[0]->out_pb_callback().set(FUNC(norautp_state::mainlamps_w));
+	m_ppi8255[0]->out_pc_callback().set(FUNC(norautp_state::counterlamps_w));
 
-	MCFG_DEVICE_ADD("ppi8255_1", I8255, 0)
+	I8255(config, m_ppi8255[1], 0);
 	/* (a0-a3) Mode 0 - Ports A & B set as input */
-	MCFG_I8255_IN_PORTA_CB(IOPORT("IN0"))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("IN1"))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, norautp_state, soundlamps_w))
+	m_ppi8255[1]->in_pa_callback().set_ioport("IN0");
+	m_ppi8255[1]->in_pb_callback().set_ioport("IN1");
+	m_ppi8255[1]->out_pc_callback().set(FUNC(norautp_state::soundlamps_w));
 
-	MCFG_DEVICE_ADD("ppi8255_2", I8255, 0)
+	I8255(config, m_ppi8255[2], 0);
 	/* (c0-c3) Group A Mode 2 (5-lines handshacked bidirectional port)
 	 Group B Mode 0, output;  (see below for lines PC0-PC2) */
-	MCFG_I8255_IN_PORTC_CB(IOPORT("IN2"))
-	MCFG_I8255_OUT_PORTC_CB(WRITELINE(*this, norautp_state, ppi2_obf_w)) MCFG_DEVCB_BIT(7)
+	m_ppi8255[2]->in_pc_callback().set_ioport("IN2");
+	m_ppi8255[2]->out_pc_callback().set(FUNC(norautp_state::ppi2_obf_w)).bit(7);
 	/*  PPI-2 is configured as mixed mode2 and mode0 output.
 	 It means that port A should be bidirectional and port B just as output.
 	 Port C as hshk regs, and P0-P2 as input (norautp, norautjp) or output (other sets). */
@@ -3670,7 +3670,7 @@ GAME(  1983, gtipoker, 0,       dphl,     norautp, norautp_state, empty_init, RO
 GAME(  1983, gtipokra, 0,       dphla,    norautp, norautp_state, empty_init, ROT0, "GTI Inc",                     "GTI Poker? (SMS hardware)",        MACHINE_NOT_WORKING )
 GAME(  1983, smshilo,  0,       dphla,    norautp, norautp_state, empty_init, ROT0, "SMS Manufacturing Corp.",     "HI-LO Double Up Joker Poker",      MACHINE_NOT_WORKING )
 GAME(  1986, drhl,     0,       drhl,     norautp, norautp_state, empty_init, ROT0, "Drews Inc.",                  "Drews Revenge (v.2.89, set 1)",    MACHINE_NOT_WORKING )
-GAME(  1986, drhla,    0,       drhl,     norautp, norautp_state, empty_init, ROT0, "Drews Inc.",                  "Drews Revenge (v.2.89, set 2)",    MACHINE_NOT_WORKING )
+GAME(  1986, drhla,    drhl,    drhl,     norautp, norautp_state, empty_init, ROT0, "Drews Inc.",                  "Drews Revenge (v.2.89, set 2)",    MACHINE_NOT_WORKING )
 GAME(  1982, ssjkrpkr, 0,       ssjkrpkr, norautp, norautp_state, init_ssa,   ROT0, "Southern Systems & Assembly", "Southern Systems Joker Poker",     MACHINE_NOT_WORKING )
 
 /* The following one also has a custom 68705 MCU */

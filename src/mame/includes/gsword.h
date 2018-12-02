@@ -1,5 +1,9 @@
 // license:BSD-3-Clause
 // copyright-holders:Steve Ellenoff,Jarek Parchanski
+#ifndef MAME_INCLUDES_GSWORD_H
+#define MAME_INCLUDES_GSWORD_H
+
+#pragma once
 
 #include "machine/gen_latch.h"
 #include "sound/ay8910.h"
@@ -26,6 +30,7 @@ public:
 	{
 	}
 
+protected:
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
 	optional_device<cpu_device> m_subcpu;
@@ -81,6 +86,12 @@ public:
 	{
 	}
 
+	void init_gsword();
+	void init_gsword2();
+
+	void gsword(machine_config &config);
+
+protected:
 	DECLARE_READ8_MEMBER(hack_r);
 	DECLARE_WRITE8_MEMBER(nmi_set_w);
 	DECLARE_WRITE8_MEMBER(sound_command_w);
@@ -90,19 +101,16 @@ public:
 
 	INTERRUPT_GEN_MEMBER(sound_interrupt);
 
-	void init_gsword();
-	void init_gsword2();
-
 	DECLARE_PALETTE_INIT(gsword);
 
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-	void gsword(machine_config &config);
 	void cpu1_io_map(address_map &map);
 	void cpu2_io_map(address_map &map);
 	void cpu2_map(address_map &map);
 	void cpu3_map(address_map &map);
+
 private:
 	required_device<generic_latch_8_device> m_soundlatch;
 	required_device<msm5205_device>         m_msm;
@@ -124,6 +132,9 @@ public:
 	{
 	}
 
+	void josvolly(machine_config &config);
+
+protected:
 	DECLARE_READ8_MEMBER(mcu1_p1_r);
 	DECLARE_READ8_MEMBER(mcu1_p2_r);
 	DECLARE_READ8_MEMBER(mcu2_p1_r);
@@ -141,13 +152,15 @@ public:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-	void josvolly(machine_config &config);
 	void josvolly_cpu1_io_map(address_map &map);
 	void josvolly_cpu2_io_map(address_map &map);
 	void josvolly_cpu2_map(address_map &map);
+
 private:
 	bool    m_cpu2_nmi_enable;
 	u8      m_mcu1_p1;
 	u8      m_mcu1_p2;
 	u8      m_mcu2_p1;
 };
+
+#endif // MAME_INCLUDES_GSWORD_H

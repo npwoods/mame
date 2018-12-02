@@ -33,6 +33,9 @@ public:
 		m_palette(*this, "palette"),
 		m_fdc(*this, "fdc")  { }
 
+	void ax20(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_shared_ptr<uint8_t> m_p_vram;
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -45,7 +48,7 @@ public:
 	DECLARE_READ8_MEMBER(unk_r);
 	DECLARE_WRITE8_MEMBER(tc_w);
 	DECLARE_WRITE8_MEMBER(ctl_w);
-	void ax20(machine_config &config);
+
 	void ax20_io(address_map &map);
 	void ax20_map(address_map &map);
 };
@@ -146,7 +149,7 @@ MACHINE_CONFIG_START(ax20_state::ax20)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_ax20)
 	MCFG_PALETTE_ADD_MONOCHROME("palette")
 
-	MCFG_I8272A_ADD("fdc", true)
+	I8272A(config, m_fdc, true);
 
 	/* Devices */
 	MCFG_FLOPPY_DRIVE_ADD("fdc:0", ax20_floppies, "525dd", isa8_fdc_device::floppy_formats)

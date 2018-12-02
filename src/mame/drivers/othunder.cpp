@@ -613,23 +613,23 @@ MACHINE_CONFIG_START(othunder_state::othunder)
 	MCFG_DEVICE_ADD("audiocpu", Z80, 16_MHz_XTAL/2/2)
 	MCFG_DEVICE_PROGRAM_MAP(z80_sound_map)
 
-	MCFG_DEVICE_ADD("eeprom", EEPROM_SERIAL_93C46_16BIT)
+	EEPROM_93C46_16BIT(config, "eeprom");
 
-	MCFG_DEVICE_ADD("adc", ADC0808, 16_MHz_XTAL/2/2/8)
-	MCFG_ADC0808_EOC_CB(WRITELINE(*this, othunder_state, adc_eoc_w))
-	MCFG_ADC0808_IN0_CB(IOPORT("P1X"))
-	MCFG_ADC0808_IN1_CB(IOPORT("P1Y"))
-	MCFG_ADC0808_IN2_CB(IOPORT("P2X"))
-	MCFG_ADC0808_IN3_CB(IOPORT("P2Y"))
+	adc0808_device &adc(ADC0808(config, "adc", 16_MHz_XTAL/2/2/8));
+	adc.eoc_callback().set(FUNC(othunder_state::adc_eoc_w));
+	adc.in_callback<0>().set_ioport("P1X");
+	adc.in_callback<1>().set_ioport("P1Y");
+	adc.in_callback<2>().set_ioport("P2X");
+	adc.in_callback<3>().set_ioport("P2Y");
 
-	MCFG_DEVICE_ADD("tc0220ioc", TC0220IOC, 0)
-	MCFG_TC0220IOC_READ_0_CB(IOPORT("DSWA"))
-	MCFG_TC0220IOC_READ_1_CB(IOPORT("DSWB"))
-	MCFG_TC0220IOC_READ_2_CB(IOPORT("IN0"))
-	MCFG_TC0220IOC_READ_3_CB(READLINE("eeprom", eeprom_serial_93cxx_device, do_read)) MCFG_DEVCB_BIT(7)
-	MCFG_TC0220IOC_WRITE_3_CB(WRITE8(*this, othunder_state, eeprom_w))
-	MCFG_TC0220IOC_WRITE_4_CB(WRITE8(*this, othunder_state, coins_w))
-	MCFG_TC0220IOC_READ_7_CB(IOPORT("IN2"))
+	TC0220IOC(config, m_tc0220ioc, 0);
+	m_tc0220ioc->read_0_callback().set_ioport("DSWA");
+	m_tc0220ioc->read_1_callback().set_ioport("DSWB");
+	m_tc0220ioc->read_2_callback().set_ioport("IN0");
+	m_tc0220ioc->read_3_callback().set(m_eeprom, FUNC(eeprom_serial_93cxx_device::do_read)).lshift(7);
+	m_tc0220ioc->write_3_callback().set(FUNC(othunder_state::eeprom_w));
+	m_tc0220ioc->write_4_callback().set(FUNC(othunder_state::coins_w));
+	m_tc0220ioc->read_7_callback().set_ioport("IN2");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -644,14 +644,14 @@ MACHINE_CONFIG_START(othunder_state::othunder)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_othunder)
 	MCFG_PALETTE_ADD("palette", 4096)
 
-	MCFG_DEVICE_ADD("tc0100scn", TC0100SCN, 0)
-	MCFG_TC0100SCN_GFX_REGION(1)
-	MCFG_TC0100SCN_TX_REGION(2)
-	MCFG_TC0100SCN_OFFSETS(4, 0)
-	MCFG_TC0100SCN_GFXDECODE("gfxdecode")
-	MCFG_TC0100SCN_PALETTE("palette")
+	TC0100SCN(config, m_tc0100scn, 0);
+	m_tc0100scn->set_gfx_region(1);
+	m_tc0100scn->set_tx_region(2);
+	m_tc0100scn->set_offsets(4, 0);
+	m_tc0100scn->set_gfxdecode_tag(m_gfxdecode);
+	m_tc0100scn->set_palette_tag(m_palette);
 
-	MCFG_DEVICE_ADD("tc0110pcr", TC0110PCR, 0, "palette")
+	TC0110PCR(config, m_tc0110pcr, 0, m_palette);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -672,9 +672,9 @@ MACHINE_CONFIG_START(othunder_state::othunder)
 	FILTER_VOLUME(config, "2610.2l").add_route(ALL_OUTPUTS, "speaker", 1.0);
 	FILTER_VOLUME(config, "2610.2r").add_route(ALL_OUTPUTS, "speaker", 1.0);
 
-	MCFG_DEVICE_ADD("tc0140syt", TC0140SYT, 0)
-	MCFG_TC0140SYT_MASTER_CPU("maincpu")
-	MCFG_TC0140SYT_SLAVE_CPU("audiocpu")
+	TC0140SYT(config, m_tc0140syt, 0);
+	m_tc0140syt->set_master_tag(m_maincpu);
+	m_tc0140syt->set_slave_tag(m_audiocpu);
 MACHINE_CONFIG_END
 
 

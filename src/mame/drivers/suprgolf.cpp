@@ -44,6 +44,11 @@ public:
 		m_videoram(*this, "videoram")
 	{ }
 
+	void suprgolf(machine_config &config);
+
+	void init_suprgolf();
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<msm5205_device> m_msm;
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -86,13 +91,11 @@ public:
 
 	TILE_GET_INFO_MEMBER(get_tile_info);
 
-	void init_suprgolf();
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void suprgolf(machine_config &config);
 	void io_map(address_map &map);
 	void suprgolf_map(address_map &map);
 };
@@ -123,10 +126,10 @@ void suprgolf_state::video_start()
 	save_item(NAME(m_vreg_pen));
 	save_item(NAME(m_palette_switch));
 	save_item(NAME(m_bg_vreg_test));
-	save_pointer(NAME(m_paletteram.get()), 0x1000);
-	save_pointer(NAME(m_bg_vram.get()), 0x2000*0x20);
-	save_pointer(NAME(m_bg_fb.get()), 0x2000*0x20);
-	save_pointer(NAME(m_fg_fb.get()), 0x2000*0x20);
+	save_pointer(NAME(m_paletteram), 0x1000);
+	save_pointer(NAME(m_bg_vram), 0x2000*0x20);
+	save_pointer(NAME(m_bg_fb), 0x2000*0x20);
+	save_pointer(NAME(m_fg_fb), 0x2000*0x20);
 }
 
 uint32_t suprgolf_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
@@ -501,17 +504,17 @@ MACHINE_CONFIG_START(suprgolf_state::suprgolf)
 	MCFG_DEVICE_IO_MAP(io_map)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", suprgolf_state,  irq0_line_hold)
 
-	MCFG_DEVICE_ADD("ppi8255_0", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(READ8(*this, suprgolf_state, p1_r))
-	MCFG_I8255_IN_PORTB_CB(READ8(*this, suprgolf_state, p2_r))
-	MCFG_I8255_IN_PORTC_CB(READ8(*this, suprgolf_state, pedal_extra_bits_r))
+	i8255_device &ppi0(I8255A(config, "ppi8255_0"));
+	ppi0.in_pa_callback().set(FUNC(suprgolf_state::p1_r));
+	ppi0.in_pb_callback().set(FUNC(suprgolf_state::p2_r));
+	ppi0.in_pc_callback().set(FUNC(suprgolf_state::pedal_extra_bits_r));
 
-	MCFG_DEVICE_ADD("ppi8255_1", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("SYSTEM"))
-	MCFG_I8255_IN_PORTB_CB(READ8(*this, suprgolf_state, rom_bank_select_r))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, suprgolf_state, rom_bank_select_w))
-	MCFG_I8255_IN_PORTC_CB(READ8(*this, suprgolf_state, vregs_r))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, suprgolf_state, vregs_w))
+	i8255_device &ppi1(I8255A(config, "ppi8255_1"));
+	ppi1.in_pa_callback().set_ioport("SYSTEM");
+	ppi1.in_pb_callback().set(FUNC(suprgolf_state::rom_bank_select_r));
+	ppi1.out_pb_callback().set(FUNC(suprgolf_state::rom_bank_select_w));
+	ppi1.in_pc_callback().set(FUNC(suprgolf_state::vregs_r));
+	ppi1.out_pc_callback().set(FUNC(suprgolf_state::vregs_w));
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -528,13 +531,13 @@ MACHINE_CONFIG_START(suprgolf_state::suprgolf)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM2203, MASTER_CLOCK/4) /* guess */
-	//MCFG_YM2203_IRQ_HANDLER(INPUTLINE("maincpu", INPUT_LINE_NMI))
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW0"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW1"))
-	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(*this, suprgolf_state, writeA))
-	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(*this, suprgolf_state, writeB))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.5)
+	ym2203_device &ymsnd(YM2203(config, "ymsnd", MASTER_CLOCK/4)); /* guess */
+	//ymsnd.irq_handler().set_inputline(m_maincpu, INPUT_LINE_NMI);
+	ymsnd.port_a_read_callback().set_ioport("DSW0");
+	ymsnd.port_b_read_callback().set_ioport("DSW1");
+	ymsnd.port_a_write_callback().set(FUNC(suprgolf_state::writeA));
+	ymsnd.port_b_write_callback().set(FUNC(suprgolf_state::writeB));
+	ymsnd.add_route(ALL_OUTPUTS, "mono", 0.5);
 
 	MCFG_DEVICE_ADD("msm", MSM5205, XTAL(384'000)) /* guess */
 	MCFG_MSM5205_VCLK_CB(WRITELINE(*this, suprgolf_state, adpcm_int))      /* interrupt function */

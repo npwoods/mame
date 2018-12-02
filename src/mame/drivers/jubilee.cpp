@@ -201,7 +201,7 @@
 #include "screen.h"
 
 #define MASTER_CLOCK    XTAL(6'000'000)              /* confirmed */
-#define CPU_CLOCK      (MASTER_CLOCK / 2)      /* guess */
+#define CPU_CLOCK       MASTER_CLOCK           /* guess */
 #define CRTC_CLOCK     (MASTER_CLOCK / 8)      /* guess */
 
 
@@ -217,6 +217,9 @@ public:
 		m_lamps(*this, "lamp%u", 0U)
 	{ }
 
+	void jubileep(machine_config &config);
+
+private:
 	DECLARE_WRITE8_MEMBER(jubileep_videoram_w);
 	DECLARE_WRITE8_MEMBER(jubileep_colorram_w);
 	DECLARE_WRITE8_MEMBER(unk_w);
@@ -224,11 +227,9 @@ public:
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	uint32_t screen_update_jubileep(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(jubileep_interrupt);
-	void jubileep(machine_config &config);
 	void jubileep_cru_map(address_map &map);
 	void jubileep_map(address_map &map);
 
-protected:
 	virtual void machine_start() override { m_lamps.resolve(); }
 	virtual void video_start() override;
 
@@ -672,10 +673,12 @@ GFXDECODE_END
 MACHINE_CONFIG_START(jubilee_state::jubileep)
 
 	// Main CPU TMS9980A, no line connections.
-	MCFG_TMS99xx_ADD("maincpu", TMS9980A, CPU_CLOCK, jubileep_map, jubileep_cru_map)
-	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", jubilee_state,  jubileep_interrupt)
+	TMS9980A(config, m_maincpu, CPU_CLOCK);
+	m_maincpu->set_addrmap(AS_PROGRAM, &jubilee_state::jubileep_map);
+	m_maincpu->set_addrmap(AS_IO, &jubilee_state::jubileep_cru_map);
+	m_maincpu->set_vblank_int("screen", FUNC(jubilee_state::jubileep_interrupt));
 
-	MCFG_NVRAM_ADD_0FILL("videoworkram")
+	NVRAM(config, "videoworkram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -689,9 +692,10 @@ MACHINE_CONFIG_START(jubilee_state::jubileep)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_jubileep)
 	MCFG_PALETTE_ADD("palette",8)
 
-	MCFG_MC6845_ADD("crtc", MC6845, "screen", CRTC_CLOCK)
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(8)
+	mc6845_device &crtc(MC6845(config, "crtc", CRTC_CLOCK));
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(8);
 MACHINE_CONFIG_END
 
 

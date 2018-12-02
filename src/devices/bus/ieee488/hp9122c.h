@@ -76,14 +76,14 @@ private:
 	constexpr static int REG_CNTL_INTSEL0 = 1 << 7;
 
 	/* Status register bits:
-	 * 	0 - Addr0
-	 * 	1 - Addr1
-	 *	2 - Addr2
-	 *	3 - Dual(H)/Single(L)
-	 *	4 - T(L)
-	 *	5 - Diskchg#
-	 *	6 - Addr3
-	 *	7 - density indicatior: H - DD, L - HD
+	 *  0 - Addr0
+	 *  1 - Addr1
+	 *  2 - Addr2
+	 *  3 - Dual(H)/Single(L)
+	 *  4 - T(L)
+	 *  5 - Diskchg#
+	 *  6 - Addr3
+	 *  7 - density indicatior: H - DD, L - HD
 	 */
 
 	constexpr static int REG_STATUS_DUAL = 1 << 3;
@@ -127,6 +127,8 @@ private:
 	required_ioport m_hpib_addr;
 	required_ioport m_testmode;
 
+	output_finder<3> m_leds;
+
 	void index_pulse_cb(floppy_image_device *floppy, int state);
 	int m_intsel;
 	void update_intsel(void);
@@ -143,6 +145,9 @@ private:
 
 	bool m_ds0;
 	bool m_ds1;
+
+	TIMER_CALLBACK_MEMBER(motor_timeout);
+	emu_timer *m_motor_timer;
 };
 
 // device type definition

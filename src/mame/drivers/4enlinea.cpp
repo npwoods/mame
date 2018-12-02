@@ -214,7 +214,9 @@ public:
 		m_maincpu(*this, "maincpu")
 	{ }
 
+	void _4enlinea(machine_config &config);
 
+private:
 	required_device<ay8910_device> m_ay;
 
 	DECLARE_READ8_MEMBER(serial_r);
@@ -233,7 +235,6 @@ public:
 	virtual void machine_reset() override;
 	required_device<cpu_device> m_maincpu;
 
-	void _4enlinea(machine_config &config);
 	void audio_map(address_map &map);
 	void audio_portmap(address_map &map);
 	void main_map(address_map &map);
@@ -514,8 +515,8 @@ MACHINE_CONFIG_START(_4enlinea_state::_4enlinea)
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(_4enlinea_state, _4enlinea_audio_irq, 60) //TODO
 
 	// FIXME: determine ISA bus clock
-	MCFG_DEVICE_ADD("isa", ISA8, 0)
-	MCFG_ISA8_CPU("maincpu")
+	ISA8(config, "isa", 0).set_cputag("maincpu");
+
 	MCFG_DEVICE_ADD("isa1", ISA8_SLOT, 0, "isa", _4enlinea_isa8_cards, "4enlinea", true)
 
 
@@ -530,10 +531,10 @@ MACHINE_CONFIG_START(_4enlinea_state::_4enlinea)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("aysnd", AY8910, SND_AY_CLOCK)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("IN-P2"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("IN-P1"))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	AY8910(config, m_ay, SND_AY_CLOCK);
+	m_ay->port_a_read_callback().set_ioport("IN-P2");
+	m_ay->port_b_read_callback().set_ioport("IN-P1");
+	m_ay->add_route(ALL_OUTPUTS, "mono", 0.50);
 MACHINE_CONFIG_END
 
 

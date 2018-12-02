@@ -36,21 +36,24 @@ public:
 		, m_oki(*this, "oki")
 	{ }
 
+	void missb2(machine_config &config);
+	void bublpong(machine_config &config);
+
+	void init_missb2();
+
+private:
 	DECLARE_WRITE8_MEMBER(missb2_bg_bank_w);
 	DECLARE_WRITE8_MEMBER(missb2_oki_w);
 	DECLARE_READ8_MEMBER(missb2_oki_r);
 	DECLARE_WRITE_LINE_MEMBER(irqhandler);
-	void init_missb2();
 	DECLARE_MACHINE_START(missb2);
 	DECLARE_MACHINE_RESET(missb2);
 	uint32_t screen_update_missb2(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	void missb2(machine_config &config);
-	void bublpong(machine_config &config);
 	void maincpu_map(address_map &map);
 	void sound_map(address_map &map);
 	void subcpu_map(address_map &map);
-protected:
+
 	void configure_banks();
 
 	required_shared_ptr<uint8_t> m_bgvram;
@@ -479,8 +482,7 @@ MACHINE_CONFIG_START(missb2_state::missb2)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000)) // 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs
 
-	MCFG_WATCHDOG_ADD("watchdog")
-	MCFG_WATCHDOG_VBLANK_INIT("screen", 128);
+	WATCHDOG_TIMER(config, "watchdog").set_vblank_count("screen", 128);
 
 	MCFG_MACHINE_START_OVERRIDE(missb2_state,missb2)
 	MCFG_MACHINE_RESET_OVERRIDE(missb2_state,missb2)
@@ -508,10 +510,10 @@ MACHINE_CONFIG_START(missb2_state::missb2)
 	MCFG_INPUT_MERGER_ALL_HIGH("soundnmi")
 	MCFG_INPUT_MERGER_OUTPUT_HANDLER(INPUTLINE("audiocpu", INPUT_LINE_NMI))
 
-	MCFG_GENERIC_LATCH_8_ADD("main_to_sound")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(WRITELINE("soundnmi", input_merger_device, in_w<1>))
+	GENERIC_LATCH_8(config, m_main_to_sound);
+	m_main_to_sound->data_pending_callback().set(m_soundnmi, FUNC(input_merger_device::in_w<1>));
 
-	MCFG_GENERIC_LATCH_8_ADD("sound_to_main")
+	GENERIC_LATCH_8(config, m_sound_to_main);
 
 	MCFG_DEVICE_ADD("ymsnd", YM3526, MAIN_XTAL/8)
 	MCFG_YM3526_IRQ_HANDLER(WRITELINE(*this, missb2_state, irqhandler))

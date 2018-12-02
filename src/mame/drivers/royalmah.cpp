@@ -112,16 +112,51 @@ Stephh's notes (based on the games Z80 code and some tests) :
 class royalmah_state : public driver_device
 {
 public:
-	royalmah_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	royalmah_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this,"maincpu"),
 		m_ay(*this, "aysnd"),
 		m_videoram(*this, "videoram"),
 		m_audiocpu(*this, "audiocpu"),
 		m_rtc(*this, "rtc"),
-		m_soundlatch(*this, "soundlatch") { }
+		m_soundlatch(*this, "soundlatch")
+	{ }
 
+	void mjdiplob(machine_config &config);
+	void tahjong(machine_config &config);
+	void tontonb(machine_config &config);
+	void mjderngr(machine_config &config);
+	void mjyarou(machine_config &config);
+	void janoh(machine_config &config);
+	void mjtensin(machine_config &config);
+	void mjvegasa(machine_config &config);
+	void jansou(machine_config &config);
+	void cafetime(machine_config &config);
+	void seljan(machine_config &config);
+	void majs101b(machine_config &config);
+	void dondenmj(machine_config &config);
+	void daisyari(machine_config &config);
+	void mjdejavu(machine_config &config);
+	void mjapinky(machine_config &config);
+	void royalmah(machine_config &config);
+	void mjifb(machine_config &config);
+	void janptr96(machine_config &config);
+	void ippatsu(machine_config &config);
+	void suzume(machine_config &config);
+	void mjclub(machine_config &config);
+	void makaijan(machine_config &config);
+	void janyoup2(machine_config &config);
 
+	void init_tahjong();
+	void init_dynax();
+	void init_jansou();
+	void init_suzume();
+	void init_ippatsu();
+	void init_mjifb();
+	void init_tontonb();
+	void init_janptr96();
+
+private:
 	DECLARE_READ8_MEMBER(player_1_port_r);
 	DECLARE_READ8_MEMBER(player_2_port_r);
 	DECLARE_WRITE8_MEMBER(input_port_select_w);
@@ -206,14 +241,6 @@ public:
 	DECLARE_WRITE8_MEMBER(mjvegasa_12400_w);
 	DECLARE_READ8_MEMBER(mjvegasa_12500_r);
 
-	void init_tahjong();
-	void init_dynax();
-	void init_jansou();
-	void init_suzume();
-	void init_ippatsu();
-	void init_mjifb();
-	void init_tontonb();
-	void init_janptr96();
 	DECLARE_PALETTE_INIT(royalmah);
 	DECLARE_PALETTE_INIT(mjderngr);
 
@@ -221,30 +248,7 @@ public:
 
 	INTERRUPT_GEN_MEMBER(suzume_irq);
 
-	void mjdiplob(machine_config &config);
-	void tahjong(machine_config &config);
-	void tontonb(machine_config &config);
-	void mjderngr(machine_config &config);
-	void mjyarou(machine_config &config);
-	void janoh(machine_config &config);
-	void mjtensin(machine_config &config);
-	void mjvegasa(machine_config &config);
-	void jansou(machine_config &config);
-	void cafetime(machine_config &config);
-	void seljan(machine_config &config);
-	void majs101b(machine_config &config);
-	void dondenmj(machine_config &config);
-	void daisyari(machine_config &config);
-	void mjdejavu(machine_config &config);
-	void mjapinky(machine_config &config);
-	void royalmah(machine_config &config);
-	void mjifb(machine_config &config);
-	void janptr96(machine_config &config);
-	void ippatsu(machine_config &config);
-	void suzume(machine_config &config);
-	void mjclub(machine_config &config);
-	void makaijan(machine_config &config);
-	void janyoup2(machine_config &config);
+
 	void cafetime_map(address_map &map);
 	void daisyari_iomap(address_map &map);
 	void dondenmj_iomap(address_map &map);
@@ -278,10 +282,9 @@ public:
 	void tahjong_iomap(address_map &map);
 	void tahjong_map(address_map &map);
 	void tontonb_iomap(address_map &map);
-protected:
+
 	virtual void machine_start() override;
 
-private:
 	required_device<cpu_device> m_maincpu;
 	required_device<ay8910_device> m_ay;
 	required_shared_ptr<uint8_t> m_videoram;
@@ -3478,10 +3481,10 @@ MACHINE_CONFIG_START(royalmah_state::royalmah)
 	MCFG_DEVICE_IO_MAP(royalmah_iomap)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", royalmah_state,  irq0_line_hold)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
-	MCFG_PALETTE_ADD("palette", 16*2)
+	MCFG_PALETTE_ADD("palette", 16*4)
 	MCFG_PALETTE_INIT_OWNER(royalmah_state,royalmah)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -3495,10 +3498,10 @@ MACHINE_CONFIG_START(royalmah_state::royalmah)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 18432000/12)
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, royalmah_state, player_1_port_r))
-	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, royalmah_state, player_2_port_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.33)
+	AY8910(config, m_ay, 18432000/12);
+	m_ay->port_a_read_callback().set(FUNC(royalmah_state::player_1_port_r));
+	m_ay->port_b_read_callback().set(FUNC(royalmah_state::player_2_port_r));
+	m_ay->add_route(ALL_OUTPUTS, "speaker", 0.33);
 MACHINE_CONFIG_END
 
 
@@ -3526,7 +3529,7 @@ MACHINE_CONFIG_START(royalmah_state::jansou)
 	MCFG_DEVICE_IO_MAP(jansou_sub_iomap)
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(royalmah_state, irq0_line_hold, 4000000/512)
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("dac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
@@ -3587,9 +3590,10 @@ MACHINE_CONFIG_START(royalmah_state::janyoup2)
 	MCFG_DEVICE_CLOCK(XTAL(18'432'000)/4) // unknown divider
 	MCFG_DEVICE_IO_MAP(janyoup2_iomap)
 
-	MCFG_MC6845_ADD("crtc", H46505, "screen", XTAL(18'432'000)/12) // unknown divider
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(4)
+	h46505_device &crtc(H46505(config, "crtc", XTAL(18'432'000)/12)); // unknown divider
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(4);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(royalmah_state::seljan)
@@ -3659,13 +3663,12 @@ MACHINE_CONFIG_START(royalmah_state::janptr96)
 	MCFG_TMPZ84C015_OUT_PB_CB(WRITE8(*this, royalmah_state, janptr96_dswsel_w))
 	// internal CTC channels 0 & 1 have falling edge triggers
 
-	MCFG_SCREEN_MODIFY("screen")
-	MCFG_SCREEN_VISIBLE_AREA(0, 255, 8, 255-8)
-	MCFG_SCREEN_VBLANK_CALLBACK(WRITELINE("maincpu", tmpz84c015_device, trg0)) MCFG_DEVCB_INVERT
+	screen_device &screen(*subdevice<screen_device>("screen"));
+	screen.set_visarea(0, 255, 8, 255-8);
+	screen.screen_vblank().set(m_maincpu, FUNC(tmpz84c015_device::trg0)).invert();
 
 	/* devices */
-	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL(32'768))
-	MCFG_MSM6242_OUT_INT_HANDLER(WRITELINE("maincpu", tmpz84c015_device, trg1)) MCFG_DEVCB_INVERT
+	MSM6242(config, m_rtc, 32.768_kHz_XTAL).out_int_handler().set(m_maincpu, FUNC(tmpz84c015_device::trg1)).invert();
 MACHINE_CONFIG_END
 
 
@@ -3719,8 +3722,7 @@ MACHINE_CONFIG_START(royalmah_state::mjtensin)
 	MCFG_SCREEN_VBLANK_CALLBACK(INPUTLINE("maincpu", INPUT_LINE_IRQ0))
 
 	/* devices */
-	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL(32'768))
-	MCFG_MSM6242_OUT_INT_HANDLER(INPUTLINE("maincpu", INPUT_LINE_IRQ1))
+	MSM6242(config, m_rtc, 32.768_kHz_XTAL).out_int_handler().set_inputline(m_maincpu, INPUT_LINE_IRQ1);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(royalmah_state::cafetime)
@@ -3735,8 +3737,7 @@ MACHINE_CONFIG_START(royalmah_state::cafetime)
 	MCFG_SCREEN_VBLANK_CALLBACK(INPUTLINE("maincpu", INPUT_LINE_IRQ0))
 
 	/* devices */
-	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL(32'768))
-	MCFG_MSM6242_OUT_INT_HANDLER(INPUTLINE("maincpu", INPUT_LINE_IRQ1))
+	MSM6242(config, m_rtc, 32.768_kHz_XTAL).out_int_handler().set_inputline(m_maincpu, INPUT_LINE_IRQ1);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(royalmah_state::mjvegasa)
@@ -3752,8 +3753,7 @@ MACHINE_CONFIG_START(royalmah_state::mjvegasa)
 	MCFG_SCREEN_VBLANK_CALLBACK(INPUTLINE("maincpu", INPUT_LINE_IRQ0))
 
 	/* devices */
-	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL(32'768))
-	MCFG_MSM6242_OUT_INT_HANDLER(INPUTLINE("maincpu", INPUT_LINE_IRQ1))
+	MSM6242(config, m_rtc, 32.768_kHz_XTAL).out_int_handler().set_inputline(m_maincpu, INPUT_LINE_IRQ1);
 MACHINE_CONFIG_END
 
 
@@ -4886,7 +4886,7 @@ ROM_START( mjsiyoub )
 	ROM_LOAD( "1.1k", 0x00000, 0x8000, CRC(a1083321) SHA1(b36772e90be60270234df16cf92d87f8d950190d) )
 	ROM_LOAD( "2.1g", 0x08000, 0x4000, CRC(cfe5de1d) SHA1(4acf9a752aa3c02b0889b0b49d3744359fa24460) )
 
-	ROM_REGION( 0x40000, "proms", 0 )
+	ROM_REGION( 0x20, "proms", 0 )
 	ROM_LOAD( "color.bpr", 0x00, 0x20,  CRC(d21367e5) SHA1(b28321ac8f99abfebe2ef4da0c751cefe9f3f3b6) )
 ROM_END
 

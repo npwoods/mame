@@ -75,6 +75,12 @@ public:
 		m_tms6100(*this, "tms6100")
 	{ }
 
+	void rev1(machine_config &config);
+	void rev2(machine_config &config);
+
+	virtual DECLARE_INPUT_CHANGED_MEMBER(power_button) override;
+
+private:
 	// devices
 	optional_device<cpu_device> m_subcpu;
 	optional_device<tms6100_device> m_tms6100;
@@ -83,7 +89,6 @@ public:
 	u16 m_sub_o;
 	u16 m_sub_r;
 
-	virtual DECLARE_INPUT_CHANGED_MEMBER(power_button) override;
 	virtual void power_off() override;
 	void prepare_display();
 	bool vfd_filament_on() { return m_display_decay[15][16] != 0; }
@@ -101,10 +106,6 @@ public:
 	DECLARE_WRITE16_MEMBER(rev2_write_o);
 	DECLARE_WRITE16_MEMBER(rev2_write_r);
 
-	void rev1(machine_config &config);
-	void rev2(machine_config &config);
-
-protected:
 	virtual void machine_start() override;
 };
 
@@ -362,7 +363,7 @@ MACHINE_CONFIG_START(tispellb_state::rev1)
 	MCFG_QUANTUM_PERFECT_CPU("maincpu")
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", hh_tms1k_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_spellb)
+	config.set_default_layout(layout_spellb);
 
 	/* no sound! */
 MACHINE_CONFIG_END
@@ -375,14 +376,14 @@ MACHINE_CONFIG_START(tispellb_state::rev2)
 	MCFG_TMS1XXX_READ_K_CB(READ8(*this, tispellb_state, main_read_k))
 	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(*this, tispellb_state, rev2_write_o))
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(*this, tispellb_state, rev2_write_r))
-	MCFG_TMS0270_READ_CTL_CB(READ8("tms6100", tms6100_device, data_r))
-	MCFG_TMS0270_WRITE_CTL_CB(WRITE8("tms6100", tms6100_device, add_w))
+	MCFG_TMS0270_READ_CTL_CB(READ8(m_tms6100, tms6100_device, data_r))
+	MCFG_TMS0270_WRITE_CTL_CB(WRITE8(m_tms6100, tms6100_device, add_w))
 
-	MCFG_DEVICE_ADD("tms6100", TMS6100, 350000)
-	MCFG_TMS6100_4BIT_MODE()
+	TMS6100(config, m_tms6100, 350000);
+	m_tms6100->enable_4bit_mode(true);
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", hh_tms1k_state, display_decay_tick, attotime::from_msec(1))
-	MCFG_DEFAULT_LAYOUT(layout_spellb)
+	config.set_default_layout(layout_spellb);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

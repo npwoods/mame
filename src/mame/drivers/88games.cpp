@@ -76,18 +76,15 @@ WRITE8_MEMBER(_88games_state::k88games_sh_irqtrigger_w)
 
 WRITE8_MEMBER(_88games_state::speech_control_w)
 {
-	m_speech_chip = (data & 4) ? 1 : 0;
-	upd7759_device *upd = m_speech_chip ? m_upd7759_2 : m_upd7759_1;
+	m_speech_chip = BIT(data, 2);
 
-	upd->reset_w(data & 2);
-	upd->start_w(data & 1);
+	m_upd7759[m_speech_chip]->reset_w(BIT(data, 1));
+	m_upd7759[m_speech_chip]->start_w(BIT(data, 0));
 }
 
 WRITE8_MEMBER(_88games_state::speech_msg_w)
 {
-	upd7759_device *upd = m_speech_chip ? m_upd7759_2 : m_upd7759_1;
-
-	upd->port_w(space, 0, data);
+	m_upd7759[m_speech_chip]->port_w(data);
 }
 
 /* special handlers to combine 052109 & 051960 */
@@ -315,9 +312,9 @@ MACHINE_CONFIG_START(_88games_state::_88games)
 	MCFG_DEVICE_ADD("audiocpu", Z80, 3579545)
 	MCFG_DEVICE_PROGRAM_MAP(sound_map)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -333,14 +330,14 @@ MACHINE_CONFIG_START(_88games_state::_88games)
 	MCFG_PALETTE_ENABLE_SHADOWS()
 	MCFG_PALETTE_FORMAT(xBBBBBGGGGGRRRRR)
 
-	MCFG_DEVICE_ADD("k052109", K052109, 0)
-	MCFG_GFX_PALETTE("palette")
-	MCFG_K052109_CB(_88games_state, tile_callback)
+	K052109(config, m_k052109, 0);
+	m_k052109->set_palette("palette");
+	m_k052109->set_tile_callback(FUNC(_88games_state::tile_callback), this);
 
-	MCFG_DEVICE_ADD("k051960", K051960, 0)
-	MCFG_GFX_PALETTE("palette")
-	MCFG_K051960_SCREEN_TAG("screen")
-	MCFG_K051960_CB(_88games_state, sprite_callback)
+	K051960(config, m_k051960, 0);
+	m_k051960->set_palette("palette");
+	m_k051960->set_screen_tag("screen");
+	m_k051960->set_sprite_callback(FUNC(_88games_state::sprite_callback), this);
 
 	MCFG_DEVICE_ADD("k051316", K051316, 0)
 	MCFG_GFX_PALETTE("palette")
@@ -349,11 +346,9 @@ MACHINE_CONFIG_START(_88games_state::_88games)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, "soundlatch");
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, 3579545)
-	MCFG_SOUND_ROUTE(0, "mono", 0.75)
-	MCFG_SOUND_ROUTE(1, "mono", 0.75)
+	YM2151(config, "ymsnd", 3579545).add_route(0, "mono", 0.75).add_route(1, "mono", 0.75);
 
 	MCFG_DEVICE_ADD("upd1", UPD7759)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.30)

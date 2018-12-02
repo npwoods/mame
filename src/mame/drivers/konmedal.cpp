@@ -57,6 +57,11 @@ public:
 		m_oki(*this, "oki")
 	{ }
 
+	void shuriboy(machine_config &config);
+	void ddboy(machine_config &config);
+	void tsukande(machine_config &config);
+
+private:
 	DECLARE_PALETTE_INIT(konmedal);
 	DECLARE_MACHINE_START(shuriboy);
 
@@ -86,18 +91,14 @@ public:
 	DECLARE_READ8_MEMBER(shuri_irq_r);
 	DECLARE_WRITE8_MEMBER(shuri_irq_w);
 
-	void shuriboy(machine_config &config);
-	void ddboy(machine_config &config);
-	void tsukande(machine_config &config);
 	void ddboy_main(address_map &map);
 	void medal_main(address_map &map);
 	void shuriboy_main(address_map &map);
-protected:
+
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 
-private:
 	required_device<cpu_device> m_maincpu;
 	optional_device<k056832_device> m_k056832;
 	optional_device<k052109_device> m_k052109;
@@ -561,9 +562,9 @@ MACHINE_CONFIG_START(konmedal_state::shuriboy)
 	MCFG_PALETTE_ENABLE_SHADOWS()
 	MCFG_PALETTE_ENABLE_HILIGHTS()
 
-	MCFG_DEVICE_ADD("k052109", K052109, 0)
-	MCFG_GFX_PALETTE("palette")
-	MCFG_K052109_CB(konmedal_state, shuriboy_tile_callback)
+	K052109(config, m_k052109, 0);
+	m_k052109->set_palette(m_palette);
+	m_k052109->set_tile_callback(FUNC(konmedal_state::shuriboy_tile_callback), this);
 
 	MCFG_MACHINE_START_OVERRIDE(konmedal_state, shuriboy)
 
@@ -663,6 +664,11 @@ ROM_START( shuriboy )
 
 	ROM_REGION( 0x200000, "upd", 0 )
 	ROM_LOAD( "341-a02.13c", 0x000000, 0x020000, CRC(e1f5c8f1) SHA1(323a078720e09a7326e82cb623b6c90e2674e800) )
+
+	ROM_REGION( 0x300, "proms", 0 )
+	ROM_LOAD( "am27s21apc.2d", 0x000, 0x100, NO_DUMP )
+	ROM_LOAD( "am27s21apc.3d", 0x100, 0x100, NO_DUMP )
+	ROM_LOAD( "am27s21apc.4d", 0x200, 0x100, NO_DUMP )
 ROM_END
 
 GAME( 1995, tsukande, 0,     tsukande, konmedal, konmedal_state, empty_init, ROT0, "Konami", "Tsukande Toru Chicchi", MACHINE_NOT_WORKING)

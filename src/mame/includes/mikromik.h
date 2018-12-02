@@ -8,6 +8,7 @@
 #include "bus/rs232/rs232.h"
 #include "cpu/i8085/i8085.h"
 #include "formats/mm_dsk.h"
+#include "imagedev/floppy.h"
 #include "machine/am9517a.h"
 #include "machine/i8212.h"
 #include "machine/mm1kb.h"
@@ -64,6 +65,12 @@ public:
 		m_fdc_tc(0)
 	{ }
 
+	void mm1(machine_config &config);
+	void mm1m6(machine_config &config);
+	void mm1m6_video(machine_config &config);
+	void mm1m7(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<i8212_device> m_iop;
 	required_device<am9517a_device> m_dmac;
@@ -127,10 +134,6 @@ public:
 	I8275_DRAW_CHARACTER_MEMBER( crtc_display_pixels );
 	UPD7220_DISPLAY_PIXELS_MEMBER( hgdc_display_pixels );
 	DECLARE_PALETTE_INIT( mm1 );
-	void mm1(machine_config &config);
-	void mm1m6(machine_config &config);
-	void mm1m6_video(machine_config &config);
-	void mm1m7(machine_config &config);
 	void mm1_map(address_map &map);
 	void mm1_upd7220_map(address_map &map);
 };

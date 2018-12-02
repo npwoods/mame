@@ -241,18 +241,20 @@ public:
 		, m_leds(*this, "led%u", 0U)
 	{ }
 
+	void omegrace(machine_config &config);
+
+	void init_omegrace();
+
+private:
 	DECLARE_READ8_MEMBER(omegrace_vg_go_r);
 	DECLARE_READ8_MEMBER(omegrace_spinner1_r);
 	DECLARE_WRITE8_MEMBER(omegrace_leds_w);
 	DECLARE_WRITE8_MEMBER(omegrace_soundlatch_w);
-	void init_omegrace();
-	void omegrace(machine_config &config);
 	void main_map(address_map &map);
 	void port_map(address_map &map);
 	void sound_map(address_map &map);
 	void sound_port(address_map &map);
 
-protected:
 	virtual void machine_start() override { m_leds.resolve(); }
 	virtual void machine_reset() override;
 
@@ -532,9 +534,9 @@ MACHINE_CONFIG_START(omegrace_state::omegrace)
 	MCFG_DEVICE_IO_MAP(sound_port)
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(omegrace_state, nmi_line_pulse, 250)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
 	MCFG_VECTOR_ADD("vector")
@@ -550,15 +552,13 @@ MACHINE_CONFIG_START(omegrace_state::omegrace)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	/* XTAL101 Crystal @ 12mhz */
 	/* through 74LS92, Pin 8 = divide by 12 */
-	MCFG_DEVICE_ADD("ay1", AY8912, XTAL(12'000'000)/12)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
+	AY8912(config, "ay1", XTAL(12'000'000)/12).add_route(ALL_OUTPUTS, "mono", 0.25);
 
-	MCFG_DEVICE_ADD("ay2", AY8912, XTAL(12'000'000)/12)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
+	AY8912(config, "ay2", XTAL(12'000'000)/12).add_route(ALL_OUTPUTS, "mono", 0.25);
 MACHINE_CONFIG_END
 
 

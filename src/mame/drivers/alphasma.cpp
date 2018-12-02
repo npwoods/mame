@@ -18,7 +18,6 @@
 #include "machine/ram.h"
 #include "video/hd44780.h"
 #include "emupal.h"
-#include "rendlay.h"
 #include "screen.h"
 
 class alphasmart_state : public driver_device
@@ -37,6 +36,11 @@ public:
 	{
 	}
 
+	void alphasmart(machine_config &config);
+
+	DECLARE_INPUT_CHANGED_MEMBER(kb_irq);
+
+protected:
 	required_device<cpu_device> m_maincpu;
 	required_device<hd44780_device> m_lcdc0;
 	required_device<hd44780_device> m_lcdc1;
@@ -51,7 +55,6 @@ public:
 	DECLARE_PALETTE_INIT(alphasmart);
 	virtual uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	DECLARE_INPUT_CHANGED_MEMBER(kb_irq);
 	DECLARE_READ8_MEMBER(kb_r);
 	DECLARE_WRITE8_MEMBER(kb_matrixl_w);
 	DECLARE_WRITE8_MEMBER(kb_matrixh_w);
@@ -59,12 +62,11 @@ public:
 	virtual DECLARE_WRITE8_MEMBER(port_a_w);
 	DECLARE_READ8_MEMBER(port_d_r);
 	DECLARE_WRITE8_MEMBER(port_d_w);
-	void update_lcdc(address_space &space, bool lcdc0, bool lcdc1);
+	void update_lcdc(bool lcdc0, bool lcdc1);
 
-	void alphasmart(machine_config &config);
 	void alphasmart_io(address_map &map);
 	void alphasmart_mem(address_map &map);
-protected:
+
 	uint8_t           m_matrix[2];
 	uint8_t           m_port_a;
 	uint8_t           m_port_d;
@@ -80,15 +82,17 @@ public:
 	{
 	}
 
+	void asma2k(machine_config &config);
+
+private:
 	required_shared_ptr<uint8_t> m_intram;
 
 	DECLARE_READ8_MEMBER(io_r);
 	DECLARE_WRITE8_MEMBER(io_w);
 	virtual DECLARE_WRITE8_MEMBER(port_a_w) override;
 
-	void asma2k(machine_config &config);
 	void asma2k_mem(address_map &map);
-private:
+
 	uint8_t m_lcd_ctrl;
 };
 
@@ -124,17 +128,17 @@ READ8_MEMBER(alphasmart_state::port_a_r)
 	return (m_port_a & 0xfd) | (m_battery_status->read() << 1);
 }
 
-void alphasmart_state::update_lcdc(address_space &space, bool lcdc0, bool lcdc1)
+void alphasmart_state::update_lcdc(bool lcdc0, bool lcdc1)
 {
 	if (m_matrix[1] & 0x04)
 	{
 		uint8_t lcdc_data = 0;
 
 		if (lcdc0)
-			lcdc_data |= m_lcdc0->read(space, BIT(m_matrix[1], 1));
+			lcdc_data |= m_lcdc0->read(BIT(m_matrix[1], 1));
 
 		if (lcdc1)
-			lcdc_data |= m_lcdc1->read(space, BIT(m_matrix[1], 1));
+			lcdc_data |= m_lcdc1->read(BIT(m_matrix[1], 1));
 
 		m_port_d = (m_port_d & 0xc3) | (lcdc_data>>2);
 	}
@@ -143,17 +147,17 @@ void alphasmart_state::update_lcdc(address_space &space, bool lcdc0, bool lcdc1)
 		uint8_t lcdc_data = (m_port_d<<2) & 0xf0;
 
 		if (lcdc0)
-			m_lcdc0->write(space, BIT(m_matrix[1], 1), lcdc_data);
+			m_lcdc0->write(BIT(m_matrix[1], 1), lcdc_data);
 
 		if (lcdc1)
-			m_lcdc1->write(space, BIT(m_matrix[1], 1), lcdc_data);
+			m_lcdc1->write(BIT(m_matrix[1], 1), lcdc_data);
 	}
 }
 
 WRITE8_MEMBER(alphasmart_state::port_a_w)
 {
 	uint8_t changed = (m_port_a ^ data) & data;
-	update_lcdc(space, changed & 0x80, changed & 0x20);
+	update_lcdc(changed & 0x80, changed & 0x20);
 	m_rambank->set_entry(((data>>3) & 0x01) | ((data>>4) & 0x02));
 	m_port_a = data;
 }
@@ -203,7 +207,7 @@ WRITE8_MEMBER(asma2k_state::io_w)
 	else if (offset == 0x4000)
 	{
 		uint8_t changed = (m_lcd_ctrl ^ data) & data;
-		update_lcdc(space, changed & 0x01, changed & 0x02);
+		update_lcdc(changed & 0x01, changed & 0x02);
 		m_lcd_ctrl = data;
 	}
 
@@ -439,8 +443,7 @@ MACHINE_CONFIG_START(alphasmart_state::alphasmart)
 	MCFG_KS0066_F05_ADD("ks0066_1")
 	MCFG_HD44780_LCD_SIZE(2, 40)
 
-	MCFG_RAM_ADD(RAM_TAG)
-	MCFG_RAM_DEFAULT_SIZE("128K")
+	RAM(config, RAM_TAG).set_default_size("128K");
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", LCD)
@@ -453,9 +456,8 @@ MACHINE_CONFIG_START(alphasmart_state::alphasmart)
 
 	MCFG_PALETTE_ADD("palette", 2)
 	MCFG_PALETTE_INIT_OWNER(alphasmart_state, alphasmart)
-	MCFG_DEFAULT_LAYOUT(layout_lcd)
 
-	MCFG_NVRAM_ADD_0FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(asma2k_state::asma2k)

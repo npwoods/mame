@@ -97,6 +97,10 @@ public:
 		m_sc3_vram(*this, "sc3_vram"),
 		m_spriteram16(*this, "sprite_ram") { }
 
+	void totmejan(machine_config &config);
+	void goodejan(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
@@ -139,8 +143,6 @@ public:
 	void draw_sprites(bitmap_ind16 &bitmap,const rectangle &cliprect,int pri);
 	virtual void video_start() override;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void totmejan(machine_config &config);
-	void goodejan(machine_config &config);
 	void common_io_map(address_map &map);
 	void goodejan_io_map(address_map &map);
 	void goodejan_map(address_map &map);
@@ -659,6 +661,7 @@ MACHINE_CONFIG_START(goodejan_state::goodejan)
 
 	MCFG_DEVICE_ADD("audiocpu", Z80, GOODEJAN_MHZ1/2)
 	MCFG_DEVICE_PROGRAM_MAP(seibu_sound_map)
+	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DEVICE("seibu_sound", seibu_sound_device, im0_vector_cb)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -670,9 +673,9 @@ MACHINE_CONFIG_START(goodejan_state::goodejan)
 	MCFG_SCREEN_PALETTE("palette")
 	MCFG_SCREEN_VBLANK_CALLBACK(WRITELINE(*this, goodejan_state, vblank_irq))
 
-	MCFG_DEVICE_ADD("crtc", SEIBU_CRTC, 0)
-	MCFG_SEIBU_CRTC_LAYER_EN_CB(WRITE16(*this, goodejan_state, layer_en_w))
-	MCFG_SEIBU_CRTC_LAYER_SCROLL_CB(WRITE16(*this, goodejan_state, layer_scroll_w))
+	SEIBU_CRTC(config, m_crtc, 0);
+	m_crtc->layer_en_callback().set(FUNC(goodejan_state::layer_en_w));
+	m_crtc->layer_scroll_callback().set(FUNC(goodejan_state::layer_scroll_w));
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_goodejan)
 	MCFG_PALETTE_ADD("palette", 0x1000)
@@ -688,11 +691,12 @@ MACHINE_CONFIG_START(goodejan_state::goodejan)
 	MCFG_DEVICE_ADD("oki", OKIM6295, GOODEJAN_MHZ2/16, okim6295_device::PIN7_LOW)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
 
-	MCFG_DEVICE_ADD("seibu_sound", SEIBU_SOUND, 0)
-	MCFG_SEIBU_SOUND_CPU("audiocpu")
-	MCFG_SEIBU_SOUND_ROMBANK("seibu_bank1")
-	MCFG_SEIBU_SOUND_YM_READ_CB(READ8("ymsnd", ym3812_device, read))
-	MCFG_SEIBU_SOUND_YM_WRITE_CB(WRITE8("ymsnd", ym3812_device, write))
+	seibu_sound_device &seibu_sound(SEIBU_SOUND(config, "seibu_sound", 0));
+	seibu_sound.int_callback().set_inputline("audiocpu", 0);
+	seibu_sound.set_rom_tag("audiocpu");
+	seibu_sound.set_rombank_tag("seibu_bank1");
+	seibu_sound.ym_read_callback().set("ymsnd", FUNC(ym3812_device::read));
+	seibu_sound.ym_write_callback().set("ymsnd", FUNC(ym3812_device::write));
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(goodejan_state::totmejan)

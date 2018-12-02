@@ -44,6 +44,11 @@ public:
 		m_gfxdecode(*this, "gfxdecode")
 	{ }
 
+	void metlfrzr(machine_config &config);
+
+	void init_metlfrzr();
+
+private:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void video_start() override;
@@ -59,12 +64,10 @@ public:
 	required_device<palette_device> m_palette;
 	required_device<gfxdecode_device> m_gfxdecode;
 
-	void init_metlfrzr();
 	DECLARE_WRITE8_MEMBER(output_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline);
 	uint8_t m_fg_tilebank;
 	bool m_rowscroll_enable;
-	void metlfrzr(machine_config &config);
 	void decrypted_opcodes_map(address_map &map);
 	void metlfrzr_map(address_map &map);
 };
@@ -391,11 +394,10 @@ MACHINE_CONFIG_START(metlfrzr_state::metlfrzr)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, XTAL(14'318'181) / 4)    /* 3.579545 MHz */
-	MCFG_YM2151_IRQ_HANDLER(WRITELINE("t5182", t5182_device, ym2151_irq_handler))
-	MCFG_SOUND_ROUTE(0, "mono", 1.0)
-	MCFG_SOUND_ROUTE(1, "mono", 1.0)
-
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", XTAL(14'318'181) / 4));    /* 3.579545 MHz */
+	ymsnd.irq_handler().set("t5182", FUNC(t5182_device::ym2151_irq_handler));
+	ymsnd.add_route(0, "mono", 1.0);
+	ymsnd.add_route(1, "mono", 1.0);
 MACHINE_CONFIG_END
 
 

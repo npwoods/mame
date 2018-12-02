@@ -278,13 +278,13 @@ MACHINE_CONFIG_START(suprslam_state::suprslam)
 	MCFG_DEVICE_PROGRAM_MAP(sound_map)
 	MCFG_DEVICE_IO_MAP(sound_io_map)
 
-	MCFG_DEVICE_ADD("io", VS9209, 0)
-	MCFG_VS9209_IN_PORTA_CB(IOPORT("P1"))
-	MCFG_VS9209_IN_PORTB_CB(IOPORT("P2"))
-	MCFG_VS9209_IN_PORTC_CB(IOPORT("SYSTEM"))
-	MCFG_VS9209_IN_PORTD_CB(IOPORT("DSW1"))
-	MCFG_VS9209_IN_PORTE_CB(IOPORT("DSW2"))
-	MCFG_VS9209_OUT_PORTG_CB(WRITE8(*this, suprslam_state, spr_ctrl_w))
+	vs9209_device &io(VS9209(config, "io", 0));
+	io.porta_input_cb().set_ioport("P1");
+	io.portb_input_cb().set_ioport("P2");
+	io.portc_input_cb().set_ioport("SYSTEM");
+	io.portd_input_cb().set_ioport("DSW1");
+	io.porte_input_cb().set_ioport("DSW2");
+	io.porth_output_cb().set(FUNC(suprslam_state::spr_ctrl_w));
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_suprslam)
 
@@ -300,10 +300,10 @@ MACHINE_CONFIG_START(suprslam_state::suprslam)
 	MCFG_PALETTE_ADD("palette", 0x800)
 	MCFG_PALETTE_FORMAT(xGGGGGBBBBBRRRRR)
 
-	MCFG_DEVICE_ADD("vsystem_spr", VSYSTEM_SPR, 0)
-	MCFG_VSYSTEM_SPR_SET_TILE_INDIRECT( suprslam_state, suprslam_tile_callback )
-	MCFG_VSYSTEM_SPR_SET_GFXREGION(1)
-	MCFG_VSYSTEM_SPR_GFXDECODE("gfxdecode")
+	VSYSTEM_SPR(config, m_spr, 0);
+	m_spr->set_tile_indirect_cb(FUNC(suprslam_state::suprslam_tile_callback), this);
+	m_spr->set_gfx_region(1);
+	m_spr->set_gfxdecode_tag(m_gfxdecode);
 
 	MCFG_DEVICE_ADD("k053936", K053936, 0)
 	MCFG_K053936_WRAP(1)
@@ -312,9 +312,9 @@ MACHINE_CONFIG_START(suprslam_state::suprslam)
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
-	MCFG_GENERIC_LATCH_SEPARATE_ACKNOWLEDGE(true)
+	GENERIC_LATCH_8(config, m_soundlatch);
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_soundlatch->set_separate_acknowledge(true);
 
 	MCFG_DEVICE_ADD("ymsnd", YM2610, 8000000)
 	MCFG_YM2610_IRQ_HANDLER(INPUTLINE("audiocpu", 0))

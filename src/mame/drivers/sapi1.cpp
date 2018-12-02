@@ -60,6 +60,17 @@ public:
 	{
 	}
 
+	void sapi3(machine_config &config);
+	void sapi1(machine_config &config);
+	void sapi2(machine_config &config);
+	void sapi3a(machine_config &config);
+	void sapi3b(machine_config &config);
+
+	void init_sapizps3();
+	void init_sapizps3a();
+	void init_sapizps3b();
+
+private:
 	optional_shared_ptr<uint8_t> m_p_videoram;
 	DECLARE_READ8_MEMBER(sapi1_keyboard_r);
 	DECLARE_WRITE8_MEMBER(sapi1_keyboard_w);
@@ -75,19 +86,12 @@ public:
 	DECLARE_READ8_MEMBER(uart_ready_r);
 	DECLARE_WRITE8_MEMBER(uart_mode_w);
 	DECLARE_WRITE8_MEMBER(uart_reset_w);
-	void init_sapizps3();
-	void init_sapizps3a();
-	void init_sapizps3b();
 	DECLARE_MACHINE_RESET(sapi1);
 	DECLARE_MACHINE_RESET(sapizps3);
 	MC6845_UPDATE_ROW(crtc_update_row);
 	uint32_t screen_update_sapi1(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_sapi3(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void sapi3(machine_config &config);
-	void sapi1(machine_config &config);
-	void sapi2(machine_config &config);
-	void sapi3a(machine_config &config);
-	void sapi3b(machine_config &config);
+
 	void sapi1_mem(address_map &map);
 	void sapi2_mem(address_map &map);
 	void sapi3_io(address_map &map);
@@ -96,7 +100,7 @@ public:
 	void sapi3a_mem(address_map &map);
 	void sapi3b_io(address_map &map);
 	void sapi3b_mem(address_map &map);
-private:
+
 	uint8_t m_term_data;
 	uint8_t m_keyboard_mask;
 	uint8_t m_refresh_counter;
@@ -110,7 +114,7 @@ private:
 	required_device<cpu_device> m_maincpu;
 	optional_device<ay31015_device> m_uart;
 	optional_device<rs232_port_device> m_v24;
-public:
+
 	optional_device<palette_device> m_palette;
 };
 
@@ -635,8 +639,7 @@ MACHINE_CONFIG_START(sapi1_state::sapi1)
 	MCFG_PALETTE_ADD_MONOCHROME("palette")
 
 	/* internal ram */
-	MCFG_RAM_ADD(RAM_TAG)
-	MCFG_RAM_DEFAULT_SIZE("64K")
+	RAM(config, RAM_TAG).set_default_size("64K");
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(sapi1_state::sapi2)
@@ -668,10 +671,11 @@ MACHINE_CONFIG_START(sapi1_state::sapi3b)
 	MCFG_DEVICE_PROGRAM_MAP(sapi3b_mem)
 	MCFG_DEVICE_IO_MAP(sapi3b_io)
 
-	MCFG_MC6845_ADD("crtc", MC6845, "screen", 1008000) // guess
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(6)
-	MCFG_MC6845_UPDATE_ROW_CB(sapi1_state, crtc_update_row)
+	mc6845_device &crtc(MC6845(config, "crtc", 1008000)); // guess
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(6);
+	crtc.set_update_row_callback(FUNC(sapi1_state::crtc_update_row), this);
 
 	MCFG_SCREEN_MODIFY("screen")
 	MCFG_SCREEN_UPDATE_DEVICE("crtc", mc6845_device, screen_update)
@@ -695,19 +699,17 @@ MACHINE_CONFIG_START(sapi1_state::sapi3a)
 	MCFG_MACHINE_RESET_OVERRIDE(sapi1_state, sapizps3 )
 
 	/* video hardware */
-	MCFG_DEVICE_ADD("uart", AY51013, 0) // Tesla MHB1012
-	MCFG_AY51013_TX_CLOCK(XTAL(12'288'000) / 80) // not actual rate?
-	MCFG_AY51013_RX_CLOCK(XTAL(12'288'000) / 80) // not actual rate?
-	MCFG_AY51013_READ_SI_CB(READLINE("v24", rs232_port_device, rxd_r))
-	MCFG_AY51013_WRITE_SO_CB(WRITELINE("v24", rs232_port_device, write_txd))
-	MCFG_AY51013_AUTO_RDAV(true) // RDAV not actually tied to RDE, but pulsed by K155AG3 (=74123N): R25=22k, C14=220
+	AY51013(config, m_uart); // Tesla MHB1012
+	m_uart->set_tx_clock(XTAL(12'288'000) / 80); // not actual rate?
+	m_uart->set_rx_clock(XTAL(12'288'000) / 80); // not actual rate?
+	m_uart->read_si_callback().set(m_v24, FUNC(rs232_port_device::rxd_r));
+	m_uart->write_so_callback().set(m_v24, FUNC(rs232_port_device::write_txd));
+	m_uart->set_auto_rdav(true); // RDAV not actually tied to RDE, but pulsed by K155AG3 (=74123N): R25=22k, C14=220
 
-	MCFG_DEVICE_ADD("v24", RS232_PORT, default_rs232_devices, "terminal")
-	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("terminal", terminal)
+	RS232_PORT(config, m_v24, default_rs232_devices, "terminal").set_option_device_input_defaults("terminal", DEVICE_INPUT_DEFAULTS_NAME(terminal));
 
 	/* internal ram */
-	MCFG_RAM_ADD(RAM_TAG)
-	MCFG_RAM_DEFAULT_SIZE("64K")
+	RAM(config, RAM_TAG).set_default_size("64K");
 MACHINE_CONFIG_END
 
 

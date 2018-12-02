@@ -712,23 +712,23 @@ MACHINE_CONFIG_START(taitoair_state::airsys)
 	MCFG_DEVICE_ADD("audiocpu", Z80, XTAL(16'000'000) / 4)   // Z8400AB1
 	MCFG_DEVICE_PROGRAM_MAP(sound_map)
 
-	MCFG_DEVICE_ADD("dsp", TMS32025, XTAL(36'000'000)) // Unverified
-	MCFG_DEVICE_PROGRAM_MAP(DSP_map_program)
-	MCFG_DEVICE_DATA_MAP(DSP_map_data)
-	MCFG_TMS32025_HOLD_IN_CB(READ16(*this, taitoair_state, dsp_HOLD_signal_r))
-	MCFG_TMS32025_HOLD_ACK_OUT_CB(WRITE16(*this, taitoair_state, dsp_HOLDA_signal_w))
+	tms32025_device& dsp(TMS32025(config, m_dsp, XTAL(36'000'000))); // Unverified
+	dsp.set_addrmap(AS_PROGRAM, &taitoair_state::DSP_map_program);
+	dsp.set_addrmap(AS_DATA, &taitoair_state::DSP_map_data);
+	dsp.hold_in_cb().set(FUNC(taitoair_state::dsp_HOLD_signal_r));
+	dsp.hold_ack_out_cb().set(FUNC(taitoair_state::dsp_HOLDA_signal_w));
 
 	MCFG_QUANTUM_PERFECT_CPU("maincpu")
 
-	MCFG_DEVICE_ADD("tc0220ioc", TC0220IOC, 0)
-	MCFG_TC0220IOC_READ_0_CB(IOPORT("DSWA"))
-	MCFG_TC0220IOC_READ_1_CB(IOPORT("DSWB"))
-	MCFG_TC0220IOC_READ_2_CB(IOPORT("IN0"))
-	MCFG_TC0220IOC_READ_3_CB(IOPORT("IN1"))
-	MCFG_TC0220IOC_WRITE_4_CB(WRITE8(*this, taitoair_state, coin_control_w))
-	MCFG_TC0220IOC_READ_7_CB(IOPORT("IN2"))
+	TC0220IOC(config, m_tc0220ioc, 0);
+	m_tc0220ioc->read_0_callback().set_ioport("DSWA");
+	m_tc0220ioc->read_1_callback().set_ioport("DSWB");
+	m_tc0220ioc->read_2_callback().set_ioport("IN0");
+	m_tc0220ioc->read_3_callback().set_ioport("IN1");
+	m_tc0220ioc->write_4_callback().set(FUNC(taitoair_state::coin_control_w));
+	m_tc0220ioc->read_7_callback().set_ioport("IN2");
 
-	MCFG_TAITOIO_YOKE_ADD("yokectrl")
+	TAITOIO_YOKE(config, m_yoke, 0);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -745,12 +745,12 @@ MACHINE_CONFIG_START(taitoair_state::airsys)
 
 	MCFG_PALETTE_ADD_INIT_BLACK("palette", 512*16+512*16)
 
-	MCFG_DEVICE_ADD("tc0080vco", TC0080VCO, 0)
-	MCFG_TC0080VCO_GFX_REGION(0)
-	MCFG_TC0080VCO_TX_REGION(1)
-	MCFG_TC0080VCO_OFFSETS(1, 1)
-	MCFG_TC0080VCO_BGFLIP_OFFS(-2)
-	MCFG_TC0080VCO_GFXDECODE("gfxdecode")
+	TC0080VCO(config, m_tc0080vco, 0);
+	m_tc0080vco->set_gfx_region(0);
+	m_tc0080vco->set_tx_region(1);
+	m_tc0080vco->set_offsets(1, 1);
+	m_tc0080vco->set_bgflip_yoffs(-2);
+	m_tc0080vco->set_gfxdecode_tag(m_gfxdecode);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -761,9 +761,9 @@ MACHINE_CONFIG_START(taitoair_state::airsys)
 	MCFG_SOUND_ROUTE(1, "mono", 0.60)
 	MCFG_SOUND_ROUTE(2, "mono", 0.60)
 
-	MCFG_DEVICE_ADD("tc0140syt", TC0140SYT, 0)
-	MCFG_TC0140SYT_MASTER_CPU("maincpu")
-	MCFG_TC0140SYT_SLAVE_CPU("audiocpu")
+	tc0140syt_device &tc0140syt(TC0140SYT(config, "tc0140syt", 0));
+	tc0140syt.set_master_tag(m_maincpu);
+	tc0140syt.set_slave_tag(m_audiocpu);
 MACHINE_CONFIG_END
 
 

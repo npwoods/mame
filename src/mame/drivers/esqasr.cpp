@@ -60,6 +60,12 @@ public:
 		, m_sq1vfd(*this, "sq1vfd")
 	{ }
 
+	void asrx(machine_config &config);
+	void asr(machine_config &config);
+
+	void init_asr();
+
+private:
 	required_device<cpu_device> m_maincpu;
 	optional_device<es5510_device> m_esp;
 	optional_device<esq_5505_5510_pump_device> m_pump;
@@ -68,11 +74,8 @@ public:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-	void init_asr();
 	DECLARE_WRITE_LINE_MEMBER(esq5506_otto_irq);
 	DECLARE_READ16_MEMBER(esq5506_read_adc);
-	void asrx(machine_config &config);
-	void asr(machine_config &config);
 	void asr_map(address_map &map);
 	void asrx_map(address_map &map);
 };
@@ -148,8 +151,8 @@ MACHINE_CONFIG_START(esqasr_state::asr)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(esqasr_state::asrx)
-	MCFG_DEVICE_ADD("maincpu", M68340, XTAL(16'000'000)) // 68340
-	MCFG_DEVICE_PROGRAM_MAP(asrx_map)
+	M68340(config, m_maincpu, XTAL(16'000'000));
+	m_maincpu->set_addrmap(AS_PROGRAM, &esqasr_state::asrx_map);
 
 	MCFG_DEVICE_ADD("esp", ES5510, XTAL(10'000'000)) // Actually ES5511
 	MCFG_DEVICE_DISABLE()

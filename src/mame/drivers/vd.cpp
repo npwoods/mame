@@ -34,17 +34,18 @@ public:
 		, m_digits(*this, "digit%u", 0U)
 	{ }
 
+	void vd(machine_config &config);
+
+private:
 	DECLARE_READ8_MEMBER(ack_r);
 	DECLARE_WRITE8_MEMBER(col_w);
 	DECLARE_WRITE8_MEMBER(disp_w);
 	DECLARE_WRITE8_MEMBER(lamp_w) { };
 	DECLARE_WRITE8_MEMBER(sol_w) { };
 	TIMER_DEVICE_CALLBACK_MEMBER(irq);
-	void vd(machine_config &config);
 	void vd_io(address_map &map);
 	void vd_map(address_map &map);
 
-private:
 	uint8_t m_t_c;
 	uint8_t segment[5];
 	virtual void machine_reset() override;
@@ -196,16 +197,16 @@ MACHINE_CONFIG_START(vd_state::vd)
 	genpin_audio(config);
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
-	MCFG_DEVICE_ADD("ay1", AY8910, 2000000) //?
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 0.33/3)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW2"))
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW1"))
-	MCFG_DEVICE_ADD("ay2", AY8910, 2000000) //?
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 0.33/3)
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("DSW3")) //?
+	ay8910_device &ay1(AY8910(config, "ay1", 2000000)); //?
+	ay1.add_route(ALL_OUTPUTS, "lspeaker", 0.33/3);
+	ay1.port_a_read_callback().set_ioport("DSW2");
+	ay1.port_b_read_callback().set_ioport("DSW1");
+	ay8910_device &ay2(AY8910(config, "ay2", 2000000)); //?
+	ay2.add_route(ALL_OUTPUTS, "rspeaker", 0.33/3);
+	ay2.port_b_read_callback().set_ioport("DSW3");
 
 	/* Video */
-	MCFG_DEFAULT_LAYOUT(layout_vd)
+	config.set_default_layout(layout_vd);
 MACHINE_CONFIG_END
 
 /*-------------------------------------------------------------------

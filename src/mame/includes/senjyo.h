@@ -1,5 +1,10 @@
 // license:BSD-3-Clause
 // copyright-holders:Mirko Buffoni
+#ifndef MAME_INCLUDES_SENJYO_H
+#define MAME_INCLUDES_SENJYO_H
+
+#pragma once
+
 #include "sound/dac.h"
 #include "machine/z80daisy.h"
 #include "machine/z80pio.h"
@@ -9,8 +14,8 @@
 class senjyo_state : public driver_device
 {
 public:
-	senjyo_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	senjyo_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_pio(*this, "z80pio"),
 		m_dac(*this, "dac"),
@@ -32,8 +37,20 @@ public:
 		m_bg3videoram(*this, "bg3videoram"),
 		m_radarram(*this, "radarram"),
 		m_bgstripesram(*this, "bgstripesram"),
-		m_decrypted_opcodes(*this, "decrypted_opcodes") { }
+		m_decrypted_opcodes(*this, "decrypted_opcodes")
+	{ }
 
+	void senjyox_e(machine_config &config);
+	void senjyo(machine_config &config);
+	void starforb(machine_config &config);
+	void senjyox_a(machine_config &config);
+
+	void init_starfora();
+	void init_senjyo();
+	void init_starfore();
+	void init_starforc();
+
+private:
 	/* devices */
 	required_device<cpu_device> m_maincpu;
 	required_device<z80pio_device> m_pio;
@@ -90,11 +107,6 @@ public:
 	DECLARE_PALETTE_DECODER(IIBBGGRR);
 	DECLARE_PALETTE_INIT(radar);
 
-	void init_starfora();
-	void init_senjyo();
-	void init_starfore();
-	void init_starforc();
-
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 	TILE_GET_INFO_MEMBER(senjyo_bg1_tile_info);
 	TILE_GET_INFO_MEMBER(starforc_bg1_tile_info);
@@ -108,10 +120,7 @@ public:
 	void draw_bgbitmap(bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	void draw_radar(bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_rgb32 &bitmap, const rectangle &cliprect,int priority);
-	void senjyox_e(machine_config &config);
-	void senjyo(machine_config &config);
-	void starforb(machine_config &config);
-	void senjyox_a(machine_config &config);
+
 	void decrypted_opcodes_map(address_map &map);
 	void senjyo_map(address_map &map);
 	void senjyo_sound_io_map(address_map &map);
@@ -122,3 +131,5 @@ public:
 
 /*----------- defined in audio/senjyo.c -----------*/
 extern const z80_daisy_config senjyo_daisy_chain[];
+
+#endif // MAME_INCLUDES_SENJYO_H

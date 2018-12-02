@@ -1,6 +1,5 @@
 // license:BSD-3-Clause
 // copyright-holders:Aaron Giles
-
 #ifndef MAME_INCLUDES_TP84
 #define MAME_INCLUDES_TP84
 
@@ -13,8 +12,8 @@
 class tp84_state : public driver_device
 {
 public:
-	tp84_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	tp84_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "cpu1"),
 		m_subcpu(*this, "sub"),
 		m_audiocpu(*this, "audiocpu"),
@@ -29,8 +28,13 @@ public:
 		m_gfxdecode(*this, "gfxdecode"),
 		m_screen(*this, "screen"),
 		m_palette(*this, "palette"),
-		m_filter(*this, "filter%u", 1U) { }
+		m_filter(*this, "filter%u", 1U)
+	{ }
 
+	void tp84(machine_config &config);
+	void tp84b(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_subcpu;
 	required_device<cpu_device> m_audiocpu;
@@ -73,8 +77,7 @@ public:
 	uint32_t screen_update_tp84(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void tp84(machine_config &config);
-	void tp84b(machine_config &config);
+
 	void audio_map(address_map &map);
 	void cpu2_map(address_map &map);
 	void tp84_cpu1_map(address_map &map);

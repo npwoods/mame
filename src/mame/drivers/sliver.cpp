@@ -96,6 +96,9 @@ public:
 		m_soundlatch(*this, "soundlatch"),
 		m_colorram(*this, "colorram") { }
 
+	void sliver(machine_config &config);
+
+private:
 	uint16_t m_io_offset;
 	uint16_t m_io_reg[IO_SIZE];
 	uint16_t m_fifo[FIFO_SIZE];
@@ -139,7 +142,7 @@ public:
 	void render_jpeg();
 
 	void postload();
-	void sliver(machine_config &config);
+
 	void oki_map(address_map &map);
 	void ramdac_map(address_map &map);
 	void sliver_map(address_map &map);
@@ -533,13 +536,13 @@ MACHINE_CONFIG_START(sliver_state::sliver)
 	MCFG_SCREEN_UPDATE_DRIVER(sliver_state, screen_update)
 
 	MCFG_PALETTE_ADD("palette", 0x100)
-	MCFG_RAMDAC_ADD("ramdac", ramdac_map, "palette")
-
+	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, "palette"));
+	ramdac.set_addrmap(0, &sliver_state::ramdac_map);
 
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, 1000000, okim6295_device::PIN7_HIGH)
 	MCFG_DEVICE_ADDRESS_MAP(0, oki_map)

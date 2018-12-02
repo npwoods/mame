@@ -1,5 +1,9 @@
 // license:BSD-3-Clause
 // copyright-holders:David Haywood, Nicola Salmoria, Tomasz Slanina
+#ifndef MAME_INCLUDES_DARKMIST_H
+#define MAME_INCLUDES_DARKMIST_H
+
+#pragma once
 
 #include "audio/t5182.h"
 #include "machine/timer.h"
@@ -9,8 +13,8 @@
 class darkmist_state : public driver_device
 {
 public:
-	darkmist_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	darkmist_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_t5182(*this, "t5182"),
 		m_screen(*this, "screen"),
@@ -25,8 +29,14 @@ public:
 		m_fg_clut(*this, "fg_clut"),
 		m_spr_clut(*this, "spr_clut"),
 		m_tx_clut(*this, "tx_clut"),
-		m_decrypted_opcodes(*this, "decrypted_opcodes") { }
+		m_decrypted_opcodes(*this, "decrypted_opcodes")
+	{ }
 
+	void darkmist(machine_config &config);
+
+	void init_darkmist();
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<t5182_device> m_t5182;
 	required_device<screen_device> m_screen;
@@ -57,7 +67,6 @@ public:
 	TILE_GET_INFO_MEMBER(get_txttile_info);
 
 	virtual void machine_start() override;
-	void init_darkmist();
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(darkmist);
 
@@ -70,7 +79,8 @@ public:
 	void decrypt_snd();
 
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline);
-	void darkmist(machine_config &config);
 	void decrypted_opcodes_map(address_map &map);
 	void memmap(address_map &map);
 };
+
+#endif // MAME_INCLUDES_DARKMIST_H

@@ -25,7 +25,6 @@
 #include "bus/generic/carts.h"
 
 #include "emupal.h"
-#include "rendlay.h"
 #include "screen.h"
 #include "softlist.h"
 #include "speaker.h"
@@ -363,7 +362,7 @@ READ8_MEMBER( pc1000_state::kb_r )
 READ8_MEMBER( pc1000_state::lcdc_data_r )
 {
 	//logerror("lcdc data r\n");
-	return m_lcdc->data_read(space, 0) >> 4;
+	return m_lcdc->data_read() >> 4;
 }
 
 WRITE8_MEMBER( pc1000_state::lcdc_data_w )
@@ -371,19 +370,19 @@ WRITE8_MEMBER( pc1000_state::lcdc_data_w )
 	//popmessage("%s", (char*)m_maincpu->space(AS_PROGRAM).get_read_ptr(0x4290));
 
 	//logerror("lcdc data w %x\n", data);
-	m_lcdc->data_write(space, 0, data << 4);
+	m_lcdc->data_write(data << 4);
 }
 
 READ8_MEMBER( pc1000_state::lcdc_control_r )
 {
 	//logerror("lcdc control r\n");
-	return m_lcdc->control_read(space, 0) >> 4;
+	return m_lcdc->control_read() >> 4;
 }
 
 WRITE8_MEMBER( pc1000_state::lcdc_control_w )
 {
 	//logerror("lcdc control w %x\n", data);
-	m_lcdc->control_write(space, 0, data<<4);
+	m_lcdc->control_write(data<<4);
 }
 
 HD44780_PIXEL_UPDATE(pc1000_state::pc1000_pixel_update)
@@ -898,7 +897,6 @@ MACHINE_CONFIG_START(pc2000_state::pc2000)
 	MCFG_PALETTE_ADD("palette", 2)
 	MCFG_PALETTE_INIT_OWNER(pc2000_state, pc2000)
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_pc2000)
-	MCFG_DEFAULT_LAYOUT(layout_lcd)
 
 	MCFG_HD44780_ADD("hd44780")
 	MCFG_HD44780_LCD_SIZE(2, 20)
@@ -951,7 +949,7 @@ MACHINE_CONFIG_START(gl3000s_state::gl3000s)
 	MCFG_SCREEN_VISIBLE_AREA(0, 120-1, 0, 24-1)
 	MCFG_SCREEN_UPDATE_DRIVER( gl3000s_state, screen_update )
 
-	MCFG_DEFAULT_LAYOUT(layout_gl3000s)
+	config.set_default_layout(layout_gl3000s);
 
 	MCFG_DEVICE_REMOVE("gfxdecode")
 

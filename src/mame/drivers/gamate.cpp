@@ -32,6 +32,11 @@ public:
 		, m_bios(*this, "bios")
 	{ }
 
+	void gamate(machine_config &config);
+
+	void init_gamate();
+
+private:
 	DECLARE_READ8_MEMBER(card_available_check);
 	DECLARE_READ8_MEMBER(card_available_set);
 	DECLARE_WRITE8_MEMBER(card_reset);
@@ -42,14 +47,11 @@ public:
 	DECLARE_WRITE8_MEMBER(write_cart);
 	DECLARE_READ8_MEMBER(read_cart);
 
-	void init_gamate();
-
 	TIMER_CALLBACK_MEMBER(gamate_timer);
 	TIMER_CALLBACK_MEMBER(gamate_timer2);
 
-	void gamate(machine_config &config);
 	void gamate_mem(address_map &map);
-private:
+
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
@@ -183,11 +185,11 @@ MACHINE_CONFIG_START(gamate_state::gamate)
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left(); // Stereo headphone output
 	SPEAKER(config, "rspeaker").front_right();
-	MCFG_DEVICE_ADD("ay8910", AY8910, 4433000 / 4) // AY compatible, no actual AY chip present
-	MCFG_SOUND_ROUTE(0, "lspeaker", 0.5)
-	MCFG_SOUND_ROUTE(1, "rspeaker", 0.5)
-	MCFG_SOUND_ROUTE(2, "lspeaker", 0.25)
-	MCFG_SOUND_ROUTE(2, "rspeaker", 0.25)
+	AY8910(config, m_ay, 4433000 / 4); // AY compatible, no actual AY chip present
+	m_ay->add_route(0, "lspeaker", 0.5);
+	m_ay->add_route(1, "rspeaker", 0.5);
+	m_ay->add_route(2, "lspeaker", 0.25);
+	m_ay->add_route(2, "rspeaker", 0.25);
 
 	MCFG_GAMATE_CARTRIDGE_ADD("cartslot", gamate_cart, nullptr)
 

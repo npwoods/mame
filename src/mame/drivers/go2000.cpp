@@ -56,6 +56,9 @@ public:
 		m_palette(*this, "palette"),
 		m_soundlatch(*this, "soundlatch") { }
 
+	void go2000(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint16_t> m_videoram;
 	required_shared_ptr<uint16_t> m_videoram2;
@@ -73,7 +76,6 @@ public:
 	virtual void machine_start() override;
 	virtual void video_start() override;
 	uint32_t screen_update_go2000(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void go2000(machine_config &config);
 	void go2000_map(address_map &map);
 	void go2000_sound_io(address_map &map);
 	void go2000_sound_map(address_map &map);
@@ -366,7 +368,7 @@ MACHINE_CONFIG_START(go2000_state::go2000)
 	MCFG_PALETTE_FORMAT(xBBBBBGGGGGRRRRR)
 
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	SPEAKER(config, "speaker").front_center();
 	MCFG_DEVICE_ADD("dac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(0, "speaker", 0.25) // unknown DAC

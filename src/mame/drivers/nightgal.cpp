@@ -72,7 +72,16 @@ public:
 		m_palette(*this, "palette"),
 		m_blitter(*this, "blitter") { }
 
+	void ngalsumr(machine_config &config);
+	void sexygal(machine_config &config);
+	void sweetgal(machine_config &config);
+	void sgaltrop(machine_config &config);
+	void royalqn(machine_config &config);
 
+	void init_ngalsumr();
+	void init_royalqn();
+
+private:
 	emu_timer *m_z80_wait_ack_timer;
 
 	required_shared_ptr<uint8_t> m_comms_ram;
@@ -100,8 +109,6 @@ public:
 	DECLARE_WRITE8_MEMBER(sexygal_audioff_w);
 	DECLARE_WRITE8_MEMBER(sexygal_audionmi_w);
 
-	void init_ngalsumr();
-	void init_royalqn();
 	DECLARE_WRITE8_MEMBER(ngalsumr_prot_latch_w);
 	DECLARE_READ8_MEMBER(ngalsumr_prot_value_r);
 	virtual void machine_start() override;
@@ -110,11 +117,6 @@ public:
 	DECLARE_PALETTE_INIT(nightgal);
 	uint32_t screen_update_nightgal(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void ngalsumr(machine_config &config);
-	void sexygal(machine_config &config);
-	void sweetgal(machine_config &config);
-	void sgaltrop(machine_config &config);
-	void royalqn(machine_config &config);
 	void common_nsc_map(address_map &map);
 	void common_sexygal_io(address_map &map);
 	void royalqn_io(address_map &map);
@@ -127,7 +129,7 @@ public:
 	void sgaltrop_io(address_map &map);
 	void sgaltrop_nsc_map(address_map &map);
 	void sweetgal_map(address_map &map);
-protected:
+
 	required_ioport m_io_cr_clear;
 	required_ioport m_io_coins;
 	required_ioport m_io_pl1_1;
@@ -153,7 +155,6 @@ protected:
 
 	std::unique_ptr<bitmap_ind16> m_tmp_bitmap;
 
-private:
 	/* video-related */
 	uint8_t m_blit_raw_data[3];
 
@@ -815,10 +816,10 @@ MACHINE_CONFIG_START(nightgal_state::royalqn)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, MASTER_CLOCK / 8)
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, nightgal_state, input_1p_r))
-	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, nightgal_state, input_2p_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
+	ay8910_device &aysnd(AY8910(config, "aysnd", MASTER_CLOCK / 8));
+	aysnd.port_a_read_callback().set(FUNC(nightgal_state::input_1p_r));
+	aysnd.port_b_read_callback().set(FUNC(nightgal_state::input_2p_r));
+	aysnd.add_route(ALL_OUTPUTS, "mono", 0.40);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(nightgal_state::sexygal)
@@ -845,10 +846,10 @@ MACHINE_CONFIG_START(nightgal_state::sexygal)
 
 	MCFG_DEVICE_REMOVE("aysnd")
 
-	MCFG_DEVICE_ADD("ymsnd", YM2203, MASTER_CLOCK / 8)
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, nightgal_state, input_1p_r))
-	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, nightgal_state, input_2p_r))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.40)
+	ym2203_device &ymsnd(YM2203(config, "ymsnd", MASTER_CLOCK / 8));
+	ymsnd.port_a_read_callback().set(FUNC(nightgal_state::input_1p_r));
+	ymsnd.port_b_read_callback().set(FUNC(nightgal_state::input_2p_r));
+	ymsnd.add_route(ALL_OUTPUTS, "mono", 0.40);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(nightgal_state::sweetgal)

@@ -5,6 +5,10 @@
     Surprise Attack
 
 *************************************************************************/
+#ifndef MAME_INCLUDES_SURPRATK_H
+#define MAME_INCLUDES_SURPRATK_H
+
+#pragma once
 
 #include "machine/bankdev.h"
 #include "video/k053244_k053245.h"
@@ -16,15 +20,19 @@
 class surpratk_state : public driver_device
 {
 public:
-	surpratk_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	surpratk_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_bank0000(*this, "bank0000"),
 		m_k052109(*this, "k052109"),
 		m_k053244(*this, "k053244"),
 		m_k053251(*this, "k053251"),
-		m_palette(*this, "palette") { }
+		m_palette(*this, "palette")
+	{ }
 
+	void surpratk(machine_config &config);
+
+private:
 	/* video-related */
 	int        m_layer_colorbase[3];
 	int        m_sprite_colorbase;
@@ -48,7 +56,8 @@ public:
 	K05324X_CB_MEMBER(sprite_callback);
 	K052109_CB_MEMBER(tile_callback);
 	DECLARE_WRITE8_MEMBER(banking_callback);
-	void surpratk(machine_config &config);
 	void bank0000_map(address_map &map);
 	void surpratk_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_SURPRATK_H

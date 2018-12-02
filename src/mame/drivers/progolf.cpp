@@ -76,6 +76,12 @@ public:
 		m_videoram(*this, "videoram"),
 		m_fbram(*this, "fbram")  { }
 
+	void progolfa(machine_config &config);
+	void progolf(machine_config &config);
+
+	DECLARE_INPUT_CHANGED_MEMBER(coin_inserted);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -99,15 +105,11 @@ public:
 	DECLARE_READ8_MEMBER(videoram_r);
 	DECLARE_WRITE8_MEMBER(videoram_w);
 
-	DECLARE_INPUT_CHANGED_MEMBER(coin_inserted);
-
 	virtual void machine_start() override;
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(progolf);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void progolfa(machine_config &config);
-	void progolf(machine_config &config);
 	void main_cpu(address_map &map);
 	void sound_cpu(address_map &map);
 };
@@ -126,7 +128,7 @@ void progolf_state::video_start()
 
 	save_item(NAME(m_char_pen));
 	save_item(NAME(m_char_pen_vreg));
-	save_pointer(NAME(m_fg_fb.get()), 0x2000*8);
+	save_pointer(NAME(m_fg_fb), 0x2000*8);
 	save_item(NAME(m_scrollx_hi));
 	save_item(NAME(m_scrollx_lo));
 	save_item(NAME(m_gfx_switch));
@@ -426,9 +428,9 @@ MACHINE_CONFIG_START(progolf_state::progolf)
 
 	MCFG_QUANTUM_PERFECT_CPU("maincpu")
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", 0))
-	MCFG_GENERIC_LATCH_SEPARATE_ACKNOWLEDGE(true)
+	generic_latch_8_device &soundlatch(GENERIC_LATCH_8(config, "soundlatch"));
+	soundlatch.data_pending_callback().set_inputline(m_audiocpu, 0);
+	soundlatch.set_separate_acknowledge(true);
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -443,18 +445,17 @@ MACHINE_CONFIG_START(progolf_state::progolf)
 	MCFG_PALETTE_ADD("palette", 32*3)
 	MCFG_PALETTE_INIT_OWNER(progolf_state, progolf)
 
-	MCFG_MC6845_ADD("crtc", MC6845, "screen", 3000000/4) /* hand tuned to get ~57 fps */
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(8)
+	mc6845_device &crtc(MC6845(config, "crtc", 3000000/4)); /* hand tuned to get ~57 fps */
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(8);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ay1", AY8910, 12000000/8)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.23)
+	AY8910(config, "ay1", 12000000/8).add_route(ALL_OUTPUTS, "mono", 0.23);
 
-	MCFG_DEVICE_ADD("ay2", AY8910, 12000000/8)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.23)
+	AY8910(config, "ay2", 12000000/8).add_route(ALL_OUTPUTS, "mono", 0.23);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(progolf_state::progolfa)

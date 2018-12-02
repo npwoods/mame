@@ -40,7 +40,7 @@
 
 # DEBUG = 1
 # PROFILER = 1
-# SANITIZE = 
+# SANITIZE =
 
 # PTR64 = 1
 # BIGENDIAN = 1
@@ -52,6 +52,10 @@
 # MAP = 1
 # PROFILE = 1
 # ARCHOPTS =
+# ARCHOPTS_C =
+# ARCHOPTS_CXX =
+# ARCHOPTS_OBJC =
+# ARCHOPTS_OBJCXX =
 # OPT_FLAGS =
 # LDOPTS =
 
@@ -627,6 +631,22 @@ ifdef ARCHOPTS
 PARAMS += --ARCHOPTS='$(ARCHOPTS)'
 endif
 
+ifdef ARCHOPTS_C
+PARAMS += --ARCHOPTS_C='$(ARCHOPTS_C)'
+endif
+
+ifdef ARCHOPTS_CXX
+PARAMS += --ARCHOPTS_CXX='$(ARCHOPTS_CXX)'
+endif
+
+ifdef ARCHOPTS_OBJC
+PARAMS += --ARCHOPTS_OBJC='$(ARCHOPTS_OBJC)'
+endif
+
+ifdef ARCHOPTS_OBJCXX
+PARAMS += --ARCHOPTS_OBJCXX='$(ARCHOPTS_OBJCXX)'
+endif
+
 ifdef OPT_FLAGS
 PARAMS += --OPT_FLAGS='$(OPT_FLAGS)'
 endif
@@ -912,12 +932,12 @@ endif
 ifeq ($(OS),windows)
 ifeq (posix,$(SHELLTYPE))
 GCC_VERSION      := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) -dumpversion 2> /dev/null)
-CLANG_VERSION    := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) --version 2> /dev/null| head -n 1 | grep clang | sed "s/^.*[^0-9]\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/" | head -n 1)
+CLANG_VERSION    := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) --version 2> /dev/null| head -n 1 | grep clang | sed "s/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*$$/\1/" | head -n 1)
 PYTHON_AVAILABLE := $(shell $(PYTHON) --version > /dev/null 2>&1 && echo python)
 GIT_AVAILABLE    := $(shell git --version > /dev/null 2>&1 && echo git)
 else
 GCC_VERSION      := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) -dumpversion 2> NUL)
-CLANG_VERSION    := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) --version 2> NUL| head -n 1 | grep clang | sed "s/^.*[^0-9]\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/" | head -n 1)
+CLANG_VERSION    := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) --version 2> NUL| head -n 1 | grep clang | sed "s/^.*[^0-9]\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*$$/\1/" | head -n 1)
 PYTHON_AVAILABLE := $(shell $(PYTHON) --version > NUL 2>&1 && echo python)
 GIT_AVAILABLE    := $(shell git --version > NUL 2>&1 && echo git)
 endif
@@ -953,7 +973,7 @@ endif
 else
 GCC_VERSION      := $(shell $(TOOLCHAIN)$(subst @,,$(CC)) -dumpversion 2> /dev/null)
 ifneq ($(OS),solaris)
-CLANG_VERSION    := $(shell $(TOOLCHAIN)$(subst @,,$(CC))  --version  2> /dev/null | head -n 1 | grep -e 'version [0-9]\.[0-9]\(\.[0-9]\)\?' -o | grep -e '[0-9]\.[0-9]\(\.[0-9]\)\?' -o | tail -n 1)
+CLANG_VERSION    := $(shell $(TOOLCHAIN)$(subst @,,$(CC))  --version  2> /dev/null | head -n 1 | grep -e 'version [0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?' -o | grep -e '[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?' -o | tail -n 1)
 endif
 PYTHON_AVAILABLE := $(shell $(PYTHON) --version > /dev/null 2>&1 && echo python)
 GIT_AVAILABLE := $(shell git --version > /dev/null 2>&1 && echo git)
@@ -1584,14 +1604,14 @@ endif
 
 ifeq (posix,$(SHELLTYPE))
 $(GENDIR)/version.cpp: $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo '#define BARE_BUILD_VERSION "0.198"' > $@
+	@echo '#define BARE_BUILD_VERSION "0.204"' > $@
 	@echo 'extern const char bare_build_version[];' >> $@
 	@echo 'extern const char build_version[];' >> $@
 	@echo 'const char bare_build_version[] = BARE_BUILD_VERSION;' >> $@
 	@echo 'const char build_version[] = BARE_BUILD_VERSION " ($(NEW_GIT_VERSION))";' >> $@
 else
 $(GENDIR)/version.cpp: $(GENDIR)/git_desc
-	@echo #define BARE_BUILD_VERSION "0.198" > $@
+	@echo #define BARE_BUILD_VERSION "0.204" > $@
 	@echo extern const char bare_build_version[]; >> $@
 	@echo extern const char build_version[]; >> $@
 	@echo const char bare_build_version[] = BARE_BUILD_VERSION; >> $@

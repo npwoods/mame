@@ -28,7 +28,7 @@ public:
 
 	void stellafr(machine_config &config);
 
-protected:
+private:
 	IRQ_CALLBACK_MEMBER(irq_ack);
 	DECLARE_WRITE8_MEMBER(write_8000c1);
 	DECLARE_READ8_MEMBER(read_800101);
@@ -38,7 +38,6 @@ protected:
 
 	void stellafr_map(address_map &map);
 
-private:
 	// devices
 	required_device<cpu_device> m_maincpu;
 	required_device<mc68681_device> m_duart;
@@ -101,10 +100,10 @@ MACHINE_CONFIG_START(stellafr_state::stellafr)
 	MCFG_MC68681_OUTPORT_CALLBACK(WRITE8(*this, stellafr_state, duart_output_w))
 
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("aysnd", AY8910, 1000000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("INPUTS"))
-	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(*this, stellafr_state, ay8910_portb_w))
+	ay8910_device &aysnd(AY8910(config, "aysnd", 1000000));
+	aysnd.add_route(ALL_OUTPUTS, "mono", 1.0);
+	aysnd.port_a_read_callback().set_ioport("INPUTS");
+	aysnd.port_b_write_callback().set(FUNC(stellafr_state::ay8910_portb_w));
 MACHINE_CONFIG_END
 
 

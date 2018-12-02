@@ -23,6 +23,7 @@
 #include "includes/atarig42.h"
 #include "machine/eeprompar.h"
 #include "machine/watchdog.h"
+#include "emupal.h"
 #include "speaker.h"
 
 
@@ -334,7 +335,7 @@ void atarig42_state::main_map(address_map &map)
 	map(0xf60000, 0xf60001).r(m_asic65, FUNC(asic65_device::read));
 	map(0xf80000, 0xf80003).w(m_asic65, FUNC(asic65_device::data_w));
 	map(0xfa0000, 0xfa0fff).rw("eeprom", FUNC(eeprom_parallel_28xx_device::read), FUNC(eeprom_parallel_28xx_device::write)).umask16(0x00ff);
-	map(0xfc0000, 0xfc0fff).ram().w(m_palette, FUNC(palette_device::write16)).share("palette");
+	map(0xfc0000, 0xfc0fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
 	map(0xff0000, 0xffffff).ram();
 	map(0xff0000, 0xff0fff).ram().share("rle");
 	map(0xff2000, 0xff5fff).w(m_playfield_tilemap, FUNC(tilemap_device::write16)).share("playfield");
@@ -519,14 +520,9 @@ MACHINE_CONFIG_START(atarig42_state::atarig42)
 	MCFG_DEVICE_ADD("maincpu", M68000, ATARI_CLOCK_14MHz)
 	MCFG_DEVICE_PROGRAM_MAP(main_map)
 
-	MCFG_DEVICE_ADD("adc", ADC0809, ATARI_CLOCK_14MHz / 16)
-	MCFG_ADC0808_IN0_CB(IOPORT("A2D0"))
-	MCFG_ADC0808_IN1_CB(IOPORT("A2D1"))
+	EEPROM_2816(config, "eeprom").lock_after_write(true);
 
-	MCFG_EEPROM_2816_ADD("eeprom")
-	MCFG_EEPROM_28XX_LOCK_AFTER_WRITE(true)
-
-	MCFG_WATCHDOG_ADD("watchdog")
+	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_atarig42)
@@ -550,14 +546,19 @@ MACHINE_CONFIG_START(atarig42_state::atarig42)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_ATARI_JSA_III_ADD("jsa", INPUTLINE("maincpu", M68K_IRQ_5))
-	MCFG_ATARI_JSA_TEST_PORT("IN2", 6)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
+	ATARI_JSA_III(config, m_jsa, 0);
+	m_jsa->main_int_cb().set_inputline(m_maincpu, M68K_IRQ_5);
+	m_jsa->test_read_cb().set_ioport("IN2").bit(6);
+	m_jsa->add_route(ALL_OUTPUTS, "mono", 1.0);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(atarig42_0x200_state::atarig42_0x200)
 	atarig42(config);
 	MCFG_ATARIRLE_ADD("rle", modesc_0x200)
+
+	ADC0809(config, m_adc, ATARI_CLOCK_14MHz / 16);
+	m_adc->in_callback<0>().set_ioport("A2D0");
+	m_adc->in_callback<1>().set_ioport("A2D1");
 
 	/* ASIC65 */
 	MCFG_ASIC65_ADD("asic65", ASIC65_ROMBASED)
@@ -569,8 +570,6 @@ MACHINE_CONFIG_START(atarig42_0x400_state::atarig42_0x400)
 
 	/* ASIC65 */
 	MCFG_ASIC65_ADD("asic65", ASIC65_GUARDIANS)
-
-	MCFG_DEVICE_REMOVE("adc")
 MACHINE_CONFIG_END
 
 

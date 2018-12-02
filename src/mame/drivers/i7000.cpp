@@ -67,6 +67,11 @@ public:
 		, m_videoram(*this, "videoram")
 	{ }
 
+	void i7000(machine_config &config);
+
+	void init_i7000();
+
+private:
 	void video_start() override;
 	void machine_start() override;
 
@@ -75,19 +80,16 @@ public:
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_shared_ptr<uint8_t> m_videoram;
 	uint32_t screen_update_i7000(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	uint8_t *m_char_rom;
 	uint8_t m_row;
 	tilemap_t *m_bg_tilemap;
 
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	MC6845_ON_UPDATE_ADDR_CHANGED(crtc_addr);
-	void init_i7000();
 	DECLARE_PALETTE_INIT(i7000);
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( i7000_card );
 
 	DECLARE_READ8_MEMBER(i7000_kbd_r);
 	DECLARE_WRITE8_MEMBER(i7000_scanlines_w);
-	void i7000(machine_config &config);
 	void i7000_io(address_map &map);
 	void i7000_mem(address_map &map);
 };
@@ -358,31 +360,31 @@ MACHINE_CONFIG_START(i7000_state::i7000)
 	MCFG_PALETTE_ADD("palette", 2)
 	MCFG_PALETTE_INIT_OWNER(i7000_state, i7000)
 
-	MCFG_MC6845_ADD("crtc", R6545_1, "screen", XTAL(20'000'000)) /* (?) */
-	MCFG_MC6845_SHOW_BORDER_AREA(true)
-	MCFG_MC6845_CHAR_WIDTH(8)
-	MCFG_MC6845_ADDR_CHANGED_CB(i7000_state, crtc_addr)
+	r6545_1_device &crtc(R6545_1(config, "crtc", XTAL(20'000'000))); /* (?) */
+	crtc.set_screen("screen");
+	crtc.set_show_border_area(true);
+	crtc.set_char_width(8);
+	crtc.set_on_update_addr_change_callback(FUNC(i7000_state::crtc_addr), this);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("speaker", SPEAKER_SOUND)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	SPEAKER_SOUND(config, "speaker").add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	/* Programmable timer */
-	MCFG_DEVICE_ADD("pit8253", PIT8253, 0)
-//  MCFG_PIT8253_CLK0(XTAL(4'000'000) / 2) /* TODO: verify on PCB */
-//  MCFG_PIT8253_OUT0_HANDLER(WRITELINE(*this, i7000_state,i7000_pit_out0))
-//  MCFG_PIT8253_CLK1(XTAL(4'000'000) / 2) /* TODO: verify on PCB */
-//  MCFG_PIT8253_OUT1_HANDLER(WRITELINE(*this, i7000_state,i7000_pit_out1))
-	MCFG_PIT8253_CLK2(XTAL(4'000'000) / 2) /* TODO: verify on PCB */
-	MCFG_PIT8253_OUT2_HANDLER(WRITELINE("speaker", speaker_sound_device, level_w))
+	pit8253_device &pit8253(PIT8253(config, "pit8253", 0));
+//  pit8253.set_clk<0>(XTAL(4'000'000) / 2); /* TODO: verify on PCB */
+//  pit8253.out_handler<0>().set(FUNC(i7000_state::i7000_pit_out0));
+//  pit8253.set_clk<1>(XTAL(4'000'000) / 2); /* TODO: verify on PCB */
+//  pit8253.out_handler<1>().set(FUNC(i7000_state::i7000_pit_out1));
+	pit8253.set_clk<2>(XTAL(4'000'000) / 2); /* TODO: verify on PCB */
+	pit8253.out_handler<2>().set("speaker", FUNC(speaker_sound_device::level_w));
 
 	/* Keyboard interface */
-	MCFG_DEVICE_ADD("i8279", I8279, 4000000) /* guessed value. TODO: verify on PCB */
-	MCFG_I8279_OUT_SL_CB(WRITE8(*this, i7000_state, i7000_scanlines_w))          // scan SL lines
-	MCFG_I8279_IN_RL_CB(READ8(*this, i7000_state, i7000_kbd_r))                  // kbd RL lines
-	MCFG_I8279_IN_SHIFT_CB(VCC) // TODO: Shift key
-	MCFG_I8279_IN_CTRL_CB(VCC) // TODO: Ctrl key
+	i8279_device &kbdc(I8279(config, "i8279", 4000000)); /* guessed value. TODO: verify on PCB */
+	kbdc.out_sl_callback().set(FUNC(i7000_state::i7000_scanlines_w));   // scan SL lines
+	kbdc.in_rl_callback().set(FUNC(i7000_state::i7000_kbd_r));          // kbd RL lines
+	kbdc.in_shift_callback().set_constant(1);                           // TODO: Shift key
+	kbdc.in_ctrl_callback().set_constant(1);                            // TODO: Ctrl key
 
 	/* Cartridge slot */
 	MCFG_GENERIC_CARTSLOT_ADD("cardslot", generic_romram_plain_slot, "i7000_card")

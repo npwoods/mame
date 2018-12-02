@@ -1,5 +1,9 @@
 // license:BSD-3-Clause
 // copyright-holders:Pierpaolo Prazzoli, Quench
+#ifndef MAME_INCLUDES_SSLAM_H
+#define MAME_INCLUDES_SSLAM_H
+
+#pragma once
 
 #include "machine/gen_latch.h"
 #include "sound/okim6295.h"
@@ -8,8 +12,8 @@
 class sslam_state : public driver_device
 {
 public:
-	sslam_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	sslam_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_audiocpu(*this, "audiocpu"),
 		m_oki(*this, "oki"),
@@ -20,9 +24,16 @@ public:
 		m_md_tileram(*this, "md_tileram"),
 		m_tx_tileram(*this, "tx_tileram"),
 		m_regs(*this, "regs"),
-		m_spriteram(*this, "spriteram") { }
+		m_spriteram(*this, "spriteram")
+	{ }
 
+	void sslam(machine_config &config);
+	void powerbls(machine_config &config);
 
+	void init_sslam();
+	void init_powerbls();
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
 	required_device<okim6295_device> m_oki;
@@ -62,8 +73,7 @@ public:
 	DECLARE_WRITE16_MEMBER(sslam_bg_tileram_w);
 	DECLARE_WRITE16_MEMBER(powerbls_bg_tileram_w);
 	DECLARE_WRITE8_MEMBER(sslam_snd_w);
-	void init_sslam();
-	void init_powerbls();
+
 	TILE_GET_INFO_MEMBER(get_sslam_tx_tile_info);
 	TILE_GET_INFO_MEMBER(get_sslam_md_tile_info);
 	TILE_GET_INFO_MEMBER(get_sslam_bg_tile_info);
@@ -75,8 +85,9 @@ public:
 	TIMER_CALLBACK_MEMBER(music_playback);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void sslam_play(int track, int data);
-	void sslam(machine_config &config);
-	void powerbls(machine_config &config);
+
 	void powerbls_map(address_map &map);
 	void sslam_program_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_SSLAM_H

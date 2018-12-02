@@ -62,7 +62,13 @@ public:
 		m_filter2(*this, "filter2")
 	{ }
 
+	void mgavegas(machine_config &config);
 
+	void init_mgavegas();
+	void init_mgavegas21();
+	void init_mgavegas133();
+
+private:
 	uint8_t m_int;
 
 	//OUT1
@@ -136,16 +142,9 @@ public:
 	DECLARE_READ8_MEMBER(ay8910_a_r);
 	DECLARE_READ8_MEMBER(ay8910_b_r);
 
-	void init_mgavegas();
-	void init_mgavegas21();
-	void init_mgavegas133();
-
 	TIMER_DEVICE_CALLBACK_MEMBER(int_0);
 
-
-	void mgavegas(machine_config &config);
 	void mgavegas_map(address_map &map);
-protected:
 
 	// devices
 	required_device<cpu_device> m_maincpu;
@@ -159,9 +158,6 @@ protected:
 	virtual void machine_reset() override;
 	void update_custom();
 	void update_lamp();
-
-
-private:
 };
 
 
@@ -596,17 +592,17 @@ MACHINE_CONFIG_START(mgavegas_state::mgavegas)
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("int_0", mgavegas_state, int_0, attotime::from_hz(6000))  //6KHz from MSM5205 /VCK
 
-	MCFG_NVRAM_ADD_1FILL("nvram")
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_1);
 
 	MCFG_TICKET_DISPENSER_ADD("hopper",attotime::from_msec(200),TICKET_MOTOR_ACTIVE_HIGH,TICKET_STATUS_ACTIVE_LOW);
 
 	/* sound hardware */
 
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("aysnd", AY8910, AY_CLK)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.3)
-	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, mgavegas_state, ay8910_a_r))
-	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, mgavegas_state, ay8910_b_r))
+	AY8910(config, m_ay, AY_CLK);
+	m_ay->add_route(ALL_OUTPUTS, "mono", 0.3);
+	m_ay->port_a_read_callback().set(FUNC(mgavegas_state::ay8910_a_r));
+	m_ay->port_b_read_callback().set(FUNC(mgavegas_state::ay8910_b_r));
 
 	MCFG_DEVICE_ADD("5205", MSM5205, MSM_CLK)
 	MCFG_MSM5205_PRESCALER_SELECTOR(S64_4B)
@@ -620,7 +616,7 @@ MACHINE_CONFIG_START(mgavegas_state::mgavegas)
 
 
 	/* Video */
-	MCFG_DEFAULT_LAYOUT(layout_mgavegas)
+	config.set_default_layout(layout_mgavegas);
 
 MACHINE_CONFIG_END
 

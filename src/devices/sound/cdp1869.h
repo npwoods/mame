@@ -108,10 +108,10 @@
 #define CDP1869_PCB_READ_MEMBER(name) int name(uint16_t pma, uint8_t cma, uint8_t pmd)
 
 #define MCFG_CDP1869_PAL_NTSC_CALLBACK(_read) \
-	devcb = &downcast<cdp1869_device &>(*device).set_pal_ntsc_rd_callback(DEVCB_##_read);
+	downcast<cdp1869_device &>(*device).set_pal_ntsc_rd_callback(DEVCB_##_read);
 
 #define MCFG_CDP1869_PRD_CALLBACK(_write) \
-	devcb = &downcast<cdp1869_device &>(*device).set_prd_wr_callback(DEVCB_##_write);
+	downcast<cdp1869_device &>(*device).set_prd_wr_callback(DEVCB_##_write);
 
 #define MCFG_CDP1869_COLOR_CLOCK(_clk) \
 	downcast<cdp1869_device &>(*device).set_color_clock(_clk);
@@ -146,17 +146,17 @@ public:
 	static constexpr auto CPU_CLK_PAL         = DOT_CLK_PAL / 2;
 	static constexpr auto CPU_CLK_NTSC        = DOT_CLK_NTSC / 2;
 
-	static constexpr unsigned CHAR_WIDTH          = 6;
+	static constexpr unsigned CH_WIDTH            = 6;
 
-	static constexpr unsigned HSYNC_START         = 56 * CHAR_WIDTH;
-	static constexpr unsigned HSYNC_END           = 60 * CHAR_WIDTH;
-	static constexpr unsigned HBLANK_START        = 54 * CHAR_WIDTH;
-	static constexpr unsigned HBLANK_END          =  5 * CHAR_WIDTH;
-	static constexpr unsigned SCREEN_START_PAL    =  9 * CHAR_WIDTH;
-	static constexpr unsigned SCREEN_START_NTSC   = 10 * CHAR_WIDTH;
-	static constexpr unsigned SCREEN_START        = 10 * CHAR_WIDTH;
-	static constexpr unsigned SCREEN_END          = 50 * CHAR_WIDTH;
-	static constexpr unsigned SCREEN_WIDTH        = 60 * CHAR_WIDTH;
+	static constexpr unsigned HSYNC_START         = 56 * CH_WIDTH;
+	static constexpr unsigned HSYNC_END           = 60 * CH_WIDTH;
+	static constexpr unsigned HBLANK_START        = 54 * CH_WIDTH;
+	static constexpr unsigned HBLANK_END          =  5 * CH_WIDTH;
+	static constexpr unsigned SCREEN_START_PAL    =  9 * CH_WIDTH;
+	static constexpr unsigned SCREEN_START_NTSC   = 10 * CH_WIDTH;
+	static constexpr unsigned SCREEN_START        = 10 * CH_WIDTH;
+	static constexpr unsigned SCREEN_END          = 50 * CH_WIDTH;
+	static constexpr unsigned SCREEN_WIDTH        = 60 * CH_WIDTH;
 
 	static constexpr unsigned TOTAL_SCANLINES_PAL             = 312;
 	static constexpr unsigned SCANLINE_VBLANK_START_PAL       = 304;

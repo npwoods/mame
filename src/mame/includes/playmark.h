@@ -1,5 +1,10 @@
 // license:BSD-3-Clause
 // copyright-holders:Nicola Salmoria, Pierpaolo Prazzoli, Quench
+#ifndef MAME_INCLUDES_PLAYMARK_H
+#define MAME_INCLUDES_PLAYMARK_H
+
+#pragma once
+
 #include "sound/okim6295.h"
 #include "machine/eepromser.h"
 #include "machine/ticket.h"
@@ -9,8 +14,8 @@
 class playmark_state : public driver_device
 {
 public:
-	playmark_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	playmark_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_bgvideoram(*this, "bgvideoram"),
 		m_videoram1(*this, "videoram1"),
 		m_videoram2(*this, "videoram2"),
@@ -25,8 +30,20 @@ public:
 		m_gfxdecode(*this, "gfxdecode"),
 		m_palette(*this, "palette"),
 		m_ticket(*this, "ticket"),
-		m_token(*this, "token") { }
+		m_token(*this, "token")
+	{ }
 
+	void wbeachvl(machine_config &config);
+	void hrdtimes(machine_config &config);
+	void luckboomh(machine_config &config);
+	void bigtwin(machine_config &config);
+	void hotmind(machine_config &config);
+	void bigtwinb(machine_config &config);
+	void excelsr(machine_config &config);
+
+	void init_pic_decode();
+
+protected:
 	/* memory pointers */
 	optional_shared_ptr<uint16_t> m_bgvideoram;
 	required_shared_ptr<uint16_t> m_videoram1;
@@ -86,7 +103,6 @@ public:
 	DECLARE_WRITE16_MEMBER(excelsr_scroll_w);
 	DECLARE_WRITE16_MEMBER(hrdtimes_scroll_w);
 	DECLARE_WRITE8_MEMBER(playmark_oki_banking_w);
-	void init_pic_decode();
 	TILE_GET_INFO_MEMBER(bigtwin_get_tx_tile_info);
 	TILE_GET_INFO_MEMBER(bigtwin_get_fg_tile_info);
 	TILE_GET_INFO_MEMBER(wbeachvl_get_tx_tile_info);
@@ -122,13 +138,7 @@ public:
 	required_device<palette_device> m_palette;
 	optional_device<ticket_dispenser_device> m_ticket;
 	optional_device<ticket_dispenser_device> m_token;
-	void wbeachvl(machine_config &config);
-	void hrdtimes(machine_config &config);
-	void luckboomh(machine_config &config);
-	void bigtwin(machine_config &config);
-	void hotmind(machine_config &config);
-	void bigtwinb(machine_config &config);
-	void excelsr(machine_config &config);
+
 	void bigtwin_main_map(address_map &map);
 	void bigtwinb_main_map(address_map &map);
 	void excelsr_main_map(address_map &map);
@@ -138,3 +148,5 @@ public:
 	void oki_map(address_map &map);
 	void wbeachvl_main_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_PLAYMARK_H

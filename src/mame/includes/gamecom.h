@@ -155,43 +155,39 @@ enum
 
 struct GAMECOM_DMA
 {
-	int enabled;
-	int transfer_mode;
-	int decrement_y;
-	int decrement_x;
-	int overwrite_mode;
-	int width_x;
-	int width_y;
-	int width_x_count;
-	int width_y_count;
-	int source_x;
-	int source_x_current;
-	int source_y;
-	int source_width;
-	int dest_x;
-	int dest_x_current;
-	int dest_y;
-	int dest_width;
-	int state_count;
-	int state_pixel;
-	int state_limit;
-	uint8_t palette[4];
-	uint8_t *source_bank;
-	unsigned int source_current;
-	unsigned int source_line;
-	unsigned int source_mask;
-	uint8_t *dest_bank;
-	unsigned int dest_current;
-	unsigned int dest_line;
-	unsigned int dest_mask;
+	u8 width_x;
+	u8 width_y;
+	u8 source_x;
+	u8 source_x_current;
+	u8 source_y;
+	u8 source_width;
+	u8 dest_x;
+	u8 dest_x_current;
+	u8 dest_y;
+	u8 dest_width;
+	u8 palette;
+	u8 block_width;
+	u8 block_height;
+	u8 *source_bank;
+	u16 source_current;
+	u16 source_line;
+	u16 source_mask;
+	u8 *dest_bank;
+	u16 dest_current;
+	u16 dest_line;
+	u16 dest_mask;
+	u8 transfer_mode;
+	s16 adjust_x;
+	bool decrement_y;
+	bool overwrite_mode;
 };
 
 struct GAMECOM_TIMER
 {
-	int enabled;
-	int state_count;
-	int state_limit;
-	int check_value;
+	bool enabled;
+	u32 prescale_count;
+	u32 prescale_max;
+	u8 upcounter_max;
 };
 
 struct gamecom_sound_t
@@ -236,11 +232,16 @@ public:
 	{
 	}
 
+	void gamecom(machine_config &config);
+
+	void init_gamecom();
+
+private:
+
 	DECLARE_READ8_MEMBER( gamecom_internal_r );
 	DECLARE_READ8_MEMBER( gamecom_pio_r );
 	DECLARE_WRITE8_MEMBER( gamecom_internal_w );
 	DECLARE_WRITE8_MEMBER( gamecom_pio_w );
-	void init_gamecom();
 	DECLARE_PALETTE_INIT(gamecom);
 	INTERRUPT_GEN_MEMBER(gamecom_interrupt);
 	TIMER_CALLBACK_MEMBER(gamecom_clock_timer_callback);
@@ -252,9 +253,8 @@ public:
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( gamecom_cart1 );
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( gamecom_cart2 );
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void gamecom(machine_config &config);
 	void gamecom_mem_map(address_map &map);
-private:
+
 	uint8_t *m_p_ram;
 	uint8_t *m_cart_ptr;
 	uint8_t m_lcdc_reg;

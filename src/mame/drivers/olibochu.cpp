@@ -76,6 +76,9 @@ public:
 		m_palette(*this, "palette"),
 		m_soundlatch(*this, "soundlatch") { }
 
+	void olibochu(machine_config &config);
+
+private:
 	/* memory pointers */
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
@@ -105,7 +108,6 @@ public:
 	uint32_t screen_update_olibochu(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	TIMER_DEVICE_CALLBACK_MEMBER(olibochu_scanline);
 	void draw_sprites( bitmap_ind16 &bitmap, const rectangle &cliprect );
-	void olibochu(machine_config &config);
 	void olibochu_map(address_map &map);
 	void olibochu_sound_map(address_map &map);
 };
@@ -493,10 +495,9 @@ MACHINE_CONFIG_START(olibochu_state::olibochu)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 2000000)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	AY8910(config, "aysnd", 2000000).add_route(ALL_OUTPUTS, "mono", 0.50);
 MACHINE_CONFIG_END
 
 

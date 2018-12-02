@@ -5,6 +5,10 @@
     Konami Finalizer
 
 ***************************************************************************/
+#ifndef MAME_INCLUDES_FINALIZR_H
+#define MAME_INCLUDES_FINALIZR_H
+
+#pragma once
 
 #include "machine/timer.h"
 #include "emupal.h"
@@ -27,6 +31,9 @@ public:
 		m_spriteram_2(*this, "spriteram_2")
 	{ }
 
+	void finalizr(machine_config &config);
+
+private:
 	/* devices */
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
@@ -69,8 +76,9 @@ public:
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_finalizr(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	TIMER_DEVICE_CALLBACK_MEMBER(finalizr_scanline);
-	void finalizr(machine_config &config);
 	void main_map(address_map &map);
 	void sound_io_map(address_map &map);
 	void sound_map(address_map &map);
 };
+
+#endif // MAME_INCLUDES_FINALIZR_H

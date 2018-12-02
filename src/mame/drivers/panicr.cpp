@@ -86,6 +86,11 @@ public:
 		m_textram(*this, "textram"),
 		m_spritebank(*this, "spritebank") { }
 
+	void panicr(machine_config &config);
+
+	void init_panicr();
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_device<t5182_device> m_t5182;
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -117,7 +122,6 @@ public:
 	TILE_GET_INFO_MEMBER(get_infotile_info_2);
 	TILE_GET_INFO_MEMBER(get_txttile_info);
 
-	void init_panicr();
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(panicr);
 
@@ -125,7 +129,6 @@ public:
 	void draw_sprites(bitmap_ind16 &bitmap,const rectangle &cliprect );
 
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline);
-	void panicr(machine_config &config);
 	void panicr_map(address_map &map);
 };
 
@@ -635,11 +638,10 @@ MACHINE_CONFIG_START(panicr_state::panicr)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, SOUND_CLOCK/4) /* 3.579545 MHz */
-	MCFG_YM2151_IRQ_HANDLER(WRITELINE("t5182", t5182_device, ym2151_irq_handler))
-	MCFG_SOUND_ROUTE(0, "mono", 1.0)
-	MCFG_SOUND_ROUTE(1, "mono", 1.0)
-
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", SOUND_CLOCK/4)); /* 3.579545 MHz */
+	ymsnd.irq_handler().set(m_t5182, FUNC(t5182_device::ym2151_irq_handler));
+	ymsnd.add_route(0, "mono", 1.0);
+	ymsnd.add_route(1, "mono", 1.0);
 MACHINE_CONFIG_END
 
 

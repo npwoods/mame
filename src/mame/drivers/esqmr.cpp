@@ -217,16 +217,18 @@ public:
 		, m_sq1vfd(*this, "sq1vfd")
 	{ }
 
+	void mr(machine_config &config);
+
+	void init_mr();
+
+private:
 	required_device<m68340_cpu_device> m_maincpu;
 	required_device<esq2x40_sq1_device> m_sq1vfd;
 
 	virtual void machine_reset() override;
 
-public:
-	void init_mr();
 	DECLARE_WRITE_LINE_MEMBER(esq5506_otto_irq);
 	DECLARE_READ16_MEMBER(esq5506_read_adc);
-	void mr(machine_config &config);
 	void mr_map(address_map &map);
 };
 
@@ -252,8 +254,8 @@ READ16_MEMBER(esqmr_state::esq5506_read_adc)
 }
 
 MACHINE_CONFIG_START(esqmr_state::mr)
-	MCFG_DEVICE_ADD("maincpu", M68340, XTAL(16'000'000))
-	MCFG_DEVICE_PROGRAM_MAP(mr_map)
+	M68340(config, m_maincpu, XTAL(16'000'000));
+	m_maincpu->set_addrmap(AS_PROGRAM, &esqmr_state::mr_map);
 
 	MCFG_ESQ2X40_SQ1_ADD("sq1vfd")
 

@@ -34,8 +34,8 @@
 class sprint2_state : public driver_device
 {
 public:
-	sprint2_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	sprint2_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_video_ram(*this, "video_ram"),
 		m_maincpu(*this, "maincpu"),
 		m_watchdog(*this, "watchdog"),
@@ -43,8 +43,20 @@ public:
 		m_discrete(*this, "discrete"),
 		m_gfxdecode(*this, "gfxdecode"),
 		m_screen(*this, "screen"),
-		m_palette(*this, "palette") { }
+		m_palette(*this, "palette")
+	{ }
 
+	void sprint1(machine_config &config);
+	void sprint2(machine_config &config);
+	void dominos4(machine_config &config);
+	void dominos(machine_config &config);
+
+	void init_sprint1();
+	void init_sprint2();
+	void init_dominos();
+	void init_dominos4();
+
+private:
 	int m_steering[2];
 	int m_gear[2];
 	int m_game;
@@ -70,10 +82,6 @@ public:
 	DECLARE_WRITE8_MEMBER(sprint2_collision_reset2_w);
 	DECLARE_WRITE8_MEMBER(sprint2_video_ram_w);
 	DECLARE_WRITE8_MEMBER(sprint2_noise_reset_w);
-	void init_sprint1();
-	void init_sprint2();
-	void init_dominos();
-	void init_dominos4();
 	TILE_GET_INFO_MEMBER(get_tile_info);
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(sprint2);
@@ -92,10 +100,7 @@ public:
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<screen_device> m_screen;
 	required_device<palette_device> m_palette;
-	void sprint1(machine_config &config);
-	void sprint2(machine_config &config);
-	void dominos4(machine_config &config);
-	void dominos(machine_config &config);
+
 	void sprint2_map(address_map &map);
 };
 
