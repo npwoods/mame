@@ -105,6 +105,7 @@ const double XTAL::known_xtals[] = {
 	  5'000'000, /* 5_MHz_XTAL             Mutant Night */
 	  5'068'800, /* 5.0688_MHz_XTAL        Usually used as MC2661 or COM8116 baud rate clock */
 	  5'185'000, /* 5.185_MHz_XTAL         Intel INTELLEC® 4 */
+	  5'370'000, /* 5.37_MHz_XTAL          HP 95LX */
 	  5'460'000, /* 5.46_MHz_XTAL          ec1840 and ec1841 keyboard */
 	  5'529'600, /* 5.5296_MHz_XTAL        Kontron PSI98 keyboard */
 	  5'626'000, /* 5.626_MHz_XTAL         RCA CDP1869 PAL dot clock */
@@ -124,6 +125,7 @@ const double XTAL::known_xtals[] = {
 	  7'372'800, /* 7.3728_MHz_XTAL        - */
 	  7'864'300, /* 7.8643_MHz_XTAL        Used on InterFlip games as video clock */
 	  7'987'000, /* 7.987_MHz_XTAL         PC9801-86 YM2608 clock */
+	  7'995'500, /* 7.9955_MHz_XTAL        Used on Electronic Devices Italy Galaxy Gunners sound board */
 	  8'000'000, /* 8_MHz_XTAL             Extremely common, used on 100's of PCBs */
 	  8'200'000, /* 8.2_MHz_XTAL           Universal Mr. Do - Model 8021 PCB */
 	  8'388'000, /* 8.388_MHz_XTAL         Nintendo Game Boy Color */

@@ -136,6 +136,7 @@ CPUS["MB86901"] = true
 CPUS["NANOPROCESSOR"] = true
 CPUS["CLIPPER"] = true
 CPUS["CAPRICORN"] = true
+--CPUS["DSPP"] = true
 
 --------------------------------------------------
 -- specify available sound cores; some of these are
@@ -1106,6 +1107,7 @@ function linkProjects_mame_mess(_target, _subtarget)
 		"mos",
 		"motorola",
 		"multitch",
+		"mupid",
 		"nakajima",
 		"nascom",
 		"ncd",
@@ -2248,6 +2250,8 @@ files {
 	MAME_DIR .. "src/mame/machine/hp9825_tape.h",
 	MAME_DIR .. "src/mame/machine/hp9845_printer.cpp",
 	MAME_DIR .. "src/mame/machine/hp9845_printer.h",
+	MAME_DIR .. "src/mame/machine/hp98x5_io_sys.cpp",
+	MAME_DIR .. "src/mame/machine/hp98x5_io_sys.h",
 	MAME_DIR .. "src/mame/video/hp48.cpp",
 	MAME_DIR .. "src/mame/drivers/hp49gp.cpp",
 	MAME_DIR .. "src/mame/drivers/hp9845.cpp",
@@ -2260,6 +2264,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/hp2620.cpp",
 	MAME_DIR .. "src/mame/drivers/hp700.cpp",
 	MAME_DIR .. "src/mame/drivers/hp2640.cpp",
+	MAME_DIR .. "src/mame/drivers/hp95lx.cpp",
 	MAME_DIR .. "src/mame/drivers/hp9825.cpp",
 }
 
@@ -2561,6 +2566,12 @@ files {
 	MAME_DIR .. "src/mame/drivers/mkit09.cpp",
 	MAME_DIR .. "src/mame/drivers/mpf1.cpp",
 	MAME_DIR .. "src/mame/includes/mpf1.h",
+}
+
+createMESSProjects(_target, _subtarget, "mupid")
+files {
+	MAME_DIR .. "src/mame/drivers/mdisk.cpp",
+	MAME_DIR .. "src/mame/drivers/mupid2.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "nakajima")
@@ -3052,6 +3063,7 @@ files {
 	MAME_DIR .. "src/mame/includes/mz700.h",
 	MAME_DIR .. "src/mame/drivers/pc1500.cpp",
 	MAME_DIR .. "src/mame/drivers/pocketc.cpp",
+	MAME_DIR .. "src/mame/machine/pocketc.cpp",
 	MAME_DIR .. "src/mame/includes/pocketc.h",
 	MAME_DIR .. "src/mame/video/pc1401.cpp",
 	MAME_DIR .. "src/mame/machine/pc1401.cpp",
@@ -3288,6 +3300,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/tv965.cpp",
 	MAME_DIR .. "src/mame/drivers/tv990.cpp",
 	MAME_DIR .. "src/mame/drivers/ts3000.cpp",
+	MAME_DIR .. "src/mame/machine/tv955kb.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "tem")
@@ -3595,6 +3608,7 @@ files {
 	MAME_DIR .. "src/mame/audio/socrates.cpp",
 	MAME_DIR .. "src/mame/audio/socrates.h",
 	MAME_DIR .. "src/mame/drivers/inteladv.cpp",
+	MAME_DIR .. "src/mame/drivers/vsmile.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "wang")
@@ -3699,6 +3713,7 @@ files {
 	MAME_DIR .. "src/mame/includes/busicom.h",
 	MAME_DIR .. "src/mame/video/busicom.cpp",
 	MAME_DIR .. "src/mame/drivers/candela.cpp",
+	MAME_DIR .. "src/mame/drivers/cardinal.cpp",
 	MAME_DIR .. "src/mame/drivers/chaos.cpp",
 	MAME_DIR .. "src/mame/drivers/chesstrv.cpp",
 	MAME_DIR .. "src/mame/drivers/cd2650.cpp",
@@ -3809,6 +3824,7 @@ files {
 	MAME_DIR .. "src/mame/drivers/mod8.cpp",
 	MAME_DIR .. "src/mame/drivers/modellot.cpp",
 	MAME_DIR .. "src/mame/drivers/molecular.cpp",
+	MAME_DIR .. "src/mame/drivers/monon_color.cpp",
 	MAME_DIR .. "src/mame/drivers/ms0515.cpp",
 	MAME_DIR .. "src/mame/drivers/ms9540.cpp",
 	MAME_DIR .. "src/mame/drivers/mstation.cpp",

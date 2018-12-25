@@ -509,8 +509,9 @@ MACHINE_CONFIG_START(gauntlet_state::gauntlet_base)
 
 	MCFG_TILEMAP_ADD_STANDARD("playfield", "gfxdecode", 2, gauntlet_state, get_playfield_tile_info, 8,8, SCAN_COLS, 64,64)
 	MCFG_TILEMAP_ADD_STANDARD_TRANSPEN("alpha", "gfxdecode", 2, gauntlet_state, get_alpha_tile_info, 8,8, SCAN_ROWS, 64,32, 0)
-	MCFG_ATARI_MOTION_OBJECTS_ADD("mob", "screen", gauntlet_state::s_mob_config)
-	MCFG_ATARI_MOTION_OBJECTS_GFXDECODE("gfxdecode")
+
+	ATARI_MOTION_OBJECTS(config, m_mob, 0, m_screen, gauntlet_state::s_mob_config);
+	m_mob->set_gfxdecode(m_gfxdecode);
 
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_BEFORE_VBLANK)
@@ -549,30 +550,32 @@ MACHINE_CONFIG_START(gauntlet_state::gauntlet_base)
 MACHINE_CONFIG_END
 
 
-MACHINE_CONFIG_START(gauntlet_state::gauntlet)
+void gauntlet_state::gauntlet(machine_config & config)
+{
 	gauntlet_base(config);
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 104, true)
-MACHINE_CONFIG_END
+	SLAPSTIC(config, m_slapstic_device, 104, true);
+}
 
 
-MACHINE_CONFIG_START(gauntlet_state::gaunt2p)
+void gauntlet_state::gaunt2p(machine_config & config)
+{
 	gauntlet_base(config);
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 107, true)
-MACHINE_CONFIG_END
+	SLAPSTIC(config, m_slapstic_device, 107, true);
+}
 
 
-MACHINE_CONFIG_START(gauntlet_state::gauntlet2)
+void gauntlet_state::gauntlet2(machine_config & config)
+{
 	gauntlet_base(config);
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 106, true)
-MACHINE_CONFIG_END
+	SLAPSTIC(config, m_slapstic_device, 106, true);
+}
 
 
-MACHINE_CONFIG_START(gauntlet_state::vindctr2)
+void gauntlet_state::vindctr2(machine_config & config)
+{
 	gauntlet_base(config);
-	MCFG_DEVICE_ADD("slapstic", SLAPSTIC, 118, true)
-MACHINE_CONFIG_END
-
-
+	SLAPSTIC(config, m_slapstic_device, 118, true);
+}
 
 
 /*************************************
