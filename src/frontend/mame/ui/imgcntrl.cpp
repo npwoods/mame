@@ -25,7 +25,6 @@
 
 
 namespace ui {
-
 /***************************************************************************
     IMPLEMENTATION
 ***************************************************************************/
@@ -40,25 +39,38 @@ menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, rende
 	, m_create_ok(false)
 	, m_create_confirmed(false)
 {
-	m_submenu_result.i = -1;
+	if (m_image.software_list_name())
+		m_sld = software_list_device::find_by_name(mui.machine().config(), m_image.software_list_name());
+	else
+		m_sld = nullptr;
+	m_swi = m_image.software_entry();
+	m_swp = m_image.part_entry();
 
-	m_state = START_FILE;
-
-	// if the image exists, set the working directory to the parent directory
-	if (m_image.exists())
+	if (m_swi != nullptr)
 	{
-		m_current_file.assign(m_image.filename());
-		util::zippath_parent(m_current_directory, m_current_file);
+		m_state = START_OTHER_PART;
+		m_current_directory = m_image.working_directory();
 	}
 	else
 	{
-		m_current_directory = m_image.working_directory();
-	}
+		m_state = START_FILE;
 
-	// check to see if the path exists; if not clear it
-	util::zippath_directory::ptr directory;
-	if (util::zippath_directory::open(m_current_directory, directory) != osd_file::error::NONE)
-		m_current_directory.clear();
+		// if the image exists, set the working directory to the parent directory
+		if (m_image.exists())
+		{
+			m_current_file.assign(m_image.filename());
+			util::zippath_parent(m_current_directory, m_current_file);
+		}
+		else
+		{
+			m_current_directory = m_image.working_directory();
+		}
+
+		// check to see if the path exists; if not then set to current directory
+		util::zippath_directory::ptr dir;
+		if (util::zippath_directory::open(m_current_directory, dir) != osd_file::error::NONE)
+			osd_get_full_path(m_current_directory, ".");
+	}
 }
 
 
@@ -109,6 +121,32 @@ void menu_control_device_image::test_create(bool &can_create, bool &need_confirm
 			can_create = false;
 			need_confirm = false;
 			fatalerror("Unexpected\n");
+	}
+}
+
+
+//-------------------------------------------------
+//  load_software_part
+//-------------------------------------------------
+
+void menu_control_device_image::load_software_part()
+{
+	std::string temp_name = string_format("%s:%s:%s", m_sld->list_name(), m_swi->shortname(), m_swp->name());
+
+	driver_enumerator drivlist(machine().options(), machine().options().system_name());
+	drivlist.next();
+	media_auditor auditor(drivlist);
+	media_auditor::summary summary = auditor.audit_software(m_sld->list_name(), (software_info *)m_swi, AUDIT_VALIDATE_FAST);
+	// if everything looks good, load software
+	if (summary == media_auditor::CORRECT || summary == media_auditor::BEST_AVAILABLE || summary == media_auditor::NONE_NEEDED)
+	{
+		m_image.load_software(temp_name);
+		stack_pop();
+	}
+	else
+	{
+		machine().popmessage(_("The software selected is missing one or more required ROM or CHD images. Please select a different one."));
+		m_state = SELECT_SOFTLIST;
 	}
 }
 
@@ -243,8 +281,13 @@ void menu_control_device_image::handle()
 			break;
 
 		case menu_file_selector::result::CREATE:
-			menu::stack_push<menu_file_create>(ui(), container(), m_image, m_current_directory, m_current_file, m_create_format, m_option_resolution, m_create_ok);
+			menu::stack_push<menu_file_create>(ui(), container(), &m_image, m_current_directory, m_current_file, m_create_format, m_option_resolution, m_create_ok);
 			m_state = CHECK_CREATE;
+			break;
+
+		case menu_file_selector::result::SOFTLIST:
+			m_state = START_SOFTLIST;
+			handle();
 			break;
 
 		default: // return to system

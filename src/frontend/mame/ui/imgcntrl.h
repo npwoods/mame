@@ -29,7 +29,8 @@ public:
 protected:
 	enum
 	{
-		START_FILE,
+		START_FILE, START_OTHER_PART, START_SOFTLIST,
+		SELECT_PARTLIST, SELECT_ONE_PART, SELECT_OTHER_PART,
 		SELECT_FILE, CREATE_FILE, CREATE_CONFIRM, CHECK_CREATE, DO_CREATE, SELECT_SOFTLIST,
 		LAST_ID
 	};
@@ -60,10 +61,15 @@ private:
 	bool							m_create_confirmed;
 	const image_device_format *					m_create_format;
 	std::unique_ptr<util::option_resolution>	m_option_resolution;
+	const software_info *           m_swi;
+	const software_part *           m_swp;
+	class software_list_device *    m_sld;
+	std::string                     m_software_info_name;
 
 	// methods
 	virtual void populate(float &customtop, float &custombottom) override;
 	void test_create(bool &can_create, bool &need_confirm);
+	void load_software_part();
 };
 
 } // namespace ui
