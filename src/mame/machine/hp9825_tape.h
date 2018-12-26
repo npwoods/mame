@@ -30,7 +30,7 @@ public:
 
 	// device_image_interface overrides
 	virtual image_init_result call_load() override;
-	virtual image_init_result call_create(int format_type, util::option_resolution *format_options) override;
+	virtual image_init_result call_create(const image_device_format *create_format, util::option_resolution *format_options) override;
 	virtual void call_unload() override;
 	virtual std::string call_display() override;
 	virtual iodevice_t image_type()  const override { return IO_MAGTAPE; }
