@@ -217,15 +217,15 @@ void nes_namcot163_device::device_start()
 	}
 	else if (m_n163_vol == 3) // Submapper 3 - N163 expansion sound: 11.0-13.0 dB louder than NES APU
 	{
-		m_namco163snd->set_output_gain(ALL_OUTPUTS, 1.125);
+		m_namco163snd->set_output_gain(ALL_OUTPUTS, 1.125f);
 	}
 	else if (m_n163_vol == 4) // Submapper 4 - N163 expansion sound: 16.0-17.0 dB louder than NES APU
 	{
-		m_namco163snd->set_output_gain(ALL_OUTPUTS, 1.17);
+		m_namco163snd->set_output_gain(ALL_OUTPUTS, 1.17f);
 	}
 	else if (m_n163_vol == 5) // Submapper 5 - N163 expansion sound: 18.0-19.5 dB louder than NES APU
 	{
-		m_namco163snd->set_output_gain(ALL_OUTPUTS, 1.19);
+		m_namco163snd->set_output_gain(ALL_OUTPUTS, 1.19f);
 	}
 }
 
