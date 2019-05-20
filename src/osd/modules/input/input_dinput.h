@@ -77,6 +77,8 @@ public:
 		DWORD cooperative_level)
 	{
 		HRESULT result;
+		std::shared_ptr<win_window_info> window;
+		HWND hwnd;
 
 		// convert instance name to utf8
 		std::string utf8_instance_name = osd::text::from_tstring(instance->tszInstanceName);
@@ -120,8 +122,22 @@ public:
 				goto error;
 		}
 
+		// default window to the first window in the list
+		window = std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front());
+		if (window->slave_ui_mode())
+		{
+			// in slave UI mode we have to ignore the caller and hook up to the desktop window
+			hwnd = GetDesktopWindow();
+			cooperative_level &= ~DISCL_FOREGROUND;
+			cooperative_level |= DISCL_BACKGROUND;
+		}
+		else
+		{
+			hwnd = window->platform_window();
+		}
+
 		// set the cooperative level
-		result = devinfo->dinput.device->SetCooperativeLevel(std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front())->platform_window(), cooperative_level);
+		result = devinfo->dinput.device->SetCooperativeLevel(hwnd, cooperative_level);
 		if (result != DI_OK)
 			goto error;
 

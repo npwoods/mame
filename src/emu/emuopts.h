@@ -197,6 +197,9 @@
 #define OPTION_HTTP_PORT            "http_port"
 #define OPTION_HTTP_ROOT            "http_root"
 
+// slave UI
+#define OPTION_SLAVE_UI				"slave_ui"
+
 //**************************************************************************
 //  TYPE DEFINITIONS
 //**************************************************************************
@@ -490,6 +493,9 @@ public:
 	bool has_slot_option(const std::string &device_name) const { return find_slot_option(device_name) ? true : false; }
 	const ::image_option &image_option(const std::string &device_name) const;
 	::image_option &image_option(const std::string &device_name);
+
+	// slave UI
+	const char *slave_ui() const { return value(OPTION_SLAVE_UI); }
 
 protected:
 	virtual void command_argument_processed() override;

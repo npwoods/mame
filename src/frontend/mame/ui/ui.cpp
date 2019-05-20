@@ -20,6 +20,7 @@
 #include "luaengine.h"
 #include "cheat.h"
 #include "rendfont.h"
+#include "../info.h"
 #include "uiinput.h"
 #include "ui/ui.h"
 #include "ui/info.h"
@@ -213,6 +214,26 @@ void mame_ui_manager::init()
 	memcpy(dst,mouse_bitmap,32*32*sizeof(uint32_t));
 	m_mouse_arrow_texture = machine().render().texture_alloc();
 	m_mouse_arrow_texture->set_bitmap(m_mouse_bitmap, m_mouse_bitmap.cliprect(), TEXFORMAT_ARGB32);
+
+	// slave UI
+	if (machine().options().slave_ui() && !m_slave_ui_initialized)
+	{
+		m_slave_ui_thread = std::thread([this]()
+		{
+			std::cout << "OK STATUS ### Emulation commenced; ready for commands" << std::endl;
+			emit_status();
+
+			for (;;)
+			{
+				std::string str;
+				std::getline(std::cin, str);
+
+				std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
+				m_slave_ui_command_queue.emplace(std::move(str));
+			};
+		});
+		m_slave_ui_initialized = true;
+	}
 }
 
 
@@ -391,6 +412,14 @@ void mame_ui_manager::set_startup_text(const char *text, bool force)
 
 void mame_ui_manager::update_and_render(render_container &container)
 {
+	// in slave UI mode, behave very differently (in the end this should probably be
+	// done in a more object oriented fashion)
+	if (machine().options().slave_ui())
+	{
+		update_and_render_slave_ui(container);
+		return;
+	}
+
 	// always start clean
 	container.empty();
 
@@ -443,6 +472,165 @@ void mame_ui_manager::update_and_render(render_container &container)
 		using namespace std::placeholders;
 		set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_ingame, this, _1));
 	}
+}
+
+
+//-------------------------------------------------
+//  strsplit
+//-------------------------------------------------
+
+static std::vector<std::string> strsplit(const std::string &str, std::function<bool (char)> is_delim)
+{
+	std::vector<std::string> results;
+
+	size_t word_length = 0;
+	for (size_t i = 0; i <= str.length(); i++)
+	{
+		if (i < str.length() && !is_delim(str[i]))
+		{
+			word_length++;
+		}
+		else if (word_length > 0)
+		{
+			std::string word = str.substr(i - word_length, word_length);
+			results.emplace_back(std::move(word));
+			word_length = 0;
+		}
+	}
+
+	return results;
+}
+
+
+//-------------------------------------------------
+//  strsplit
+//-------------------------------------------------
+
+static std::vector<std::string> strsplit(const std::string &str)
+{
+	return strsplit(str, [](char ch) { return ch == ' ' || ch == '\r' || ch == '\n'; });
+}
+
+
+//-------------------------------------------------
+//  update_and_render_slave_ui
+//-------------------------------------------------
+
+bool					mame_ui_manager::m_slave_ui_initialized;
+std::thread				mame_ui_manager::m_slave_ui_thread;
+std::mutex				mame_ui_manager::m_slave_ui_mutex;
+std::queue<std::string> mame_ui_manager::m_slave_ui_command_queue;
+
+void mame_ui_manager::update_and_render_slave_ui(render_container &container)
+{
+	std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
+
+	while (!m_slave_ui_command_queue.empty())
+	{
+		auto args = strsplit(m_slave_ui_command_queue.front());
+		if (!args.empty())
+			invoke_slave_ui_command(args);
+
+		m_slave_ui_command_queue.pop();
+	}
+}
+
+
+//-------------------------------------------------
+//  bool_from_string
+//-------------------------------------------------
+
+static bool bool_from_string(const std::string &s)
+{
+	return s == "on" || s == "1" || s == "true";
+}
+
+
+//-------------------------------------------------
+//  string_from_bool
+//-------------------------------------------------
+
+static const char *string_from_bool(bool b)
+{
+	return b ? "true" : "false";
+}
+
+
+//-------------------------------------------------
+//  invoke_slave_ui_command
+//-------------------------------------------------
+
+bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &args)
+{
+	if (args[0] == "exit")
+	{
+		machine().schedule_exit();
+		std::cout << "OK ### Exit scheduled" << std::endl;
+	}
+	else if (args[0] == "ping")
+	{
+		std::cout << "OK STATUS ### Ping... pong... " << std::endl;
+		emit_status();
+	}
+	else if (args[0] == "soft_reset")
+	{
+		machine().schedule_soft_reset();
+		std::cout << "OK ### Soft Reset Scheduled" << std::endl;
+	}
+	else if (args[0] == "throttled")
+	{
+		bool throttled = bool_from_string(args[1]);
+		machine().video().set_throttled(throttled);
+		std::cout << "OK STATUS ### Throttled set to " << string_from_bool(throttled) << std::endl;
+		emit_status();
+	}
+	else if (args[0] == "throttle_rate")
+	{
+		float throttle_rate = atof(args[1].c_str());
+		machine().video().set_throttle_rate(throttle_rate);
+		std::cout << "OK STATUS ### Throttle rate set to " << throttle_rate << std::endl;
+		emit_status();
+	}
+	else if (args[0] == "frameskip")
+	{
+		machine().video().set_frameskip(args[1] == "auto" ? -1 : atoi(args[1].c_str()));
+		std::cout << "OK STATUS ### Frame skip rate set to " << args[1] << std::endl;
+		emit_status();
+	}
+	else if (args[0] == "pause")
+	{
+		machine().pause();
+		std::cout << "OK STATUS ### Paused" << std::endl;
+		emit_status();
+	}
+	else if (args[0] == "resume")
+	{
+		machine().resume();
+		std::cout << "OK STATUS ### Resumed" << std::endl;
+		emit_status();
+	}
+	else
+	{
+		std::cout << "ERROR ### Unrecognized command '" << args[0] << "'" << std::endl;
+	}
+	return true;
+}
+
+
+//-------------------------------------------------
+//  emit_status
+//-------------------------------------------------
+
+void mame_ui_manager::emit_status()
+{
+	std::cout << "<status" << std::endl;
+	std::cout << "\tpaused=\"" << string_from_bool(machine().paused()) << "\">" << std::endl;
+	std::cout << "\t<video" << std::endl;
+	std::cout << "\t\tframeskip=\"" << (machine().video().frameskip() == -1 ? "auto" : std::to_string(machine().video().frameskip())) << "\"" << std::endl;
+	std::cout << "\t\tspeed_text=\"" << machine().video().speed_text() << "\"" << std::endl;
+	std::cout << "\t\tthrottled=\"" << string_from_bool(machine().video().throttled()) << "\"" << std::endl;
+	std::cout << "\t\tthrottle_rate=\"" << machine().video().throttle_rate() << "\"/>" << std::endl;
+	std::cout << "</status>" << std::endl;
 }
 
 

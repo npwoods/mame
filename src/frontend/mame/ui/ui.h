@@ -23,6 +23,7 @@
 
 #include <functional>
 #include <vector>
+#include <queue>
 
 namespace ui {
 class menu_item;
@@ -258,6 +259,12 @@ private:
 	static std::vector<ui::menu_item> slider_list;
 	static slider_state     *slider_current;
 
+	// slave UI statics
+	static bool				m_slave_ui_initialized;
+	static std::thread		m_slave_ui_thread;
+	static std::mutex		m_slave_ui_mutex;
+	static std::queue<std::string> m_slave_ui_command_queue;
+
 	// UI handlers
 	uint32_t handler_messagebox(render_container &container);
 	uint32_t handler_messagebox_anykey(render_container &container);
@@ -268,6 +275,11 @@ private:
 	// private methods
 	void exit();
 	std::unique_ptr<slider_state> slider_alloc(int id, const char *title, int32_t minval, int32_t defval, int32_t maxval, int32_t incval, void *arg);
+	
+	// slave UI
+	void update_and_render_slave_ui(render_container &container);
+	bool invoke_slave_ui_command(const std::vector<std::string> &args);
+	void emit_status();
 
 	// slider controls
 	virtual int32_t slider_changed(running_machine &machine, void *arg, int id, std::string *str, int32_t newval) override;

@@ -51,6 +51,7 @@ public:
 
 	virtual render_target *target() override { return m_target; }
 	int fullscreen() const override { return m_fullscreen; }
+	bool slave_ui_mode() const { return m_slave_ui_mode; }
 
 	void update() override;
 
@@ -144,6 +145,7 @@ private:
 #endif
 
 	running_machine &   m_machine;
+	bool				m_slave_ui_mode;
 };
 
 struct osd_draw_callbacks
