@@ -396,6 +396,7 @@ kdt6.cpp
 kim1.cpp
 konin.cpp
 kramermc.cpp
+krokha.cpp
 kron.cpp
 krz2000.cpp
 kyocera.cpp
@@ -427,6 +428,7 @@ mac.cpp
 mac128.cpp
 macpci.cpp
 magnum.cpp
+mattelchess.cpp
 mbc200.cpp
 mbc55x.cpp
 mbee.cpp
@@ -498,6 +500,7 @@ multi16.cpp
 multi8.cpp
 mupid2.cpp
 mvme147.cpp
+mvme162.cpp
 mx2178.cpp
 myb3k.cpp
 mycom.cpp
@@ -773,6 +776,7 @@ tek405x.cpp
 tek410x.cpp
 tek440x.cpp
 tekxp33x.cpp
+telex274.cpp
 terak.cpp
 terco.cpp
 terminal.cpp

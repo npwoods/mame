@@ -18,8 +18,8 @@
 
   Game Notes:
 
-  * Mini-Boy 7. 
-  
+  * Mini-Boy 7.
+
   Seven games in one, plus Ad message support.
   http://www.arcadeflyers.com/?page=thumbs&db=videodb&id=4275
 
@@ -173,7 +173,7 @@
   [2011... 2019]
 
   - Wired PIA and AY8910 properly.
-  - Implemented and documented the PIA port B multiplexion. 
+  - Implemented and documented the PIA port B multiplexion.
   - Lot of fixes, getting Mini-Boy 7 working.
   - Added support for Super Mini-Boy.
   - Added technical and games notes.
@@ -228,6 +228,10 @@ public:
 
 	void miniboy7(machine_config &config);
 
+protected:
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
+
 private:
 	void ay_pa_w(uint8_t data);
 	void ay_pb_w(uint8_t data);
@@ -240,9 +244,6 @@ private:
 	void miniboy7_palette(palette_device &palette) const;
 
 	void miniboy7_map(address_map &map);
-
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
 
 	required_shared_ptr<uint8_t> m_videoram_a;
 	required_shared_ptr<uint8_t> m_colorram_a;
@@ -546,10 +547,10 @@ static INPUT_PORTS_START( sminiboy )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("Hold 1 / Play")        PORT_CODE(KEYCODE_Z)  // hold 1 / play
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("Service / Books")      PORT_CODE(KEYCODE_0)  // service / books
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("08 - changes screen")  PORT_CODE(KEYCODE_E)  // (changes in screen)
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("10")   PORT_CODE(KEYCODE_R)  // 
-	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("20")   PORT_CODE(KEYCODE_T)  // 
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("40")   PORT_CODE(KEYCODE_Y)  // 
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("80")   PORT_CODE(KEYCODE_U)  // 
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("10")   PORT_CODE(KEYCODE_R)  //
+	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("20")   PORT_CODE(KEYCODE_T)  //
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("40")   PORT_CODE(KEYCODE_Y)  //
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("80")   PORT_CODE(KEYCODE_U)  //
 
 
 	PORT_START("DSW2")
@@ -746,7 +747,7 @@ ROM_START( miniboy7a ) /* The term CREDIT has been changed to POINT is this vers
 ROM_END
 
 /*
-  Bonaza's Super Mini Boy.
+  Bonanza's Super Mini Boy.
   PCB: MVX-001-02
 
   1x 6502
@@ -782,6 +783,6 @@ ROM_END
 ***********************************/
 
 //     YEAR  NAME       PARENT    MACHINE   INPUT     CLASS           INIT        ROT    COMPANY                     FULLNAME             FLAGS                LAYOUT
-GAME(  1984, sminiboy,  0,        miniboy7, sminiboy, miniboy7_state, empty_init, ROT0, "Bonanza Enterprises, Ltd", "Super Mini-Boy",     MACHINE_NOT_WORKING )
-GAMEL( 1983, miniboy7,  0,        miniboy7, miniboy7, miniboy7_state, empty_init, ROT0, "Bonanza Enterprises, Ltd", "Mini-Boy 7 (set 1)", MACHINE_NO_COCKTAIL, layout_miniboy7 )
-GAMEL( 1983, miniboy7a, miniboy7, miniboy7, miniboy7, miniboy7_state, empty_init, ROT0, "Bonanza Enterprises, Ltd", "Mini-Boy 7 (set 2)", MACHINE_NO_COCKTAIL, layout_miniboy7 )
+GAME(  1984, sminiboy,  0,        miniboy7, sminiboy, miniboy7_state, empty_init, ROT0, "Bonanza Enterprises, Ltd", "Super Mini-Boy",     MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+GAMEL( 1983, miniboy7,  0,        miniboy7, miniboy7, miniboy7_state, empty_init, ROT0, "Bonanza Enterprises, Ltd", "Mini-Boy 7 (set 1)", MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE, layout_miniboy7 )
+GAMEL( 1983, miniboy7a, miniboy7, miniboy7, miniboy7, miniboy7_state, empty_init, ROT0, "Bonanza Enterprises, Ltd", "Mini-Boy 7 (set 2)", MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE, layout_miniboy7 )
