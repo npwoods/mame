@@ -206,9 +206,10 @@ const char info_xml_creator::s_dtd_string[] =
 //  info_xml_creator - constructor
 //-------------------------------------------------
 
-info_xml_creator::info_xml_creator(emu_options const &options, bool dtd)
+info_xml_creator::info_xml_creator(emu_options const &options, bool dtd, bool light)
 	: m_output(nullptr)
 	, m_dtd(dtd)
+	, m_light(light)
 {
 }
 
@@ -473,25 +474,28 @@ void info_xml_creator::output_one(driver_enumerator &drivlist, device_type_set *
 	if (driver.manufacturer != nullptr)
 		fprintf(m_output, "\t\t<manufacturer>%s</manufacturer>\n", util::xml::normalize_string(driver.manufacturer));
 
-	// now print various additional information
-	output_bios(config->root_device());
-	output_rom(&drivlist, config->root_device());
-	output_device_refs(config->root_device());
-	output_sample(config->root_device());
-	output_chips(config->root_device(), "");
-	output_display(config->root_device(), &drivlist.driver().flags, "");
-	output_sound(config->root_device());
-	output_input(portlist);
-	output_switches(portlist, "", IPT_DIPSWITCH, "dipswitch", "diplocation", "dipvalue");
-	output_switches(portlist, "", IPT_CONFIG, "configuration", "conflocation", "confsetting");
-	output_ports(portlist);
-	output_adjusters(portlist);
-	output_driver(driver, overall_unemulated, overall_imperfect);
-	output_features(driver.type, overall_unemulated, overall_imperfect);
-	output_images(config->root_device(), "");
-	output_slots(*config, config->root_device(), "", devtypes);
-	output_software_list(config->root_device());
-	output_ramoptions(config->root_device());
+	if (!m_light)
+	{
+		// now print various additional information
+		output_bios(config->root_device());
+		output_rom(&drivlist, config->root_device());
+		output_device_refs(config->root_device());
+		output_sample(config->root_device());
+		output_chips(config->root_device(), "");
+		output_display(config->root_device(), &drivlist.driver().flags, "");
+		output_sound(config->root_device());
+		output_input(portlist);
+		output_switches(portlist, "", IPT_DIPSWITCH, "dipswitch", "diplocation", "dipvalue");
+		output_switches(portlist, "", IPT_CONFIG, "configuration", "conflocation", "confsetting");
+		output_ports(portlist);
+		output_adjusters(portlist);
+		output_driver(driver, overall_unemulated, overall_imperfect);
+		output_features(driver.type, overall_unemulated, overall_imperfect);
+		output_images(config->root_device(), "");
+		output_slots(*config, config->root_device(), "", devtypes);
+		output_software_list(config->root_device());
+		output_ramoptions(config->root_device());
+	}
 
 	// close the topmost tag
 	fprintf(m_output, "\t</%s>\n", XML_TOP);
