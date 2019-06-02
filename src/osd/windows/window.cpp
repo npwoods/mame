@@ -1081,8 +1081,8 @@ int win_window_info::complete_create()
 	// are we in slave UI mode?
 	HWND hwnd;
 	const char *slave_ui_window_name = machine().options().slave_ui();
-	m_slave_ui_mode = slave_ui_window_name ? true : false;
-	if (slave_ui_window_name)
+	m_slave_ui_mode = slave_ui_window_name && *slave_ui_window_name ? true : false;
+	if (m_slave_ui_mode)
 	{
 		// we are in slave UI mode; either this value is an HWND or a window name
 		hwnd = (HWND)atoll(slave_ui_window_name);

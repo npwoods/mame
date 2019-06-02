@@ -215,18 +215,25 @@ void mame_ui_manager::init()
 	m_mouse_arrow_texture = machine().render().texture_alloc();
 	m_mouse_arrow_texture->set_bitmap(m_mouse_bitmap, m_mouse_bitmap.cliprect(), TEXFORMAT_ARGB32);
 
-	// slave UI
-	if (machine().options().slave_ui() && !m_slave_ui_initialized)
+	// slave UI hacks
+	if (machine().options().slave_ui() && *machine().options().slave_ui() && !m_slave_ui_initialized)
 	{
 		m_slave_ui_thread = std::thread([this]()
 		{
 			std::cout << "OK STATUS ### Emulation commenced; ready for commands" << std::endl;
 			emit_status();
 
-			for (;;)
+			bool done = false;
+			while (!done)
 			{
 				std::string str;
 				std::getline(std::cin, str);
+
+				// extremely gross; intercept the exit command as a prompt to above out of this loop
+				done = str[0] == 'e'
+					&& str[1] == 'x'
+					&& str[2] == 'i'
+					&& str[3] == 't';
 
 				std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
 				m_slave_ui_command_queue.emplace(std::move(str));
@@ -414,7 +421,7 @@ void mame_ui_manager::update_and_render(render_container &container)
 {
 	// in slave UI mode, behave very differently (in the end this should probably be
 	// done in a more object oriented fashion)
-	if (machine().options().slave_ui())
+	if (machine().options().slave_ui() && *machine().options().slave_ui())
 	{
 		update_and_render_slave_ui(container);
 		return;
@@ -564,6 +571,7 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 {
 	if (args[0] == "exit")
 	{
+		m_slave_ui_thread.join();
 		machine().schedule_exit();
 		std::cout << "OK ### Exit scheduled" << std::endl;
 	}
