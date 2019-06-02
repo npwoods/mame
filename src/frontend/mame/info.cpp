@@ -396,43 +396,49 @@ void info_xml_creator::output_one(driver_enumerator &drivlist, device_type_set *
 	std::string errors;
 	device_t::feature_type overall_unemulated(driver.type.unemulated_features());
 	device_t::feature_type overall_imperfect(driver.type.imperfect_features());
-	for (device_t &device : iter)
+	if (!m_light)
 	{
-		portlist.append(device, errors);
-		overall_unemulated |= device.type().unemulated_features();
-		overall_imperfect |= device.type().imperfect_features();
+		for (device_t &device : iter)
+		{
+			portlist.append(device, errors);
+			overall_unemulated |= device.type().unemulated_features();
+			overall_imperfect |= device.type().imperfect_features();
 
-		if (devtypes && device.owner())
-			devtypes->insert(&device.type());
+			if (devtypes && device.owner())
+				devtypes->insert(&device.type());
+		}
 	}
 
 	// renumber player numbers for controller ports
 	int player_offset = 0;
 	// but treat keyboard count separately from players' number
 	int kbd_offset = 0;
-	for (device_t &device : iter)
+	if (!m_light)
 	{
-		int nplayers = 0;
-		bool new_kbd = false;
-		for (auto &port : portlist)
-			if (&port.second->device() == &device)
-				for (ioport_field &field : port.second->fields())
-					if (field.type() >= IPT_START && field.type() < IPT_ANALOG_LAST)
-					{
-						if (field.type() == IPT_KEYBOARD)
+		for (device_t &device : iter)
+		{
+			int nplayers = 0;
+			bool new_kbd = false;
+			for (auto &port : portlist)
+				if (&port.second->device() == &device)
+					for (ioport_field &field : port.second->fields())
+						if (field.type() >= IPT_START && field.type() < IPT_ANALOG_LAST)
 						{
-							if (!new_kbd)
-								new_kbd = true;
-							field.set_player(field.player() + kbd_offset);
+							if (field.type() == IPT_KEYBOARD)
+							{
+								if (!new_kbd)
+									new_kbd = true;
+								field.set_player(field.player() + kbd_offset);
+							}
+							else
+							{
+								nplayers = std::max(nplayers, field.player() + 1);
+								field.set_player(field.player() + player_offset);
+							}
 						}
-						else
-						{
-							nplayers = std::max(nplayers, field.player() + 1);
-							field.set_player(field.player() + player_offset);
-						}
-					}
-		player_offset += nplayers;
-		if (new_kbd) kbd_offset++;
+			player_offset += nplayers;
+			if (new_kbd) kbd_offset++;
+		}
 	}
 
 	// print the header and the machine name
