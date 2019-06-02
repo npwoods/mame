@@ -48,7 +48,6 @@ private:
 
 	// commands
 	void listxml(const std::vector<std::string> &args);
-	void listxmllight(const std::vector<std::string> &args);
 	void listfull(const std::vector<std::string> &args);
 	void listsource(const std::vector<std::string> &args);
 	void listclones(const std::vector<std::string> &args);

@@ -387,6 +387,55 @@ void info_xml_creator::output_footer()
 
 void info_xml_creator::output_one(driver_enumerator &drivlist, device_type_set *devtypes)
 {
+	// BEGIN COPY AND PASTE HACK
+	if (m_light)
+	{
+		const game_driver &driver = drivlist.driver();
+
+		// print the header and the machine name
+		fprintf(m_output, "\t<%s name=\"%s\"", XML_TOP, util::xml::normalize_string(driver.name));
+
+		// strip away any path information from the source_file and output it
+		const char *start = strrchr(driver.type.source(), '/');
+		if (!start)
+			start = strrchr(driver.type.source(), '\\');
+		start = start ? (start + 1) : driver.type.source();
+		fprintf(m_output, " sourcefile=\"%s\"", util::xml::normalize_string(start));
+
+		// append bios and runnable flags
+		if (driver.flags & machine_flags::IS_BIOS_ROOT)
+			fprintf(m_output, " isbios=\"yes\"");
+		if (driver.flags & machine_flags::MECHANICAL)
+			fprintf(m_output, " ismechanical=\"yes\"");
+
+		// display clone information
+		int clone_of = drivlist.find(driver.parent);
+		if (clone_of != -1 && !(drivlist.driver(clone_of).flags & machine_flags::IS_BIOS_ROOT))
+			fprintf(m_output, " cloneof=\"%s\"", util::xml::normalize_string(drivlist.driver(clone_of).name));
+		if (clone_of != -1)
+			fprintf(m_output, " romof=\"%s\"", util::xml::normalize_string(drivlist.driver(clone_of).name));
+
+		// close the game tag
+		fprintf(m_output, ">\n");
+
+		// output game description
+		if (driver.type.fullname() != nullptr)
+			fprintf(m_output, "\t\t<description>%s</description>\n", util::xml::normalize_string(driver.type.fullname()));
+
+		// print the year only if is a number or another allowed character (? or +)
+		if (driver.year != nullptr && strspn(driver.year, "0123456789?+") == strlen(driver.year))
+			fprintf(m_output, "\t\t<year>%s</year>\n", util::xml::normalize_string(driver.year));
+
+		// print the manufacturer information
+		if (driver.manufacturer != nullptr)
+			fprintf(m_output, "\t\t<manufacturer>%s</manufacturer>\n", util::xml::normalize_string(driver.manufacturer));
+
+		// close the topmost tag and return
+		fprintf(m_output, "\t</%s>\n", XML_TOP);
+		return;
+	}
+	// END COPY AND PASTE HACK
+
 	const game_driver &driver = drivlist.driver();
 	std::shared_ptr<machine_config> const config(drivlist.config());
 	device_iterator iter(config->root_device());
@@ -396,49 +445,43 @@ void info_xml_creator::output_one(driver_enumerator &drivlist, device_type_set *
 	std::string errors;
 	device_t::feature_type overall_unemulated(driver.type.unemulated_features());
 	device_t::feature_type overall_imperfect(driver.type.imperfect_features());
-	if (!m_light)
+	for (device_t &device : iter)
 	{
-		for (device_t &device : iter)
-		{
-			portlist.append(device, errors);
-			overall_unemulated |= device.type().unemulated_features();
-			overall_imperfect |= device.type().imperfect_features();
+		portlist.append(device, errors);
+		overall_unemulated |= device.type().unemulated_features();
+		overall_imperfect |= device.type().imperfect_features();
 
-			if (devtypes && device.owner())
-				devtypes->insert(&device.type());
-		}
+		if (devtypes && device.owner())
+			devtypes->insert(&device.type());
 	}
 
 	// renumber player numbers for controller ports
 	int player_offset = 0;
 	// but treat keyboard count separately from players' number
 	int kbd_offset = 0;
-	if (!m_light)
+	for (device_t &device : iter)
 	{
-		for (device_t &device : iter)
-		{
-			int nplayers = 0;
-			bool new_kbd = false;
-			for (auto &port : portlist)
-				if (&port.second->device() == &device)
-					for (ioport_field &field : port.second->fields())
-						if (field.type() >= IPT_START && field.type() < IPT_ANALOG_LAST)
+		int nplayers = 0;
+		bool new_kbd = false;
+		for (auto &port : portlist)
+			if (&port.second->device() == &device)
+				for (ioport_field &field : port.second->fields())
+					if (field.type() >= IPT_START && field.type() < IPT_ANALOG_LAST)
+					{
+						if (field.type() == IPT_KEYBOARD)
 						{
-							if (field.type() == IPT_KEYBOARD)
-							{
-								if (!new_kbd)
-									new_kbd = true;
-								field.set_player(field.player() + kbd_offset);
-							}
-							else
-							{
-								nplayers = std::max(nplayers, field.player() + 1);
-								field.set_player(field.player() + player_offset);
-							}
+							if (!new_kbd)
+								new_kbd = true;
+							field.set_player(field.player() + kbd_offset);
 						}
-			player_offset += nplayers;
-			if (new_kbd) kbd_offset++;
-		}
+						else
+						{
+							nplayers = std::max(nplayers, field.player() + 1);
+							field.set_player(field.player() + player_offset);
+						}
+					}
+		player_offset += nplayers;
+		if (new_kbd) kbd_offset++;
 	}
 
 	// print the header and the machine name
@@ -480,28 +523,25 @@ void info_xml_creator::output_one(driver_enumerator &drivlist, device_type_set *
 	if (driver.manufacturer != nullptr)
 		fprintf(m_output, "\t\t<manufacturer>%s</manufacturer>\n", util::xml::normalize_string(driver.manufacturer));
 
-	if (!m_light)
-	{
-		// now print various additional information
-		output_bios(config->root_device());
-		output_rom(&drivlist, config->root_device());
-		output_device_refs(config->root_device());
-		output_sample(config->root_device());
-		output_chips(config->root_device(), "");
-		output_display(config->root_device(), &drivlist.driver().flags, "");
-		output_sound(config->root_device());
-		output_input(portlist);
-		output_switches(portlist, "", IPT_DIPSWITCH, "dipswitch", "diplocation", "dipvalue");
-		output_switches(portlist, "", IPT_CONFIG, "configuration", "conflocation", "confsetting");
-		output_ports(portlist);
-		output_adjusters(portlist);
-		output_driver(driver, overall_unemulated, overall_imperfect);
-		output_features(driver.type, overall_unemulated, overall_imperfect);
-		output_images(config->root_device(), "");
-		output_slots(*config, config->root_device(), "", devtypes);
-		output_software_list(config->root_device());
-		output_ramoptions(config->root_device());
-	}
+	// now print various additional information
+	output_bios(config->root_device());
+	output_rom(&drivlist, config->root_device());
+	output_device_refs(config->root_device());
+	output_sample(config->root_device());
+	output_chips(config->root_device(), "");
+	output_display(config->root_device(), &drivlist.driver().flags, "");
+	output_sound(config->root_device());
+	output_input(portlist);
+	output_switches(portlist, "", IPT_DIPSWITCH, "dipswitch", "diplocation", "dipvalue");
+	output_switches(portlist, "", IPT_CONFIG, "configuration", "conflocation", "confsetting");
+	output_ports(portlist);
+	output_adjusters(portlist);
+	output_driver(driver, overall_unemulated, overall_imperfect);
+	output_features(driver.type, overall_unemulated, overall_imperfect);
+	output_images(config->root_device(), "");
+	output_slots(*config, config->root_device(), "", devtypes);
+	output_software_list(config->root_device());
+	output_ramoptions(config->root_device());
 
 	// close the topmost tag
 	fprintf(m_output, "\t</%s>\n", XML_TOP);

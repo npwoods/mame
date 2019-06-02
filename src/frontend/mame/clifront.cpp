@@ -51,7 +51,6 @@
 
 // frontend commands
 #define CLICOMMAND_LISTXML              "listxml"
-#define CLICOMMAND_LISTXMLLIGHT         "listxmllight"
 #define CLICOMMAND_LISTFULL             "listfull"
 #define CLICOMMAND_LISTSOURCE           "listsource"
 #define CLICOMMAND_LISTCLONES           "listclones"
@@ -72,6 +71,7 @@
 
 // command options
 #define CLIOPTION_DTD                   "dtd"
+#define CLIOPTION_LIGHTXML				"lightxml"
 
 
 namespace {
@@ -95,7 +95,6 @@ const options_entry cli_option_entries[] =
 	/* frontend commands */
 	{ nullptr,                              nullptr,   OPTION_HEADER,     "FRONTEND COMMANDS" },
 	{ CLICOMMAND_LISTXML        ";lx",      "0",       OPTION_COMMAND,    "all available info on driver in XML format" },
-	{ CLICOMMAND_LISTXMLLIGHT   ";lxl",     "0",       OPTION_COMMAND,    "overview info on driver in XML format" },
 	{ CLICOMMAND_LISTFULL       ";ll",      "0",       OPTION_COMMAND,    "short name, full name" },
 	{ CLICOMMAND_LISTSOURCE     ";ls",      "0",       OPTION_COMMAND,    "driver sourcefile" },
 	{ CLICOMMAND_LISTCLONES     ";lc",      "0",       OPTION_COMMAND,    "show clones" },
@@ -116,6 +115,7 @@ const options_entry cli_option_entries[] =
 
 	{ nullptr,                              nullptr,   OPTION_HEADER,     "FRONTEND COMMAND OPTIONS" },
 	{ CLIOPTION_DTD,                        "1",       OPTION_BOOLEAN,    "include DTD in XML output" },
+	{ CLIOPTION_LIGHTXML,                   "0",       OPTION_BOOLEAN,    "emit light XML output" },
 	{ nullptr }
 };
 
@@ -354,20 +354,7 @@ int cli_frontend::execute(std::vector<std::string> &args)
 void cli_frontend::listxml(const std::vector<std::string> &args)
 {
 	// create the XML and print it to stdout
-	info_xml_creator creator(m_options, m_options.bool_value(CLIOPTION_DTD));
-	creator.output(stdout, args);
-}
-
-
-//-------------------------------------------------
-//  listxmllight - output overview XML data for one or more
-//  games
-//-------------------------------------------------
-
-void cli_frontend::listxmllight(const std::vector<std::string> &args)
-{
-	// create the XML and print it to stdout
-	info_xml_creator creator(m_options, m_options.bool_value(CLIOPTION_DTD), true);
+	info_xml_creator creator(m_options, m_options.bool_value(CLIOPTION_DTD), m_options.bool_value(CLIOPTION_LIGHTXML));
 	creator.output(stdout, args);
 }
 
@@ -1570,7 +1557,6 @@ const cli_frontend::info_command_struct *cli_frontend::find_command(const std::s
 	static const info_command_struct s_info_commands[] =
 	{
 		{ CLICOMMAND_LISTXML,           0, -1, &cli_frontend::listxml,          "[pattern] ..." },
-		{ CLICOMMAND_LISTXMLLIGHT,      0, -1, &cli_frontend::listxmllight,     "[pattern] ..." },
 		{ CLICOMMAND_LISTFULL,          0, -1, &cli_frontend::listfull,         "[pattern] ..." },
 		{ CLICOMMAND_LISTSOURCE,        0, -1, &cli_frontend::listsource,       "[system name]" },
 		{ CLICOMMAND_LISTCLONES,        0,  1, &cli_frontend::listclones,       "[system name]" },
