@@ -287,7 +287,7 @@ void info_xml_creator::output(FILE *out, std::vector<std::string> const &pattern
 	}
 
 	// output devices (both devices with roms and slot devices)
-	if (!devfilter || !devfilter->empty())
+	if (!m_light && (!devfilter || !devfilter->empty()))
 	{
 		if (first)
 		{
