@@ -222,6 +222,7 @@ const options_entry emu_options::s_option_entries[] =
 
 	{ nullptr,                                           nullptr,     OPTION_HEADER,     "SLAVE UI OPTIONS" },
 	{ OPTION_SLAVE_UI,						        	 "",          OPTION_STRING,     "slave UI window" },
+	{ OPTION_SLAVE_UI_DEBUG,				        	 "0",         OPTION_BOOLEAN,    "slave UI debugging" },
 
 	{ nullptr }
 };

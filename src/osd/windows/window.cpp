@@ -1088,6 +1088,10 @@ int win_window_info::complete_create()
 		hwnd = (HWND)atoll(slave_ui_window_name);
 		if (!hwnd)
 			hwnd = FindWindowEx(nullptr, nullptr, nullptr, osd::text::to_tstring(slave_ui_window_name).c_str());
+
+		// hack for debugging
+		if (machine().options().slave_ui_debug())
+			win_message_box_utf8(hwnd, "Waiting for a debugger to be attached", nullptr, MB_OK);
 	}
 	else
 	{

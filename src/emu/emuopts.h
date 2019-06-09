@@ -199,6 +199,8 @@
 
 // slave UI
 #define OPTION_SLAVE_UI				"slave_ui"
+#define OPTION_SLAVE_UI_DEBUG		"slave_ui_debug"
+
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -496,6 +498,7 @@ public:
 
 	// slave UI
 	const char *slave_ui() const { return value(OPTION_SLAVE_UI); }
+	bool slave_ui_debug() const { return bool_value(OPTION_SLAVE_UI_DEBUG); }
 
 protected:
 	virtual void command_argument_processed() override;
