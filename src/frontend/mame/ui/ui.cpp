@@ -218,6 +218,10 @@ void mame_ui_manager::init()
 	// slave UI hacks
 	if (machine().options().slave_ui() && *machine().options().slave_ui() && !m_slave_ui_initialized)
 	{
+		// in slave UI, we start up paused
+		machine().pause();
+
+		// start the thread
 		m_slave_ui_thread = std::thread([this]()
 		{
 			std::cout << "OK STATUS ### Emulation commenced; ready for commands" << std::endl;
@@ -483,26 +487,35 @@ void mame_ui_manager::update_and_render(render_container &container)
 
 
 //-------------------------------------------------
-//  strsplit
+//  string_split
 //-------------------------------------------------
 
-static std::vector<std::string> strsplit(const std::string &str, std::function<bool (char)> is_delim)
+template<typename TStr, typename TFunc>
+std::vector<TStr> string_split(const TStr &str, TFunc &&is_delim)
 {
-	std::vector<std::string> results;
+	std::vector<TStr> results;
 
-	size_t word_length = 0;
-	for (size_t i = 0; i <= str.length(); i++)
+	auto word_begin = str.cbegin();
+	for (auto iter = str.cbegin(); iter < str.cend(); iter++)
 	{
-		if (i < str.length() && !is_delim(str[i]))
+		if (is_delim(*iter))
 		{
-			word_length++;
+			if (word_begin < iter)
+			{
+				TStr word(word_begin, iter);
+				results.emplace_back(std::move(word));
+			}
+
+			word_begin = iter;
+			word_begin++;
 		}
-		else if (word_length > 0)
-		{
-			std::string word = str.substr(i - word_length, word_length);
-			results.emplace_back(std::move(word));
-			word_length = 0;
-		}
+	}
+
+	// squeeze off that final word, if necessary
+	if (word_begin < str.cend())
+	{
+		TStr word(word_begin, str.cend());
+		results.emplace_back(std::move(word));
 	}
 
 	return results;
@@ -510,12 +523,31 @@ static std::vector<std::string> strsplit(const std::string &str, std::function<b
 
 
 //-------------------------------------------------
-//  strsplit
+//  string_split_with_quotes
+//
+//	TODO - this does not handle quotes as robustly
+//	as it really should
 //-------------------------------------------------
 
-static std::vector<std::string> strsplit(const std::string &str)
+static std::vector<std::string> string_split_with_quotes(const std::string &str)
 {
-	return strsplit(str, [](char ch) { return ch == ' ' || ch == '\r' || ch == '\n'; });
+	// perform the split
+	bool in_quotes = false;
+	std::vector<std::string> result = string_split(str, [&in_quotes](char ch)
+	{
+		if (ch == '\"')
+			in_quotes = !in_quotes;
+		return !in_quotes && (ch == ' ' || ch == '\r' || ch == '\n');
+	});
+
+	// unquote any strings
+	for (auto iter = result.begin(); iter != result.end(); iter++)
+	{
+		if (iter->size() >= 2 && (*iter)[0] == '\"' && (*iter)[iter->size() - 1] == '\"')
+			*iter = iter->substr(1, iter->size() - 2);
+	}
+
+	return result;
 }
 
 
@@ -534,7 +566,7 @@ void mame_ui_manager::update_and_render_slave_ui(render_container &container)
 
 	while (!m_slave_ui_command_queue.empty())
 	{
-		auto args = strsplit(m_slave_ui_command_queue.front());
+		auto args = string_split_with_quotes(m_slave_ui_command_queue.front());
 		if (!args.empty())
 			invoke_slave_ui_command(args);
 
@@ -617,6 +649,45 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 		std::cout << "OK STATUS ### Resumed" << std::endl;
 		emit_status();
 	}
+	else if (args[0] == "load" || args[0] == "unload")
+	{
+		machine_config *config = const_cast<machine_config *>(&machine().config());
+		device_t *device = config->device_find(&machine().root_device(), args[1].c_str());
+		if (!device)
+		{
+			std::cout << "ERROR ### Cannot find device '" << args[1] << "'" << std::endl;
+			return false;
+		}
+
+		device_image_interface *image = dynamic_cast<device_image_interface *>(device);
+		if (!image)
+		{
+			std::cout << "ERROR ### Device '" << args[1] << "' does not support loadable images" << std::endl;
+			return false;
+		}
+
+		if (args[0] == "load")
+		{
+			// load!
+			image_init_result result = image->load(args[2]);
+			if (result != image_init_result::PASS)
+			{
+				std::cout << "ERROR ### Device '" << args[1] << "' returned error '" << image->error() << "' when loading image '" << args[2] << "'" << std::endl;
+				return false;
+			}
+			std::cout << "OK ### Device '" << args[1] << "' loaded '" << args[2] << "' successfully" << std::endl;
+		}
+		else if (args[1] == "unload")
+		{
+			// unload!
+			image->unload();
+			std::cout << "OK ### Device '" << args[1] << "' unloaded successfully" << std::endl;
+		}
+		else
+		{
+			throw false;
+		}
+	}
 	else
 	{
 		std::cout << "ERROR ### Unrecognized command '" << args[0] << "'" << std::endl;
@@ -631,13 +702,50 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 
 void mame_ui_manager::emit_status()
 {
+	// start status
 	std::cout << "<status" << std::endl;
 	std::cout << "\tpaused=\"" << string_from_bool(machine().paused()) << "\">" << std::endl;
+
+	// video
 	std::cout << "\t<video" << std::endl;
 	std::cout << "\t\tframeskip=\"" << (machine().video().frameskip() == -1 ? "auto" : std::to_string(machine().video().frameskip())) << "\"" << std::endl;
 	std::cout << "\t\tspeed_text=\"" << machine().video().speed_text() << "\"" << std::endl;
 	std::cout << "\t\tthrottled=\"" << string_from_bool(machine().video().throttled()) << "\"" << std::endl;
 	std::cout << "\t\tthrottle_rate=\"" << machine().video().throttle_rate() << "\"/>" << std::endl;
+
+	// slots
+	std::cout << "\t<slots>" << std::endl;
+	for (device_slot_interface &slot : slot_interface_iterator(machine().root_device()))
+	{
+		std::cout << util::string_format("\t\t<slot tag=\"%s\" name=\"%s\">", slot.device().tag(), slot.slot_name()) << std::endl;
+		for (auto &opt : slot.option_list())
+		{
+			std::cout << util::string_format("\t\t\t<option name=\"%s\"/>", opt.first) << std::endl;
+		}
+		std::cout << "\t\t</slot>" << std::endl;
+	}
+	std::cout << "\t</slots>" << std::endl;
+
+	// images
+	std::cout << "\t<images>" << std::endl;
+	for (device_image_interface &image : image_interface_iterator(machine().root_device()))
+	{
+		std::cout << util::string_format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
+			image.device().tag(),
+			image.instance_name(),
+			image.is_readable() ? "1" : "0",
+			image.is_writeable() ? "1" : "0",
+			image.is_creatable() ? "1" : "0",
+			image.must_be_loaded() ? "1" : "0") << std::endl;
+
+		if (image.filename() != nullptr)
+			std::cout << util::string_format("\t\t\t\" filename=\"%s\"", image.filename()) << std::endl;
+
+		std::cout << "\t\t/>" << std::endl;
+	}
+	std::cout << "\t</images>" << std::endl;
+
+	// end status
 	std::cout << "</status>" << std::endl;
 }
 
