@@ -675,18 +675,21 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 				std::cout << "ERROR ### Device '" << args[1] << "' returned error '" << image->error() << "' when loading image '" << args[2] << "'" << std::endl;
 				return false;
 			}
-			std::cout << "OK ### Device '" << args[1] << "' loaded '" << args[2] << "' successfully" << std::endl;
+			std::cout << "OK STATUS ### Device '" << args[1] << "' loaded '" << args[2] << "' successfully" << std::endl;
 		}
 		else if (args[1] == "unload")
 		{
 			// unload!
 			image->unload();
-			std::cout << "OK ### Device '" << args[1] << "' unloaded successfully" << std::endl;
+			std::cout << "OK STATUS ### Device '" << args[1] << "' unloaded successfully" << std::endl;
 		}
 		else
 		{
 			throw false;
 		}
+
+		// we've changed the status; emit it
+		emit_status();
 	}
 	else
 	{
