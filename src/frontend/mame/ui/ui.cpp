@@ -742,7 +742,7 @@ void mame_ui_manager::emit_status()
 			image.must_be_loaded() ? "1" : "0") << std::endl;
 
 		if (image.filename() != nullptr)
-			std::cout << util::string_format("\t\t\t\" filename=\"%s\"", image.filename()) << std::endl;
+			std::cout << util::string_format("\t\t\tfilename=\"%s\"", image.filename()) << std::endl;
 
 		std::cout << "\t\t/>" << std::endl;
 	}
