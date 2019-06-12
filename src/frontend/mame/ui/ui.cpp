@@ -216,34 +216,38 @@ void mame_ui_manager::init()
 	m_mouse_arrow_texture->set_bitmap(m_mouse_bitmap, m_mouse_bitmap.cliprect(), TEXFORMAT_ARGB32);
 
 	// slave UI hacks
-	if (machine().options().slave_ui() && *machine().options().slave_ui() && !m_slave_ui_initialized)
+	if (machine().options().slave_ui() && *machine().options().slave_ui())
 	{
 		// in slave UI, we start up paused
 		machine().pause();
 
-		// start the thread
-		m_slave_ui_thread = std::thread([this]()
+		// start the thread if we don't already have one (we won't have a thread if we started and
+		// a hard reset occurred)
+		if (!m_slave_ui_initialized)
 		{
-			std::cout << "OK STATUS ### Emulation commenced; ready for commands" << std::endl;
-			emit_status();
-
-			bool done = false;
-			while (!done)
+			m_slave_ui_thread = std::thread([this]()
 			{
-				std::string str;
-				std::getline(std::cin, str);
+				std::cout << "OK STATUS ### Emulation commenced; ready for commands" << std::endl;
+				emit_status();
 
-				// extremely gross; intercept the exit command as a prompt to above out of this loop
-				done = str[0] == 'e'
-					&& str[1] == 'x'
-					&& str[2] == 'i'
-					&& str[3] == 't';
+				bool done = false;
+				while (!done)
+				{
+					std::string str;
+					std::getline(std::cin, str);
 
-				std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
-				m_slave_ui_command_queue.emplace(std::move(str));
-			};
-		});
-		m_slave_ui_initialized = true;
+					// extremely gross; intercept the exit command as a prompt to above out of this loop
+					done = str[0] == 'e'
+						&& str[1] == 'x'
+						&& str[2] == 'i'
+						&& str[3] == 't';
+
+					std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
+					m_slave_ui_command_queue.emplace(std::move(str));
+				};
+			});
+			m_slave_ui_initialized = true;
+		}
 	}
 }
 
