@@ -297,8 +297,11 @@ void mame_machine_manager::ui_initialize(running_machine& machine)
 {
 	m_ui->initialize(machine);
 
-	// display the startup screens
-	m_ui->display_startup_screens(m_firstrun);
+	if (!options().slave_ui() || !*options().slave_ui())
+	{
+		// display the startup screens
+		m_ui->display_startup_screens(m_firstrun);
+	}
 }
 
 void mame_machine_manager::create_custom(running_machine& machine)
