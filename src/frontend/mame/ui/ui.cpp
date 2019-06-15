@@ -621,6 +621,11 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 		machine().schedule_soft_reset();
 		std::cout << "OK ### Soft Reset Scheduled" << std::endl;
 	}
+	else if (args[0] == "hard_reset")
+	{
+		machine().schedule_hard_reset();
+		std::cout << "OK ### Hard Reset Scheduled" << std::endl;
+	}
 	else if (args[0] == "throttled")
 	{
 		bool throttled = bool_from_string(args[1]);
@@ -653,6 +658,36 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 		std::cout << "OK STATUS ### Resumed" << std::endl;
 		emit_status();
 	}
+	else if (args[0] == "state_load")
+	{
+		machine().schedule_load(std::string(args[1]));
+		std::cout << "OK ### Scheduled state load of '" << args[1] << "'" << std::endl;
+	}
+	else if (args[0] == "state_save")
+	{
+		machine().schedule_save(std::string(args[1]));
+		std::cout << "OK ### Scheduled state save of '" << args[1] << "'" << std::endl;
+	}
+	else if (args[0] == "save_snapshot")
+	{
+		int scrnum = atoi(args[1].c_str());
+		screen_device_iterator iter(machine().root_device());
+		screen_device *screen = iter.byindex(scrnum);
+        if (!screen)
+        {
+            std::cout << "ERROR ### Unknown screen '" << args[1] << "'" << std::endl;
+            return false;
+        }
+        emu_file file("", OPEN_FLAG_WRITE | OPEN_FLAG_CREATE);
+        osd_file::error filerr = file.open(args[2]);
+        if (filerr != osd_file::error::NONE)
+        {
+            std::cout << "ERROR ### Error " << (int)filerr << " when opening '" << args[2] << "' for writing" << std::endl;
+            return false;
+        }
+        machine().video().save_snapshot(screen, file);
+        std::cout << "OK ### Successfully saved screenshot '" << args[2] << "'" << std::endl;
+    }
 	else if (args[0] == "load" || args[0] == "unload")
 	{
 		machine_config *config = const_cast<machine_config *>(&machine().config());
