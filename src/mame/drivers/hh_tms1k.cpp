@@ -107,7 +107,7 @@
   M34047   TMS1100   1982, MicroVision cartridge: Super Blockbuster
  @M34078A  TMS1100   1983, Milton Bradley Electronic Arcade Mania
  @MP4486A  TMS1000C  1983, Vulcan XL 25
- *MP6061   TMS0970   1979, Texas Instruments Electronic Digital Thermostat
+ *MP6061   TMS0970   1979, Texas Instruments Electronic Digital Thermostat (from patent, the one in MAME didn't have a label)
  @MP6100A  TMS0980   1979, Ideal Electronic Detective
  @MP6101B  TMS0980   1979, Parker Brothers Stop Thief
  *MP6361   ?         1983, Defender Strikes (? note: VFD-capable)
@@ -153,6 +153,7 @@
 
 #include "machine/tms1024.h"
 #include "machine/clock.h"
+#include "machine/timer.h"
 #include "sound/beep.h"
 #include "sound/s14001a.h"
 #include "sound/sn76477.h"
@@ -241,34 +242,20 @@
 
 void hh_tms1k_state::machine_start()
 {
+	screenless_state::machine_start();
+
 	// resolve handlers
-	m_out_x.resolve();
-	m_out_a.resolve();
-	m_out_digit.resolve();
+	m_out_power.resolve();
 
 	// zerofill
-	memset(m_display_state, 0, sizeof(m_display_state));
-	memset(m_display_decay, 0, sizeof(m_display_decay));
-	memset(m_display_segmask, 0, sizeof(m_display_segmask));
-
 	m_o = 0;
 	m_r = 0;
 	m_inp_mux = 0;
-	m_power_led = false;
 	m_power_on = false;
 	m_grid = 0;
 	m_plate = 0;
 
 	// register for savestates
-	save_item(NAME(m_display_maxy));
-	save_item(NAME(m_display_maxx));
-	save_item(NAME(m_display_wait));
-
-	save_item(NAME(m_display_state));
-	/* save_item(NAME(m_power_led)); */ // don't save!
-	save_item(NAME(m_display_decay));
-	save_item(NAME(m_display_segmask));
-
 	save_item(NAME(m_o));
 	save_item(NAME(m_r));
 	save_item(NAME(m_inp_mux));
@@ -279,7 +266,7 @@ void hh_tms1k_state::machine_start()
 
 void hh_tms1k_state::machine_reset()
 {
-	m_power_on = true;
+	set_power(true);
 }
 
 
@@ -290,87 +277,6 @@ void hh_tms1k_state::machine_reset()
 
 ***************************************************************************/
 
-// The device may strobe the outputs very fast, it is unnoticeable to the user.
-// To prevent flickering here, we need to simulate a decay.
-
-void hh_tms1k_state::display_update()
-{
-	for (int y = 0; y < m_display_maxy; y++)
-	{
-		u32 active_state = 0;
-
-		for (int x = 0; x <= m_display_maxx; x++)
-		{
-			// turn on powered segments
-			if (m_power_on && m_display_state[y] >> x & 1)
-				m_display_decay[y][x] = m_display_wait;
-
-			// determine active state
-			u32 ds = (m_display_decay[y][x] != 0) ? 1 : 0;
-			active_state |= (ds << x);
-
-			// output to y.x, or y.a when always-on
-			if (x != m_display_maxx)
-				m_out_x[y][x] = ds;
-			else
-				m_out_a[y] = ds;
-		}
-
-		// output to digity
-		if (m_display_segmask[y] != 0)
-			m_out_digit[y] = active_state & m_display_segmask[y];
-	}
-
-	// output optional power led
-	if (m_power_led != m_power_on)
-	{
-		m_power_led = m_power_on;
-		output().set_value("power_led", m_power_led ? 1 : 0);
-	}
-}
-
-TIMER_DEVICE_CALLBACK_MEMBER(hh_tms1k_state::display_decay_tick)
-{
-	// slowly turn off unpowered segments
-	for (int y = 0; y < m_display_maxy; y++)
-		for (int x = 0; x <= m_display_maxx; x++)
-			if (m_display_decay[y][x] != 0)
-				m_display_decay[y][x]--;
-
-	display_update();
-}
-
-void hh_tms1k_state::set_display_size(int maxx, int maxy)
-{
-	m_display_maxx = maxx;
-	m_display_maxy = maxy;
-}
-
-void hh_tms1k_state::set_display_segmask(u32 digits, u32 mask)
-{
-	// set a segment mask per selected digit, but leave unselected ones alone
-	for (int i = 0; i < 0x20; i++)
-	{
-		if (digits & 1)
-			m_display_segmask[i] = mask;
-		digits >>= 1;
-	}
-}
-
-void hh_tms1k_state::display_matrix(int maxx, int maxy, u32 setx, u32 sety, bool update)
-{
-	set_display_size(maxx, maxy);
-
-	// update current state
-	u32 mask = (1 << maxx) - 1;
-	for (int y = 0; y < maxy; y++)
-		m_display_state[y] = (sety >> y & 1) ? ((setx & mask) | (1 << maxx)) : 0;
-
-	if (update)
-		display_update();
-}
-
-
 // generic input handlers
 
 u8 hh_tms1k_state::read_inputs(int columns)
@@ -380,7 +286,7 @@ u8 hh_tms1k_state::read_inputs(int columns)
 	// read selected input rows
 	for (int i = 0; i < columns; i++)
 		if (m_inp_mux >> i & 1)
-			ret |= m_inp_matrix[i]->read();
+			ret |= m_inputs[i]->read();
 
 	return ret;
 }
@@ -392,7 +298,7 @@ u8 hh_tms1k_state::read_rotated_inputs(int columns, u8 rowmask)
 
 	// read selected input columns
 	for (int i = 0; i < 8; i++)
-		if (1 << i & rowmask && m_inp_matrix[i]->read() & m_inp_mux & colmask)
+		if (1 << i & rowmask && m_inputs[i]->read() & m_inp_mux & colmask)
 			ret |= 1 << i;
 
 	return ret;
@@ -401,7 +307,7 @@ u8 hh_tms1k_state::read_rotated_inputs(int columns, u8 rowmask)
 void hh_tms1k_state::switch_change(int sel, u32 mask, bool next)
 {
 	// config switches (for direct control)
-	ioport_field *inp = m_inp_matrix[sel]->field(mask);
+	ioport_field *inp = m_inputs[sel]->field(mask);
 
 	if (next && inp->has_next_setting())
 		inp->select_next_setting();
@@ -417,7 +323,7 @@ INPUT_CHANGED_MEMBER(hh_tms1k_state::reset_button)
 
 INPUT_CHANGED_MEMBER(hh_tms1k_state::power_button)
 {
-	m_power_on = (bool)(uintptr_t)param;
+	set_power((bool)(uintptr_t)param);
 	m_maincpu->set_input_line(INPUT_LINE_RESET, m_power_on ? CLEAR_LINE : ASSERT_LINE);
 }
 
@@ -430,8 +336,14 @@ WRITE_LINE_MEMBER(hh_tms1k_state::auto_power_off)
 
 void hh_tms1k_state::power_off()
 {
-	m_power_on = false;
+	set_power(false);
 	m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
+}
+
+void hh_tms1k_state::set_power(bool state)
+{
+	m_power_on = state;
+	m_out_power = state ? 1 : 0;
 }
 
 
@@ -561,7 +473,6 @@ void matchnum_state::matchnum(machine_config &config)
 	m_maincpu->r().set(FUNC(matchnum_state::write_r));
 	m_maincpu->o().set(FUNC(matchnum_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_matchnum);
 
 	/* sound hardware */
@@ -673,7 +584,6 @@ void arrball_state::arrball(machine_config &config)
 	m_maincpu->r().set(FUNC(arrball_state::write_r));
 	m_maincpu->o().set(FUNC(arrball_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_arrball);
 
 	/* sound hardware */
@@ -838,7 +748,6 @@ void mathmagi_state::mathmagi(machine_config &config)
 	m_maincpu->r().set(FUNC(mathmagi_state::write_r));
 	m_maincpu->o().set(FUNC(mathmagi_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_mathmagi);
 
 	/* no sound! */
@@ -1094,7 +1003,6 @@ void amaztron_state::amaztron(machine_config &config)
 	m_maincpu->r().set(FUNC(amaztron_state::write_r));
 	m_maincpu->o().set(FUNC(amaztron_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_amaztron);
 
 	/* sound hardware */
@@ -1254,7 +1162,6 @@ void zodiac_state::zodiac(machine_config &config)
 	m_maincpu->r().set(FUNC(zodiac_state::write_r));
 	m_maincpu->o().set(FUNC(zodiac_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_zodiac);
 
 	/* sound hardware */
@@ -1296,7 +1203,10 @@ class cqback_state : public hh_tms1k_state
 public:
 	cqback_state(const machine_config &mconfig, device_type type, const char *tag) :
 		hh_tms1k_state(mconfig, type, tag)
-	{ }
+	{
+		// offsense blips are brighter
+		set_display_levels(0.005, 0.03);
+	}
 
 	void prepare_display();
 	DECLARE_WRITE16_MEMBER(write_r);
@@ -1381,7 +1291,6 @@ void cqback_state::cqback(machine_config &config)
 	m_maincpu->r().set(FUNC(cqback_state::write_r));
 	m_maincpu->o().set(FUNC(cqback_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_cqback);
 
 	/* sound hardware */
@@ -1426,7 +1335,10 @@ class h2hfootb_state : public hh_tms1k_state
 public:
 	h2hfootb_state(const machine_config &mconfig, device_type type, const char *tag) :
 		hh_tms1k_state(mconfig, type, tag)
-	{ }
+	{
+		// offsense blips are brighter
+		set_display_levels(0.005, 0.03);
+	}
 
 	void prepare_display();
 	DECLARE_WRITE16_MEMBER(write_r);
@@ -1511,7 +1423,6 @@ void h2hfootb_state::h2hfootb(machine_config &config)
 	m_maincpu->r().set(FUNC(h2hfootb_state::write_r));
 	m_maincpu->o().set(FUNC(h2hfootb_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_h2hfootb);
 
 	/* sound hardware */
@@ -1547,6 +1458,7 @@ ROM_END
   * same PCB/hardware as above
 
   Unlike the COP420 version(see hh_cop400.cpp driver), each game has its own MCU.
+  To begin play, press start while holding left/right.
 
 ***************************************************************************/
 
@@ -1697,7 +1609,6 @@ void h2hbaskb_state::h2hbaskb(machine_config &config)
 
 	TIMER(config, "cap_empty").configure_generic(FUNC(h2hbaskb_state::cap_empty_callback));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_h2hbaskb);
 
 	/* sound hardware */
@@ -1783,7 +1694,7 @@ void h2hbaseb_state::set_clock()
 {
 	// MCU clock is from an RC circuit with C=47pF, and R value is depending on
 	// skill switch: R=51K(1) or 43K(2)
-	m_maincpu->set_unscaled_clock((m_inp_matrix[5]->read() & 1) ? 400000 : 350000);
+	m_maincpu->set_unscaled_clock((m_inputs[5]->read() & 1) ? 400000 : 350000);
 }
 
 void h2hbaseb_state::prepare_display()
@@ -1817,7 +1728,7 @@ WRITE16_MEMBER(h2hbaseb_state::write_o)
 READ8_MEMBER(h2hbaseb_state::read_k)
 {
 	// K: multiplexed inputs (note: K8(Vss row) is always on)
-	return m_inp_matrix[4]->read() | read_inputs(4);
+	return m_inputs[4]->read() | read_inputs(4);
 }
 
 // config
@@ -1859,7 +1770,6 @@ void h2hbaseb_state::h2hbaseb(machine_config &config)
 	m_maincpu->r().set(FUNC(h2hbaseb_state::write_r));
 	m_maincpu->o().set(FUNC(h2hbaseb_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_h2hbaseb);
 
 	/* sound hardware */
@@ -1983,7 +1893,6 @@ void h2hboxing_state::h2hboxing(machine_config &config)
 	m_maincpu->r().set(FUNC(h2hboxing_state::write_r));
 	m_maincpu->o().set(FUNC(h2hboxing_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_h2hboxing);
 
 	/* sound hardware */
@@ -2166,7 +2075,6 @@ void quizwizc_state::quizwizc(machine_config &config)
 	m_maincpu->r().set(FUNC(quizwizc_state::write_r));
 	m_maincpu->o().set(FUNC(quizwizc_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_quizwizc);
 
 	/* sound hardware */
@@ -2354,7 +2262,6 @@ void tc4_state::tc4(machine_config &config)
 	m_maincpu->r().set(FUNC(tc4_state::write_r));
 	m_maincpu->o().set(FUNC(tc4_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tc4);
 
 	/* sound hardware */
@@ -2482,7 +2389,6 @@ void cnbaskb_state::cnbaskb(machine_config &config)
 	m_maincpu->r().set(FUNC(cnbaskb_state::write_r));
 	m_maincpu->o().set(FUNC(cnbaskb_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_cnbaskb);
 
 	/* sound hardware */
@@ -2607,7 +2513,6 @@ void cmsport_state::cmsport(machine_config &config)
 	m_maincpu->r().set(FUNC(cmsport_state::write_r));
 	m_maincpu->o().set(FUNC(cmsport_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_cmsport);
 
 	/* sound hardware */
@@ -2745,7 +2650,6 @@ void cnfball_state::cnfball(machine_config &config)
 	m_maincpu->r().set(FUNC(cnfball_state::write_r));
 	m_maincpu->o().set(FUNC(cnfball_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_cnfball);
 
 	/* sound hardware */
@@ -2884,7 +2788,6 @@ void cnfball2_state::cnfball2(machine_config &config)
 	m_maincpu->r().set(FUNC(cnfball2_state::write_r));
 	m_maincpu->o().set(FUNC(cnfball2_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_cnfball2);
 
 	/* sound hardware */
@@ -3029,7 +2932,6 @@ void eleciq_state::eleciq(machine_config &config)
 	m_maincpu->r().set(FUNC(eleciq_state::write_r));
 	m_maincpu->o().set(FUNC(eleciq_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_eleciq);
 
 	/* sound hardware */
@@ -3146,7 +3048,6 @@ void esoccer_state::esoccer(machine_config &config)
 	m_maincpu->r().set(FUNC(esoccer_state::write_r));
 	m_maincpu->o().set(FUNC(esoccer_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_esoccer);
 
 	/* sound hardware */
@@ -3249,7 +3150,7 @@ WRITE16_MEMBER(ebball_state::write_o)
 READ8_MEMBER(ebball_state::read_k)
 {
 	// K: multiplexed inputs (note: K8(Vss row) is always on)
-	return m_inp_matrix[5]->read() | read_inputs(5);
+	return m_inputs[5]->read() | read_inputs(5);
 }
 
 // config
@@ -3292,7 +3193,6 @@ void ebball_state::ebball(machine_config &config)
 	m_maincpu->r().set(FUNC(ebball_state::write_r));
 	m_maincpu->o().set(FUNC(ebball_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ebball);
 
 	/* sound hardware */
@@ -3427,7 +3327,6 @@ void ebball2_state::ebball2(machine_config &config)
 	m_maincpu->r().set(FUNC(ebball2_state::write_r));
 	m_maincpu->o().set(FUNC(ebball2_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ebball2);
 
 	/* sound hardware */
@@ -3517,7 +3416,7 @@ void ebball3_state::set_clock()
 	// MCU clock is from an RC circuit(R=47K, C=33pF) oscillating by default at ~340kHz,
 	// but on PRO, the difficulty switch adds an extra 150K resistor to Vdd to speed
 	// it up to around ~440kHz.
-	m_maincpu->set_unscaled_clock((m_inp_matrix[3]->read() & 1) ? 440000 : 340000);
+	m_maincpu->set_unscaled_clock((m_inputs[3]->read() & 1) ? 440000 : 340000);
 }
 
 void ebball3_state::prepare_display()
@@ -3614,7 +3513,6 @@ void ebball3_state::ebball3(machine_config &config)
 	m_maincpu->r().set(FUNC(ebball3_state::write_r));
 	m_maincpu->o().set(FUNC(ebball3_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ebball3);
 
 	/* sound hardware */
@@ -3737,7 +3635,6 @@ void esbattle_state::esbattle(machine_config &config)
 	m_maincpu->r().set(FUNC(esbattle_state::write_r));
 	m_maincpu->o().set(FUNC(esbattle_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_esbattle);
 
 	/* sound hardware */
@@ -3806,7 +3703,7 @@ void einvader_state::set_clock()
 	// MCU clock is from an RC circuit(R=47K, C=56pF) oscillating by default at ~320kHz,
 	// but on PRO, the difficulty switch adds an extra 180K resistor to Vdd to speed
 	// it up to around ~400kHz.
-	m_maincpu->set_unscaled_clock((m_inp_matrix[0]->read() & 8) ? 400000 : 320000);
+	m_maincpu->set_unscaled_clock((m_inputs[0]->read() & 8) ? 400000 : 320000);
 }
 
 void einvader_state::prepare_display()
@@ -3855,12 +3752,10 @@ void einvader_state::einvader(machine_config &config)
 
 	/* video hardware */
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_SVG));
-	screen.set_svg_region("svg");
-	screen.set_refresh_hz(50);
+	screen.set_refresh_hz(60);
 	screen.set_size(939, 1080);
 	screen.set_visarea_full();
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_einvader);
 
 	/* sound hardware */
@@ -3880,7 +3775,7 @@ ROM_START( einvader )
 	ROM_REGION( 365, "maincpu:opla", 0 )
 	ROM_LOAD( "tms1100_einvader_output.pla", 0, 365, CRC(490158e1) SHA1(61cace1eb09244663de98d8fb04d9459b19668fd) )
 
-	ROM_REGION( 44398, "svg", 0)
+	ROM_REGION( 44398, "screen", 0)
 	ROM_LOAD( "einvader.svg", 0, 44398, CRC(48de88fd) SHA1(56a2b9c997a447277b45902ab542eda54e7d5a2f) )
 ROM_END
 
@@ -3990,7 +3885,6 @@ void efootb4_state::efootb4(machine_config &config)
 	m_maincpu->r().set(FUNC(efootb4_state::write_r));
 	m_maincpu->o().set(FUNC(efootb4_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_efootb4);
 
 	/* sound hardware */
@@ -4123,7 +4017,6 @@ void ebaskb2_state::ebaskb2(machine_config &config)
 	m_maincpu->r().set(FUNC(ebaskb2_state::write_r));
 	m_maincpu->o().set(FUNC(ebaskb2_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ebaskb2);
 
 	/* sound hardware */
@@ -4206,7 +4099,7 @@ void raisedvl_state::set_clock()
 	// 0:   R=47K  -> ~350kHz
 	// 2,3: R=35K8 -> ~425kHz (combined)
 	// 4:   R=32K  -> ~465kHz (combined)
-	u8 inp = m_inp_matrix[1]->read();
+	u8 inp = m_inputs[1]->read();
 	m_maincpu->set_unscaled_clock((inp & 0x20) ? 465000 : ((inp & 0x10) ? 425000 : 350000));
 }
 
@@ -4269,7 +4162,6 @@ void raisedvl_state::raisedvl(machine_config &config)
 	m_maincpu->r().set(FUNC(raisedvl_state::write_r));
 	m_maincpu->o().set(FUNC(raisedvl_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_raisedvl);
 
 	/* sound hardware */
@@ -4404,7 +4296,6 @@ void f2pbball_state::f2pbball(machine_config &config)
 	m_maincpu->r().set(FUNC(f2pbball_state::write_r));
 	m_maincpu->o().set(FUNC(f2pbball_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_f2pbball);
 
 	/* sound hardware */
@@ -4472,7 +4363,7 @@ void f3in1_state::machine_reset()
 void f3in1_state::set_clock()
 {
 	// MCU clock is from an RC circuit where C=47pF, R=39K(PROF) or 56K(REG)
-	m_maincpu->set_unscaled_clock((m_inp_matrix[4]->read() & 1) ? 400000 : 300000);
+	m_maincpu->set_unscaled_clock((m_inputs[4]->read() & 1) ? 400000 : 300000);
 }
 
 void f3in1_state::prepare_display()
@@ -4548,7 +4439,6 @@ void f3in1_state::f3in1(machine_config &config)
 	m_maincpu->r().set(FUNC(f3in1_state::write_r));
 	m_maincpu->o().set(FUNC(f3in1_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_f3in1);
 
 	/* sound hardware */
@@ -4709,7 +4599,6 @@ void gpoker_state::gpoker(machine_config &config)
 	m_maincpu->r().set(FUNC(gpoker_state::write_r));
 	m_maincpu->o().set(FUNC(gpoker_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_gpoker);
 
 	/* sound hardware */
@@ -4834,7 +4723,6 @@ void gjackpot_state::gjackpot(machine_config &config)
 	m_maincpu->r().set(FUNC(gjackpot_state::write_r));
 	m_maincpu->o().set(FUNC(gpoker_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_gjackpot);
 
 	/* sound hardware */
@@ -4923,7 +4811,7 @@ WRITE16_MEMBER(ginv_state::write_o)
 READ8_MEMBER(ginv_state::read_k)
 {
 	// K1-K4: multiplexed inputs (K8 is fire button)
-	return m_inp_matrix[2]->read() | read_inputs(2);
+	return m_inputs[2]->read() | read_inputs(2);
 }
 
 // config
@@ -4956,12 +4844,9 @@ void ginv_state::ginv(machine_config &config)
 
 	/* video hardware */
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_SVG));
-	screen.set_svg_region("svg");
-	screen.set_refresh_hz(50);
+	screen.set_refresh_hz(60);
 	screen.set_size(236, 1080);
 	screen.set_visarea_full();
-
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -4980,7 +4865,7 @@ ROM_START( ginv )
 	ROM_REGION( 365, "maincpu:opla", 0 )
 	ROM_LOAD( "tms1100_ginv_output.pla", 0, 365, CRC(6e33a24e) SHA1(cdf7ecf12ddd3863e6301e20fe80f9737db429e5) )
 
-	ROM_REGION( 142959, "svg", 0)
+	ROM_REGION( 142959, "screen", 0)
 	ROM_LOAD( "ginv.svg", 0, 142959, CRC(b0dc9bac) SHA1(18f8cc51a432d14f08fdf766275222f3ed184d89) )
 ROM_END
 
@@ -5050,7 +4935,7 @@ WRITE16_MEMBER(ginv1000_state::write_o)
 READ8_MEMBER(ginv1000_state::read_k)
 {
 	// K1,K2: multiplexed inputs (K8 is fire button)
-	return m_inp_matrix[2]->read() | read_inputs(2);
+	return m_inputs[2]->read() | read_inputs(2);
 }
 
 // config
@@ -5082,12 +4967,9 @@ void ginv1000_state::ginv1000(machine_config &config)
 
 	/* video hardware */
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_SVG));
-	screen.set_svg_region("svg");
-	screen.set_refresh_hz(50);
+	screen.set_refresh_hz(60);
 	screen.set_size(226, 1080);
 	screen.set_visarea_full();
-
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -5106,7 +4988,7 @@ ROM_START( ginv1000 )
 	ROM_REGION( 365, "maincpu:opla", 0 )
 	ROM_LOAD( "tms1100_ginv1000_output.pla", 0, 365, CRC(b0a5dc41) SHA1(d94746ec48661998173e7f60ccc7c96e56b3484e) )
 
-	ROM_REGION( 226185, "svg", 0)
+	ROM_REGION( 226185, "screen", 0)
 	ROM_LOAD( "ginv1000.svg", 0, 226185, CRC(1e1bafd1) SHA1(15868ef0c9dadbf537fed0e2d846451ba99fab7b) )
 ROM_END
 
@@ -5197,7 +5079,7 @@ WRITE16_MEMBER(ginv2000_state::write_o)
 READ8_MEMBER(ginv2000_state::read_k)
 {
 	// K1,K2: multiplexed inputs (K8 is fire button)
-	return m_inp_matrix[2]->read() | read_inputs(2);
+	return m_inputs[2]->read() | read_inputs(2);
 }
 
 // config
@@ -5234,12 +5116,9 @@ void ginv2000_state::ginv2000(machine_config &config)
 
 	/* video hardware */
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_SVG));
-	screen.set_svg_region("svg");
-	screen.set_refresh_hz(50);
+	screen.set_refresh_hz(60);
 	screen.set_size(364, 1080);
 	screen.set_visarea_full();
-
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -5258,7 +5137,7 @@ ROM_START( ginv2000 )
 	ROM_REGION( 365, "maincpu:opla", 0 )
 	ROM_LOAD( "tms1100_ginv2000_output.pla", 0, 365, CRC(520bb003) SHA1(1640ae54f8dcc257e0ad0cbe0281b38fcbd8da35) )
 
-	ROM_REGION( 374443, "svg", 0)
+	ROM_REGION( 374443, "screen", 0)
 	ROM_LOAD( "ginv2000.svg", 0, 374443, CRC(a4ce1e6d) SHA1(57d9ff05d634a8d495b9d544a2a959790cd10b6b) )
 ROM_END
 
@@ -5391,7 +5270,6 @@ void fxmcr165_state::fxmcr165(machine_config &config)
 	m_maincpu->r().set(FUNC(fxmcr165_state::write_r));
 	m_maincpu->o().set(FUNC(fxmcr165_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_fxmcr165);
 
 	/* sound hardware */
@@ -5469,7 +5347,7 @@ WRITE16_MEMBER(elecdet_state::write_o)
 READ8_MEMBER(elecdet_state::read_k)
 {
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return m_inp_matrix[4]->read() | read_inputs(4);
+	return m_inputs[4]->read() | read_inputs(4);
 }
 
 // config
@@ -5532,7 +5410,6 @@ void elecdet_state::elecdet(machine_config &config)
 	m_maincpu->o().set(FUNC(elecdet_state::write_o));
 	m_maincpu->power_off().set(FUNC(hh_tms1k_state::auto_power_off));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_elecdet);
 
 	/* sound hardware */
@@ -5675,7 +5552,6 @@ void starwbc_state::starwbc(machine_config &config)
 	m_maincpu->r().set(FUNC(starwbc_state::write_r));
 	m_maincpu->o().set(FUNC(starwbc_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_starwbc);
 
 	/* sound hardware */
@@ -5824,7 +5700,6 @@ void astro_state::astro(machine_config &config)
 	m_maincpu->r().set(FUNC(astro_state::write_r));
 	m_maincpu->o().set(FUNC(astro_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_astro);
 
 	/* no sound! */
@@ -5992,7 +5867,6 @@ void elecbowl_state::elecbowl(machine_config &config)
 	m_maincpu->r().set(FUNC(elecbowl_state::write_r));
 	m_maincpu->o().set(FUNC(elecbowl_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_elecbowl);
 
 	/* sound hardware */
@@ -6162,7 +6036,7 @@ void horseran_state::horseran(machine_config &config)
 	/* video hardware */
 	HLCD0569(config, m_lcd, 1100); // C=0.022uF
 	m_lcd->write_cols().set(FUNC(horseran_state::lcd_output_w));
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
+
 	config.set_default_layout(layout_horseran);
 
 	/* no sound! */
@@ -6467,7 +6341,6 @@ void comp4_state::comp4(machine_config &config)
 	m_maincpu->r().set(FUNC(comp4_state::write_r));
 	m_maincpu->o().set(FUNC(comp4_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_comp4);
 
 	/* no sound! */
@@ -6546,7 +6419,7 @@ WRITE16_MEMBER(bship_state::write_o)
 READ8_MEMBER(bship_state::read_k)
 {
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return m_inp_matrix[11]->read() | read_inputs(11);
+	return m_inputs[11]->read() | read_inputs(11);
 }
 
 // config
@@ -6633,7 +6506,6 @@ void bship_state::bship(machine_config &config)
 	m_maincpu->r().set(FUNC(bship_state::write_r));
 	m_maincpu->o().set(FUNC(bship_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_bship);
 
 	/* sound hardware */
@@ -6733,7 +6605,7 @@ WRITE16_MEMBER(bshipb_state::write_o)
 READ8_MEMBER(bshipb_state::read_k)
 {
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return m_inp_matrix[11]->read() | read_inputs(11);
+	return m_inputs[11]->read() | read_inputs(11);
 }
 
 // config
@@ -6748,7 +6620,6 @@ void bshipb_state::bshipb(machine_config &config)
 	m_maincpu->r().set(FUNC(bshipb_state::write_r));
 	m_maincpu->o().set(FUNC(bshipb_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_bship);
 
 	/* sound hardware */
@@ -6883,7 +6754,6 @@ void simon_state::simon(machine_config &config)
 	m_maincpu->k().set(FUNC(simon_state::read_k));
 	m_maincpu->r().set(FUNC(simon_state::write_r));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_simon);
 
 	/* sound hardware */
@@ -6961,7 +6831,7 @@ void ssimon_state::set_clock()
 	// 0 Simple: R=51K -> ~200kHz
 	// 1 Normal: R=37K -> ~275kHz
 	// 2 Super:  R=22K -> ~400kHz
-	u8 inp = m_inp_matrix[6]->read();
+	u8 inp = m_inputs[6]->read();
 	m_maincpu->set_unscaled_clock((inp & 2) ? 400000 : ((inp & 1) ? 275000 : 200000));
 }
 
@@ -7049,7 +6919,6 @@ void ssimon_state::ssimon(machine_config &config)
 	m_maincpu->k().set(FUNC(ssimon_state::read_k));
 	m_maincpu->r().set(FUNC(ssimon_state::write_r));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ssimon);
 
 	/* sound hardware */
@@ -7103,7 +6972,7 @@ public:
 	DECLARE_READ8_MEMBER(read_k);
 
 	int m_gearbox_pos;
-	bool sensor_state() { return m_gearbox_pos < 0 && m_display_decay[0][0] != 0; }
+	bool sensor_state() { return m_gearbox_pos < 0 && display_element_on(0, 0); }
 	TIMER_DEVICE_CALLBACK_MEMBER(gearbox_sim_tick);
 	void bigtrak(machine_config &config);
 
@@ -7243,7 +7112,7 @@ void bigtrak_state::bigtrak(machine_config &config)
 	m_maincpu->o().set(FUNC(bigtrak_state::write_o));
 
 	TIMER(config, "gearbox").configure_periodic(FUNC(bigtrak_state::gearbox_sim_tick), attotime::from_msec(1));
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
+
 	config.set_default_layout(layout_bigtrak);
 
 	/* sound hardware */
@@ -7296,7 +7165,7 @@ public:
 	{ }
 
 	void prepare_display();
-	bool sensor_led_on() { return m_display_decay[0][0] != 0; }
+	bool sensor_led_on() { return display_element_on(0, 0); }
 
 	int m_motor_pos;
 	int m_motor_pos_prev;
@@ -7488,7 +7357,7 @@ void mbdtower_state::mbdtower(machine_config &config)
 	m_maincpu->o().set(FUNC(mbdtower_state::write_o));
 
 	TIMER(config, "tower_motor").configure_periodic(FUNC(mbdtower_state::motor_sim_tick), attotime::from_msec(3500/0x80)); // ~3.5sec for a full rotation
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
+
 	config.set_default_layout(layout_mbdtower);
 
 	/* sound hardware */
@@ -7610,7 +7479,6 @@ void arcmania_state::arcmania(machine_config &config)
 	m_maincpu->r().set(FUNC(arcmania_state::write_r));
 	m_maincpu->o().set(FUNC(arcmania_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_arcmania);
 
 	/* sound hardware */
@@ -7741,7 +7609,6 @@ void cnsector_state::cnsector(machine_config &config)
 	m_maincpu->r().set(FUNC(cnsector_state::write_r));
 	m_maincpu->o().set(FUNC(cnsector_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_cnsector);
 
 	/* no sound! */
@@ -7871,7 +7738,6 @@ void merlin_state::merlin(machine_config &config)
 	m_maincpu->r().set(FUNC(merlin_state::write_r));
 	m_maincpu->o().set(FUNC(merlin_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_merlin);
 
 	/* sound hardware */
@@ -7948,7 +7814,6 @@ void mmerlin_state::mmerlin(machine_config &config)
 	m_maincpu->r().set(FUNC(mmerlin_state::write_r));
 	m_maincpu->o().set(FUNC(mmerlin_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_mmerlin);
 
 	/* sound hardware */
@@ -8028,7 +7893,7 @@ WRITE16_MEMBER(stopthief_state::write_o)
 READ8_MEMBER(stopthief_state::read_k)
 {
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return m_inp_matrix[2]->read() | read_inputs(2);
+	return m_inputs[2]->read() | read_inputs(2);
 }
 
 // config
@@ -8077,7 +7942,6 @@ void stopthief_state::stopthief(machine_config &config)
 	m_maincpu->o().set(FUNC(stopthief_state::write_o));
 	m_maincpu->power_off().set(FUNC(hh_tms1k_state::auto_power_off));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_stopthief);
 
 	/* sound hardware */
@@ -8220,7 +8084,6 @@ void bankshot_state::bankshot(machine_config &config)
 	m_maincpu->r().set(FUNC(bankshot_state::write_r));
 	m_maincpu->o().set(FUNC(bankshot_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_bankshot);
 
 	/* sound hardware */
@@ -8349,7 +8212,6 @@ void splitsec_state::splitsec(machine_config &config)
 	m_maincpu->r().set(FUNC(splitsec_state::write_r));
 	m_maincpu->o().set(FUNC(splitsec_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_splitsec);
 
 	/* sound hardware */
@@ -8479,7 +8341,6 @@ void lostreas_state::lostreas(machine_config &config)
 	m_maincpu->r().set(FUNC(lostreas_state::write_r));
 	m_maincpu->o().set(FUNC(lostreas_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_lostreas);
 
 	/* sound hardware */
@@ -8620,7 +8481,6 @@ void alphie_state::alphie(machine_config &config)
 	m_maincpu->r().set(FUNC(alphie_state::write_r));
 	m_maincpu->o().set(FUNC(alphie_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_alphie);
 
 	/* sound hardware */
@@ -8741,7 +8601,6 @@ void tcfball_state::tcfball(machine_config &config)
 	m_maincpu->r().set(FUNC(tcfball_state::write_r));
 	m_maincpu->o().set(FUNC(tcfball_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tcfball);
 
 	/* sound hardware */
@@ -8819,7 +8678,6 @@ void tcfballa_state::tcfballa(machine_config &config)
 	m_maincpu->r().set(FUNC(tcfballa_state::write_r));
 	m_maincpu->o().set(FUNC(tcfballa_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tcfballa);
 
 	/* sound hardware */
@@ -8995,7 +8853,6 @@ void tandy12_state::tandy12(machine_config &config)
 	m_maincpu->r().set(FUNC(tandy12_state::write_r));
 	m_maincpu->o().set(FUNC(tandy12_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tandy12);
 
 	/* sound hardware */
@@ -9115,7 +8972,6 @@ void monkeysee_state::monkeysee(machine_config &config)
 	m_maincpu->r().set(FUNC(monkeysee_state::write_r));
 	m_maincpu->o().set(FUNC(monkeysee_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_monkeysee);
 
 	/* sound hardware */
@@ -9204,7 +9060,7 @@ WRITE16_MEMBER(speechp_state::write_o)
 READ8_MEMBER(speechp_state::read_k)
 {
 	// K: multiplexed inputs
-	return m_inp_matrix[10]->read() | (read_inputs(10) & 7);
+	return m_inputs[10]->read() | (read_inputs(10) & 7);
 }
 
 // config
@@ -9276,7 +9132,6 @@ void speechp_state::speechp(machine_config &config)
 	m_maincpu->r().set(FUNC(speechp_state::write_r));
 	m_maincpu->o().set(FUNC(speechp_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_speechp);
 
 	/* sound hardware */
@@ -9373,7 +9228,6 @@ void timaze_state::timaze(machine_config &config)
 	m_maincpu->r().set(FUNC(timaze_state::write_r));
 	m_maincpu->o().set(FUNC(timaze_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_timaze);
 
 	/* no sound! */
@@ -9398,9 +9252,9 @@ ROM_END
 /***************************************************************************
 
   Texas Instruments Electronic Digital Thermostat
-  * TMS0970 MCU, TMC0910B (die label 0970F-10E)
-  * 4-digit 7seg LED display
-  * temperature sensor, heat/cool outputs, fan
+  * TMS0970 MCU, label TMS0970NLL TMC0910B (die label 0970F-10E)
+  * 9-digit 7seg LED display, only 4 used
+  * temperature sensor, heat/cool/fan outputs
 
   This is a thermostat and digital clock. It's the 2nd one described in
   patents US4388692 and US4298946.
@@ -9467,8 +9321,8 @@ static INPUT_PORTS_START( tithermos )
 	PORT_START("IN.0") // SA
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F) PORT_NAME("Two Set PM 2")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Four Set PM 2")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F) PORT_NAME("Temp Row PM 2")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Time Row PM 2")
 
 	PORT_START("IN.1") // SB
 	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_UNUSED )
@@ -9476,8 +9330,8 @@ static INPUT_PORTS_START( tithermos )
 	PORT_START("IN.2") // SC
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_D) PORT_NAME("Two Set PM 1")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_E) PORT_NAME("Four Set PM 1")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_D) PORT_NAME("Temp Row PM 1")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_E) PORT_NAME("Time Row PM 1")
 
 	PORT_START("IN.3") // SD
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) // AC line
@@ -9490,14 +9344,14 @@ static INPUT_PORTS_START( tithermos )
 	PORT_START("IN.4") // SE
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_NAME("3")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_NAME("Two Set AM 2")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_W) PORT_NAME("Four Set AM 2")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_NAME("Temp Row AM 2")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_W) PORT_NAME("Time Row AM 2")
 
 	PORT_START("IN.5") // SF
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("7")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_A) PORT_NAME("Two Set AM 1")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Q) PORT_NAME("Four Set AM 1")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_A) PORT_NAME("Temp Row AM 1")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Q) PORT_NAME("Time Row AM 1")
 
 	PORT_START("IN.6") // SG
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("6")
@@ -9509,9 +9363,14 @@ static INPUT_PORTS_START( tithermos )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) // AC line
 	PORT_CONFNAME( 0x06, 0x04, "Mode")
 	PORT_CONFSETTING(    0x04, "Constant" )
-	PORT_CONFSETTING(    0x00, "Four Set" )
-	PORT_CONFSETTING(    0x02, "Two Set" )
+	PORT_CONFSETTING(    0x00, "Day/Night" )
+	PORT_CONFSETTING(    0x02, "Night" )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) // A/D output
+
+	PORT_START("IN.8")
+	PORT_CONFNAME( 0x01, 0x00, "Fan")
+	PORT_CONFSETTING(    0x00, "On" )
+	PORT_CONFSETTING(    0x01, "Auto" ) // same output as heat/cool
 INPUT_PORTS_END
 
 void tithermos_state::tithermos(machine_config &config)
@@ -9524,7 +9383,6 @@ void tithermos_state::tithermos(machine_config &config)
 
 	CLOCK(config, "ac_line", 60).signal_handler().set_nop();
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tithermos);
 
 	/* no sound! */
@@ -9642,7 +9500,6 @@ void copycat_state::copycat(machine_config &config)
 	m_maincpu->r().set(FUNC(copycat_state::write_r));
 	m_maincpu->o().set(FUNC(copycat_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_copycat);
 
 	/* sound hardware */
@@ -9730,7 +9587,6 @@ void copycatm2_state::copycatm2(machine_config &config)
 	m_maincpu->r().set(FUNC(copycatm2_state::write_r));
 	m_maincpu->o().set(FUNC(copycatm2_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_copycatm2);
 
 	/* sound hardware */
@@ -9813,7 +9669,6 @@ void ditto_state::ditto(machine_config &config)
 	m_maincpu->r().set(FUNC(ditto_state::write_r));
 	m_maincpu->o().set(FUNC(ditto_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ditto);
 
 	/* sound hardware */
@@ -9941,7 +9796,6 @@ void ss7in1_state::ss7in1(machine_config &config)
 	m_maincpu->r().set(FUNC(ss7in1_state::write_r));
 	m_maincpu->o().set(FUNC(ss7in1_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_7in1ss);
 
 	/* sound hardware */
@@ -10048,7 +9902,7 @@ void tbreakup_state::machine_reset()
 void tbreakup_state::set_clock()
 {
 	// MCU clock is from an analog circuit with resistor of 73K, PRO2 adds 100K
-	m_maincpu->set_unscaled_clock((m_inp_matrix[3]->read() & 1) ? 500000 : 325000);
+	m_maincpu->set_unscaled_clock((m_inputs[3]->read() & 1) ? 500000 : 325000);
 }
 
 void tbreakup_state::prepare_display()
@@ -10110,7 +9964,7 @@ READ8_MEMBER(tbreakup_state::read_k)
 {
 	// K4: fixed input
 	// K8: multiplexed inputs
-	return (m_inp_matrix[2]->read() & 4) | (read_inputs(2) & 8);
+	return (m_inputs[2]->read() & 4) | (read_inputs(2) & 8);
 }
 
 // config
@@ -10150,7 +10004,6 @@ void tbreakup_state::tbreakup(machine_config &config)
 	m_expander->write_port6_callback().set(FUNC(tbreakup_state::expander_w));
 	m_expander->write_port7_callback().set(FUNC(tbreakup_state::expander_w));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tbreakup);
 
 	/* sound hardware */
@@ -10226,7 +10079,7 @@ void phpball_state::prepare_display()
 {
 	// rectangular LEDs under LEDs D,F and E,G are directly connected
 	// to the left and right flipper buttons - output them to 10.a and 9.a
-	u16 in1 = m_inp_matrix[1]->read() << 7 & 0x600;
+	u16 in1 = m_inputs[1]->read() << 7 & 0x600;
 
 	set_display_segmask(7, 0x7f);
 	display_matrix(7, 11, m_o, (m_r & 0x1ff) | in1);
@@ -10257,7 +10110,7 @@ WRITE16_MEMBER(phpball_state::write_o)
 READ8_MEMBER(phpball_state::read_k)
 {
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return m_inp_matrix[1]->read() | read_inputs(1);
+	return m_inputs[1]->read() | read_inputs(1);
 }
 
 // config
@@ -10281,7 +10134,6 @@ void phpball_state::phpball(machine_config &config)
 	m_maincpu->r().set(FUNC(phpball_state::write_r));
 	m_maincpu->o().set(FUNC(phpball_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_phpball);
 
 	/* sound hardware */
@@ -10429,7 +10281,6 @@ void ssports4_state::ssports4(machine_config &config)
 	m_maincpu->r().set(FUNC(ssports4_state::write_r));
 	m_maincpu->o().set(FUNC(ssports4_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ssports4);
 
 	/* sound hardware */
@@ -10605,7 +10456,6 @@ void xl25_state::xl25(machine_config &config)
 	m_maincpu->r().set(FUNC(xl25_state::write_r));
 	m_maincpu->o().set(FUNC(xl25_state::write_o));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_xl25);
 
 	/* sound hardware */

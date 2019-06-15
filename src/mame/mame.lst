@@ -1372,6 +1372,10 @@ prav8c                          // Pravetz 8C
 tk3000                          // Microdigital TK3000
 spectred
 ceci                            // China Education Computer-I
+cece                            // China Education Computer-E
+cecg                            // China Education Computer-G
+cecm                            // China Education Computer-M
+cec2000                         // China Education Computer-2000
 
 @source:apple2gs.cpp
 apple2gs                        // Aug 1989 Apple IIgs ROM03
@@ -8866,6 +8870,9 @@ bigbord2                        //
 bigevglf                        // A67 (c) 1986 Taito America Corporation (US)
 bigevglfj                       // A67 (c) 1986 Taito Corporation (Japan)
 
+@source:bigkarnk_ms.cpp
+bigkarnkm                       //
+
 @source:bigstrkb.cpp
 bigstrkb                        // bootleg on different hardware
 bigstrkba                       // alt set of 'bigstrkb' with Italian teams
@@ -10617,6 +10624,7 @@ progearjd                       //
 progearud                       //
 pzloop2                         // 02/03/2001 (c) 2001 Mitchell (Euro)
 pzloop2j                        // 26/02/2001 (c) 2001 Mitchell (Japan)
+pzloop2jd                       //
 pzloop2jr1                      // 05/02/2001 (c) 2001 Mitchell (Japan)
 qndream                         // 26/08/1996 (c) 1996 (Japan)
 ringdest                        // 02/09/1994 (c) 1994 (Euro)
@@ -10812,6 +10820,7 @@ warzardr1                       // 23/10/1996 (c) 1996 (Japan)
 
 @source:cpzodiac.cpp
 cpzodiac                        //
+cpzodiacj                       //
 
 @source:craft.cpp
 craft                           // Craft, by [lft]
@@ -11586,6 +11595,7 @@ destroyr1                       // 030131-030136    1977/10 [6800]
 
 @source:dfruit.cpp
 dfruit                          //
+gemcrush
 
 @source:dgn_beta.cpp
 dgnbeta                         // Dragon Beta
@@ -12481,6 +12491,22 @@ egghunt                         // (c) 1995 Invi Image
 @source:einstein.cpp
 einst256                        //
 einstein                        //
+
+@source:elan_eu3a14.cpp
+rad_gtg
+rad_rsg
+rad_rsgp
+rad_foot
+rad_bb3
+rad_bb3p
+rad_hnt3
+rad_hnt3p
+rad_bask
+rad_baskp
+
+@source:elan_eu3a05.cpp
+rad_sinv
+rad_tetr
 
 @source:electra.cpp
 avenger                         // (c) 1975 Electra
@@ -15195,6 +15221,7 @@ gnw_chef                        // Nintendo
 gnw_climber                     // Nintendo
 gnw_climbcs                     // Nintendo
 gnw_dkjr                        // Nintendo
+gnw_dkjrp                       // Nintendo
 gnw_dkong                       // Nintendo
 gnw_dkong2                      // Nintendo
 gnw_egg                         // Nintendo
@@ -15643,7 +15670,8 @@ hvyunitu                        // (c) 1988 Kaneko
 @source:hx20.cpp
 ehx20                           //
 ehx20e                          //
-ecm6000                         //
+ecm6032                         //
+ecm6127                         //
 
 @source:hyhoo.cpp
 hyhoo                           // (c) 1987
@@ -18191,9 +18219,9 @@ pcnfrk2m                        // 2000 - Percussion Freaks 2nd Mix (GE912 VER. 
 pcnfrk3m                        // 2000 - Percussion Freaks 3rd Mix (G*A23 VER. KAA)
 pcnfrk4m                        // 2000 - Percussion Freaks 4rd Mix (G*A25 VER. AAA)
 pcnfrk5m                        // 2001 - Percussion Freaks 5th Mix (G*B05 VER. KAA)
-pnchmn                          // 2000 - Punch Mania: Hokuto No Ken (GQ918 VER. JAB)
-pnchmn2                         // 2000 - Punch Mania 2: Hokuto No Ken (GQA09 JAA)
-pnchmna                         // 2000 - Punch Mania: Hokuto No Ken (GQ918 VER. JAB, ALT CD)
+pnchmn                          // 2000 - Punch Mania: Hokuto no Ken (GQ918 VER. JAB)
+pnchmn2                         // 2000 - Punch Mania 2: Hokuto no Ken (GQA09 JAA)
+pnchmna                         // 2000 - Punch Mania: Hokuto no Ken (GQ918 VER. JAB, ALT CD)
 powyakex                        // 1998 - Jikkyou Powerful Pro Yakyuu EX (GX802 VER. JAB)
 salarymc                        // 2000 - Salary Man Champ (G*A18 VER. JAA)
 stepchmp                        // 1999 - Step Champ (GE930 VER. JA)
@@ -21757,6 +21785,9 @@ milton                          // 1980 Milton Bradley
 @source:milwaukee.cpp
 mc1200                          //
 
+@source:mindset.cpp
+mindset                         // (c) 1984
+
 @source:mini2440.cpp
 mini2440                        //
 
@@ -21993,6 +22024,7 @@ vf2b                            // 1995.?? Virtua Fighter 2 (Revision B)
 vf2o                            // 1994.11 Virtua Fighter 2
 von                             // 1996.01 Cyber Troopers Virtual-On (USA, Revision B)
 vonj                            // 1996.01 Cyber Troopers Virtual-On (Japan, Revision B)
+vonr                            // 1996.01 Cyber Troopers Virtual-On Relay (Japan)
 vstriker                        // 1995.05 Virtua Striker (Revision A)
 vstrikero                       // 1995.05 Virtua Striker
 waverunr                        // 1996.10 Wave Runner (Japan, Revision A)
@@ -29472,6 +29504,7 @@ panikuru                        // 2002.03 Panicuru Panekuru
 ptblank3                        // 2000.12 Point Blank 3 (GNN2 Ver.A)
 sekaikh                         // 2004.04 Sekai Kaseki Hakken (Japan, SKH1 Ver.A)
 startrgn                        // 2002.07 Star Trigon (STT1 Ver.A)
+taiko6                          // 2004.?? Taiko no Tatsujin 6 (Japan, TK61 Ver.A)
 
 @source:namcos11.cpp
 danceyes                        // 1996.10 Dancing Eyes (US, DC3/VER.C)
@@ -29836,7 +29869,7 @@ initdv2jo                       // 2002.12 Initial D Arcade Stage Ver. 2 (Japan)
 initdv3e                        // 2004.05.18 Initial D Arcade Stage Ver. 3 (Export)
 initdv3j                        // 2004.01.30 Initial D Arcade Stage Ver. 3 (Japan) (Rev C)
 initdv3jb                       // 2004.01 Initial D Arcade Stage Ver. 3 (Japan) (Rev B)
-inunoos                         // 2001.10 Inu No Osanpo / Dog Walking (Rev A)
+inunoos                         // 2001.10 Inu no Osanpo / Dog Walking (Rev A)
 jambo                           // 1999.09 Jambo! Safari (Rev A)
 jingystm                        // 2006.09 Jingi Storm
 karous                          // 2006.11 Karous
@@ -29932,7 +29965,7 @@ shaktam                         // 2000.12.28 Shakatto Tambourine (Rev B)
 shaktamb                        // 2001.10.17 Shakatto Tambourine Cho Powerup Chu (2K1 AUT)
 shaktmsp                        // 2001.04.04 Shakatto Tambourine Motto Norinori Shinkyoku Tsuika (2K1 SPR)
 shangril                        // 1999.08 Dengen Tenshi Taisen Janshi Shangri-la
-shikgam2                        // 2003.04 Shikigami No Shiro II / The Castle of Shikigami II
+shikgam2                        // 2003.04 Shikigami no Shiro II / The Castle of Shikigami II
 shootopl                        // 2002.?? Shootout Pool
 shootpl                         // 2003.?? Shootout Pool Prize / Shootout Pool The Medal (Rev A)
 shootplm                        // 2004.?? Shootout Pool Prize / Shootout Pool The Medal Ver. B
@@ -30198,7 +30231,7 @@ nc100                           // 1992 NC100
 nc150                           // 1992 NC150
 nc200                           // 1993 NC200
 
-@source:ncd17c.cpp
+@source:ncd68k.cpp
 ncd16                           // 1989 Network Computing Devices
 ncd17c                          // 1990 Network Computing Devices
 ncd19                           // 1990 Network Computing Devices
@@ -33372,22 +33405,6 @@ r9751                           // ROLM 9751 phone system
 @source:rabbit.cpp
 rabbit                          // (c) 1997 Electronic Arts
 rabbitjt                        // (c) 1996 Electronic Arts
-
-@source:rad_eu3a14.cpp
-rad_gtg
-rad_rsg
-rad_rsgp
-rad_foot
-rad_bb3
-rad_bb3p
-rad_hnt3
-rad_hnt3p
-rad_bask
-rad_baskp
-
-@source:rad_eu3a05.cpp
-rad_sinv
-rad_tetr
 
 @source:radio86.cpp
 impuls03                        //

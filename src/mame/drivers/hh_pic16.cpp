@@ -49,6 +49,8 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "includes/screenless.h"
+
 #include "cpu/pic16c5x/pic16c5x.h"
 #include "machine/clock.h"
 #include "machine/timer.h"
@@ -69,29 +71,20 @@
 #include "hh_pic16_test.lh" // common test-layout - use external artwork
 
 
-class hh_pic16_state : public driver_device
+class hh_pic16_state : public screenless_state
 {
 public:
 	hh_pic16_state(const machine_config &mconfig, device_type type, const char *tag) :
-		driver_device(mconfig, type, tag),
+		screenless_state(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
-		m_inp_matrix(*this, "IN.%u", 0),
-		m_out_x(*this, "%u.%u", 0U, 0U),
-		m_out_a(*this, "%u.a", 0U),
-		m_out_digit(*this, "digit%u", 0U),
 		m_speaker(*this, "speaker"),
-		m_display_wait(33),
-		m_display_maxy(1),
-		m_display_maxx(0)
+		m_inputs(*this, "IN.%u", 0)
 	{ }
 
 	// devices
 	required_device<pic16c5x_device> m_maincpu;
-	optional_ioport_array<6> m_inp_matrix; // max 6
-	output_finder<0x20, 0x20> m_out_x;
-	output_finder<0x20> m_out_a;
-	output_finder<0x20> m_out_digit;
 	optional_device<speaker_sound_device> m_speaker;
+	optional_ioport_array<6> m_inputs; // max 6
 
 	// misc common
 	u8 m_a;                         // MCU port A write data
@@ -104,21 +97,6 @@ public:
 	u8 read_rotated_inputs(int columns, u8 rowmask = ~0);
 	virtual DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
-	// display common
-	int m_display_wait;             // led/lamp off-delay in milliseconds (default 33ms)
-	int m_display_maxy;             // display matrix number of rows
-	int m_display_maxx;             // display matrix number of columns (max 31 for now)
-
-	u32 m_display_state[0x20];      // display matrix rows data (last bit is used for always-on)
-	u16 m_display_segmask[0x20];    // if not 0, display matrix row is a digit, mask indicates connected segments
-	u8 m_display_decay[0x20][0x20]; // (internal use)
-
-	TIMER_DEVICE_CALLBACK_MEMBER(display_decay_tick);
-	void display_update();
-	void set_display_size(int maxx, int maxy);
-	void set_display_segmask(u32 digits, u32 mask);
-	void display_matrix(int maxx, int maxy, u32 setx, u32 sety, bool update = true);
-
 protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
@@ -129,16 +107,9 @@ protected:
 
 void hh_pic16_state::machine_start()
 {
-	// resolve handlers
-	m_out_x.resolve();
-	m_out_a.resolve();
-	m_out_digit.resolve();
+	screenless_state::machine_start();
 
 	// zerofill
-	memset(m_display_state, 0, sizeof(m_display_state));
-	memset(m_display_decay, 0, sizeof(m_display_decay));
-	memset(m_display_segmask, 0, sizeof(m_display_segmask));
-
 	m_a = 0;
 	m_b = 0;
 	m_c = 0;
@@ -146,14 +117,6 @@ void hh_pic16_state::machine_start()
 	m_inp_mux = ~0;
 
 	// register for savestates
-	save_item(NAME(m_display_maxy));
-	save_item(NAME(m_display_maxx));
-	save_item(NAME(m_display_wait));
-
-	save_item(NAME(m_display_state));
-	save_item(NAME(m_display_decay));
-	save_item(NAME(m_display_segmask));
-
 	save_item(NAME(m_a));
 	save_item(NAME(m_b));
 	save_item(NAME(m_c));
@@ -173,80 +136,6 @@ void hh_pic16_state::machine_reset()
 
 ***************************************************************************/
 
-// The device may strobe the outputs very fast, it is unnoticeable to the user.
-// To prevent flickering here, we need to simulate a decay.
-
-void hh_pic16_state::display_update()
-{
-	for (int y = 0; y < m_display_maxy; y++)
-	{
-		u32 active_state = 0;
-
-		for (int x = 0; x <= m_display_maxx; x++)
-		{
-			// turn on powered segments
-			if (m_display_state[y] >> x & 1)
-				m_display_decay[y][x] = m_display_wait;
-
-			// determine active state
-			u32 ds = (m_display_decay[y][x] != 0) ? 1 : 0;
-			active_state |= (ds << x);
-
-			// output to y.x, or y.a when always-on
-			if (x != m_display_maxx)
-				m_out_x[y][x] = ds;
-			else
-				m_out_a[y] = ds;
-		}
-
-		// output to digity
-		if (m_display_segmask[y] != 0)
-			m_out_digit[y] = active_state & m_display_segmask[y];
-	}
-}
-
-TIMER_DEVICE_CALLBACK_MEMBER(hh_pic16_state::display_decay_tick)
-{
-	// slowly turn off unpowered segments
-	for (int y = 0; y < m_display_maxy; y++)
-		for (int x = 0; x <= m_display_maxx; x++)
-			if (m_display_decay[y][x] != 0)
-				m_display_decay[y][x]--;
-
-	display_update();
-}
-
-void hh_pic16_state::set_display_size(int maxx, int maxy)
-{
-	m_display_maxx = maxx;
-	m_display_maxy = maxy;
-}
-
-void hh_pic16_state::set_display_segmask(u32 digits, u32 mask)
-{
-	// set a segment mask per selected digit, but leave unselected ones alone
-	for (int i = 0; i < 0x20; i++)
-	{
-		if (digits & 1)
-			m_display_segmask[i] = mask;
-		digits >>= 1;
-	}
-}
-
-void hh_pic16_state::display_matrix(int maxx, int maxy, u32 setx, u32 sety, bool update)
-{
-	set_display_size(maxx, maxy);
-
-	// update current state
-	u32 mask = (1 << maxx) - 1;
-	for (int y = 0; y < maxy; y++)
-		m_display_state[y] = (sety >> y & 1) ? ((setx & mask) | (1 << maxx)) : 0;
-
-	if (update)
-		display_update();
-}
-
-
 // generic input handlers
 
 u16 hh_pic16_state::read_inputs(int columns, u16 colmask)
@@ -257,7 +146,7 @@ u16 hh_pic16_state::read_inputs(int columns, u16 colmask)
 	// read selected input rows
 	for (int i = 0; i < columns; i++)
 		if (~m_inp_mux >> i & 1)
-			ret &= m_inp_matrix[i]->read();
+			ret &= m_inputs[i]->read();
 
 	return ret;
 }
@@ -269,7 +158,7 @@ u8 hh_pic16_state::read_rotated_inputs(int columns, u8 rowmask)
 
 	// read selected input columns
 	for (int i = 0; i < 8; i++)
-		if (1 << i & rowmask && ~m_inp_matrix[i]->read() & ~m_inp_mux & colmask)
+		if (1 << i & rowmask && ~m_inputs[i]->read() & ~m_inp_mux & colmask)
 			ret |= 1 << i;
 
 	// active low
@@ -401,7 +290,6 @@ void touchme_state::touchme(machine_config &config)
 	// PIC CLKOUT, tied to RTCC
 	CLOCK(config, "clock", 300000/4).signal_handler().set_inputline("maincpu", PIC16C5x_RTCC);
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_touchme);
 
 	/* sound hardware */
@@ -506,7 +394,6 @@ void pabball_state::pabball(machine_config &config)
 	m_maincpu->read_c().set_ioport("IN.1");
 	m_maincpu->write_c().set(FUNC(pabball_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_hh_pic16_test);
 
 	/* sound hardware */
@@ -541,7 +428,9 @@ class melodym_state : public hh_pic16_state
 public:
 	melodym_state(const machine_config &mconfig, device_type type, const char *tag) :
 		hh_pic16_state(mconfig, type, tag)
-	{ }
+	{
+		set_display_levels(0.9);
+	}
 
 	DECLARE_WRITE8_MEMBER(write_b);
 	DECLARE_READ8_MEMBER(read_c);
@@ -566,7 +455,6 @@ READ8_MEMBER(melodym_state::read_c)
 WRITE8_MEMBER(melodym_state::write_c)
 {
 	// C6: both lamps
-	m_display_wait = 2;
 	display_matrix(1, 1, ~data >> 6 & 1, 1);
 
 	// C7: speaker out
@@ -627,7 +515,6 @@ void melodym_state::melodym(machine_config &config)
 	m_maincpu->read_c().set(FUNC(melodym_state::read_c));
 	m_maincpu->write_c().set(FUNC(melodym_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_melodym);
 
 	/* sound hardware */
@@ -732,7 +619,6 @@ void maniac_state::maniac(machine_config &config)
 	m_maincpu->write_b().set(FUNC(maniac_state::write_b));
 	m_maincpu->write_c().set(FUNC(maniac_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_maniac);
 
 	/* sound hardware */
@@ -803,7 +689,7 @@ void matchme_state::set_clock()
 {
 	// MCU clock is ~1.2MHz by default (R=18K, C=15pF), high speed setting adds a
 	// 10pF cap to speed it up by about 7.5%.
-	m_maincpu->set_unscaled_clock((m_inp_matrix[4]->read() & 1) ? 1300000 : 1200000);
+	m_maincpu->set_unscaled_clock((m_inputs[4]->read() & 1) ? 1300000 : 1200000);
 }
 
 WRITE8_MEMBER(matchme_state::write_b)
@@ -887,7 +773,6 @@ void matchme_state::matchme(machine_config &config)
 	m_maincpu->read_c().set(FUNC(matchme_state::read_c));
 	m_maincpu->write_c().set(FUNC(matchme_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_matchme);
 
 	/* sound hardware */
@@ -1049,7 +934,6 @@ void leboom_state::leboom(machine_config &config)
 	m_maincpu->read_c().set_constant(0xff);
 	m_maincpu->write_c().set(FUNC(leboom_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_leboom);
 
 	/* sound hardware */
@@ -1106,7 +990,7 @@ void tbaskb_state::prepare_display()
 READ8_MEMBER(tbaskb_state::read_a)
 {
 	// A2: skill switch, A3: multiplexed inputs
-	return m_inp_matrix[5]->read() | read_inputs(5, 8) | 3;
+	return m_inputs[5]->read() | read_inputs(5, 8) | 3;
 }
 
 WRITE8_MEMBER(tbaskb_state::write_b)
@@ -1165,7 +1049,6 @@ void tbaskb_state::tbaskb(machine_config &config)
 	m_maincpu->read_c().set_constant(0xff);
 	m_maincpu->write_c().set(FUNC(tbaskb_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_tbaskb);
 
 	/* sound hardware */
@@ -1288,7 +1171,6 @@ void rockpin_state::rockpin(machine_config &config)
 	// PIC CLKOUT, tied to RTCC
 	CLOCK(config, "clock", 450000/4).signal_handler().set_inputline(m_maincpu, PIC16C5x_RTCC);
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_rockpin);
 
 	/* sound hardware */
@@ -1347,7 +1229,7 @@ void hccbaskb_state::prepare_display()
 READ8_MEMBER(hccbaskb_state::read_a)
 {
 	// A2: skill switch, A3: multiplexed inputs
-	return m_inp_matrix[5]->read() | read_inputs(5, 8) | 3;
+	return m_inputs[5]->read() | read_inputs(5, 8) | 3;
 }
 
 WRITE8_MEMBER(hccbaskb_state::write_b)
@@ -1406,7 +1288,6 @@ void hccbaskb_state::hccbaskb(machine_config &config)
 	m_maincpu->read_c().set_constant(0xff);
 	m_maincpu->write_c().set(FUNC(hccbaskb_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_hccbaskb);
 
 	/* sound hardware */
@@ -1472,7 +1353,7 @@ void ttfball_state::prepare_display()
 READ8_MEMBER(ttfball_state::read_a)
 {
 	// A3: multiplexed inputs, A0-A2: other inputs
-	return m_inp_matrix[5]->read() | read_inputs(5, 8);
+	return m_inputs[5]->read() | read_inputs(5, 8);
 }
 
 WRITE8_MEMBER(ttfball_state::write_b)
@@ -1564,7 +1445,6 @@ void ttfball_state::ttfball(machine_config &config)
 	m_maincpu->read_c().set_constant(0xff);
 	m_maincpu->write_c().set(FUNC(ttfball_state::write_c));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_ttfball);
 
 	/* sound hardware */
@@ -1686,7 +1566,6 @@ void uspbball_state::uspbball(machine_config &config)
 	// PIC CLKOUT, tied to RTCC
 	CLOCK(config, "clock", 900000/4).signal_handler().set_inputline("maincpu", PIC16C5x_RTCC);
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_hh_pic16_test);
 
 	/* sound hardware */
@@ -1744,7 +1623,7 @@ void us2pfball_state::prepare_display()
 READ8_MEMBER(us2pfball_state::read_a)
 {
 	// A0,A1: multiplexed inputs, A4-A7: other inputs
-	return read_inputs(4, 3) | (m_inp_matrix[4]->read() & 0xf0) | 0x0c;
+	return read_inputs(4, 3) | (m_inputs[4]->read() & 0xf0) | 0x0c;
 }
 
 WRITE8_MEMBER(us2pfball_state::write_a)
@@ -1827,7 +1706,6 @@ void us2pfball_state::us2pfball(machine_config &config)
 	// PIC CLKOUT, tied to RTCC
 	CLOCK(config, "clock", 800000/4).signal_handler().set_inputline("maincpu", PIC16C5x_RTCC);
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_pic16_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_us2pfball);
 
 	/* sound hardware */

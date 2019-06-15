@@ -405,6 +405,7 @@ K28 modules:
 
 #include "bus/generic/carts.h"
 #include "bus/generic/slot.h"
+#include "machine/timer.h"
 #include "machine/tms6100.h"
 #include "sound/tms5110.h"
 #include "softlist.h"
@@ -466,7 +467,7 @@ public:
 private:
 	virtual void power_off() override;
 	void prepare_display();
-	bool vfd_filament_on() { return m_display_decay[15][16] != 0; }
+	bool vfd_filament_on() { return display_element_on(16, 15); }
 
 	DECLARE_READ8_MEMBER(snspell_read_k);
 	DECLARE_WRITE16_MEMBER(snmath_write_o);
@@ -621,7 +622,7 @@ WRITE16_MEMBER(tispeak_state::snspell_write_o)
 READ8_MEMBER(tispeak_state::snspell_read_k)
 {
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return m_inp_matrix[8]->read() | read_inputs(8);
+	return m_inputs[8]->read() | read_inputs(8);
 }
 
 
@@ -675,7 +676,7 @@ READ8_MEMBER(tispeak_state::snspellc_read_k)
 	u8 k4 = m_tms5100->ctl_r(space, 0) << 2 & 4;
 
 	// K: multiplexed inputs (note: the Vss row is always on)
-	return k4 | m_inp_matrix[9]->read() | read_inputs(9);
+	return k4 | m_inputs[9]->read() | read_inputs(9);
 }
 
 
@@ -706,7 +707,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(tispeak_state::tntell_get_overlay)
 	// external module, the game continues.
 
 	// pick overlay code from machine config, see comment section above for reference
-	m_overlay = m_inp_matrix[10]->read();
+	m_overlay = m_inputs[10]->read();
 
 	// try to get it from (external) layout
 	if (m_overlay == 0x20)
@@ -783,7 +784,7 @@ INPUT_CHANGED_MEMBER(tispeak_state::power_button)
 
 	if (on && !m_power_on)
 	{
-		m_power_on = true;
+		set_power(true);
 		m_maincpu->set_input_line(INPUT_LINE_RESET, CLEAR_LINE);
 	}
 	else if (!on && m_power_on)
@@ -1319,7 +1320,6 @@ void tispeak_state::snmath(machine_config &config)
 	m_maincpu->write_ctl().set("tms5100", FUNC(tms5110_device::ctl_w));
 	m_maincpu->write_pdc().set("tms5100", FUNC(tms5110_device::pdc_w));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_snmath);
 
 	/* sound hardware */
@@ -1460,7 +1460,6 @@ void tispeak_state::vocaid(machine_config &config)
 	m_maincpu->o().set(FUNC(tispeak_state::snspellc_write_o));
 	m_maincpu->r().set(FUNC(tispeak_state::snspellc_write_r));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	TIMER(config, "ol_timer").configure_periodic(FUNC(tispeak_state::tntell_get_overlay), attotime::from_msec(50));
 	config.set_default_layout(layout_tntell);
 
@@ -1492,7 +1491,6 @@ void tispeak_state::k28m2(machine_config &config)
 	m_maincpu->o().set(FUNC(tispeak_state::k28_write_o));
 	m_maincpu->r().set(FUNC(tispeak_state::k28_write_r));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_tms1k_state::display_decay_tick), attotime::from_msec(1));
 	config.set_default_layout(layout_k28m2);
 
 	/* sound hardware */

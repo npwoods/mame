@@ -18,7 +18,7 @@
 
 #include "emu.h"
 #include "cpu/cop400/cop400.h"
-
+#include "video/pwm.h"
 #include "machine/timer.h"
 #include "sound/spkrdev.h"
 #include "sound/dac.h"
@@ -51,23 +51,16 @@ public:
 	hh_cop400_state(const machine_config &mconfig, device_type type, const char *tag) :
 		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
-		m_inp_matrix(*this, "IN.%u", 0),
-		m_out_x(*this, "%u.%u", 0U, 0U),
-		m_out_a(*this, "%u.a", 0U),
-		m_out_digit(*this, "digit%u", 0U),
+		m_display(*this, "display"),
 		m_speaker(*this, "speaker"),
-		m_display_wait(33),
-		m_display_maxy(1),
-		m_display_maxx(0)
+		m_inputs(*this, "IN.%u", 0)
 	{ }
 
 	// devices
 	required_device<cop400_cpu_device> m_maincpu;
-	optional_ioport_array<6> m_inp_matrix; // max 6
-	output_finder<0x20, 0x20> m_out_x;
-	output_finder<0x20> m_out_a;
-	output_finder<0x20> m_out_digit;
+	optional_device<pwm_display_device> m_display;
 	optional_device<speaker_sound_device> m_speaker;
+	optional_ioport_array<6> m_inputs; // max 6
 
 	// misc common
 	u8 m_l;                         // MCU port L write data
@@ -80,21 +73,6 @@ public:
 	u16 read_inputs(int columns, u16 colmask = ~0);
 	virtual DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
-	// display common
-	int m_display_wait;             // led/lamp off-delay in milliseconds (default 33ms)
-	int m_display_maxy;             // display matrix number of rows
-	int m_display_maxx;             // display matrix number of columns (max 31 for now)
-
-	u32 m_display_state[0x20];      // display matrix rows data (last bit is used for always-on)
-	u16 m_display_segmask[0x20];    // if not 0, display matrix row is a digit, mask indicates connected segments
-	u8 m_display_decay[0x20][0x20]; // (internal use)
-
-	TIMER_DEVICE_CALLBACK_MEMBER(display_decay_tick);
-	void display_update();
-	void set_display_size(int maxx, int maxy);
-	void set_display_segmask(u32 digits, u32 mask);
-	void display_matrix(int maxx, int maxy, u32 setx, u32 sety, bool update = true);
-
 protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
@@ -105,16 +83,7 @@ protected:
 
 void hh_cop400_state::machine_start()
 {
-	// resolve handlers
-	m_out_x.resolve();
-	m_out_a.resolve();
-	m_out_digit.resolve();
-
 	// zerofill
-	memset(m_display_state, 0, sizeof(m_display_state));
-	memset(m_display_decay, 0, sizeof(m_display_decay));
-	memset(m_display_segmask, 0, sizeof(m_display_segmask));
-
 	m_l = 0;
 	m_g = 0;
 	m_d = 0;
@@ -123,14 +92,6 @@ void hh_cop400_state::machine_start()
 	m_inp_mux = ~0;
 
 	// register for savestates
-	save_item(NAME(m_display_maxy));
-	save_item(NAME(m_display_maxx));
-	save_item(NAME(m_display_wait));
-
-	save_item(NAME(m_display_state));
-	save_item(NAME(m_display_decay));
-	save_item(NAME(m_display_segmask));
-
 	save_item(NAME(m_l));
 	save_item(NAME(m_g));
 	save_item(NAME(m_d));
@@ -151,80 +112,6 @@ void hh_cop400_state::machine_reset()
 
 ***************************************************************************/
 
-// The device may strobe the outputs very fast, it is unnoticeable to the user.
-// To prevent flickering here, we need to simulate a decay.
-
-void hh_cop400_state::display_update()
-{
-	for (int y = 0; y < m_display_maxy; y++)
-	{
-		u32 active_state = 0;
-
-		for (int x = 0; x <= m_display_maxx; x++)
-		{
-			// turn on powered segments
-			if (m_display_state[y] >> x & 1)
-				m_display_decay[y][x] = m_display_wait;
-
-			// determine active state
-			u32 ds = (m_display_decay[y][x] != 0) ? 1 : 0;
-			active_state |= (ds << x);
-
-			// output to y.x, or y.a when always-on
-			if (x != m_display_maxx)
-				m_out_x[y][x] = ds;
-			else
-				m_out_a[y] = ds;
-		}
-
-		// output to digity
-		if (m_display_segmask[y] != 0)
-			m_out_digit[y] = active_state & m_display_segmask[y];
-	}
-}
-
-TIMER_DEVICE_CALLBACK_MEMBER(hh_cop400_state::display_decay_tick)
-{
-	// slowly turn off unpowered segments
-	for (int y = 0; y < m_display_maxy; y++)
-		for (int x = 0; x <= m_display_maxx; x++)
-			if (m_display_decay[y][x] != 0)
-				m_display_decay[y][x]--;
-
-	display_update();
-}
-
-void hh_cop400_state::set_display_size(int maxx, int maxy)
-{
-	m_display_maxx = maxx;
-	m_display_maxy = maxy;
-}
-
-void hh_cop400_state::set_display_segmask(u32 digits, u32 mask)
-{
-	// set a segment mask per selected digit, but leave unselected ones alone
-	for (int i = 0; i < 0x20; i++)
-	{
-		if (digits & 1)
-			m_display_segmask[i] = mask;
-		digits >>= 1;
-	}
-}
-
-void hh_cop400_state::display_matrix(int maxx, int maxy, u32 setx, u32 sety, bool update)
-{
-	set_display_size(maxx, maxy);
-
-	// update current state
-	u32 mask = (1 << maxx) - 1;
-	for (int y = 0; y < maxy; y++)
-		m_display_state[y] = (sety >> y & 1) ? ((setx & mask) | (1 << maxx)) : 0;
-
-	if (update)
-		display_update();
-}
-
-
 // generic input handlers
 
 u16 hh_cop400_state::read_inputs(int columns, u16 colmask)
@@ -235,7 +122,7 @@ u16 hh_cop400_state::read_inputs(int columns, u16 colmask)
 	// read selected input rows
 	for (int i = 0; i < columns; i++)
 		if (~m_inp_mux >> i & 1)
-			ret &= m_inp_matrix[i]->read();
+			ret &= m_inputs[i]->read();
 
 	return ret;
 }
@@ -291,7 +178,7 @@ WRITE8_MEMBER(ctstein_state::write_g)
 WRITE8_MEMBER(ctstein_state::write_l)
 {
 	// L0-L3: button lamps
-	display_matrix(4, 1, data & 0xf, 1);
+	m_display->matrix(1, data & 0xf);
 }
 
 READ8_MEMBER(ctstein_state::read_l)
@@ -332,7 +219,8 @@ void ctstein_state::ctstein(machine_config &config)
 	m_maincpu->write_sk().set(m_speaker, FUNC(speaker_sound_device::level_w));
 	m_maincpu->read_l().set(FUNC(ctstein_state::read_l));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(1, 4);
 	config.set_default_layout(layout_ctstein);
 
 	/* sound hardware */
@@ -406,18 +294,16 @@ WRITE8_MEMBER(h2hbaskbc_state::write_l)
 	u16 sel = (m_g | m_d << 4 | m_g << 8 | m_d << 12) & mask;
 
 	// D2+G0,G1 are 7segs
-	set_display_segmask(3, 0x7f);
+	m_display->segmask(3, 0x7f);
 
 	// L0-L6: digit segments A-G, L0-L4: led data
-	// strobe display
-	display_matrix(7, 16, data, sel);
-	display_matrix(7, 16, 0, 0);
+	m_display->matrix(sel, data);
 }
 
 READ8_MEMBER(h2hbaskbc_state::read_in)
 {
 	// IN: multiplexed inputs
-	return read_inputs(4, 7) | (m_inp_matrix[4]->read() & 8);
+	return read_inputs(4, 7) | (m_inputs[4]->read() & 8);
 }
 
 // config
@@ -482,7 +368,8 @@ void h2hbaskbc_state::h2hbaskbc(machine_config &config)
 	m_maincpu->read_in().set(FUNC(h2hbaskbc_state::read_in));
 	m_maincpu->write_so().set(m_speaker, FUNC(speaker_sound_device::level_w));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(16, 7);
 	config.set_default_layout(layout_h2hbaskbc);
 
 	/* sound hardware */
@@ -547,18 +434,15 @@ public:
 
 void einvaderc_state::prepare_display()
 {
-	// D0-D2 are 7segs
-	set_display_segmask(7, 0x7f);
-
-	// update display
 	u8 l = bitswap<8>(m_l,7,6,0,1,2,3,4,5);
 	u16 grid = (m_d | m_g << 4 | m_sk << 8 | m_so << 9) ^ 0x0ff;
-	display_matrix(8, 10, l, grid);
+
+	m_display->matrix(grid, l);
 }
 
 WRITE8_MEMBER(einvaderc_state::write_d)
 {
-	// D: led grid 0-3
+	// D: led grid 0-3 (D0-D2 are 7segs)
 	m_d = data;
 	prepare_display();
 }
@@ -618,12 +502,12 @@ void einvaderc_state::einvaderc(machine_config &config)
 
 	/* video hardware */
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_SVG));
-	screen.set_svg_region("svg");
-	screen.set_refresh_hz(50);
+	screen.set_refresh_hz(60);
 	screen.set_size(913, 1080);
 	screen.set_visarea_full();
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	PWM_DISPLAY(config, m_display).set_size(10, 8);
+	m_display->set_segmask(7, 0x7f);
 	config.set_default_layout(layout_einvaderc);
 
 	/* sound hardware */
@@ -637,7 +521,7 @@ ROM_START( einvaderc )
 	ROM_REGION( 0x0800, "maincpu", 0 )
 	ROM_LOAD( "copl444-hrz_n_inv_ii", 0x0000, 0x0800, CRC(76400f38) SHA1(0e92ab0517f7b7687293b189d30d57110df20fe0) )
 
-	ROM_REGION( 80636, "svg", 0)
+	ROM_REGION( 80636, "screen", 0)
 	ROM_LOAD( "einvaderc.svg", 0, 80636, CRC(a52d0166) SHA1(f69397ebcc518701f30a47b4d62e5a700825375a) )
 ROM_END
 
@@ -680,12 +564,12 @@ public:
 
 void unkeinv_state::prepare_display()
 {
-	display_matrix(8+8, 8+12, m_g << 4 | m_d, m_l, false);
+	m_display->matrix(m_l, m_g << 4 | m_d, false);
 
 	// positional led row is on L6,L7
-	u16 wand = m_display_state[7] << 8 | m_display_state[6];
-	m_display_state[8 + m_inp_matrix[1]->read()] = wand;
-	display_update();
+	u16 wand = m_display->read_row(7) << 8 | m_display->read_row(6);
+	m_display->write_row(8 + m_inputs[1]->read(), wand);
+	m_display->update();
 }
 
 WRITE8_MEMBER(unkeinv_state::write_g)
@@ -716,14 +600,14 @@ READ8_MEMBER(unkeinv_state::read_l)
 
 	// L0-L5+G2: positional odd
 	// L0-L5+G3: positional even
-	u8 pos = m_inp_matrix[1]->read();
+	u8 pos = m_inputs[1]->read();
 	if (m_g & 4 && pos & 1)
 		ret ^= (1 << (pos >> 1));
 	if (m_g & 8 && ~pos & 1)
 		ret ^= (1 << (pos >> 1));
 
 	// L7+G3: fire button
-	if (m_g & 8 && m_inp_matrix[0]->read())
+	if (m_g & 8 && m_inputs[0]->read())
 		ret ^= 0x80;
 
 	return ret & ~m_l;
@@ -751,7 +635,8 @@ void unkeinv_state::unkeinv(machine_config &config)
 	m_maincpu->read_l_tristate().set_constant(0xff);
 	m_maincpu->write_so().set(m_speaker, FUNC(speaker_sound_device::level_w));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(8+12, 8+8);
 	config.set_default_layout(layout_unkeinv);
 
 	/* sound hardware */
@@ -838,7 +723,7 @@ WRITE8_MEMBER(lchicken_state::write_l)
 	// L0-L3: led data
 	// L4-L6: led select
 	// L7: N/C
-	display_matrix(4, 3, ~data & 0xf, data >> 4 & 7);
+	m_display->matrix(data >> 4 & 7, ~data & 0xf);
 }
 
 WRITE8_MEMBER(lchicken_state::write_d)
@@ -914,7 +799,9 @@ void lchicken_state::lchicken(machine_config &config)
 	m_maincpu->read_si().set(FUNC(lchicken_state::read_si));
 
 	TIMER(config, "chicken_motor").configure_periodic(FUNC(lchicken_state::motor_sim_tick), attotime::from_msec(6000/0x100)); // ~6sec for a full rotation
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(3, 4);
 	config.set_default_layout(layout_lchicken);
 
 	/* sound hardware */
@@ -963,14 +850,14 @@ WRITE8_MEMBER(funjacks_state::write_d)
 	// D: led grid + input mux
 	m_inp_mux = data;
 	m_d = ~data & 0xf;
-	display_matrix(2, 4, m_l, m_d);
+	m_display->matrix(m_d, m_l);
 }
 
 WRITE8_MEMBER(funjacks_state::write_l)
 {
 	// L0,L1: led state
 	m_l = data & 3;
-	display_matrix(2, 4, m_l, m_d);
+	m_display->matrix(m_d, m_l);
 }
 
 WRITE8_MEMBER(funjacks_state::write_g)
@@ -990,7 +877,7 @@ READ8_MEMBER(funjacks_state::read_g)
 {
 	// G1: speaker out state
 	// G2,G3: inputs
-	return m_inp_matrix[3]->read() | (m_g & 2);
+	return m_inputs[3]->read() | (m_g & 2);
 }
 
 // config
@@ -1028,7 +915,9 @@ void funjacks_state::funjacks(machine_config &config)
 	m_maincpu->read_l().set(FUNC(funjacks_state::read_l));
 	m_maincpu->read_g().set(FUNC(funjacks_state::read_g));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(4, 2);
+	m_display->set_bri_levels(0.15);
 	config.set_default_layout(layout_funjacks);
 
 	/* sound hardware */
@@ -1078,7 +967,7 @@ WRITE8_MEMBER(funrlgl_state::write_d)
 {
 	// D: led grid
 	m_d = ~data & 0xf;
-	display_matrix(4, 4, m_l, m_d);
+	m_display->matrix(m_d, m_l);
 }
 
 WRITE8_MEMBER(funrlgl_state::write_l)
@@ -1086,7 +975,7 @@ WRITE8_MEMBER(funrlgl_state::write_l)
 	// L0-L3: led state
 	// L4-L7: N/C
 	m_l = ~data & 0xf;
-	display_matrix(4, 4, m_l, m_d);
+	m_display->matrix(m_d, m_l);
 }
 
 WRITE8_MEMBER(funrlgl_state::write_g)
@@ -1121,7 +1010,9 @@ void funrlgl_state::funrlgl(machine_config &config)
 	m_maincpu->write_g().set(FUNC(funrlgl_state::write_g));
 	m_maincpu->read_g().set_ioport("IN.0");
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(4, 4);
+	m_display->set_bri_levels(0.02, 0.1); // top led is brighter
 	config.set_default_layout(layout_funrlgl);
 
 	/* sound hardware */
@@ -1169,8 +1060,7 @@ public:
 
 void mdallas_state::prepare_display()
 {
-	set_display_segmask(0xff, 0xff);
-	display_matrix(8, 8, m_l, ~(m_d << 4 | m_g));
+	m_display->matrix(~(m_d << 4 | m_g), m_l);
 }
 
 WRITE8_MEMBER(mdallas_state::write_l)
@@ -1263,7 +1153,9 @@ void mdallas_state::mdallas(machine_config &config)
 	m_maincpu->read_in().set(FUNC(mdallas_state::read_in));
 	m_maincpu->write_so().set(m_speaker, FUNC(speaker_sound_device::level_w));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(8, 8);
+	m_display->set_segmask(0xff, 0xff);
 	config.set_default_layout(layout_mdallas);
 
 	/* sound hardware */
@@ -1322,7 +1214,7 @@ WRITE8_MEMBER(plus1_state::write_l)
 READ8_MEMBER(plus1_state::read_l)
 {
 	// L: IN.1, mask with output
-	return m_inp_matrix[1]->read() & m_l;
+	return m_inputs[1]->read() & m_l;
 }
 
 // config
@@ -1410,7 +1302,7 @@ public:
 void lightfgt_state::prepare_display()
 {
 	u8 grid = (m_so | m_d << 1) ^ 0x1f;
-	display_matrix(5, 5, m_l, grid);
+	m_display->matrix(grid, m_l);
 }
 
 WRITE_LINE_MEMBER(lightfgt_state::write_so)
@@ -1487,7 +1379,8 @@ void lightfgt_state::lightfgt(machine_config &config)
 	m_maincpu->write_sk().set(m_speaker, FUNC(speaker_sound_device::level_w));
 	m_maincpu->read_g().set(FUNC(lightfgt_state::read_g));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(5, 5);
 	config.set_default_layout(layout_lightfgt);
 
 	/* sound hardware */
@@ -1552,7 +1445,7 @@ READ8_MEMBER(bship82_state::read_in)
 WRITE_LINE_MEMBER(bship82_state::write_so)
 {
 	// SO: led
-	display_matrix(1, 1, state, 1);
+	m_display->matrix(1, state);
 }
 
 // config
@@ -1648,7 +1541,8 @@ void bship82_state::bship82(machine_config &config)
 	m_maincpu->write_so().set(FUNC(bship82_state::write_so));
 	m_maincpu->read_si().set_ioport("IN.4");
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(1, 1);
 	config.set_default_layout(layout_bship82);
 
 	/* sound hardware */
@@ -1700,10 +1594,7 @@ public:
 
 void qkracer_state::prepare_display()
 {
-	set_display_segmask(0xdf, 0x7f);
-	set_display_segmask(0x20, 0x41); // equals sign
-
-	display_matrix(7, 9, m_l, ~(m_d | m_g << 4 | m_sk << 8));
+	m_display->matrix(~(m_d | m_g << 4 | m_sk << 8), m_l);
 }
 
 WRITE8_MEMBER(qkracer_state::write_d)
@@ -1787,7 +1678,10 @@ void qkracer_state::qkracer(machine_config &config)
 	m_maincpu->read_in().set(FUNC(qkracer_state::read_in));
 	m_maincpu->write_sk().set(FUNC(qkracer_state::write_sk));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(9, 7);
+	m_display->set_segmask(0xdf, 0x7f);
+	m_display->set_segmask(0x20, 0x41); // equals sign
 	config.set_default_layout(layout_qkracer);
 
 	/* no sound! */
@@ -1839,8 +1733,7 @@ public:
 
 void vidchal_state::prepare_display()
 {
-	set_display_segmask(0x3f, 0xff);
-	display_matrix(8, 7, m_l, m_d | m_sk << 6);
+	m_display->matrix(m_d | m_sk << 6, m_l);
 }
 
 WRITE8_MEMBER(vidchal_state::write_d)
@@ -1885,7 +1778,9 @@ void vidchal_state::vidchal(machine_config &config)
 	m_maincpu->read_in().set_ioport("IN.0");
 	m_maincpu->write_sk().set(FUNC(vidchal_state::write_sk));
 
-	TIMER(config, "display_decay").configure_periodic(FUNC(hh_cop400_state::display_decay_tick), attotime::from_msec(1));
+	/* video hardware */
+	PWM_DISPLAY(config, m_display).set_size(6+1, 8);
+	m_display->set_segmask(0x3f, 0xff);
 	config.set_default_layout(layout_vidchal);
 
 	/* sound hardware */

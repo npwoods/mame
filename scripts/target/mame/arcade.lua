@@ -336,6 +336,7 @@ VIDEOS["RAMDAC"] = true
 VIDEOS["SAA5050"] = true
 --VIDEOS["SDA5708"] = true
 VIDEOS["SCN2674"] = true
+--VIDEOS["PWM_DISPLAY"] = true
 --VIDEOS["SED1200"] = true
 --VIDEOS["SED1330"] = true
 --VIDEOS["SED1520"] = true
@@ -520,6 +521,7 @@ MACHINES["MCF5206E"] = true
 MACHINES["METERS"] = true
 MACHINES["MICROTOUCH"] = true
 --MACHINES["MIOT6530"] = true
+--MACHINES["MM5307"] = true
 --MACHINES["MM58167"] = true
 MACHINES["MM58274C"] = true
 MACHINES["MM74C922"] = true
@@ -1944,6 +1946,7 @@ files {
 	MAME_DIR .. "src/mame/video/xorworld.cpp",
 	MAME_DIR .. "src/mame/machine/gaelco_ds5002fp.cpp",
 	MAME_DIR .. "src/mame/machine/gaelco_ds5002fp.h",
+	MAME_DIR .. "src/mame/drivers/bigkarnk_ms.cpp",
 }
 
 createMAMEProjects(_target, _subtarget, "gameplan")
