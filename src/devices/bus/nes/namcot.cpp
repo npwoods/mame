@@ -213,7 +213,7 @@ void nes_namcot163_device::device_start()
 	// TODO : Measure actual volume
 	if (m_n163_vol == 2) // Submapper 2 - No expansion sound
 	{
-		m_namco163snd->set_output_gain(ALL_OUTPUTS, 0.0);
+		m_namco163snd->set_output_gain(ALL_OUTPUTS, 0.0f);
 	}
 	else if (m_n163_vol == 3) // Submapper 3 - N163 expansion sound: 11.0-13.0 dB louder than NES APU
 	{
