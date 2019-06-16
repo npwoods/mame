@@ -20,7 +20,6 @@
 #include "luaengine.h"
 #include "cheat.h"
 #include "rendfont.h"
-#include "../info.h"
 #include "uiinput.h"
 #include "ui/ui.h"
 #include "ui/info.h"

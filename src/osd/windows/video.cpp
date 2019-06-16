@@ -63,8 +63,6 @@ bool windows_osd_interface::video_init()
 		win_window_info::create(machine(), index, m_monitor_module->pick_monitor(options, index), &windows[index]);
 	}
 
-	//MessageBoxA(nullptr, "Fuck4", NULL, MB_OK);
-
 	if (video_config.mode != VIDEO_MODE_NONE)
 		SetForegroundWindow(std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front())->platform_window());
 
