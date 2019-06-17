@@ -657,6 +657,21 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 		std::cout << "OK STATUS ### Resumed" << std::endl;
 		emit_status();
 	}
+	else if (args[0] == "input")
+	{
+		machine().ioport().natkeyboard().post_utf8(args[1].c_str(), args[1].size());
+		std::cout << "OK ### Text inputted" << std::endl;
+	}
+	else if (args[0] == "paste")
+	{
+		char *text = osd_get_clipboard_text();
+		if (text)
+		{
+			machine().ioport().natkeyboard().post_utf8(text);
+			free(text);
+		}
+		std::cout << "OK ### Text inputted from clipboard" << std::endl;
+	}
 	else if (args[0] == "state_load")
 	{
 		machine().schedule_load(std::string(args[1]));
