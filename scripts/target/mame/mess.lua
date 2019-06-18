@@ -412,6 +412,7 @@ MACHINES["ADC083X"] = true
 MACHINES["ADC1038"] = true
 MACHINES["ADC1213X"] = true
 MACHINES["AICARTC"] = true
+MACHINES["AM25S55X"] = true
 MACHINES["AM2847"] = true
 MACHINES["AM2910"] = true
 MACHINES["AM53CF96"] = true
@@ -608,6 +609,7 @@ MACHINES["TDC1008"] = true
 --MACHINES["TE7750"] = true
 MACHINES["TIMEKPR"] = true
 MACHINES["TMC0430"] = true
+MACHINES["TMC208K"] = true
 MACHINES["TMP68301"] = true
 MACHINES["TMS5501"] = true
 MACHINES["TMS6100"] = true
@@ -627,6 +629,7 @@ MACHINES["TTL74164"] = true
 MACHINES["TTL74175"] = true
 MACHINES["TTL74181"] = true
 MACHINES["TTL74259"] = true
+MACHINES["TTL74381"] = true
 MACHINES["TTL7474"] = true
 MACHINES["TUBE"] = true
 MACHINES["UPD1990A"] = true
@@ -1209,7 +1212,7 @@ function linkProjects_mame_mess(_target, _subtarget)
 		"svi",
 		"svision",
 		"swtpc",
-		"synertec",
+		"synertek",
 		"ta",
 		"tandberg",
 		"tangerin",
@@ -2962,8 +2965,8 @@ files {
 	MAME_DIR .. "src/mame/drivers/qvt70.cpp",
 	MAME_DIR .. "src/mame/drivers/qvt102.cpp",
 	MAME_DIR .. "src/mame/drivers/qvt103.cpp",
+	MAME_DIR .. "src/mame/drivers/qvt190.cpp",
 	MAME_DIR .. "src/mame/drivers/qvt201.cpp",
-	MAME_DIR .. "src/mame/drivers/qvt6800.cpp",
 }
 
 createMESSProjects(_target, _subtarget, "radio")
@@ -3328,8 +3331,9 @@ files {
 	MAME_DIR .. "src/mame/machine/swtpc09.cpp",
 }
 
-createMESSProjects(_target, _subtarget, "synertec")
+createMESSProjects(_target, _subtarget, "synertek")
 files {
+	MAME_DIR .. "src/mame/drivers/ktm3.cpp",
 	MAME_DIR .. "src/mame/drivers/sym1.cpp",
 }
 
@@ -3449,8 +3453,6 @@ files {
 	MAME_DIR .. "src/mame/drivers/evmbug.cpp",
 	MAME_DIR .. "src/mame/drivers/exelv.cpp",
 	MAME_DIR .. "src/mame/drivers/geneve.cpp",
-	MAME_DIR .. "src/mame/machine/screenless.cpp", -- delete soon
-	MAME_DIR .. "src/mame/includes/screenless.h", -- delete soon
 	MAME_DIR .. "src/mame/drivers/hh_tms1k.cpp",
 	MAME_DIR .. "src/mame/includes/hh_tms1k.h",
 	MAME_DIR .. "src/mame/drivers/tispeak.cpp",  -- subdriver of hh_tms1k
@@ -3892,6 +3894,10 @@ files {
 	MAME_DIR .. "src/mame/machine/dmv_keyb.cpp",
 	MAME_DIR .. "src/mame/machine/dmv_keyb.h",
 	MAME_DIR .. "src/mame/drivers/dpb7000.cpp",
+	MAME_DIR .. "src/mame/video/dpb_combiner.cpp",
+	MAME_DIR .. "src/mame/video/dpb_combiner.h",
+	MAME_DIR .. "src/mame/video/dpb_brushproc.cpp",
+	MAME_DIR .. "src/mame/video/dpb_brushproc.h",
 	MAME_DIR .. "src/mame/drivers/dps1.cpp",
 	MAME_DIR .. "src/mame/drivers/dsb46.cpp",
 	MAME_DIR .. "src/mame/drivers/dual68.cpp",

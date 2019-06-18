@@ -480,6 +480,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/74381.h,MACHINES["TTL74381"] = true
+---------------------------------------------------
+
+if (MACHINES["TTL74381"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/74381.cpp",
+		MAME_DIR .. "src/devices/machine/74381.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/7474.h,MACHINES["TTL7474"] = true
 ---------------------------------------------------
 
@@ -595,6 +607,18 @@ if (MACHINES["AICARTC"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/aicartc.cpp",
 		MAME_DIR .. "src/devices/machine/aicartc.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/am25s55x.h,MACHINES["AM25S55X"] = true
+---------------------------------------------------
+
+if (MACHINES["AM25S55X"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/am25s55x.cpp",
+		MAME_DIR .. "src/devices/machine/am25s55x.h",
 	}
 end
 
@@ -2828,6 +2852,18 @@ if (MACHINES["TMC0430"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/tmc0430.cpp",
 		MAME_DIR .. "src/devices/machine/tmc0430.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/tmc208k.h,MACHINES["TMC208K"] = true
+---------------------------------------------------
+
+if (MACHINES["TMC208K"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/tmc208k.cpp",
+		MAME_DIR .. "src/devices/machine/tmc208k.h",
 	}
 end
 

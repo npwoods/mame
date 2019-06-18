@@ -9,6 +9,8 @@
     This system is only vaguely Apple II compatible.
     The keyboard works entirely differently, which is a big deal.
 
+    TODO: emulate expansion connector (not wholly Apple II compatible)
+
     $C05A - banks RAM from c100-ffff
     $C05B - banks ROM from c100-ffff
 
@@ -628,4 +630,4 @@ ROM_START(tk2000)
 ROM_END
 
 /*    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT   CLASS         INIT        COMPANY         FULLNAME */
-COMP( 1984, tk2000, 0,      0,      tk2000,  tk2000, tk2000_state, empty_init, "Microdigital", "TK2000", MACHINE_NOT_WORKING )
+COMP( 1984, tk2000, 0,      0,      tk2000,  tk2000, tk2000_state, empty_init, "Microdigital", "TK2000 Color Computer", MACHINE_NOT_WORKING )
