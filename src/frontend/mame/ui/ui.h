@@ -259,6 +259,10 @@ private:
 	static std::vector<ui::menu_item> slider_list;
 	static slider_state     *slider_current;
 
+	// slave UI instance variables
+	ioport_field *			m_slave_ui_current_poll_field;
+	input_seq_type			m_slave_ui_current_poll_seq_type;
+
 	// slave UI statics
 	static bool				m_slave_ui_initialized;
 	static std::thread		m_slave_ui_thread;
@@ -280,6 +284,8 @@ private:
 	void update_and_render_slave_ui(render_container &container);
 	bool invoke_slave_ui_command(const std::vector<std::string> &args);
 	void emit_status();
+	bool has_currently_polling_input_seq() const;
+	void set_input_seq(ioport_field &field, input_seq_type seq_type, const input_seq seq);
 
 	// slider controls
 	virtual int32_t slider_changed(running_machine &machine, void *arg, int id, std::string *str, int32_t newval) override;

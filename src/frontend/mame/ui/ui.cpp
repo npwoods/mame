@@ -183,7 +183,11 @@ mame_ui_manager::mame_ui_manager(running_machine &machine)
 	, m_popup_text_end(0)
 	, m_mouse_bitmap(32, 32)
 	, m_mouse_arrow_texture(nullptr)
-	, m_mouse_show(false) {}
+	, m_mouse_show(false)
+	, m_slave_ui_current_poll_field(nullptr)
+	, m_slave_ui_current_poll_seq_type(SEQ_TYPE_INVALID)
+{
+}
 
 mame_ui_manager::~mame_ui_manager()
 {
@@ -565,8 +569,26 @@ std::queue<std::string> mame_ui_manager::m_slave_ui_command_queue;
 
 void mame_ui_manager::update_and_render_slave_ui(render_container &container)
 {
-	std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
+	// are we polling input changes
+	if (m_slave_ui_current_poll_field && m_slave_ui_current_poll_seq_type != SEQ_TYPE_INVALID)
+	{
+		// if we are, poll, and do we get anything?
+		if (machine().input().seq_poll())
+		{
+			// update the input sequence
+			set_input_seq(
+				*m_slave_ui_current_poll_field,
+				m_slave_ui_current_poll_seq_type,
+				machine().input().seq_poll_final());
 
+			// and we're no longer polling
+			m_slave_ui_current_poll_field = nullptr;
+			m_slave_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
+		}
+	}
+
+	// pop commands
+	std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
 	while (!m_slave_ui_command_queue.empty())
 	{
 		auto args = string_split_with_quotes(m_slave_ui_command_queue.front());
@@ -744,6 +766,89 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 		// we've changed the status; emit it
 		emit_status();
 	}
+	else if (args[0] == "seq_poll_start"
+		|| args[0] == "seq_set_default"
+		|| args[0] == "seq_clear")
+	{
+		// find the port
+		auto ports_iter = machine().ioport().ports().find(args[1]);
+		if (ports_iter == machine().ioport().ports().end())
+		{
+			std::cout << "ERROR ### Can't find port '" << args[1] << "'" << std::endl;
+			return false;
+		}
+
+		// find the field
+		ioport_value mask = atoll(args[2].c_str());
+		ioport_field *field = ports_iter->second->field(mask);
+		if (!field)
+		{
+			std::cout << "ERROR ### Can't find field mask '" << args[2] << "' on port '" << args[1] << "'" << std::endl;
+			return false;
+		}
+		if (!field->enabled())
+		{
+			std::cout << "ERROR ### Field '" << args[1] << "':" << args[2] << " is disabled" << std::endl;
+			return false;
+		}
+
+		// find the sequence
+		input_seq_type seq_type;
+		if (args[3] == "standard")
+			seq_type = SEQ_TYPE_STANDARD;
+		else if (args[3] == "increment")
+			seq_type = SEQ_TYPE_INCREMENT;
+		else if (args[3] == "decrement")
+			seq_type = SEQ_TYPE_DECREMENT;
+		else
+		{
+			std::cout << "ERROR ### Unknown input sequence type '" << args[3] << "'" << std::endl;
+			return false;
+		}
+
+		if (args[0] == "seq_poll_start")
+		{
+			// are we recording next?
+			bool record_next = args.size() >= 5 && bool_from_string(args[4]);
+
+			// start polling
+			machine().input().seq_poll_start(
+				field->is_analog() ? ITEM_CLASS_ABSOLUTE : ITEM_CLASS_SWITCH,
+				record_next ? &field->seq(seq_type) : nullptr);
+
+			// and record that we're tracking
+			m_slave_ui_current_poll_field = field;
+			m_slave_ui_current_poll_seq_type = seq_type;
+			std::cout << "OK STATUS ### Starting polling" << std::endl;
+		}
+		else if (args[0] == "seq_set_default")
+		{
+			set_input_seq(*field, seq_type, field->defseq(seq_type));
+			std::cout << "OK STATUS ### Input seq set to default" << std::endl;
+		}
+		else if (args[0] == "seq_clear")
+		{
+			set_input_seq(*field, seq_type, input_seq());
+			std::cout << "OK STATUS ### Cleared" << std::endl;
+		}
+		else
+		{
+			throw false;
+		}
+		emit_status();
+	}
+	else if (args[0] == "seq_poll_stop")
+	{
+		if (!has_currently_polling_input_seq())
+		{
+			std::cout << "ERROR ### Was not polling" << std::endl;
+			return false;
+		}
+
+		m_slave_ui_current_poll_field = nullptr;
+		m_slave_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
+		std::cout << "OK ### Stopped polling" << std::endl;
+	}
 	else
 	{
 		std::cout << "ERROR ### Unrecognized command '" << args[0] << "'" << std::endl;
@@ -760,7 +865,8 @@ void mame_ui_manager::emit_status()
 {
 	// start status
 	std::cout << "<status" << std::endl;
-	std::cout << "\tpaused=\"" << string_from_bool(machine().paused()) << "\">" << std::endl;
+	std::cout << "\tpaused=\"" << string_from_bool(machine().paused()) << "\"" << std::endl;
+	std::cout << "\tpolling_input_seq=\"" << string_from_bool(has_currently_polling_input_seq()) << "\">" << std::endl;
 
 	// video
 	std::cout << "\t<video" << std::endl;
@@ -839,6 +945,29 @@ void mame_ui_manager::emit_status()
 
 	// end status
 	std::cout << "</status>" << std::endl;
+}
+
+
+//-------------------------------------------------
+//  has_currently_polling_input_seq
+//-------------------------------------------------
+
+bool mame_ui_manager::has_currently_polling_input_seq() const
+{
+	return m_slave_ui_current_poll_field && m_slave_ui_current_poll_seq_type != SEQ_TYPE_INVALID;
+}
+
+
+//-------------------------------------------------
+//  set_input_seq
+//-------------------------------------------------
+
+void mame_ui_manager::set_input_seq(ioport_field &field, input_seq_type seq_type, const input_seq seq)
+{
+	ioport_field::user_settings settings;
+	m_slave_ui_current_poll_field->get_user_settings(settings);
+	settings.seq[m_slave_ui_current_poll_seq_type] = machine().input().seq_poll_final();
+	m_slave_ui_current_poll_field->set_user_settings(settings);
 }
 
 
