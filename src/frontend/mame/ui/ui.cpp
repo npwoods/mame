@@ -801,6 +801,42 @@ void mame_ui_manager::emit_status()
 	}
 	std::cout << "\t</images>" << std::endl;
 
+	// inputs (input enumeration logic very similar to src/frontend/mame/ui/inputmap.cpp)
+	std::cout << "\t<inputs>" << std::endl;
+	for (auto &port : machine().ioport().ports())
+	{
+		for (ioport_field &field : port.second->fields())
+		{
+			ioport_type_class type_class = field.type_class();
+
+			// add if we match the group and we have a valid name
+			if (field.enabled() && (type_class == INPUT_CLASS_CONTROLLER || type_class == INPUT_CLASS_MISC || type_class == INPUT_CLASS_KEYBOARD))
+			{
+				// loop over all sequence types
+				for (input_seq_type seqtype = SEQ_TYPE_STANDARD; seqtype < SEQ_TYPE_TOTAL; ++seqtype)
+				{
+					std::cout << "\t\t<input port_tag=\"" << port.first
+						<< "\" mask=\"0x" << std::hex << field.mask()
+						<< "\" type=\"" << (field.is_analog() ? "analog" : "digital")
+						<< "\" name=\"" << util::xml::normalize_string(field.name())
+						<< "\">" << std::endl;
+
+					// both analog and digital have "standard" seq types
+					std::cout << "\t\t<seq type=\"standard\" text=\"" << util::xml::normalize_string(machine().input().seq_name(field.seq(SEQ_TYPE_STANDARD)).c_str()) << "\"/>" << std::endl;
+					if (field.is_analog())
+					{
+						// analog inputs also have increment and decrement
+						std::cout << "\t\t<seq type=\"increment\" text=\"" << util::xml::normalize_string(machine().input().seq_name(field.seq(SEQ_TYPE_INCREMENT)).c_str()) << "\"/>" << std::endl;
+						std::cout << "\t\t<seq type=\"decrement\" text=\"" << util::xml::normalize_string(machine().input().seq_name(field.seq(SEQ_TYPE_DECREMENT)).c_str()) << "\"/>" << std::endl;
+					}
+
+					std::cout << "\t\t</input>" << std::endl;
+				}
+			}
+		}
+	}
+	std::cout << "\t</inputs>" << std::endl;
+
 	// end status
 	std::cout << "</status>" << std::endl;
 }
