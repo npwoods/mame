@@ -922,7 +922,7 @@ void mame_ui_manager::emit_status()
 				for (input_seq_type seqtype = SEQ_TYPE_STANDARD; seqtype < SEQ_TYPE_TOTAL; ++seqtype)
 				{
 					std::cout << "\t\t<input port_tag=\"" << port.first
-						<< "\" mask=\"0x" << std::hex << field.mask()
+						<< "\" mask=\"" << field.mask()
 						<< "\" type=\"" << (field.is_analog() ? "analog" : "digital")
 						<< "\" name=\"" << util::xml::normalize_string(field.name())
 						<< "\">" << std::endl;
