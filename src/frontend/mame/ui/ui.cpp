@@ -839,12 +839,6 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 	}
 	else if (args[0] == "seq_poll_stop")
 	{
-		if (!has_currently_polling_input_seq())
-		{
-			std::cout << "ERROR ### Was not polling" << std::endl;
-			return false;
-		}
-
 		m_slave_ui_current_poll_field = nullptr;
 		m_slave_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
 		std::cout << "OK ### Stopped polling" << std::endl;
