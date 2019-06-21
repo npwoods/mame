@@ -142,6 +142,7 @@ CPUS["NS32000"] = true
 CPUS["HPC"] = true
 CPUS["MEG"] = true
 CPUS["DSPV"] = true
+CPUS["RII"] = true
 
 --------------------------------------------------
 -- specify available sound cores; some of these are
@@ -298,6 +299,7 @@ VIDEOS["SEGA315_5313"] = true
 --VIDEOS["BUFSPRITE"] = true
 VIDEOS["BT45X"] = true
 VIDEOS["BT459"] = true
+VIDEOS["BT47X"] = true
 VIDEOS["CATSEYE"] = true
 VIDEOS["CDP1861"] = true
 VIDEOS["CDP1862"] = true
@@ -3898,6 +3900,8 @@ files {
 	MAME_DIR .. "src/mame/video/dpb_combiner.h",
 	MAME_DIR .. "src/mame/video/dpb_brushproc.cpp",
 	MAME_DIR .. "src/mame/video/dpb_brushproc.h",
+	MAME_DIR .. "src/mame/video/dpb_storeaddr.cpp",
+	MAME_DIR .. "src/mame/video/dpb_storeaddr.h",
 	MAME_DIR .. "src/mame/drivers/dps1.cpp",
 	MAME_DIR .. "src/mame/drivers/dsb46.cpp",
 	MAME_DIR .. "src/mame/drivers/dual68.cpp",
