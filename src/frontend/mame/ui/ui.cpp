@@ -694,6 +694,20 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 		}
 		std::cout << "OK ### Text inputted from clipboard" << std::endl;
 	}
+	else if (args[0] == "set_attenuation")
+	{
+		int attenuation = atoi(args[1].c_str());
+		machine().sound().set_attenuation(attenuation);
+		std::cout << "OK STATUS ### Sound attenuation set to " << attenuation << std::endl;
+		emit_status();
+	}
+	else if (args[0] == "set_natural_keyboard_in_use")
+	{
+		bool in_use = bool_from_string(args[1]);
+		machine().ioport().natkeyboard().set_in_use(in_use);
+		std::cout << "OK STATUS ### Natural keyboard in use set to " << string_from_bool(in_use) << std::endl;
+		emit_status();
+	}
 	else if (args[0] == "state_load")
 	{
 		machine().schedule_load(std::string(args[1]));
@@ -860,7 +874,10 @@ void mame_ui_manager::emit_status()
 	// start status
 	std::cout << "<status" << std::endl;
 	std::cout << "\tpaused=\"" << string_from_bool(machine().paused()) << "\"" << std::endl;
-	std::cout << "\tpolling_input_seq=\"" << string_from_bool(has_currently_polling_input_seq()) << "\">" << std::endl;
+	std::cout << "\tpolling_input_seq=\"" << string_from_bool(has_currently_polling_input_seq()) << "\"" << std::endl;
+	if (machine().ioport().safe_to_read())
+		std::cout << "\tnatural_keyboard_in_use=\"" << string_from_bool(machine().ioport().natkeyboard().in_use()) << "\"" << std::endl;
+	std::cout << "\t>" << std::endl;
 
 	// video
 	std::cout << "\t<video" << std::endl;
@@ -868,6 +885,13 @@ void mame_ui_manager::emit_status()
 	std::cout << "\t\tspeed_text=\"" << machine().video().speed_text() << "\"" << std::endl;
 	std::cout << "\t\tthrottled=\"" << string_from_bool(machine().video().throttled()) << "\"" << std::endl;
 	std::cout << "\t\tthrottle_rate=\"" << machine().video().throttle_rate() << "\"/>" << std::endl;
+
+	// sound
+	if (!machine().paused())	// sometimes machine().sound() can assert
+	{
+		std::cout << "\t<sound" << std::endl;
+		std::cout << "\t\tattenuation=\"" << machine().sound().attenuation() << "\"/>" << std::endl;
+	}
 
 	// slots
 	std::cout << "\t<slots>" << std::endl;
