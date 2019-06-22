@@ -259,15 +259,15 @@ private:
 	static std::vector<ui::menu_item> slider_list;
 	static slider_state     *slider_current;
 
-	// slave UI instance variables
-	ioport_field *			m_slave_ui_current_poll_field;
-	input_seq_type			m_slave_ui_current_poll_seq_type;
+	// worker UI instance variables
+	ioport_field *			m_worker_ui_current_poll_field;
+	input_seq_type			m_worker_ui_current_poll_seq_type;
 
-	// slave UI statics
-	static bool				m_slave_ui_initialized;
-	static std::thread		m_slave_ui_thread;
-	static std::mutex		m_slave_ui_mutex;
-	static std::queue<std::string> m_slave_ui_command_queue;
+	// worker UI statics
+	static bool				m_worker_ui_initialized;
+	static std::thread		m_worker_ui_thread;
+	static std::mutex		m_worker_ui_mutex;
+	static std::queue<std::string> m_worker_ui_command_queue;
 
 	// UI handlers
 	uint32_t handler_messagebox(render_container &container);
@@ -281,8 +281,8 @@ private:
 	std::unique_ptr<slider_state> slider_alloc(int id, const char *title, int32_t minval, int32_t defval, int32_t maxval, int32_t incval, void *arg);
 	
 	// slave UI
-	void update_and_render_slave_ui(render_container &container);
-	bool invoke_slave_ui_command(const std::vector<std::string> &args);
+	void update_and_render_worker_ui(render_container &container);
+	bool invoke_worker_ui_command(const std::vector<std::string> &args);
 	void emit_status();
 	bool has_currently_polling_input_seq() const;
 	void set_input_seq(ioport_field &field, input_seq_type seq_type, const input_seq seq);

@@ -124,7 +124,7 @@ public:
 
 		// default window to the first window in the list
 		window = std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front());
-		if (window->slave_ui_mode())
+		if (window->worker_ui_mode())
 		{
 			// in slave UI mode we have to ignore the caller and hook up to the desktop window
 			hwnd = GetDesktopWindow();

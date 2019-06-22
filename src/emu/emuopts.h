@@ -198,8 +198,8 @@
 #define OPTION_HTTP_ROOT            "http_root"
 
 // slave UI
-#define OPTION_SLAVE_UI				"slave_ui"
-#define OPTION_SLAVE_UI_DEBUG		"slave_ui_debug"
+#define OPTION_WORKER_UI				"worker_ui"
+#define OPTION_WORKER_UI_DEBUG		"worker_ui_debug"
 
 
 //**************************************************************************
@@ -496,9 +496,9 @@ public:
 	const ::image_option &image_option(const std::string &device_name) const;
 	::image_option &image_option(const std::string &device_name);
 
-	// slave UI
-	const char *slave_ui() const { return value(OPTION_SLAVE_UI); }
-	bool slave_ui_debug() const { return bool_value(OPTION_SLAVE_UI_DEBUG); }
+	// worker UI
+	const char *worker_ui() const { return value(OPTION_WORKER_UI); }
+	bool worker_ui_debug() const { return bool_value(OPTION_WORKER_UI_DEBUG); }
 
 protected:
 	virtual void command_argument_processed() override;

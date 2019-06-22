@@ -184,8 +184,8 @@ mame_ui_manager::mame_ui_manager(running_machine &machine)
 	, m_mouse_bitmap(32, 32)
 	, m_mouse_arrow_texture(nullptr)
 	, m_mouse_show(false)
-	, m_slave_ui_current_poll_field(nullptr)
-	, m_slave_ui_current_poll_seq_type(SEQ_TYPE_INVALID)
+	, m_worker_ui_current_poll_field(nullptr)
+	, m_worker_ui_current_poll_seq_type(SEQ_TYPE_INVALID)
 {
 }
 
@@ -219,16 +219,16 @@ void mame_ui_manager::init()
 	m_mouse_arrow_texture->set_bitmap(m_mouse_bitmap, m_mouse_bitmap.cliprect(), TEXFORMAT_ARGB32);
 
 	// slave UI hacks
-	if (machine().options().slave_ui() && *machine().options().slave_ui())
+	if (machine().options().worker_ui() && *machine().options().worker_ui())
 	{
 		// in slave UI, we start up paused
 		machine().pause();
 
 		// start the thread if we don't already have one (we won't have a thread if we started and
 		// a hard reset occurred)
-		if (!m_slave_ui_initialized)
+		if (!m_worker_ui_initialized)
 		{
-			m_slave_ui_thread = std::thread([this]()
+			m_worker_ui_thread = std::thread([this]()
 			{
 				std::cout << "OK STATUS ### Emulation commenced; ready for commands" << std::endl;
 				emit_status();
@@ -245,11 +245,11 @@ void mame_ui_manager::init()
 						&& str[2] == 'i'
 						&& str[3] == 't';
 
-					std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
-					m_slave_ui_command_queue.emplace(std::move(str));
+					std::lock_guard<std::mutex> lock(m_worker_ui_mutex);
+					m_worker_ui_command_queue.emplace(std::move(str));
 				};
 			});
-			m_slave_ui_initialized = true;
+			m_worker_ui_initialized = true;
 		}
 	}
 }
@@ -432,9 +432,9 @@ void mame_ui_manager::update_and_render(render_container &container)
 {
 	// in slave UI mode, behave very differently (in the end this should probably be
 	// done in a more object oriented fashion)
-	if (machine().options().slave_ui() && *machine().options().slave_ui())
+	if (machine().options().worker_ui() && *machine().options().worker_ui())
 	{
-		update_and_render_slave_ui(container);
+		update_and_render_worker_ui(container);
 		return;
 	}
 
@@ -559,43 +559,43 @@ static std::vector<std::string> string_split_with_quotes(const std::string &str)
 
 
 //-------------------------------------------------
-//  update_and_render_slave_ui
+//  update_and_render_worker_ui
 //-------------------------------------------------
 
-bool					mame_ui_manager::m_slave_ui_initialized;
-std::thread				mame_ui_manager::m_slave_ui_thread;
-std::mutex				mame_ui_manager::m_slave_ui_mutex;
-std::queue<std::string> mame_ui_manager::m_slave_ui_command_queue;
+bool					mame_ui_manager::m_worker_ui_initialized;
+std::thread				mame_ui_manager::m_worker_ui_thread;
+std::mutex				mame_ui_manager::m_worker_ui_mutex;
+std::queue<std::string> mame_ui_manager::m_worker_ui_command_queue;
 
-void mame_ui_manager::update_and_render_slave_ui(render_container &container)
+void mame_ui_manager::update_and_render_worker_ui(render_container &container)
 {
 	// are we polling input changes
-	if (m_slave_ui_current_poll_field && m_slave_ui_current_poll_seq_type != SEQ_TYPE_INVALID)
+	if (m_worker_ui_current_poll_field && m_worker_ui_current_poll_seq_type != SEQ_TYPE_INVALID)
 	{
 		// if we are, poll, and do we get anything?
 		if (machine().input().seq_poll())
 		{
 			// update the input sequence
 			set_input_seq(
-				*m_slave_ui_current_poll_field,
-				m_slave_ui_current_poll_seq_type,
+				*m_worker_ui_current_poll_field,
+				m_worker_ui_current_poll_seq_type,
 				machine().input().seq_poll_final());
 
 			// and we're no longer polling
-			m_slave_ui_current_poll_field = nullptr;
-			m_slave_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
+			m_worker_ui_current_poll_field = nullptr;
+			m_worker_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
 		}
 	}
 
 	// pop commands
-	std::lock_guard<std::mutex> lock(m_slave_ui_mutex);
-	while (!m_slave_ui_command_queue.empty())
+	std::lock_guard<std::mutex> lock(m_worker_ui_mutex);
+	while (!m_worker_ui_command_queue.empty())
 	{
-		auto args = string_split_with_quotes(m_slave_ui_command_queue.front());
+		auto args = string_split_with_quotes(m_worker_ui_command_queue.front());
 		if (!args.empty())
-			invoke_slave_ui_command(args);
+			invoke_worker_ui_command(args);
 
-		m_slave_ui_command_queue.pop();
+		m_worker_ui_command_queue.pop();
 	}
 }
 
@@ -621,14 +621,14 @@ static const char *string_from_bool(bool b)
 
 
 //-------------------------------------------------
-//  invoke_slave_ui_command
+//  invoke_worker_ui_command
 //-------------------------------------------------
 
-bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &args)
+bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &args)
 {
 	if (args[0] == "exit")
 	{
-		m_slave_ui_thread.join();
+		m_worker_ui_thread.join();
 		machine().schedule_exit();
 		std::cout << "OK ### Exit scheduled" << std::endl;
 	}
@@ -817,8 +817,8 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 				record_next ? &field->seq(seq_type) : nullptr);
 
 			// and record that we're tracking
-			m_slave_ui_current_poll_field = field;
-			m_slave_ui_current_poll_seq_type = seq_type;
+			m_worker_ui_current_poll_field = field;
+			m_worker_ui_current_poll_seq_type = seq_type;
 			std::cout << "OK STATUS ### Starting polling" << std::endl;
 		}
 		else if (args[0] == "seq_set_default")
@@ -839,8 +839,8 @@ bool mame_ui_manager::invoke_slave_ui_command(const std::vector<std::string> &ar
 	}
 	else if (args[0] == "seq_poll_stop")
 	{
-		m_slave_ui_current_poll_field = nullptr;
-		m_slave_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
+		m_worker_ui_current_poll_field = nullptr;
+		m_worker_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
 		std::cout << "OK ### Stopped polling" << std::endl;
 	}
 	else
@@ -944,7 +944,7 @@ void mame_ui_manager::emit_status()
 
 bool mame_ui_manager::has_currently_polling_input_seq() const
 {
-	return m_slave_ui_current_poll_field && m_slave_ui_current_poll_seq_type != SEQ_TYPE_INVALID;
+	return m_worker_ui_current_poll_field && m_worker_ui_current_poll_seq_type != SEQ_TYPE_INVALID;
 }
 
 
@@ -955,9 +955,9 @@ bool mame_ui_manager::has_currently_polling_input_seq() const
 void mame_ui_manager::set_input_seq(ioport_field &field, input_seq_type seq_type, const input_seq seq)
 {
 	ioport_field::user_settings settings;
-	m_slave_ui_current_poll_field->get_user_settings(settings);
-	settings.seq[m_slave_ui_current_poll_seq_type] = machine().input().seq_poll_final();
-	m_slave_ui_current_poll_field->set_user_settings(settings);
+	m_worker_ui_current_poll_field->get_user_settings(settings);
+	settings.seq[m_worker_ui_current_poll_seq_type] = machine().input().seq_poll_final();
+	m_worker_ui_current_poll_field->set_user_settings(settings);
 }
 
 

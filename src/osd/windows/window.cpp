@@ -320,7 +320,7 @@ win_window_info::win_window_info(
 		m_lastclickx(0),
 		m_lastclicky(0),
 		m_machine(machine),
-		m_slave_ui_mode(false)
+		m_worker_ui_mode(false)
 {
 	memset(m_title,0,sizeof(m_title));
 	m_non_fullscreen_bounds.left = 0;
@@ -671,7 +671,7 @@ BOOL winwindow_has_focus(void)
 	for (auto window : osd_common_t::s_window_list)
 	{
 		auto win_window = std::static_pointer_cast<win_window_info>(window);
-		if (focuswnd == win_window->platform_window() || win_window->slave_ui_mode())
+		if (focuswnd == win_window->platform_window() || win_window->worker_ui_mode())
 			return TRUE;
 	}
 
@@ -893,7 +893,7 @@ void win_window_info::update()
 			// post a redraw request with the primitive list as a parameter
 			last_update_time = timeGetTime();
 
-			if (slave_ui_mode())
+			if (worker_ui_mode())
 			{
 				HDC hdc = GetDC(platform_window());
 
@@ -1078,19 +1078,19 @@ int win_window_info::complete_create()
 			return 1;
 	}
 
-	// are we in slave UI mode?
+	// are we in worker UI mode?
 	HWND hwnd;
-	const char *slave_ui_window_name = machine().options().slave_ui();
-	m_slave_ui_mode = slave_ui_window_name && *slave_ui_window_name ? true : false;
-	if (m_slave_ui_mode)
+	const char *worker_ui_window_name = machine().options().worker_ui();
+	m_worker_ui_mode = worker_ui_window_name && *worker_ui_window_name ? true : false;
+	if (m_worker_ui_mode)
 	{
 		// we are in slave UI mode; either this value is an HWND or a window name
-		hwnd = (HWND)atoll(slave_ui_window_name);
+		hwnd = (HWND)atoll(worker_ui_window_name);
 		if (!hwnd)
-			hwnd = FindWindowEx(nullptr, nullptr, nullptr, osd::text::to_tstring(slave_ui_window_name).c_str());
+			hwnd = FindWindowEx(nullptr, nullptr, nullptr, osd::text::to_tstring(worker_ui_window_name).c_str());
 
 		// hack for debugging
-		if (machine().options().slave_ui_debug())
+		if (machine().options().worker_ui_debug())
 			win_message_box_utf8(hwnd, "Waiting for a debugger to be attached", nullptr, MB_OK);
 	}
 	else
@@ -1115,11 +1115,11 @@ int win_window_info::complete_create()
 	set_platform_window(hwnd);
 
 	// set a pointer back to us
-	if (!slave_ui_mode())
+	if (!worker_ui_mode())
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 
 	// skip the positioning stuff for -video none or slave UI
-	if (video_config.mode == VIDEO_MODE_NONE || slave_ui_mode())
+	if (video_config.mode == VIDEO_MODE_NONE || worker_ui_mode())
 	{
 		set_renderer(osd_renderer::make_for_type(video_config.mode, shared_from_this()));
 		renderer().create();
@@ -1142,7 +1142,7 @@ int win_window_info::complete_create()
 	adjust_window_position_after_major_change();
 
 	// show the window
-	if (!fullscreen() || m_fullscreen_safe || !slave_ui_mode())
+	if (!fullscreen() || m_fullscreen_safe || !worker_ui_mode())
 	{
 		set_renderer(osd_renderer::make_for_type(video_config.mode, shared_from_this()));
 		if (renderer().create())
