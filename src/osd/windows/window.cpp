@@ -1084,7 +1084,7 @@ int win_window_info::complete_create()
 	m_worker_ui_mode = worker_ui_window_name && *worker_ui_window_name ? true : false;
 	if (m_worker_ui_mode)
 	{
-		// we are in slave UI mode; either this value is an HWND or a window name
+		// we are in worker UI mode; either this value is an HWND or a window name
 		hwnd = (HWND)atoll(worker_ui_window_name);
 		if (!hwnd)
 			hwnd = FindWindowEx(nullptr, nullptr, nullptr, osd::text::to_tstring(worker_ui_window_name).c_str());
@@ -1118,7 +1118,7 @@ int win_window_info::complete_create()
 	if (!worker_ui_mode())
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 
-	// skip the positioning stuff for -video none or slave UI
+	// skip the positioning stuff for -video none or worker UI
 	if (video_config.mode == VIDEO_MODE_NONE || worker_ui_mode())
 	{
 		set_renderer(osd_renderer::make_for_type(video_config.mode, shared_from_this()));

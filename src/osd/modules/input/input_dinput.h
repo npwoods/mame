@@ -126,7 +126,7 @@ public:
 		window = std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front());
 		if (window->worker_ui_mode())
 		{
-			// in slave UI mode we have to ignore the caller and hook up to the desktop window
+			// in worker UI mode we have to ignore the caller and hook up to the desktop window
 			hwnd = GetDesktopWindow();
 			cooperative_level &= ~DISCL_FOREGROUND;
 			cooperative_level |= DISCL_BACKGROUND;

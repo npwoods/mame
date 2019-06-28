@@ -218,10 +218,10 @@ void mame_ui_manager::init()
 	m_mouse_arrow_texture = machine().render().texture_alloc();
 	m_mouse_arrow_texture->set_bitmap(m_mouse_bitmap, m_mouse_bitmap.cliprect(), TEXFORMAT_ARGB32);
 
-	// slave UI hacks
+	// worker UI hacks
 	if (machine().options().worker_ui() && *machine().options().worker_ui())
 	{
-		// in slave UI, we start up paused
+		// in worker UI, we start up paused
 		machine().pause();
 
 		// start the thread if we don't already have one (we won't have a thread if we started and
@@ -430,7 +430,7 @@ void mame_ui_manager::set_startup_text(const char *text, bool force)
 
 void mame_ui_manager::update_and_render(render_container &container)
 {
-	// in slave UI mode, behave very differently (in the end this should probably be
+	// in worker UI mode, behave very differently (in the end this should probably be
 	// done in a more object oriented fashion)
 	if (machine().options().worker_ui() && *machine().options().worker_ui())
 	{

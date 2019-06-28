@@ -197,7 +197,7 @@
 #define OPTION_HTTP_PORT            "http_port"
 #define OPTION_HTTP_ROOT            "http_root"
 
-// slave UI
+// worker UI
 #define OPTION_WORKER_UI				"worker_ui"
 #define OPTION_WORKER_UI_DEBUG		"worker_ui_debug"
 
