@@ -206,10 +206,9 @@ const char info_xml_creator::s_dtd_string[] =
 //  info_xml_creator - constructor
 //-------------------------------------------------
 
-info_xml_creator::info_xml_creator(emu_options const &options, bool dtd, bool light)
+info_xml_creator::info_xml_creator(emu_options const &options, bool dtd)
 	: m_output(nullptr)
 	, m_dtd(dtd)
-	, m_light(light)
 {
 }
 
@@ -287,7 +286,7 @@ void info_xml_creator::output(FILE *out, std::vector<std::string> const &pattern
 	}
 
 	// output devices (both devices with roms and slot devices)
-	if (!m_light && (!devfilter || !devfilter->empty()))
+	if (!devfilter || !devfilter->empty())
 	{
 		if (first)
 		{
@@ -387,55 +386,6 @@ void info_xml_creator::output_footer()
 
 void info_xml_creator::output_one(driver_enumerator &drivlist, device_type_set *devtypes)
 {
-	// BEGIN COPY AND PASTE HACK
-	if (m_light)
-	{
-		const game_driver &driver = drivlist.driver();
-
-		// print the header and the machine name
-		fprintf(m_output, "\t<%s name=\"%s\"", XML_TOP, util::xml::normalize_string(driver.name));
-
-		// strip away any path information from the source_file and output it
-		const char *start = strrchr(driver.type.source(), '/');
-		if (!start)
-			start = strrchr(driver.type.source(), '\\');
-		start = start ? (start + 1) : driver.type.source();
-		fprintf(m_output, " sourcefile=\"%s\"", util::xml::normalize_string(start));
-
-		// append bios and runnable flags
-		if (driver.flags & machine_flags::IS_BIOS_ROOT)
-			fprintf(m_output, " isbios=\"yes\"");
-		if (driver.flags & machine_flags::MECHANICAL)
-			fprintf(m_output, " ismechanical=\"yes\"");
-
-		// display clone information
-		int clone_of = drivlist.find(driver.parent);
-		if (clone_of != -1 && !(drivlist.driver(clone_of).flags & machine_flags::IS_BIOS_ROOT))
-			fprintf(m_output, " cloneof=\"%s\"", util::xml::normalize_string(drivlist.driver(clone_of).name));
-		if (clone_of != -1)
-			fprintf(m_output, " romof=\"%s\"", util::xml::normalize_string(drivlist.driver(clone_of).name));
-
-		// close the game tag
-		fprintf(m_output, ">\n");
-
-		// output game description
-		if (driver.type.fullname() != nullptr)
-			fprintf(m_output, "\t\t<description>%s</description>\n", util::xml::normalize_string(driver.type.fullname()));
-
-		// print the year only if is a number or another allowed character (? or +)
-		if (driver.year != nullptr && strspn(driver.year, "0123456789?+") == strlen(driver.year))
-			fprintf(m_output, "\t\t<year>%s</year>\n", util::xml::normalize_string(driver.year));
-
-		// print the manufacturer information
-		if (driver.manufacturer != nullptr)
-			fprintf(m_output, "\t\t<manufacturer>%s</manufacturer>\n", util::xml::normalize_string(driver.manufacturer));
-
-		// close the topmost tag and return
-		fprintf(m_output, "\t</%s>\n", XML_TOP);
-		return;
-	}
-	// END COPY AND PASTE HACK
-
 	const game_driver &driver = drivlist.driver();
 	std::shared_ptr<machine_config> const config(drivlist.config());
 	device_iterator iter(config->root_device());

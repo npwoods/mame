@@ -32,7 +32,7 @@ class info_xml_creator
 {
 public:
 	// construction/destruction
-	info_xml_creator(emu_options const &options, bool dtd = true, bool light = false);
+	info_xml_creator(emu_options const &options, bool dtd = true);
 
 	// output
 	void output(FILE *out, std::vector<std::string> const &patterns);
@@ -77,7 +77,6 @@ private:
 
 	static const char s_dtd_string[];
 	bool m_dtd;
-	bool m_light;
 };
 
 #endif // MAME_FRONTEND_MAME_INFO_H
