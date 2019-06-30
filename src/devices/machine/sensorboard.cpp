@@ -3,8 +3,7 @@
 /*
 
 Generic sensorboard device, meant for tracking pieces, primarily made for
-electronic chessboards. It supports buttons, magnets, and inductive sensors
-(latter is not emulated in any driver yet but the device is ready for it).
+electronic chessboards. It supports buttons, magnets, and inductive sensors.
 
 Concept/idea by Ralph Schaefer, but his code got removed from MAME when he
 couldn't be reached for source relicensing. This device is made from scratch.
@@ -58,7 +57,7 @@ sensorboard_device::sensorboard_device(const machine_config &mconfig, const char
 	// set defaults for most common use case (aka chess)
 	set_size(8, 8);
 	set_spawnpoints(12);
-	m_sensordelay = attotime::from_msec(75);
+	set_delay(attotime::from_msec(75));
 }
 
 
@@ -184,6 +183,23 @@ void sensorboard_device::device_reset()
 //  public handlers
 //-------------------------------------------------
 
+sensorboard_device &sensorboard_device::set_type(sb_type type)
+{
+	m_inductive = (type == INDUCTIVE);
+	m_magnets = (type == MAGNETS) || m_inductive;
+
+	if (type == NOSENSORS)
+	{
+		set_mod_enable(false);
+		set_delay(attotime::never);
+	}
+
+	if (m_inductive)
+		set_mod_enable(false);
+
+	return *this;
+}
+
 u8 sensorboard_device::read_sensor(u8 x, u8 y)
 {
 	if (x >= m_width || y >= m_height)
@@ -192,7 +208,7 @@ u8 sensorboard_device::read_sensor(u8 x, u8 y)
 	u8 live_state = BIT(m_inp_rank[y]->read(), x);
 	int pos = (y << 4 & 0xf0) | (x & 0x0f);
 
-	if (m_magnets || m_inductive)
+	if (m_magnets)
 	{
 		u8 piece = read_piece(x, y);
 		u8 state = (piece != 0 && pos != m_handpos && pos != m_droppos) ? 1 : 0;
@@ -207,12 +223,15 @@ u8 sensorboard_device::read_sensor(u8 x, u8 y)
 	}
 	else
 	{
+		// buttons are forced
+		if (m_inp_ui->read() & 1)
+			return live_state;
+
 		// buttons are blocked
-		if (m_inp_ui->read() & 2)
+		else if (m_inp_ui->read() & 2)
 			return 0;
 
-		// buttons are forced
-		if (m_sensordelay == attotime::never || m_inp_ui->read() & 1)
+		else if (m_sensordelay == attotime::never)
 			return live_state;
 
 		return (pos == m_sensorpos) ? 1 : 0;
@@ -383,7 +402,7 @@ INPUT_CHANGED_MEMBER(sensorboard_device::sensor)
 		return;
 
 	// auto click / sensor delay
-	if (m_sensordelay != attotime::never && (m_magnets || m_inductive || (pos != m_handpos && ~m_inp_ui->read() & 2)))
+	if (m_sensordelay != attotime::never && (m_magnets || (pos != m_handpos && ~m_inp_ui->read() & 2)))
 	{
 		m_sensorpos = pos;
 		m_sensortimer->adjust(m_sensordelay);
