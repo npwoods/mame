@@ -165,6 +165,7 @@ mame_ui_manager::mame_ui_manager(running_machine &machine)
 	, m_mouse_bitmap(32, 32)
 	, m_mouse_arrow_texture(nullptr)
 	, m_mouse_show(false)
+	, m_target_font_height(0)
 	, m_worker_ui_current_poll_field(nullptr)
 	, m_worker_ui_current_poll_seq_type(SEQ_TYPE_INVALID)
 {
@@ -181,8 +182,10 @@ void mame_ui_manager::init()
 	ui::menu::init(machine(), options());
 	ui_gfx_init(machine());
 
-	get_font_rows(&machine());
 	m_ui_colors.refresh(options());
+
+	// update font row info from setting
+	update_target_font_height();
 
 	// more initialization
 	using namespace std::placeholders;
@@ -233,6 +236,16 @@ void mame_ui_manager::init()
 			m_worker_ui_initialized = true;
 		}
 	}
+}
+
+
+//-------------------------------------------------
+//  update_target_font_height
+//-------------------------------------------------
+
+void mame_ui_manager::update_target_font_height()
+{
+	m_target_font_height = 1.0f / options().font_rows();
 }
 
 
@@ -996,7 +1009,7 @@ float mame_ui_manager::get_line_height()
 	one_to_one_line_height = (float)raw_font_pixel_height / (float)target_pixel_height;
 
 	// determine the scale factor
-	scale_factor = UI_TARGET_FONT_HEIGHT / one_to_one_line_height;
+	scale_factor = target_font_height() / one_to_one_line_height;
 
 	// if our font is small-ish, do integral scaling
 	if (raw_font_pixel_height < 24)
@@ -1122,7 +1135,7 @@ void mame_ui_manager::draw_text_full(render_container &container, const char *or
 void mame_ui_manager::draw_text_box(render_container &container, const char *text, ui::text_layout::text_justify justify, float xpos, float ypos, rgb_t backcolor)
 {
 	// cap the maximum width
-	float maximum_width = 1.0f - UI_BOX_LR_BORDER * 2;
+	float maximum_width = 1.0f - box_lr_border() * 2;
 
 	// create a layout
 	ui::text_layout layout = create_layout(container, maximum_width, justify);
@@ -1146,15 +1159,15 @@ void mame_ui_manager::draw_text_box(render_container &container, ui::text_layout
 	auto actual_left = layout.actual_left();
 	auto actual_width = layout.actual_width();
 	auto actual_height = layout.actual_height();
-	auto x = std::min(std::max(xpos - actual_width / 2, UI_BOX_LR_BORDER), 1.0f - actual_width - UI_BOX_LR_BORDER);
-	auto y = std::min(std::max(ypos - actual_height / 2, UI_BOX_TB_BORDER), 1.0f - actual_height - UI_BOX_TB_BORDER);
+	auto x = std::min(std::max(xpos - actual_width / 2, box_lr_border()), 1.0f - actual_width - box_lr_border());
+	auto y = std::min(std::max(ypos - actual_height / 2, box_tb_border()), 1.0f - actual_height - box_tb_border());
 
 	// add a box around that
 	draw_outlined_box(container,
-			x - UI_BOX_LR_BORDER,
-			y - UI_BOX_TB_BORDER,
-			x + actual_width + UI_BOX_LR_BORDER,
-			y + actual_height + UI_BOX_TB_BORDER, backcolor);
+			x - box_lr_border(),
+			y - box_tb_border(),
+			x + actual_width + box_lr_border(),
+			y + actual_height + box_tb_border(), backcolor);
 
 	// emit the text
 	layout.emit(container, x - actual_left, y);
@@ -1546,7 +1559,7 @@ void mame_ui_manager::image_handler_ingame()
 		if (!layout.empty())
 		{
 			float x = 0.2f;
-			float y = 0.5f * get_line_height() + 2.0f * UI_BOX_TB_BORDER;
+			float y = 0.5f * get_line_height() + 2.0f * box_tb_border();
 			draw_text_box(machine().render().ui_container(), layout, x, y, colors().background_color());
 		}
 	}
@@ -2595,17 +2608,6 @@ void mame_ui_manager::draw_textured_box(render_container &container, float x0, f
 	container.add_line(x1, y0, x1, y1, UI_LINE_WIDTH, linecolor, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
 	container.add_line(x1, y1, x0, y1, UI_LINE_WIDTH, linecolor, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
 	container.add_line(x0, y1, x0, y0, UI_LINE_WIDTH, linecolor, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
-}
-
-//-------------------------------------------------
-//  get font rows from options
-//-------------------------------------------------
-
-int get_font_rows(running_machine *machine)
-{
-	static int value;
-
-	return ((machine != nullptr) ? value = mame_machine_manager::instance()->ui().options().font_rows() : value);
 }
 
 void mame_ui_manager::popup_time_string(int seconds, std::string message)
