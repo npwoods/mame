@@ -871,6 +871,8 @@ void mame_ui_manager::emit_status()
 	std::cout << "\tpolling_input_seq=\"" << string_from_bool(has_currently_polling_input_seq()) << "\"" << std::endl;
 	if (machine().ioport().safe_to_read())
 		std::cout << "\tnatural_keyboard_in_use=\"" << string_from_bool(machine().ioport().natkeyboard().in_use()) << "\"" << std::endl;
+	if (!messagebox_text.empty())
+		std::cout << "\tstartup_text=\"" << util::xml::normalize_string(messagebox_text.c_str()) << "\"" << std::endl;
 	std::cout << "\t>" << std::endl;
 
 	// video
@@ -914,6 +916,10 @@ void mame_ui_manager::emit_status()
 
 		if (image.filename() != nullptr)
 			std::cout << util::string_format("\t\t\tfilename=\"%s\"", image.filename()) << std::endl;
+
+		std::string display = image.call_display();
+		if (!display.empty())
+			std::cout << util::string_format("\t\t\tdisplay=\"%s\"", util::xml::normalize_string(display.c_str())) << std::endl;
 
 		std::cout << "\t\t/>" << std::endl;
 	}
