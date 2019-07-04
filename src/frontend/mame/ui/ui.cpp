@@ -615,6 +615,61 @@ static const char *string_from_bool(bool b)
 
 
 //-------------------------------------------------
+//  xml_encode
+//
+//	not using util::xml::normalize_string() because
+//	that function does not encode code points >127
+//-------------------------------------------------
+
+static std::string xml_encode(const char *s, size_t length)
+{
+	std::ostringstream result;
+
+	// loop through characters
+	size_t position = 0;
+	while (position < length)
+	{
+		char32_t ch;
+		int size = uchar_from_utf8(&ch, &s[position], length - position);
+
+		// treat invalid results as '?'
+		if (size <= 0)
+		{
+			ch = '?';
+			size = 1;
+		}
+
+		switch (ch)
+		{
+		case '\"':	result << "&quot;"; break;
+		case '&':	result << "&amp;"; break;
+		case '<':	result << "&lt;"; break;
+		case '>':	result << "&gt;"; break;
+		default:
+			if (ch < 128)
+				result << (char)ch;
+			else
+				result << "&#" << (unsigned int) ch << ';';
+			break;
+		}
+
+		position += size;
+	}
+	return result.str();
+}
+
+static std::string xml_encode(const char *s)
+{
+	return xml_encode(s, strlen(s));
+}
+
+static std::string xml_encode(const std::string &s)
+{
+	return xml_encode(s.c_str(), s.size());
+}
+
+
+//-------------------------------------------------
 //  invoke_worker_ui_command
 //-------------------------------------------------
 
@@ -872,7 +927,7 @@ void mame_ui_manager::emit_status()
 	if (machine().ioport().safe_to_read())
 		std::cout << "\tnatural_keyboard_in_use=\"" << string_from_bool(machine().ioport().natkeyboard().in_use()) << "\"" << std::endl;
 	if (!messagebox_text.empty())
-		std::cout << "\tstartup_text=\"" << util::xml::normalize_string(messagebox_text.c_str()) << "\"" << std::endl;
+		std::cout << "\tstartup_text=\"" << xml_encode(messagebox_text) << "\"" << std::endl;
 	std::cout << "\t>" << std::endl;
 
 	// video
@@ -919,7 +974,7 @@ void mame_ui_manager::emit_status()
 
 		std::string display = image.call_display();
 		if (!display.empty())
-			std::cout << util::string_format("\t\t\tdisplay=\"%s\"", util::xml::normalize_string(display.c_str())) << std::endl;
+			std::cout << util::string_format("\t\t\tdisplay=\"%s\"", xml_encode(display)) << std::endl;
 
 		std::cout << "\t\t/>" << std::endl;
 	}
@@ -939,16 +994,16 @@ void mame_ui_manager::emit_status()
 				std::cout << "\t\t<input port_tag=\"" << port.first
 					<< "\" mask=\"" << field.mask()
 					<< "\" type=\"" << (field.is_analog() ? "analog" : "digital")
-					<< "\" name=\"" << util::xml::normalize_string(field.name())
+					<< "\" name=\"" << xml_encode(field.name())
 					<< "\">" << std::endl;
 
 				// both analog and digital have "standard" seq types
-				std::cout << "\t\t<seq type=\"standard\" text=\"" << util::xml::normalize_string(machine().input().seq_name(field.seq(SEQ_TYPE_STANDARD)).c_str()) << "\"/>" << std::endl;
+				std::cout << "\t\t<seq type=\"standard\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_STANDARD)).c_str()) << "\"/>" << std::endl;
 				if (field.is_analog())
 				{
 					// analog inputs also have increment and decrement
-					std::cout << "\t\t<seq type=\"increment\" text=\"" << util::xml::normalize_string(machine().input().seq_name(field.seq(SEQ_TYPE_INCREMENT)).c_str()) << "\"/>" << std::endl;
-					std::cout << "\t\t<seq type=\"decrement\" text=\"" << util::xml::normalize_string(machine().input().seq_name(field.seq(SEQ_TYPE_DECREMENT)).c_str()) << "\"/>" << std::endl;
+					std::cout << "\t\t<seq type=\"increment\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_INCREMENT))) << "\"/>" << std::endl;
+					std::cout << "\t\t<seq type=\"decrement\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_DECREMENT))) << "\"/>" << std::endl;
 				}
 
 				std::cout << "\t\t</input>" << std::endl;
