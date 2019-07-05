@@ -3,8 +3,8 @@ os: windows
 script:
   - curl -L https://github.com/mamedev/buildtools/releases/download/4.0/msys64-32-2019-03-25.exe > C:/msys64.exe
   - cd C:/; 7z e msys64.exe -y
-  - cmd /c "C:/msys64/win32env.bat"
-  - make 
+  - cd C:/; ls
+  - export PATH=C:/msys64/win32;C:/msys64/mingw64/bin;C:/msys64/usr/bin;C:/Windows/System32;C:/Windows ; make
 
 branches:
   only:
