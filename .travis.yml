@@ -2,8 +2,7 @@ language: cpp
 os: windows
 script:
   - curl -L https://github.com/mamedev/buildtools/releases/download/4.0/msys64-32-2019-03-25.exe > C:/msys64.exe
-  - ls C:/
-  - start /b /wait C:/msys64.exe -o"C:\\" -y
+  - cd C:/; 7z e msys64.exe -y
   - cmd /c "C:/msys64/win32env.bat"
   - make 
 
