@@ -14,7 +14,7 @@ script:
   - export MINGW64=C:/msys64/mingw64
   - export MINGW_PATH=C:/msys64/mingw64/bin
   - export MSYS2_ROOT=C:/msys64
-  - make -j 8
+  - make -j4 IGNORE_GIT=1 OPTIMIZE=0 
 
 cache:
   directories:
