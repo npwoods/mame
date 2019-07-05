@@ -6,9 +6,11 @@ script:
   - curl -L https://github.com/mamedev/buildtools/releases/download/4.0/msys64-32-2019-03-25.exe > C:/msys64.exe
   - pushd C:/; 7z x msys64.exe -y; popd
   - pushd C:/; ls; popd
-  - pwd
   - export PATH=/c/msys64/win32:/c/msys64/mingw64/bin:/c/msys64/usr/bin:/c/windows/system32/:/c/windows
-  - echo $PATH
+  - export MINGW=C:/msys64/mingw64
+  - export MINGW64=C:/msys64/mingw64
+  - export MINGW_PATH=C:/msys64/mingw64/bin
+  - export MSYS2_ROOT=C:/msys64
   - make -j 8
 
 branches:
