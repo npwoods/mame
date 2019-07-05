@@ -2,7 +2,7 @@ language: cpp
 os: windows
 
 script:
-  - which curl
+  - echo ${PATH}
   - curl -L https://github.com/mamedev/buildtools/releases/download/4.0/msys64-32-2019-03-25.exe > C:/msys64.exe
   - pushd C:/; 7z x msys64.exe -y; popd
   - pushd C:/; ls; popd
