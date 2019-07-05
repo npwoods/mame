@@ -1,3 +1,3 @@
 pwd
-export PATH=C:/msys64/win32;$PATH
+export PATH=/msys64/win32:$PATH
 make
