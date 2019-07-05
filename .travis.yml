@@ -7,7 +7,7 @@ script:
   - pushd C:/; 7z x msys64.exe -y; popd
   - pushd C:/; ls; popd
   - pwd
-  - export PATH=C:/msys64/win32;C:/msys64/mingw64/bin;C:/msys64/usr/bin;C:/Windows/System32;C:/Windows;$PATH
+  - export PATH=C:/msys64/win32;${PATH}
   - make
 
 branches:
