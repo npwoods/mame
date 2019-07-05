@@ -1,6 +1,9 @@
 language: cpp
 os: windows
 
+env:
+  - SUBTARGET=tiny   MAME=mametiny64
+
 script:
   - echo ${PATH}
   - curl -L https://github.com/mamedev/buildtools/releases/download/4.0/msys64-32-2019-03-25.exe > C:/msys64.exe
