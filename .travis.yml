@@ -13,6 +13,10 @@ script:
   - export MSYS2_ROOT=C:/msys64
   - make -j 8
 
+cache:
+  directories:
+  - build
+  
 branches:
   only:
   - worker_ui
