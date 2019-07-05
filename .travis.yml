@@ -1,15 +1,13 @@
 language: cpp
 os: windows
 
-env:
-  - PATH=C:\\msys64\\win32;C:\\msys64\\mingw64\\bin;C:\\msys64\\usr\\bin;C:\\Windows\\System32;C:\\Windows;$PATH
-
 script:
   - which curl
   - curl -L https://github.com/mamedev/buildtools/releases/download/4.0/msys64-32-2019-03-25.exe > C:/msys64.exe
   - pushd C:/; 7z x msys64.exe -y; popd
   - pushd C:/; ls; popd
   - pwd
+  - export PATH=C:/msys64/win32;C:/msys64/mingw64/bin;C:/msys64/usr/bin;C:/Windows/System32;C:/Windows;$PATH
   - make
 
 branches:
