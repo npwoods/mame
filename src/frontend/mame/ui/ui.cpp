@@ -787,7 +787,7 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
         machine().video().save_snapshot(screen, file);
         std::cout << "OK ### Successfully saved screenshot '" << args[2] << "'" << std::endl;
     }
-	else if (args[0] == "load" || args[0] == "unload")
+	else if (args[0] == "load" || args[0] == "unload" || args[0] == "create")
 	{
 		machine_config *config = const_cast<machine_config *>(&machine().config());
 		device_t *device = config->device_find(&machine().root_device(), args[1].c_str());
@@ -815,11 +815,22 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 			}
 			std::cout << "OK STATUS ### Device '" << args[1] << "' loaded '" << args[2] << "' successfully" << std::endl;
 		}
-		else if (args[1] == "unload")
+		else if (args[0] == "unload")
 		{
 			// unload!
 			image->unload();
 			std::cout << "OK STATUS ### Device '" << args[1] << "' unloaded successfully" << std::endl;
+		}
+		else if (args[0] == "create")
+		{
+			// create!
+			image_init_result result = image->create(args[2]);
+			if (result != image_init_result::PASS)
+			{
+				std::cout << "ERROR ### Device '" << args[1] << "' returned error '" << image->error() << "' when creating image '" << args[2] << "'" << std::endl;
+				return false;
+			}
+			std::cout << "OK STATUS ### Device '" << args[1] << "' created '" << args[2] << "' successfully" << std::endl;
 		}
 		else
 		{
