@@ -926,6 +926,38 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 
 
 //-------------------------------------------------
+//  type_class_string
+//-------------------------------------------------
+
+static const char *type_class_string(ioport_type_class type_class)
+{
+	const char *result;
+	switch (type_class)
+	{
+	case INPUT_CLASS_CONTROLLER:
+		result = "controller";
+		break;
+	case INPUT_CLASS_MISC:
+		result = "misc";
+		break;
+	case INPUT_CLASS_KEYBOARD:
+		result = "keyboard";
+		break;
+	case INPUT_CLASS_CONFIG:
+		result = "config";
+		break;
+	case INPUT_CLASS_DIPSWITCH:
+		result = "dipswitch";
+		break;
+	default:
+		result = nullptr;
+		break;
+	}
+	return result;
+}
+
+
+//-------------------------------------------------
 //  emit_status
 //-------------------------------------------------
 
@@ -998,23 +1030,29 @@ void mame_ui_manager::emit_status()
 		for (ioport_field &field : port.second->fields())
 		{
 			ioport_type_class type_class = field.type_class();
+			const char *type_class_str;
 
 			// add if we match the group and we have a valid name
-			if (field.enabled() && (type_class == INPUT_CLASS_CONTROLLER || type_class == INPUT_CLASS_MISC || type_class == INPUT_CLASS_KEYBOARD))
+			if (field.enabled() && ((type_class_str = type_class_string(type_class)) != nullptr))
 			{
 				std::cout << "\t\t<input port_tag=\"" << port.first
 					<< "\" mask=\"" << field.mask()
+					<< "\" class=\"" << type_class_str
 					<< "\" type=\"" << (field.is_analog() ? "analog" : "digital")
 					<< "\" name=\"" << xml_encode(field.name())
 					<< "\">" << std::endl;
 
-				// both analog and digital have "standard" seq types
-				std::cout << "\t\t<seq type=\"standard\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_STANDARD)).c_str()) << "\"/>" << std::endl;
-				if (field.is_analog())
+				// emit input sequences for anything that is not DIP switches of configs
+				if (type_class != INPUT_CLASS_DIPSWITCH && type_class != INPUT_CLASS_CONFIG)
 				{
-					// analog inputs also have increment and decrement
-					std::cout << "\t\t<seq type=\"increment\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_INCREMENT))) << "\"/>" << std::endl;
-					std::cout << "\t\t<seq type=\"decrement\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_DECREMENT))) << "\"/>" << std::endl;
+					// both analog and digital have "standard" seq types
+					std::cout << "\t\t<seq type=\"standard\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_STANDARD)).c_str()) << "\"/>" << std::endl;
+					if (field.is_analog())
+					{
+						// analog inputs also have increment and decrement
+						std::cout << "\t\t<seq type=\"increment\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_INCREMENT))) << "\"/>" << std::endl;
+						std::cout << "\t\t<seq type=\"decrement\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_DECREMENT))) << "\"/>" << std::endl;
+					}
 				}
 
 				std::cout << "\t\t</input>" << std::endl;
