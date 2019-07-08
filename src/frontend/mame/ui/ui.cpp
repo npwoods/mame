@@ -1035,15 +1035,25 @@ void mame_ui_manager::emit_status()
 			// add if we match the group and we have a valid name
 			if (field.enabled() && ((type_class_str = type_class_string(type_class)) != nullptr))
 			{
+				// is this a "switch"?  (a DIP switch or a config)
+				bool is_switch = type_class == INPUT_CLASS_DIPSWITCH || type_class == INPUT_CLASS_CONFIG;
+
 				std::cout << "\t\t<input port_tag=\"" << port.first
 					<< "\" mask=\"" << field.mask()
 					<< "\" class=\"" << type_class_str
 					<< "\" type=\"" << (field.is_analog() ? "analog" : "digital")
-					<< "\" name=\"" << xml_encode(field.name())
-					<< "\">" << std::endl;
+					<< "\" name=\"" << xml_encode(field.name());
+				if (is_switch)
+				{
+					// DIP switches and configs have values
+					ioport_field::user_settings settings;
+					field.get_user_settings(settings);
+					std::cout << "\" value=\"" << settings.value;
+				}
+				std::cout << "\">" << std::endl;
 
 				// emit input sequences for anything that is not DIP switches of configs
-				if (type_class != INPUT_CLASS_DIPSWITCH && type_class != INPUT_CLASS_CONFIG)
+				if (!is_switch)
 				{
 					// both analog and digital have "standard" seq types
 					std::cout << "\t\t<seq type=\"standard\" text=\"" << xml_encode(machine().input().seq_name(field.seq(SEQ_TYPE_STANDARD)).c_str()) << "\"/>" << std::endl;
