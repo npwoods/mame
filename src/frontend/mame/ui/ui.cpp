@@ -917,6 +917,39 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 		m_worker_ui_current_poll_seq_type = SEQ_TYPE_INVALID;
 		std::cout << "OK ### Stopped polling" << std::endl;
 	}
+	else if (args[0] == "set_input_value")
+	{
+		// find the port
+		auto ports_iter = machine().ioport().ports().find(args[1]);
+		if (ports_iter == machine().ioport().ports().end())
+		{
+			std::cout << "ERROR ### Can't find port '" << args[1] << "'" << std::endl;
+			return false;
+		}
+
+		// find the field
+		ioport_value mask = atoll(args[2].c_str());
+		ioport_field *field = ports_iter->second->field(mask);
+		if (!field)
+		{
+			std::cout << "ERROR ### Can't find field mask '" << args[2] << "' on port '" << args[1] << "'" << std::endl;
+			return false;
+		}
+		if (!field->enabled())
+		{
+			std::cout << "ERROR ### Field '" << args[1] << "':" << args[2] << " is disabled" << std::endl;
+			return false;
+		}
+
+		// set the value
+		ioport_field::user_settings settings;
+		field->get_user_settings(settings);
+		settings.value = atoi(args[3].c_str());
+		field->set_user_settings(settings);
+
+		std::cout << "OK STATUS ### Field '" << args[1] << "':" << args[2] << " set to " << settings.value << std::endl;
+		emit_status();
+	}
 	else
 	{
 		std::cout << "ERROR ### Unrecognized command '" << args[0] << "'" << std::endl;
