@@ -14221,6 +14221,7 @@ gjmovie                         // Genius Junior Movie (Germany)
 gjrstar                         // Genius Junior Redstar (Germany)
 gjrstar2                        // Genius Junior Redstar 2 (Germany)
 gjrstar3                        // Genius Junior Redstar 3 (Germany)
+pitagjr                         // Pitagorin Junior
 
 @source:genpc.cpp
 pc                              // 1987 PC with CGA
@@ -14582,6 +14583,7 @@ lucky8b                         // (c) 1989 Wing Co. Ltd
 lucky8c                         // (c) 1989 Wing Co. Ltd
 lucky8d                         // (c) 1989 Wing Co. Ltd
 lucky8e                         // (c) 1989 Wing Co. Ltd
+lucky8f                         // bootleg?
 luckybar                        // unknown
 luckylad                        // (c) 1985 Wing Co. Ltd
 magodds                         // 198? (c) Micro Manufacturing Ltd.
@@ -15468,6 +15470,9 @@ tmpacman                        // Tomy
 tmscramb                        // Tomy
 tmtennis                        // Tomy
 ufombs                          // Bambino
+
+@source:hhtiger.cpp
+hhtiger                         // 1983 H/H Tiger
 
 @source:hideseek.cpp
 hideseek                        //
@@ -32577,9 +32582,6 @@ piratesb                        // bootleg?
 @source:piratesh.cpp
 piratesh                        // (c) 1995 Konami
 
-@source:pitagjr.cpp
-pitagjr                         // Pitagorin Junior
-
 @source:pitnrun.cpp
 pitnrun                         // PR  (c) 1984 Taito Corporation
 pitnruna                        // PR  (c) 1984 Taito Corporation
@@ -38620,7 +38622,7 @@ tvc64pru                        //
 tvcapcom                        //
 
 @source:tvg01.cpp
-boatrace                        //
+theboat                         //
 
 @source:tvgame.cpp
 tvgame                          //
