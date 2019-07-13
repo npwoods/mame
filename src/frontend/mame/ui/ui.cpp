@@ -959,6 +959,37 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 
 
 //-------------------------------------------------
+//  machine_phase_string
+//-------------------------------------------------
+
+static const char *machine_phase_string(machine_phase phase)
+{
+	const char *result;
+	switch (phase)
+	{
+	case machine_phase::PREINIT:
+		result = "preinit";
+		break;
+	case machine_phase::INIT:
+		result = "init";
+		break;
+	case machine_phase::RESET:
+		result = "reset";
+		break;
+	case machine_phase::RUNNING:
+		result = "running";
+		break;
+	case machine_phase::EXIT:
+		result = "exit";
+		break;
+	default:
+		throw false;
+	}
+	return result;
+}
+
+
+//-------------------------------------------------
 //  type_class_string
 //-------------------------------------------------
 
@@ -998,6 +1029,7 @@ void mame_ui_manager::emit_status()
 {
 	// start status
 	std::cout << "<status" << std::endl;
+	std::cout << "\tphase=\"" << machine_phase_string(machine().phase()) << "\"" << std::endl;
 	std::cout << "\tpaused=\"" << string_from_bool(machine().paused()) << "\"" << std::endl;
 	std::cout << "\tpolling_input_seq=\"" << string_from_bool(has_currently_polling_input_seq()) << "\"" << std::endl;
 	if (machine().ioport().safe_to_read())
