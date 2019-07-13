@@ -670,6 +670,25 @@ static std::string xml_encode(const std::string &s)
 
 
 //-------------------------------------------------
+//  find_ioport
+//-------------------------------------------------
+
+static ioport_port *find_ioport(running_machine &machine, const std::string &port_tag)
+{
+	// normalize by ensuring a colon is at the beginning
+	std::string actual_port_tag = port_tag.size() > 0 && port_tag[0] != ':'
+		? util::string_format(":%s", port_tag)
+		: port_tag;
+
+	// find the port
+	auto iter = machine.ioport().ports().find(actual_port_tag);
+	return iter != machine.ioport().ports().end()
+		? &*iter->second
+		: nullptr;
+}
+
+
+//-------------------------------------------------
 //  invoke_worker_ui_command
 //-------------------------------------------------
 
@@ -845,8 +864,8 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 		|| args[0] == "seq_clear")
 	{
 		// find the port
-		auto ports_iter = machine().ioport().ports().find(args[1]);
-		if (ports_iter == machine().ioport().ports().end())
+		ioport_port *port = find_ioport(machine(), args[1]);
+		if (!port)
 		{
 			std::cout << "ERROR ### Can't find port '" << args[1] << "'" << std::endl;
 			return false;
@@ -854,7 +873,7 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 
 		// find the field
 		ioport_value mask = atoll(args[2].c_str());
-		ioport_field *field = ports_iter->second->field(mask);
+		ioport_field *field = port->field(mask);
 		if (!field)
 		{
 			std::cout << "ERROR ### Can't find field mask '" << args[2] << "' on port '" << args[1] << "'" << std::endl;
@@ -920,8 +939,8 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 	else if (args[0] == "set_input_value")
 	{
 		// find the port
-		auto ports_iter = machine().ioport().ports().find(args[1]);
-		if (ports_iter == machine().ioport().ports().end())
+		ioport_port *port = find_ioport(machine(), args[1]);
+		if (!port)
 		{
 			std::cout << "ERROR ### Can't find port '" << args[1] << "'" << std::endl;
 			return false;
@@ -929,7 +948,7 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 
 		// find the field
 		ioport_value mask = atoll(args[2].c_str());
-		ioport_field *field = ports_iter->second->field(mask);
+		ioport_field *field = port->field(mask);
 		if (!field)
 		{
 			std::cout << "ERROR ### Can't find field mask '" << args[2] << "' on port '" << args[1] << "'" << std::endl;
