@@ -884,6 +884,9 @@ borisdpl                        //
 @source:aci_ggm.cpp
 ggm
 
+@source:aci_prodigy.cpp
+prodigy
+
 @source:acommand.cpp
 acommand                        // (c) 1990
 
@@ -12620,9 +12623,9 @@ klaxp1                          // prototype
 klaxp2                          // prototype
 
 @source:equites.cpp
+bngotime                        // (c) 1986 CLS?
 bullfgtr                        // (c) 1984 Alpha Denshi Co.
 bullfgtrs                       // (c) 1984 Alpha Denshi Co./Sega
-clsunk                          // (c) 1986 CLS?
 equites                         // (c) 1984 Alpha Denshi Co.
 equitess                        // (c) 1984 Alpha Denshi Co./Sega
 gekisou                         // (c) 1985 Eastern
@@ -33178,9 +33181,6 @@ pr_walls                        // Wall Street (Project)
 pr_whlft                        // Wheel Of Fortune (Project)
 pr_wldkn                        // Wild Kings (Project)
 pr_wnstk                        // Winning Streak (Coinworld)
-
-@source:prodigy.cpp
-prodigy                        // ACI Destiny Prodigy, 1981
 
 @source:prof180x.cpp
 prof180x                        //
