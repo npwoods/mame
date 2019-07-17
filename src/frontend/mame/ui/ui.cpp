@@ -203,7 +203,7 @@ void mame_ui_manager::init()
 	m_mouse_arrow_texture->set_bitmap(m_mouse_bitmap, m_mouse_bitmap.cliprect(), TEXFORMAT_ARGB32);
 
 	// worker UI hacks
-	if (machine().options().worker_ui() && *machine().options().worker_ui())
+	if (is_classic_worker_ui_active())
 	{
 		// in worker UI, we start up paused
 		machine().pause();
@@ -426,7 +426,7 @@ void mame_ui_manager::update_and_render(render_container &container)
 {
 	// in worker UI mode, behave very differently (in the end this should probably be
 	// done in a more object oriented fashion)
-	if (machine().options().worker_ui() && *machine().options().worker_ui())
+	if (is_classic_worker_ui_active())
 	{
 		update_and_render_worker_ui(container);
 		return;
@@ -484,6 +484,18 @@ void mame_ui_manager::update_and_render(render_container &container)
 		using namespace std::placeholders;
 		set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_ingame, this, _1));
 	}
+}
+
+
+//-------------------------------------------------
+//  is_classic_worker_ui_active
+//-------------------------------------------------
+
+bool mame_ui_manager::is_classic_worker_ui_active() const
+{
+	// make sure that -worker_ui was specified, but not "-plugin worker_ui"
+	return machine().options().worker_ui() && *machine().options().worker_ui()
+		&& !(machine().options().plugin() && !strcmp(machine().options().plugin(), "worker_ui"));
 }
 
 

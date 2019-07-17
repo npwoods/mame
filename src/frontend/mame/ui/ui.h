@@ -309,6 +309,7 @@ private:
 	std::unique_ptr<slider_state> slider_alloc(int id, const char *title, int32_t minval, int32_t defval, int32_t maxval, int32_t incval, void *arg);
 	
 	// worker UI
+	bool is_classic_worker_ui_active() const;
 	void update_and_render_worker_ui(render_container &container);
 	bool invoke_worker_ui_command(const std::vector<std::string> &args);
 	void emit_status();
