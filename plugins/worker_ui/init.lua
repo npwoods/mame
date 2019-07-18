@@ -86,6 +86,20 @@ function command_hard_reset(args)
 	print("OK ### Hard Reset Scheduled")
 end
 
+-- PAUSE command
+function command_pause(args)
+	emu.pause()
+	print("OK STATUS ### Paused")
+	emit_status()
+end
+
+-- RESUME command
+function command_resume(args)
+	emu.unpause()
+	print("OK STATUS ### Resumed")
+	emit_status()
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command " .. args[1] .. " not yet implemeted")
@@ -106,8 +120,8 @@ local commands =
 	["throttled"]					= command_nyi,
 	["throttle_rate"]				= command_nyi,
 	["frameskip"]					= command_nyi,
-	["pause"]						= command_nyi,
-	["resume"]						= command_nyi,
+	["pause"]						= command_pause,
+	["resume"]						= command_resume,
 	["input"]						= command_nyi,
 	["paste"]						= command_nyi,
 	["set_attenuation"]				= command_nyi,
@@ -134,7 +148,7 @@ function console.startplugin()
 	conth:start(scr);
 
 	emu.register_periodic(function()
-		if not (conth.yield or conth.busy) then
+		if (manager:machine() ~= nil and not (conth.yield or conth.busy)) then
 			-- invoke the appropriate command
 			local args = quoted_string_split(conth.result)
 			if (commands[args[1]:lower()]) then
