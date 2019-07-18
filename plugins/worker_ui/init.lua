@@ -32,6 +32,24 @@ function quoted_string_split(text)
 	return result
 end
 
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
+
+function toboolean(str)
+	str = str:lower()
+	return str == "1" or str == "on" or str == "true"
+end
+
 function emit_status()
 	print("<status");
 	print("\tphase=\"running\"");
@@ -100,6 +118,33 @@ function command_resume(args)
 	emit_status()
 end
 
+-- THROTTLED command
+function command_throttled(args)
+	manager:machine():video().throttled = toboolean(args[2])
+	print("OK STATUS ### Throttled set to " .. tostring(manager:machine():video().throttled))
+	emit_status()
+end
+
+-- THROTTLE_RATE command
+function command_throttle_rate(args)
+	manager:machine():video().throttle_rate = tonumber(args[2])
+	print("OK STATUS ### Throttle rate set to " .. tostring(manager:machine():video().throttle_rate))
+	emit_status()
+end
+
+-- FRAMESKIP command
+function command_frameskip(args)
+	local frameskip
+	if (args[2]:lower() == "auto") then
+		frameskip = -1
+	else
+		frameskip = tonumber(args[2])
+	end
+	manager:machine():video().frameskip = frameskip
+	print("OK STATUS ### Frame skip rate set to " .. tostring(manager:machine():video().frameskip))
+	emit_status()
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command " .. args[1] .. " not yet implemeted")
@@ -117,9 +162,9 @@ local commands =
 	["ping"]						= command_ping,
 	["soft_reset"]					= command_soft_reset,
 	["hard_reset"]					= command_hard_reset,
-	["throttled"]					= command_nyi,
-	["throttle_rate"]				= command_nyi,
-	["frameskip"]					= command_nyi,
+	["throttled"]					= command_throttled,
+	["throttle_rate"]				= command_throttle_rate,
+	["frameskip"]					= command_frameskip,
 	["pause"]						= command_pause,
 	["resume"]						= command_resume,
 	["input"]						= command_nyi,
@@ -137,6 +182,24 @@ local commands =
 	["seq_clear"]					= command_nyi
 }
 
+-- invokes a command line
+function invoke_command_line(line)
+	-- invoke the appropriate command
+	local invocation = (function()
+		local args = quoted_string_split(line)
+		if (commands[args[1]:lower()]) then
+			commands[args[1]:lower()](args)
+		else
+			command_unknown(args)
+		end
+	end)
+
+	local status, err = pcall(invocation)
+	if (not status) then
+		print("ERROR ## Lua runtime error " .. tostring(err.code))
+	end
+end
+
 function console.startplugin()
 	-- start a thread to read from stdin
 	local scr = "return io.read()"
@@ -146,23 +209,20 @@ function console.startplugin()
 	-- we want to hold off until the prestart event; register a handler for it
 	local prestarted = false
 	emu.register_prestart(function()
-		-- prestart has been invoked; we're ready for commands
-		emu.pause()
-		print("OK STATUS ### Emulation commenced; ready for commands")
-		emit_status()
-		prestarted = true
+		if not prestarted then
+			-- prestart has been invoked; we're ready for commands
+			emu.pause()
+			print("OK STATUS ### Emulation commenced; ready for commands")
+			emit_status()
+			prestarted = true
+		end
 	end)
 
 	-- register another handler to handle commands after prestart
 	emu.register_periodic(function()
 		if (prestarted and not (conth.yield or conth.busy)) then
-			-- invoke the appropriate command
-			local args = quoted_string_split(conth.result)
-			if (commands[args[1]:lower()]) then
-				commands[args[1]:lower()](args)
-			else
-				command_unknown(args)
-			end
+			-- invoke the command line
+			invoke_command_line(conth.result)
 
 			-- continue on reading
 			conth:start(scr)
