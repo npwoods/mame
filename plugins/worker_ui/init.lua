@@ -138,17 +138,24 @@ local commands =
 }
 
 function console.startplugin()
-	-- initial status
-	print("OK STATUS ### Emulation commenced; ready for commands")
-	emit_status()
-
 	-- start a thread to read from stdin
 	local scr = "return io.read()"
 	local conth = emu.thread()
 	conth:start(scr);
 
+	-- we want to hold off until the prestart event; register a handler for it
+	local prestarted = false
+	emu.register_prestart(function()
+		-- prestart has been invoked; we're ready for commands
+		emu.pause()
+		print("OK STATUS ### Emulation commenced; ready for commands")
+		emit_status()
+		prestarted = true
+	end)
+
+	-- register another handler to handle commands after prestart
 	emu.register_periodic(function()
-		if (manager:machine() ~= nil and not (conth.yield or conth.busy)) then
+		if (prestarted and not (conth.yield or conth.busy)) then
 			-- invoke the appropriate command
 			local args = quoted_string_split(conth.result)
 			if (commands[args[1]:lower()]) then
