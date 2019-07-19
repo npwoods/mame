@@ -85,7 +85,7 @@ function emit_status()
 
 	if manager:machine() then
 		print("\t<sound");
-		print("\t\tattenuation=\"0\"");
+		print("\t\tattenuation=\"" .. tostring(manager:machine():sound().attenuation) .. "\"");
 		print("\t/>");
 	end
 
@@ -169,14 +169,21 @@ function command_paste(args)
 	print("OK ### Text inputted from clipboard")
 end
 
+-- SET_ATTENUATION command
+function command_set_attenuation(args)
+	manager:machine():sound().attenuation = tonumber(args[2])
+	print("OK STATUS ### Sound attenuation set to " .. tostring(manager:machine():sound().attenuation))
+	emit_status()
+end
+
 -- not implemented command
 function command_nyi(args)
-	print("ERROR ### Command " .. args[1] .. " not yet implemeted")
+	print("ERROR ### Command '" .. args[1] .. "' not yet implemeted")
 end
 
 -- unknown command
 function command_unknown(args)
-	print("ERROR ### Unrecognized command " .. args[1])
+	print("ERROR ### Unrecognized command '" .. args[1] .. "'")
 end
 
 -- command list
@@ -193,7 +200,7 @@ local commands =
 	["resume"]						= command_resume,
 	["input"]						= command_input,
 	["paste"]						= command_paste,
-	["set_attenuation"]				= command_nyi,
+	["set_attenuation"]				= command_set_attenuation,
 	["set_natural_keyboard_in_use"]	= command_nyi,
 	["state_load"]					= command_nyi,
 	["state_save"]					= command_nyi,
