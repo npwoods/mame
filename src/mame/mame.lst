@@ -9827,6 +9827,7 @@ changela                        // ??? (c) 1983 Taito Corporation
 
 @source:changyu.cpp
 changyu
+changyu2
 
 @source:channelf.cpp
 channelf                        // Fairchild Channel F VES - 1976
@@ -34115,7 +34116,12 @@ risc2500                        //
 montreux                        //
 
 @source:saitek_stratos.cpp
-stratos                         // Kasparov Stratos Chess Computer
+corona
+stratos
+stratosl
+tking
+tkingl
+tkingp
 
 @source:sam.cpp
 24_130                          //
