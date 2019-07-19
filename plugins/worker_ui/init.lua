@@ -50,6 +50,18 @@ function toboolean(str)
 	return str == "1" or str == "on" or str == "true"
 end
 
+function speed_text()
+	-- show speed percentage first
+	local text = tostring(math.floor(manager:machine():video():speed_percent() * 100 + 0.5)) .. "%"
+
+	-- then show effective frameskip, if more than zero
+	local effective_frameskip = manager:machine():video():effective_frameskip()
+	if effective_frameskip > 0 then
+		text = text .. " (frameskip " .. tostring(effective_frameskip) .. "/10)"
+	end
+	return text
+end
+
 function emit_status()
 	print("<status");
 	print("\tphase=\"running\"");
@@ -63,7 +75,7 @@ function emit_status()
 	print(">");
 
 	print("\t<video");
-	print("\t\tspeed_text=\"dummy\"");
+	print("\t\tspeed_text=\"" .. speed_text() .. "\"");
 	if manager:machine() then
 		print("\t\tframeskip=\"" .. tostring(manager:machine():video().frameskip) .. "\"");
 		print("\t\tthrottled=\"" .. tostring(manager:machine():video().throttled) .. "\"");
