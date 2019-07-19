@@ -157,6 +157,18 @@ function command_frameskip(args)
 	emit_status()
 end
 
+-- INPUT command
+function command_input(args)
+	emu.keypost(args[2])
+	print("OK ### Text inputted")
+end
+
+-- PASTE command
+function command_paste(args)
+	emu.paste()
+	print("OK ### Text inputted from clipboard")
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command " .. args[1] .. " not yet implemeted")
@@ -179,8 +191,8 @@ local commands =
 	["frameskip"]					= command_frameskip,
 	["pause"]						= command_pause,
 	["resume"]						= command_resume,
-	["input"]						= command_nyi,
-	["paste"]						= command_nyi,
+	["input"]						= command_input,
+	["paste"]						= command_paste,
 	["set_attenuation"]				= command_nyi,
 	["set_natural_keyboard_in_use"]	= command_nyi,
 	["state_load"]					= command_nyi,
