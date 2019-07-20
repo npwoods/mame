@@ -332,6 +332,18 @@ function command_unload(args)
 	emit_status()
 end
 
+-- CREATE command
+function command_create(args)
+	local image = find_image_by_tag(args[2])
+	if not image then
+		print("ERROR ### Cannot find device '" .. args[2] .. "'")
+		return
+	end
+	image:create(args[3])
+	print("OK STATUS ### Device '" .. args[2] .. "' created image '" .. args[3] .. "' successfully")
+	emit_status()
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command '" .. args[1] .. "' not yet implemeted")
@@ -363,7 +375,7 @@ local commands =
 	["save_snapshot"]				= command_save_snapshot,
 	["load"]						= command_load,
 	["unload"]						= command_unload,
-	["create"]						= command_nyi,
+	["create"]						= command_create,
 	["seq_poll_start"]				= command_nyi,
 	["seq_set_default"]				= command_nyi,
 	["seq_clear"]					= command_nyi
