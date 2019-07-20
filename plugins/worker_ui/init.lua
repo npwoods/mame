@@ -66,7 +66,7 @@ function emit_status()
 	print("<status");
 	print("\tphase=\"running\"");
 	print("\tpolling_input_seq=\"false\"");
-	print("\tnatural_keyboard_in_use=\"false\"");
+	print("\tnatural_keyboard_in_use=\"" .. tostring(manager:machine():ioport():natkeyboard().in_use) .. "\"");
 	if manager:machine() then
 		print("\tpaused=\"" .. tostring(manager:machine().paused) .. "\"");
 	else
@@ -159,13 +159,13 @@ end
 
 -- INPUT command
 function command_input(args)
-	emu.keypost(args[2])
+	manager:machine():ioport():natkeyboard():post(args[2])
 	print("OK ### Text inputted")
 end
 
 -- PASTE command
 function command_paste(args)
-	emu.paste()
+	manager:machine():ioport():natkeyboard():paste(args[2])
 	print("OK ### Text inputted from clipboard")
 end
 
@@ -173,6 +173,13 @@ end
 function command_set_attenuation(args)
 	manager:machine():sound().attenuation = tonumber(args[2])
 	print("OK STATUS ### Sound attenuation set to " .. tostring(manager:machine():sound().attenuation))
+	emit_status()
+end
+
+-- SET_NATURAL_KEYBOARD_IN_USE command
+function command_set_natural_keyboard_in_use(args)
+	manager:machine():ioport():natkeyboard().in_use = toboolean(args[2])
+	print("OK STATUS ### Natural keyboard in use set to " .. tostring(manager:machine():ioport():natkeyboard().in_use))
 	emit_status()
 end
 
@@ -201,7 +208,7 @@ local commands =
 	["input"]						= command_input,
 	["paste"]						= command_paste,
 	["set_attenuation"]				= command_set_attenuation,
-	["set_natural_keyboard_in_use"]	= command_nyi,
+	["set_natural_keyboard_in_use"]	= command_set_natural_keyboard_in_use,
 	["state_load"]					= command_nyi,
 	["state_save"]					= command_nyi,
 	["save_snapshot"]				= command_nyi,
