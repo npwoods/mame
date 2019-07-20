@@ -768,12 +768,7 @@ bool mame_ui_manager::invoke_worker_ui_command(const std::vector<std::string> &a
 	}
 	else if (args[0] == "paste")
 	{
-		char *text = osd_get_clipboard_text();
-		if (text)
-		{
-			machine().ioport().natkeyboard().post_utf8(text);
-			free(text);
-		}
+		machine().ioport().natkeyboard().paste();
 		std::cout << "OK ### Text inputted from clipboard" << std::endl;
 	}
 	else if (args[0] == "set_attenuation")
@@ -1074,6 +1069,8 @@ void mame_ui_manager::emit_status()
 	// video
 	std::cout << "\t<video" << std::endl;
 	std::cout << "\t\tframeskip=\"" << (machine().video().frameskip() == -1 ? "auto" : std::to_string(machine().video().frameskip())) << "\"" << std::endl;
+	std::cout << "\t\teffective_frameskip=\"" << machine().video().effective_frameskip() << '/' << MAX_FRAMESKIP << "\"" << std::endl;
+	std::cout << "\t\tspeed_percent=\"" << machine().video().speed_percent() << "\"" << std::endl;
 	std::cout << "\t\tspeed_text=\"" << machine().video().speed_text() << "\"" << std::endl;
 	std::cout << "\t\tthrottled=\"" << string_from_bool(machine().video().throttled()) << "\"" << std::endl;
 	std::cout << "\t\tthrottle_rate=\"" << machine().video().throttle_rate() << "\"/>" << std::endl;
