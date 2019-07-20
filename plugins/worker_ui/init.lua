@@ -183,6 +183,18 @@ function command_set_natural_keyboard_in_use(args)
 	emit_status()
 end
 
+-- STATE_LOAD command
+function command_state_load(args)
+	manager:machine():load(args[2])
+	print("OK ### Scheduled state load of '" .. args[2] .. "'")
+end
+
+-- STATE_SAVE command
+function command_state_save(args)
+	manager:machine():save(args[2])
+	print("OK ### Scheduled state save of '" .. args[2] .. "'")
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command '" .. args[1] .. "' not yet implemeted")
@@ -209,8 +221,8 @@ local commands =
 	["paste"]						= command_paste,
 	["set_attenuation"]				= command_set_attenuation,
 	["set_natural_keyboard_in_use"]	= command_set_natural_keyboard_in_use,
-	["state_load"]					= command_nyi,
-	["state_save"]					= command_nyi,
+	["state_load"]					= command_state_load,
+	["state_save"]					= command_state_save,
 	["save_snapshot"]				= command_nyi,
 	["load"]						= command_nyi,
 	["unload"]						= command_nyi,
