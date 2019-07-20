@@ -198,13 +198,17 @@ end
 -- SAVE_SNAPSHOT command
 function command_save_snapshot(args)
 	-- hardcoded for first screen now
+	local index = tonumber(args[2])
 	for k,v in pairs(manager:machine().screens) do
-		screen = v
-		break
+		if index == 0 then
+			screen = v
+			break
+		end
+		index = index - 1
 	end
 
-	screen:snapshot(args[2])
-	print("OK ### Successfully saved screenshot '" .. args[2] .. "'")
+	screen:snapshot(args[3])
+	print("OK ### Successfully saved screenshot '" .. args[3] .. "'")
 end
 
 -- not implemented command
