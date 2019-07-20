@@ -1,4 +1,4 @@
-local exports = {}
+﻿local exports = {}
 exports.name = "workerui"
 exports.version = "0.0.1"
 exports.description = "worker-ui plugin"
@@ -50,6 +50,57 @@ function toboolean(str)
 	return str == "1" or str == "on" or str == "true"
 end
 
+function string_from_bool(b)
+	if b then
+		return "1"
+	else
+		return "0"
+	end
+end
+
+function xml_encode(str)
+	local res = ""
+	local seq = 0
+	local val = nil
+	for i = 1, #str do
+		-- decode this byte
+		local c = string.byte(str, i)
+		if seq == 0 then	
+			seq = c < 0x80 and 1 or c < 0xE0 and 2 or c < 0xF0 and 3 or
+			      c < 0xF8 and 4 or -1
+			val = bit32.band(c, 2^(8-seq) - 1)
+		else
+			val = bit32.bor(bit32.lshift(val, 6), bit32.band(c, 0x3F))
+		end
+
+		-- do we have an invalid sequence?  if so, serve up a '?'
+		if seq < 0 then
+			val = 63
+			seq = 1
+		end
+
+		-- emit the character if appropriate
+		seq = seq - 1
+		if seq == 0 then
+			if val > 127 then
+				res = res .. "&#" .. tostring(val) .. ";"
+			elseif string.char(val) == "\"" then
+				res = res .. "&quot;"
+			elseif string.char(val) == "&" then
+				res = res .. "&amp;"
+			elseif string.char(val) == "<" then
+				res = res .. "&lt;"
+			elseif string.char(val) == ">" then
+				res = res .. "&gt;"
+			else
+				res = res .. string.char(val)
+			end
+			val = 0
+		end
+	end
+	return res
+end
+
 function speed_text()
 	-- show speed percentage first
 	local text = tostring(math.floor(manager:machine():video():speed_percent() * 100 + 0.5)) .. "%"
@@ -60,6 +111,18 @@ function speed_text()
 		text = text .. " (frameskip " .. tostring(effective_frameskip) .. "/10)"
 	end
 	return text
+end
+
+function find_image_by_tag(tag)
+	if not (tag.sub(1, 1) == ":") then
+		tag = ":" .. tag
+	end
+
+	for k,image in pairs(manager:machine().images) do
+		if image.device:tag() == tag then
+			return image
+		end
+	end
 end
 
 function emit_status()
@@ -84,9 +147,43 @@ function emit_status()
 	print("\t/>");
 
 	if manager:machine() then
+		-- <sound> (sound_manager)
 		print("\t<sound");
 		print("\t\tattenuation=\"" .. tostring(manager:machine():sound().attenuation) .. "\"");
 		print("\t/>");
+
+		-- <images>
+		print("\t<images>")
+		for instance_name,image in pairs(manager:machine().images) do
+			local filename = image:filename()
+			if filename == nil then
+				filename = ""
+			end
+
+			-- basic image properties
+			print(string.format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
+				xml_encode(image.device:tag()),
+				xml_encode(instance_name),
+				string_from_bool(image.is_readable),
+				string_from_bool(image.is_writeable),
+				string_from_bool(image.is_creatable),
+				string_from_bool(image.must_be_loaded)))
+
+			-- filename
+			local filename = image:filename()
+			if filename ~= nil and filename ~= "" then
+				print("\t\t\tfilename=\"" .. xml_encode(filename) .. "\"")
+			end
+
+			-- display
+			local display = image:display()
+			if display ~= nil and display ~= "" then
+				print("\t\t\tdisplay=\"" .. xml_encode(display) .. "\"")
+			end
+
+			print("\t\t/>")
+		end	
+		print("\t</images>")
 	end
 
 	print("</status>");
@@ -211,6 +308,30 @@ function command_save_snapshot(args)
 	print("OK ### Successfully saved screenshot '" .. args[3] .. "'")
 end
 
+-- LOAD command
+function command_load(args)
+	local image = find_image_by_tag(args[2])
+	if not image then
+		print("ERROR ### Cannot find device '" .. args[2] .. "'")
+		return
+	end
+	image:load(args[3])
+	print("OK STATUS ### Device '" .. args[2] .. "' loaded '" .. args[3] .. "' successfully")
+	emit_status()
+end
+
+-- UNLOAD command
+function command_unload(args)
+	local image = find_image_by_tag(args[2])
+	if not image then
+		print("ERROR ### Cannot find device '" .. args[2] .. "'")
+		return
+	end
+	image:unload()
+	print("OK STATUS ### Device '" .. args[2] .. "' unloaded successfully")
+	emit_status()
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command '" .. args[1] .. "' not yet implemeted")
@@ -240,8 +361,8 @@ local commands =
 	["state_load"]					= command_state_load,
 	["state_save"]					= command_state_save,
 	["save_snapshot"]				= command_save_snapshot,
-	["load"]						= command_nyi,
-	["unload"]						= command_nyi,
+	["load"]						= command_load,
+	["unload"]						= command_unload,
 	["create"]						= command_nyi,
 	["seq_poll_start"]				= command_nyi,
 	["seq_set_default"]				= command_nyi,
