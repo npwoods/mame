@@ -125,10 +125,22 @@ function find_image_by_tag(tag)
 	end
 end
 
+-- input polling
+local current_poll_field
+local current_poll_seq_type
+
+function is_polling_input_seq()
+	if current_poll_field then
+		return true
+	else
+		return false
+	end
+end
+
 function emit_status()
 	print("<status");
 	print("\tphase=\"running\"");
-	print("\tpolling_input_seq=\"false\"");
+	print("\tpolling_input_seq=\"" .. tostring(is_polling_input_seq()) .. "\"");
 	print("\tnatural_keyboard_in_use=\"" .. tostring(manager:machine():ioport():natkeyboard().in_use) .. "\"");
 	if manager:machine() then
 		print("\tpaused=\"" .. tostring(manager:machine().paused) .. "\"");
@@ -344,6 +356,49 @@ function command_create(args)
 	emit_status()
 end
 
+-- SEQ_POLL_START command
+function command_seq_poll_start(args)
+	local port = manager:machine():ioport().ports[args[2]]
+	if not port then
+		print("ERROR ### Can't find port '" .. args[2] .. "'")
+		return
+	end
+
+	local field
+	for k,v in pairs(port.fields) do
+		if v.mask == tonumber(args[3]) then
+			field = v
+			break
+		end
+	end
+	if not field then
+		print("ERROR ### Can't find field mask '" .. tostring(tonumber(args[3])) .. "' on port '" .. args[2] .. "'")
+		return
+	end
+	if not field.enabled then
+		print("ERROR ### Field '" .. args[2] .. "':" .. tostring(tonumber(args[3])) .. " is disabled")
+		return
+	end
+
+	local input_seq_class
+	if field.is_analog then
+		input_seq_class = "absolute"
+	else
+		input_seq_class = "switch"
+	end
+
+	manager:machine():input():seq_poll_start(input_seq_class)
+	current_poll_field = field
+	current_poll_seq_type = args[4]
+	print("OK STATUS ### Starting polling")
+end
+
+function command_seq_poll_stop(args)
+	current_poll_field = nil
+	current_poll_seq_type = nil
+	print("OK ### Stopped polling");
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command '" .. args[1] .. "' not yet implemeted")
@@ -376,7 +431,8 @@ local commands =
 	["load"]						= command_load,
 	["unload"]						= command_unload,
 	["create"]						= command_create,
-	["seq_poll_start"]				= command_nyi,
+	["seq_poll_start"]				= command_seq_poll_start,
+	["seq_poll_stop"]				= command_seq_poll_stop,
 	["seq_set_default"]				= command_nyi,
 	["seq_clear"]					= command_nyi
 }
@@ -419,12 +475,29 @@ function console.startplugin()
 
 	-- register another handler to handle commands after prestart
 	emu.register_periodic(function()
-		if (prestarted and not (conth.yield or conth.busy)) then
-			-- invoke the command line
-			invoke_command_line(conth.result)
+		if (prestarted) then
+			-- are we polling input?
+			if is_polling_input_seq() then
+				if manager:machine():input():seq_poll() then
+					-- done polling; set the new input_seq
+					local seq = manager:machine():input():seq_poll_final()
+					manager:machine():input():seq_pressed(seq)
+					current_poll_field:set_input_seq(current_poll_seq_type, seq)
+					
+					-- and terminate polling
+					current_poll_field = nil
+					current_poll_seq_type = nil
+				end
+			end
 
-			-- continue on reading
-			conth:start(scr)
+			-- do we have a command?
+			if not (conth.yield or conth.busy) then
+				-- invoke the command line
+				invoke_command_line(conth.result)
+
+				-- continue on reading
+				conth:start(scr)
+			end
 		end
 	end)
 end
