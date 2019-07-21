@@ -465,8 +465,11 @@ function console.startplugin()
 	local prestarted = false
 	emu.register_prestart(function()
 		if not prestarted then
-			-- prestart has been invoked; we're ready for commands
+			-- prestart has been invoked; set up MAME for our control
 			emu.pause()
+			manager:machine():uiinput().presses_enabled = false
+
+			-- and indicate that we're ready for commands
 			print("OK STATUS ### Emulation commenced; ready for commands")
 			emit_status()
 			prestarted = true
