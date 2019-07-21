@@ -476,23 +476,35 @@ function console.startplugin()
 	conth:start(scr);
 
 	-- we want to hold off until the prestart event; register a handler for it
-	local prestarted = false
+	local initial_start = false
+	local session_active = true
 	emu.register_prestart(function()
-		if not prestarted then
-			-- prestart has been invoked; set up MAME for our control
-			emu.pause()
-			manager:machine():uiinput().presses_enabled = false
+		-- prestart has been invoked; set up MAME for our control
+		emu.pause()
+		manager:machine():uiinput().presses_enabled = false
+		session_active = true
 
+		-- is this the very first time we have hit a pre-start?
+		if not initial_start then
 			-- and indicate that we're ready for commands
 			print("OK STATUS ### Emulation commenced; ready for commands")
 			emit_status()
-			prestarted = true
+			initial_start = true
 		end
+	end)
+
+	emu.register_stop(function()
+		-- the emulation session has stopped; tidy things up
+		current_poll_field = nil
+		current_poll_seq_type = nil
+		session_active = false
 	end)
 
 	-- register another handler to handle commands after prestart
 	emu.register_periodic(function()
-		if (prestarted) then
+		-- it is essential that we only perform these activities when there
+		-- is an active session!
+		if session_active then
 			-- are we polling input?
 			if is_polling_input_seq() then
 				if manager:machine():input():seq_poll() then
