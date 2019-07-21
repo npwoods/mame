@@ -155,62 +155,55 @@ function emit_status()
 	print("\tphase=\"running\"");
 	print("\tpolling_input_seq=\"" .. tostring(is_polling_input_seq()) .. "\"");
 	print("\tnatural_keyboard_in_use=\"" .. tostring(manager:machine():ioport():natkeyboard().in_use) .. "\"");
-	if manager:machine() then
-		print("\tpaused=\"" .. tostring(manager:machine().paused) .. "\"");
-	else
-		print("\tstartup_text=\"Initializing...\"");
-	end
+	print("\tpaused=\"" .. tostring(manager:machine().paused) .. "\"");
+	print("\tstartup_text=\"\"");
 	print(">");
 
 	print("\t<video");
 	print("\t\tspeed_text=\"" .. speed_text() .. "\"");
-	if manager:machine() then
-		print("\t\tframeskip=\"" .. tostring(manager:machine():video().frameskip) .. "\"");
-		print("\t\tthrottled=\"" .. tostring(manager:machine():video().throttled) .. "\"");
-		print("\t\tthrottle_rate=\"" .. tostring(manager:machine():video().throttle_rate) .. "\"");
-	end
+	print("\t\tframeskip=\"" .. tostring(manager:machine():video().frameskip) .. "\"");
+	print("\t\tthrottled=\"" .. tostring(manager:machine():video().throttled) .. "\"");
+	print("\t\tthrottle_rate=\"" .. tostring(manager:machine():video().throttle_rate) .. "\"");
 	print("\t/>");
 
-	if manager:machine() then
-		-- <sound> (sound_manager)
-		print("\t<sound");
-		print("\t\tattenuation=\"" .. tostring(manager:machine():sound().attenuation) .. "\"");
-		print("\t/>");
+	-- <sound> (sound_manager)
+	print("\t<sound");
+	print("\t\tattenuation=\"" .. tostring(manager:machine():sound().attenuation) .. "\"");
+	print("\t/>");
 
-		-- <images>
-		print("\t<images>")
-		for _,image in ipairs(get_images()) do
+	-- <images>
+	print("\t<images>")
+	for _,image in ipairs(get_images()) do
 
-			local filename = image:filename()
-			if filename == nil then
-				filename = ""
-			end
+		local filename = image:filename()
+		if filename == nil then
+			filename = ""
+		end
 
-			-- basic image properties
-			print(string.format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
-				xml_encode(image.device:tag()),
-				xml_encode(image.instance_name),
-				string_from_bool(image.is_readable),
-				string_from_bool(image.is_writeable),
-				string_from_bool(image.is_creatable),
-				string_from_bool(image.must_be_loaded)))
+		-- basic image properties
+		print(string.format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
+			xml_encode(image.device:tag()),
+			xml_encode(image.instance_name),
+			string_from_bool(image.is_readable),
+			string_from_bool(image.is_writeable),
+			string_from_bool(image.is_creatable),
+			string_from_bool(image.must_be_loaded)))
 
-			-- filename
-			local filename = image:filename()
-			if filename ~= nil and filename ~= "" then
-				print("\t\t\tfilename=\"" .. xml_encode(filename) .. "\"")
-			end
+		-- filename
+		local filename = image:filename()
+		if filename ~= nil and filename ~= "" then
+			print("\t\t\tfilename=\"" .. xml_encode(filename) .. "\"")
+		end
 
-			-- display
-			local display = image:display()
-			if display ~= nil and display ~= "" then
-				print("\t\t\tdisplay=\"" .. xml_encode(display) .. "\"")
-			end
+		-- display
+		local display = image:display()
+		if display ~= nil and display ~= "" then
+			print("\t\t\tdisplay=\"" .. xml_encode(display) .. "\"")
+		end
 
-			print("\t\t/>")
-		end	
-		print("\t</images>")
-	end
+		print("\t\t/>")
+	end	
+	print("\t</images>")
 
 	print("</status>");
 end
