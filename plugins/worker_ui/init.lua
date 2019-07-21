@@ -159,6 +159,7 @@ function emit_status()
 	print("\tstartup_text=\"\"");
 	print(">");
 
+	-- <video> (video_manager)
 	print("\t<video");
 	print("\t\tspeed_text=\"" .. speed_text() .. "\"");
 	print("\t\tframeskip=\"" .. tostring(manager:machine():video().frameskip) .. "\"");
@@ -204,6 +205,51 @@ function emit_status()
 		print("\t\t/>")
 	end	
 	print("\t</images>")
+
+	-- <inputs>
+	print("\t<inputs>")
+	for _,port in pairs(manager:machine():ioport().ports) do
+		for _,field in pairs(port.fields) do
+			if field.enabled then
+				local type_class = field.type_class
+				local is_switch = type_class == "dipswitch" or type_class == "config"
+				local field_type
+				if field.is_analog then
+					field_type = "analog"
+				else
+					field_type = "digital"
+				end
+
+				print("\t\t<input"
+					.. " port_tag=\"" .. xml_encode(port:tag()) .. "\""
+					.. " mask=\"" .. tostring(field.mask) .. "\""
+					.. " class=\"" .. type_class .. "\""
+					.. " type=\"" .. field_type .. "\""
+					.. " name=\"" .. xml_encode(field.name) .. "\"")
+
+				if is_switch then
+					-- DIP switches and configs have values
+					print("\t\t\tvalue=\"" .. tostring(field.user_value) .. "\"")
+				end
+
+				print("\t\t>")
+
+				-- emit input sequences for anything that is not DIP switches of configs
+				if not is_switch then
+					-- both analog and digital have "standard" seq types
+					print("\t\t\t<seq type=\"standard\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("standard"))) .. "\"/>")
+					if field.is_analog then
+						-- analog inputs also have increment and decrement
+						print("\t\t\t<seq type=\"increment\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("increment"))) .. "\"/>")
+						print("\t\t\t<seq type=\"decrement\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("decrement"))) .. "\"/>")						
+					end
+				end
+
+				print("\t\t</input>")
+			end
+		end
+	end
+	print("\t</inputs>")
 
 	print("</status>");
 end
@@ -441,7 +487,8 @@ local commands =
 	["seq_poll_start"]				= command_seq_poll_start,
 	["seq_poll_stop"]				= command_seq_poll_stop,
 	["seq_set_default"]				= command_nyi,
-	["seq_clear"]					= command_nyi
+	["seq_clear"]					= command_nyi,
+	["set_input_value"]				= command_nyi
 }
 
 -- invokes a command line
