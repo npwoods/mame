@@ -113,12 +113,25 @@ function speed_text()
 	return text
 end
 
+function get_images()
+	local result = {}
+	local i = 1
+
+	for k,v in pairs(manager:machine().images) do
+		if k == v.instance_name then
+			result[i] = v
+			i = i + 1
+		end
+	end
+	return result
+end
+
 function find_image_by_tag(tag)
 	if not (tag.sub(1, 1) == ":") then
 		tag = ":" .. tag
 	end
 
-	for k,image in pairs(manager:machine().images) do
+	for _,image in ipairs(get_images()) do
 		if image.device:tag() == tag then
 			return image
 		end
@@ -166,7 +179,8 @@ function emit_status()
 
 		-- <images>
 		print("\t<images>")
-		for instance_name,image in pairs(manager:machine().images) do
+		for _,image in ipairs(get_images()) do
+
 			local filename = image:filename()
 			if filename == nil then
 				filename = ""
@@ -175,7 +189,7 @@ function emit_status()
 			-- basic image properties
 			print(string.format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
 				xml_encode(image.device:tag()),
-				xml_encode(instance_name),
+				xml_encode(image.instance_name),
 				string_from_bool(image.is_readable),
 				string_from_bool(image.is_writeable),
 				string_from_bool(image.is_creatable),
