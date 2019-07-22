@@ -20,7 +20,7 @@ cold boot, press ACL, then hold the PLAY button and press GO.
 *******************************************************************************
 
 Hardware notes:
-- W65C02 or R65C02 at 5MHz or 5.67MHz (for latter, box says 6MHz but that's a marketing lie)
+- W65C02 or R65C02 at 5MHz or ~5.6MHz (for latter, box says 6MHz but that's a marketing lie)
 - 2*32KB ROM + optional 32KB Endgame ROM sold separately
 - 8KB RAM + another 8KB RAM(latter not populated on every PCB)
 - NEC gate array for all I/O, Saitek calls it HELIOS
@@ -30,6 +30,11 @@ Hardware notes:
 Stratos/Turbo King are identical.
 Corona has magnet sensors and two HELIOS chips.
 Simultano has an extra LCD screen representing the chessboard state.
+
+There is no official Saitek program versioning for these. The D/D+ versions are known since
+they're the same chess engine as later Saitek modules, such as the Analyst module.
+Likewise, officially there isn't a "Turbo King II" or "Corona II", these 'sequels' are titled
+as such by the chesscomputer community. Saitek simply advertised them as an improved program.
 
 TODO:
 - emulate LCD at lower level, probably an MCU with embedded LCDC
@@ -68,7 +73,8 @@ public:
 		m_rombank(*this, "rombank"),
 		m_nvrambank(*this, "nvrambank"),
 		m_board(*this, "board"),
-		m_dac(*this, "dac")
+		m_dac(*this, "dac"),
+		m_inputs(*this, "IN.%u", 0)
 	{ }
 
 	// machine drivers
@@ -86,18 +92,19 @@ private:
 	required_memory_bank m_nvrambank;
 	required_device<sensorboard_device> m_board;
 	required_device<dac_bit_interface> m_dac;
+	required_ioport_array<8+1> m_inputs;
 
 	void main_map(address_map &map);
-	void update_leds();
 
 	// I/O handlers
+	void update_leds();
 	DECLARE_WRITE8_MEMBER(select_w);
 	DECLARE_READ8_MEMBER(chessboard_r);
 	DECLARE_WRITE8_MEMBER(sound_w);
 	DECLARE_WRITE8_MEMBER(leds_w);
 	DECLARE_READ8_MEMBER(control_r);
 	DECLARE_WRITE8_MEMBER(control_w);
-	DECLARE_READ8_MEMBER(lcd_r);
+	DECLARE_READ8_MEMBER(lcd_data_r);
 	DECLARE_READ8_MEMBER(extrom_r);
 
 	std::unique_ptr<u8[]> m_nvram_data;
@@ -117,11 +124,13 @@ void saitek_stratos_state::machine_start()
 
 	// zerofill
 	m_power = false;
+	m_lcd_ready = false;
 	m_lcd_count = 0;
 	m_lcd_address = 0;
 
 	// register for savestates
 	save_item(NAME(m_power));
+	save_item(NAME(m_lcd_ready));
 	save_item(NAME(m_lcd_count));
 	save_item(NAME(m_lcd_address));
 	save_item(NAME(m_lcd_data));
@@ -130,6 +139,7 @@ void saitek_stratos_state::machine_start()
 void saitek_stratos_state::machine_reset()
 {
 	m_power = true;
+	m_lcd_ready = false;
 	m_lcd_count = 0;
 	clear_lcd();
 
@@ -138,8 +148,10 @@ void saitek_stratos_state::machine_reset()
 
 void saitek_stratos_state::set_cpu_freq()
 {
-	// released with either 5MHz or 5.67MHz speeds
-	m_maincpu->set_unscaled_clock((ioport("FAKE")->read() & 1) ? 5.67_MHz_XTAL : 5_MHz_XTAL);
+	// known officially* released CPU speeds: 5MHz, 5.626MHz, 5.67MHz
+	// *not including reseller overclocks, user mods, or the "Turbo Kit"
+	u8 inp = ioport("FAKE")->read();
+	m_maincpu->set_unscaled_clock((inp & 2) ? 5.67_MHz_XTAL : ((inp & 1) ? 5.626_MHz_XTAL : 5_MHz_XTAL));
 }
 
 // stratos_state
@@ -241,16 +253,16 @@ void saitek_stratos_state::update_lcd()
 
 	m_out_digit[0] = 0; // where?
 
-	// upper digits
+	// upper digits (colon is at 0x00)
 	for (int i = 0; i < 4; i++)
 		m_out_digit[i + 1] = (m_lcd_data[0x01 + i * 2] << 4 | m_lcd_data[0x01 + i * 2 + 1]) & 0x7f;
 
-	// lower digits
+	// lower digits (colon is at 0x10)
 	for (int i = 0; i < 4; i++)
 		m_out_digit[i + 5] = (m_lcd_data[0x11 + i * 2] << 4 | m_lcd_data[0x11 + i * 2 + 1]) & 0x7f;
 }
 
-void saitek_stratos_state::lcd_w(u8 data)
+void saitek_stratos_state::lcd_data_w(u8 data)
 {
 	// d0-d3: lcd data
 	// d4-d7: unused?
@@ -274,14 +286,12 @@ void saitek_stratos_state::lcd_w(u8 data)
 	}
 	else
 		m_lcd_count++;
-
-	m_lcd_busy->adjust(attotime::from_usec(50)); // ?
 }
 
-READ8_MEMBER(stratos_state::lcd_r)
+void saitek_stratos_state::lcd_reset_w(u8 data)
 {
-	// unknown, maybe resets lcd controller
-	return 0;
+	m_lcd_count = 0;
+	m_lcd_ready = true;
 }
 
 
@@ -294,7 +304,7 @@ void stratos_state::update_leds()
 
 WRITE8_MEMBER(stratos_state::leds_w)
 {
-	// d0-d7: button leds data
+	// d0-d7: button led data
 	m_led_data = data;
 	update_leds();
 
@@ -327,11 +337,12 @@ READ8_MEMBER(stratos_state::control_r)
 
 	if (sel == 8)
 	{
-		// lcd busy flag?
-		if (m_lcd_busy->enabled())
+		// d5: lcd status flag?
+		if (m_lcd_ready)
 			data |= 0x20;
+		m_lcd_ready = false;
 
-		// battery low
+		// d7: battery low
 		data |= m_inputs[8]->read();
 	}
 
@@ -354,12 +365,19 @@ WRITE8_MEMBER(stratos_state::control_w)
 	m_nvrambank->set_entry((data >> 1) & 1);
 
 	// d2: mode led state
-	// d5: button leds select
+	// d5: button led select
 	update_leds();
 
 	// d6 falling edge: power-off request
 	if (~data & prev & 0x40)
 		power_off();
+}
+
+READ8_MEMBER(stratos_state::lcd_data_r)
+{
+	// reset lcd?
+	lcd_reset_w();
+	return 0;
 }
 
 
@@ -376,7 +394,7 @@ void stratos_state::main_map(address_map &map)
 	map(0x2400, 0x2400).w(FUNC(stratos_state::leds_w));
 	map(0x2600, 0x2600).rw(FUNC(stratos_state::control_r), FUNC(stratos_state::control_w));
 	map(0x2800, 0x37ff).bankrw("nvrambank");
-	map(0x3800, 0x3800).rw(FUNC(stratos_state::lcd_r), FUNC(stratos_state::lcd_w));
+	map(0x3800, 0x3800).rw(FUNC(stratos_state::lcd_data_r), FUNC(stratos_state::lcd_data_w));
 	map(0x4000, 0x7fff).r(FUNC(stratos_state::extrom_r));
 	map(0x8000, 0xffff).bankr("rombank");
 }
@@ -421,7 +439,7 @@ INPUT_PORTS_START( saitek_stratos )
 	PORT_START("IN.6")
 	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_T) PORT_NAME("Library")
 	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_Y) PORT_NAME("Info")
-	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_CUSTOM) // freq sel
+	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_CUSTOM) // freq sel
 
 	PORT_START("IN.7")
 	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_UNUSED)
@@ -438,13 +456,21 @@ INPUT_PORTS_START( saitek_stratos )
 	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, saitek_stratos_state, acl_button, nullptr) PORT_NAME("ACL")
 
 	PORT_START("FAKE")
-	PORT_CONFNAME( 0x01, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, saitek_stratos_state, cpu_freq, nullptr) // factory set
+	PORT_CONFNAME( 0x03, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, saitek_stratos_state, cpu_freq, nullptr) // factory set
 	PORT_CONFSETTING(    0x00, "5MHz" )
-	PORT_CONFSETTING(    0x01, "5.67MHz" )
+	PORT_CONFSETTING(    0x01, "5.626MHz" )
+	PORT_CONFSETTING(    0x02, "5.67MHz" )
+INPUT_PORTS_END
+
+static INPUT_PORTS_START( stratos )
+	PORT_INCLUDE( saitek_stratos )
+
+	PORT_MODIFY("IN.6")
+	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_CUSTOM)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( tking2 )
-	PORT_INCLUDE( saitek_stratos )
+	PORT_INCLUDE( stratos )
 
 	PORT_MODIFY("IN.5")
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_CUSTOM)
@@ -473,8 +499,6 @@ void stratos_state::stratos(machine_config &config)
 	/* video hardware */
 	PWM_DISPLAY(config, m_display).set_size(2+4, 8+1);
 	config.set_default_layout(layout_saitek_stratos);
-
-	TIMER(config, "lcd_busy").configure_generic(timer_device::expired_delegate());
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -540,10 +564,10 @@ ROM_END
     Drivers
 ******************************************************************************/
 
-/*    YEAR  NAME      PARENT  CMP MACHINE  INPUT           CLASS          INIT        COMPANY, FULLNAME, FLAGS */
-CONS( 1986, stratos,  0,       0, stratos, saitek_stratos, stratos_state, empty_init, "SciSys", "Kasparov Stratos (set 1)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK )
-CONS( 1986, stratosa, stratos, 0, stratos, saitek_stratos, stratos_state, empty_init, "SciSys", "Kasparov Stratos (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK )
+/*    YEAR  NAME      PARENT  CMP MACHINE  INPUT    CLASS          INIT        COMPANY, FULLNAME, FLAGS */
+CONS( 1986, stratos,  0,       0, stratos, stratos, stratos_state, empty_init, "SciSys", "Kasparov Stratos (set 1)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK )
+CONS( 1986, stratosa, stratos, 0, stratos, stratos, stratos_state, empty_init, "SciSys", "Kasparov Stratos (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK )
 
-CONS( 1990, tking,    0,       0, tking2,  tking2,         stratos_state, empty_init, "Saitek", "Kasparov Turbo King (set 1, ver. D)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK ) // aka Turbo King II
-CONS( 1988, tkinga,   tking,   0, stratos, saitek_stratos, stratos_state, empty_init, "Saitek", "Kasparov Turbo King (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK ) // oldest?
-CONS( 1988, tkingb,   tking,   0, stratos, saitek_stratos, stratos_state, empty_init, "Saitek", "Kasparov Turbo King (set 3)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK )
+CONS( 1988, tking,    0,       0, tking2,  tking2,  stratos_state, empty_init, "Saitek", "Kasparov Turbo King (set 1, ver. D)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK ) // aka Turbo King II
+CONS( 1988, tkinga,   tking,   0, stratos, stratos, stratos_state, empty_init, "Saitek", "Kasparov Turbo King (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK ) // oldest?
+CONS( 1988, tkingb,   tking,   0, stratos, stratos, stratos_state, empty_init, "Saitek", "Kasparov Turbo King (set 3)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_CLICKABLE_ARTWORK )
