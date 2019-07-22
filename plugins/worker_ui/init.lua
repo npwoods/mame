@@ -449,13 +449,15 @@ function command_seq_poll_start(args)
 	current_poll_field = field
 	current_poll_seq_type = args[4]
 	print("OK STATUS ### Starting polling")
+	emit_status()
 end
 
 -- SEQ_POLL_STOP command
 function command_seq_poll_stop(args)
 	current_poll_field = nil
 	current_poll_seq_type = nil
-	print("OK ### Stopped polling");
+	print("OK STATUS ### Stopped polling");
+	emit_status()
 end
 
 -- SET_INPUT_VALUE command
@@ -472,6 +474,7 @@ function command_set_input_value(args)
 
 	field.user_value = tonumber(args[4]);
 	print("OK STATUS ### Field '" .. args[2] .. "':" .. tostring(args[3]) .. " set to " .. tostring(field.user_value))
+	emit_status()
 end
 
 -- not implemented command
