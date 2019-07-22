@@ -138,6 +138,23 @@ function find_image_by_tag(tag)
 	end
 end
 
+function find_port_and_field(tag, mask)
+	if not (tag.sub(1, 1) == ":") then
+		tag = ":" .. tag
+	end
+
+	local port = manager:machine():ioport().ports[tag]
+	if not port then
+		return
+	end
+
+	for k,v in pairs(port.fields) do
+		if v.mask == tonumber(mask) then
+			return v
+		end
+	end
+end
+
 -- input polling
 local current_poll_field
 local current_poll_seq_type
@@ -411,19 +428,7 @@ end
 
 -- SEQ_POLL_START command
 function command_seq_poll_start(args)
-	local port = manager:machine():ioport().ports[args[2]]
-	if not port then
-		print("ERROR ### Can't find port '" .. args[2] .. "'")
-		return
-	end
-
-	local field
-	for k,v in pairs(port.fields) do
-		if v.mask == tonumber(args[3]) then
-			field = v
-			break
-		end
-	end
+	local field = find_port_and_field(args[2], args[3])
 	if not field then
 		print("ERROR ### Can't find field mask '" .. tostring(tonumber(args[3])) .. "' on port '" .. args[2] .. "'")
 		return
@@ -446,10 +451,27 @@ function command_seq_poll_start(args)
 	print("OK STATUS ### Starting polling")
 end
 
+-- SEQ_POLL_STOP command
 function command_seq_poll_stop(args)
 	current_poll_field = nil
 	current_poll_seq_type = nil
 	print("OK ### Stopped polling");
+end
+
+-- SET_INPUT_VALUE command
+function command_set_input_value(args)
+	local field = find_port_and_field(args[2], args[3])
+	if not field then
+		print("ERROR ### Can't find field mask '" .. tostring(tonumber(args[3])) .. "' on port '" .. args[2] .. "'")
+		return
+	end
+	if not field.enabled then
+		print("ERROR ### Field '" .. args[2] .. "':" .. tostring(tonumber(args[3])) .. " is disabled")
+		return
+	end
+
+	field.user_value = tonumber(args[4]);
+	print("OK STATUS ### Field '" .. args[2] .. "':" .. tostring(args[3]) .. " set to " .. tostring(field.user_value))
 end
 
 -- not implemented command
@@ -486,9 +508,9 @@ local commands =
 	["create"]						= command_create,
 	["seq_poll_start"]				= command_seq_poll_start,
 	["seq_poll_stop"]				= command_seq_poll_stop,
+	["set_input_value"]				= command_set_input_value,
 	["seq_set_default"]				= command_nyi,
-	["seq_clear"]					= command_nyi,
-	["set_input_value"]				= command_nyi
+	["seq_clear"]					= command_nyi
 }
 
 -- invokes a command line
