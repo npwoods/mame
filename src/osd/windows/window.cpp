@@ -671,8 +671,22 @@ BOOL winwindow_has_focus(void)
 	for (auto window : osd_common_t::s_window_list)
 	{
 		auto win_window = std::static_pointer_cast<win_window_info>(window);
-		if (focuswnd == win_window->platform_window() || win_window->attached_mode())
+		if (focuswnd == win_window->platform_window())
 			return TRUE;
+
+		// if this window is in attached mode, we need to see if it has
+		// focus in its context
+		if (win_window->attached_mode())
+		{
+			GUITHREADINFO gti;
+			gti.cbSize = sizeof(gti);
+			DWORD window_thread_id = GetWindowThreadProcessId(win_window->platform_window(), nullptr);
+			if (GetGUIThreadInfo(window_thread_id, &gti))
+			{
+				if (gti.hwndFocus == win_window->platform_window())
+					return TRUE;
+			}
+		}
 	}
 
 	return FALSE;
