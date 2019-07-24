@@ -167,7 +167,11 @@ function is_polling_input_seq()
 	end
 end
 
-function emit_status()
+function emit_status(light)
+	if light == nil then
+		light = false
+	end
+
 	print("<status");
 	print("\tphase=\"running\"");
 	print("\tpolling_input_seq=\"" .. tostring(is_polling_input_seq()) .. "\"");
@@ -190,84 +194,86 @@ function emit_status()
 	print("\t\tattenuation=\"" .. tostring(manager:machine():sound().attenuation) .. "\"");
 	print("\t/>");
 
-	-- <images>
-	print("\t<images>")
-	for _,image in ipairs(get_images()) do
+	if (not light or manager:machine().paused or is_polling_input_seq()) then
+		-- <images>
+		print("\t<images>")
+		for _,image in ipairs(get_images()) do
 
-		local filename = image:filename()
-		if filename == nil then
-			filename = ""
-		end
+			local filename = image:filename()
+			if filename == nil then
+				filename = ""
+			end
 
-		-- basic image properties
-		print(string.format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
-			xml_encode(image.device:tag()),
-			xml_encode(image.instance_name),
-			string_from_bool(image.is_readable),
-			string_from_bool(image.is_writeable),
-			string_from_bool(image.is_creatable),
-			string_from_bool(image.must_be_loaded)))
+			-- basic image properties
+			print(string.format("\t\t<image tag=\"%s\" instance_name=\"%s\" is_readable=\"%s\" is_writeable=\"%s\" is_creatable=\"%s\" must_be_loaded=\"%s\"",
+				xml_encode(image.device:tag()),
+				xml_encode(image.instance_name),
+				string_from_bool(image.is_readable),
+				string_from_bool(image.is_writeable),
+				string_from_bool(image.is_creatable),
+				string_from_bool(image.must_be_loaded)))
 
-		-- filename
-		local filename = image:filename()
-		if filename ~= nil and filename ~= "" then
-			print("\t\t\tfilename=\"" .. xml_encode(filename) .. "\"")
-		end
+			-- filename
+			local filename = image:filename()
+			if filename ~= nil and filename ~= "" then
+				print("\t\t\tfilename=\"" .. xml_encode(filename) .. "\"")
+			end
 
-		-- display
-		local display = image:display()
-		if display ~= nil and display ~= "" then
-			print("\t\t\tdisplay=\"" .. xml_encode(display) .. "\"")
-		end
+			-- display
+			local display = image:display()
+			if display ~= nil and display ~= "" then
+				print("\t\t\tdisplay=\"" .. xml_encode(display) .. "\"")
+			end
 
-		print("\t\t/>")
-	end	
-	print("\t</images>")
+			print("\t\t/>")
+		end	
+		print("\t</images>")
 
-	-- <inputs>
-	print("\t<inputs>")
-	for _,port in pairs(manager:machine():ioport().ports) do
-		for _,field in pairs(port.fields) do
-			if field.enabled then
-				local type_class = field.type_class
-				local is_switch = type_class == "dipswitch" or type_class == "config"
-				local field_type
-				if field.is_analog then
-					field_type = "analog"
-				else
-					field_type = "digital"
-				end
-
-				print("\t\t<input"
-					.. " port_tag=\"" .. xml_encode(port:tag()) .. "\""
-					.. " mask=\"" .. tostring(field.mask) .. "\""
-					.. " class=\"" .. type_class .. "\""
-					.. " type=\"" .. field_type .. "\""
-					.. " name=\"" .. xml_encode(field.name) .. "\"")
-
-				if is_switch then
-					-- DIP switches and configs have values
-					print("\t\t\tvalue=\"" .. tostring(field.user_value) .. "\"")
-				end
-
-				print("\t\t>")
-
-				-- emit input sequences for anything that is not DIP switches of configs
-				if not is_switch then
-					-- both analog and digital have "standard" seq types
-					print("\t\t\t<seq type=\"standard\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("standard"))) .. "\"/>")
+		-- <inputs>
+		print("\t<inputs>")
+		for _,port in pairs(manager:machine():ioport().ports) do
+			for _,field in pairs(port.fields) do
+				if field.enabled then
+					local type_class = field.type_class
+					local is_switch = type_class == "dipswitch" or type_class == "config"
+					local field_type
 					if field.is_analog then
-						-- analog inputs also have increment and decrement
-						print("\t\t\t<seq type=\"increment\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("increment"))) .. "\"/>")
-						print("\t\t\t<seq type=\"decrement\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("decrement"))) .. "\"/>")						
+						field_type = "analog"
+					else
+						field_type = "digital"
 					end
-				end
 
-				print("\t\t</input>")
+					print("\t\t<input"
+						.. " port_tag=\"" .. xml_encode(port:tag()) .. "\""
+						.. " mask=\"" .. tostring(field.mask) .. "\""
+						.. " class=\"" .. type_class .. "\""
+						.. " type=\"" .. field_type .. "\""
+						.. " name=\"" .. xml_encode(field.name) .. "\"")
+
+					if is_switch then
+						-- DIP switches and configs have values
+						print("\t\t\tvalue=\"" .. tostring(field.user_value) .. "\"")
+					end
+
+					print("\t\t>")
+
+					-- emit input sequences for anything that is not DIP switches of configs
+					if not is_switch then
+						-- both analog and digital have "standard" seq types
+						print("\t\t\t<seq type=\"standard\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("standard"))) .. "\"/>")
+						if field.is_analog then
+							-- analog inputs also have increment and decrement
+							print("\t\t\t<seq type=\"increment\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("increment"))) .. "\"/>")
+							print("\t\t\t<seq type=\"decrement\" text=\"" .. xml_encode(manager:machine():input():seq_name(field:input_seq("decrement"))) .. "\"/>")						
+						end
+					end
+
+					print("\t\t</input>")
+				end
 			end
 		end
+		print("\t</inputs>")
 	end
-	print("\t</inputs>")
 
 	print("</status>");
 end
@@ -281,7 +287,7 @@ end
 -- PING command
 function command_ping(args)
 	print "OK STATUS ### Ping... pong..."
-	emit_status()
+	emit_status(true)
 end
 
 -- SOFT_RESET command
