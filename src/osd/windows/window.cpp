@@ -680,7 +680,7 @@ bool winwindow_has_focus(void)
 			DWORD window_thread_id = GetWindowThreadProcessId(win_window->platform_window(), nullptr);
 			if (GetGUIThreadInfo(window_thread_id, &gti))
 			{
-				if (gti.hwndFocus == win_window->platform_window())
+				if (gti.hwndFocus == win_window->platform_window() || GetProp(gti.hwndFocus, TEXT("MAMEFOCUS")))
 					return true;
 			}
 		}
