@@ -174,6 +174,7 @@ function emit_status()
 	print("\tnatural_keyboard_in_use=\"" .. tostring(manager:machine():ioport():natkeyboard().in_use) .. "\"");
 	print("\tpaused=\"" .. tostring(manager:machine().paused) .. "\"");
 	print("\tstartup_text=\"\"");
+	print("\tshow_profiler=\"" .. tostring(manager:ui().show_profiler) .. "\"");
 	print(">");
 
 	-- <video> (video_manager)
@@ -477,6 +478,13 @@ function command_set_input_value(args)
 	emit_status()
 end
 
+-- SHOW_PROFILER Command
+function command_show_profiler(args)
+	manager:ui().show_profiler = toboolean(args[2])
+	print("OK STATUS ### Show profiler set to " .. tostring(manager:ui().show_profiler))
+	emit_status()
+end
+
 -- not implemented command
 function command_nyi(args)
 	print("ERROR ### Command '" .. args[1] .. "' not yet implemeted")
@@ -512,8 +520,7 @@ local commands =
 	["seq_poll_start"]				= command_seq_poll_start,
 	["seq_poll_stop"]				= command_seq_poll_stop,
 	["set_input_value"]				= command_set_input_value,
-	["seq_set_default"]				= command_nyi,
-	["seq_clear"]					= command_nyi
+	["show_profiler"]				= command_show_profiler
 }
 
 -- invokes a command line
