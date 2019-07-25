@@ -167,6 +167,12 @@ function is_polling_input_seq()
 	end
 end
 
+function stop_polling_input_seq()
+	current_poll_field = nil
+	current_poll_seq_type = nil
+	manager:ui():set_aggressive_input_focus(false)
+end
+
 function emit_status(light)
 	if light == nil then
 		light = false
@@ -453,6 +459,7 @@ function command_seq_poll_start(args)
 	end
 
 	manager:machine():input():seq_poll_start(input_seq_class)
+	manager:ui():set_aggressive_input_focus(true)
 	current_poll_field = field
 	current_poll_seq_type = args[4]
 	print("OK STATUS ### Starting polling")
@@ -461,8 +468,7 @@ end
 
 -- SEQ_POLL_STOP command
 function command_seq_poll_stop(args)
-	current_poll_field = nil
-	current_poll_seq_type = nil
+	stop_polling_input_seq()
 	print("OK STATUS ### Stopped polling");
 	emit_status()
 end
@@ -573,8 +579,7 @@ function console.startplugin()
 
 	emu.register_stop(function()
 		-- the emulation session has stopped; tidy things up
-		current_poll_field = nil
-		current_poll_seq_type = nil
+		stop_polling_input_seq()
 		session_active = false
 	end)
 
@@ -592,8 +597,7 @@ function console.startplugin()
 					current_poll_field:set_input_seq(current_poll_seq_type, seq)
 					
 					-- and terminate polling
-					current_poll_field = nil
-					current_poll_seq_type = nil
+					stop_polling_input_seq()
 				end
 			end
 
