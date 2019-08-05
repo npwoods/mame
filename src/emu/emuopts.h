@@ -193,10 +193,6 @@
 #define OPTION_HTTP_PORT            "http_port"
 #define OPTION_HTTP_ROOT            "http_root"
 
-// worker ui debug
-#define OPTION_WORKER_UI_DEBUG		"worker_ui_debug"
-
-
 //**************************************************************************
 //  TYPE DEFINITIONS
 //**************************************************************************
