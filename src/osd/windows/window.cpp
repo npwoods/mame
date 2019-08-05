@@ -1099,7 +1099,7 @@ int win_window_info::complete_create()
 
 	// are we in worker UI mode?
 	HWND hwnd;
-	const char *attach_window_name = machine().options().attach_window();
+	const char *attach_window_name = downcast<windows_options &>(machine().options()).attach_window();
 	m_attached_mode = attach_window_name && *attach_window_name ? true : false;
 	if (m_attached_mode)
 	{
@@ -1109,7 +1109,7 @@ int win_window_info::complete_create()
 			hwnd = FindWindowEx(nullptr, nullptr, nullptr, osd::text::to_tstring(attach_window_name).c_str());
 
 		// hack for debugging
-		if (machine().options().worker_ui_debug())
+		if (downcast<windows_options &>(machine().options()).attach_window_debug())
 			win_message_box_utf8(hwnd, "Waiting for a debugger to be attached", nullptr, MB_OK);
 	}
 	else

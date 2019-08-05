@@ -24,6 +24,8 @@
 
 // video options
 #define WINOPTION_MENU                  "menu"
+#define WINOPTION_ATTACH_WINDOW         "attach_window"
+#define WINOPTION_ATTACH_WINDOW_DEBUG   "attach_window_debug"
 
 // core post-processing options
 #define WINOPTION_HLSLPATH                  "hlslpath"
@@ -135,6 +137,8 @@ public:
 
 	// video options
 	bool menu() const { return bool_value(WINOPTION_MENU); }
+	const char *attach_window() const { return value(WINOPTION_ATTACH_WINDOW); }
+	bool attach_window_debug() const { return bool_value(WINOPTION_ATTACH_WINDOW_DEBUG); }
 
 	// core post-processing options
 	const char *screen_post_fx_dir() const { return value(WINOPTION_HLSLPATH); }

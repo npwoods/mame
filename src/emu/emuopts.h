@@ -193,8 +193,7 @@
 #define OPTION_HTTP_PORT            "http_port"
 #define OPTION_HTTP_ROOT            "http_root"
 
-// attached mode
-#define OPTION_ATTACH_WINDOW		"attach_window"
+// worker ui debug
 #define OPTION_WORKER_UI_DEBUG		"worker_ui_debug"
 
 
@@ -488,10 +487,6 @@ public:
 	const ::image_option &image_option(const std::string &device_name) const;
 	::image_option &image_option(const std::string &device_name);
 	bool has_image_option(const std::string &device_name) const { return m_image_options.find(device_name) != m_image_options.end(); }
-
-	// attached mode
-	const char *attach_window() const { return value(OPTION_ATTACH_WINDOW); }
-	bool worker_ui_debug() const { return bool_value(OPTION_WORKER_UI_DEBUG); }
 
 protected:
 	virtual void command_argument_processed() override;

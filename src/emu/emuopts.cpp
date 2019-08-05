@@ -216,10 +216,6 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_HTTP_PORT,                                  "8080",      OPTION_INTEGER,    "HTTP server port" },
 	{ OPTION_HTTP_ROOT,                                  "web",       OPTION_STRING,     "HTTP server document root" },
 
-	{ nullptr,                                           nullptr,     OPTION_HEADER,     "WORKER UI OPTIONS" },
-	{ OPTION_ATTACH_WINDOW ";worker_ui",	        	 "",          OPTION_STRING,     "attach to arbitrary window" },
-	{ OPTION_WORKER_UI_DEBUG,				        	 "0",         OPTION_BOOLEAN,    "worker UI debugging" },
-
 	{ nullptr }
 };
 
