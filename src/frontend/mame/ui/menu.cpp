@@ -1171,6 +1171,30 @@ void menu::move_selection(int delta, uint32_t flags)
 
 
 //-------------------------------------------------
+//  select_first_item - select the first item in
+//  the menu
+//-------------------------------------------------
+
+void menu::select_first_item()
+{
+	m_selected = top_line = 0;
+	validate_selection(1);
+}
+
+
+//-------------------------------------------------
+//  select_last_item - select the last item in the
+//  menu
+//-------------------------------------------------
+
+void menu::select_last_item()
+{
+	m_selected = top_line = m_items.size() - 1;
+	validate_selection(-1);
+}
+
+
+//-------------------------------------------------
 //  validate_selection - validate the
 //  current selection and ensure it is on a
 //  correct item

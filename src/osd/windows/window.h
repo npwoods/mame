@@ -135,7 +135,6 @@ public:
 
 private:
 	void draw_video_contents(HDC dc, bool update);
-	int complete_create();
 	void set_starting_view(int index, const char *defview, const char *view);
 	int wnd_extra_width();
 	int wnd_extra_height();
