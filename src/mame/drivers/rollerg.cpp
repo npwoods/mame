@@ -44,14 +44,14 @@ WRITE8_MEMBER(rollerg_state::rollerg_0010_w)
 READ8_MEMBER(rollerg_state::rollerg_k051316_r)
 {
 	if (m_readzoomroms)
-		return m_k051316->rom_r(space, offset);
+		return m_k051316->rom_r(offset);
 	else
-		return m_k051316->read(space, offset);
+		return m_k051316->read(offset);
 }
 
 WRITE8_MEMBER(rollerg_state::soundirq_w)
 {
-	m_audiocpu->set_input_line_and_vector(0, HOLD_LINE, 0xff);
+	m_audiocpu->set_input_line_and_vector(0, HOLD_LINE, 0xff); // Z80
 }
 
 void rollerg_state::device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr)
@@ -265,9 +265,7 @@ void rollerg_state::rollerg(machine_config &config)
 	screen.set_screen_update(FUNC(rollerg_state::screen_update_rollerg));
 	screen.set_palette("palette");
 
-	palette_device &palette(PALETTE(config, "palette", 1024));
-	palette.enable_shadows();
-	palette.set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, "palette").set_format(palette_device::xBGR_555, 1024).enable_shadows();
 
 	K053244(config, m_k053244, 0);
 	m_k053244->set_palette("palette");

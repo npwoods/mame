@@ -40,7 +40,7 @@
     1994  Ichidant-R (World)         Sega              ?                C2
     1994  Ichidant-R (Korea)         Sega              ?                C2
     1994  Puyo Puyo 2                Compile           317-0228         C2
-    1994  Zunzunkyou No Yabou        Sega              ?                C2
+    1994  Zunzunkyou no Yabou        Sega              ?                C2
 
     1995  Print Club (Vol.1)         Atlus             ?                C2
     1995  Print Club (Vol.2)         Atlus             ?                C2
@@ -563,7 +563,7 @@ WRITE8_MEMBER(segac2_state::prot_w)
 		m_sp_palbase = new_sp_palbase;
 		m_bg_palbase = new_bg_palbase;
 		recompute_palette_tables();
-		if (LOG_PALETTE) logerror("Set palbank: %d/%d (scan=%d)\n", m_bg_palbase, m_sp_palbase, m_screen->vpos());
+		if (LOG_PALETTE && m_screen) logerror("Set palbank: %d/%d (scan=%d)\n", m_bg_palbase, m_sp_palbase, m_screen->vpos());
 	}
 }
 
@@ -1542,15 +1542,16 @@ WRITE_LINE_MEMBER(segac2_state::vdp_lv4irqline_callback_c2)
 }
 
 
-MACHINE_CONFIG_START(segac2_state::segac)
-
+void segac2_state::segac(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_DEVICE_ADD("maincpu", M68000, XL2_CLOCK/6)
-	MCFG_DEVICE_PROGRAM_MAP(main_map)
-	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DRIVER(md_base_state,genesis_int_callback)
+	M68000(config, m_maincpu, XL2_CLOCK/6);
+	m_maincpu->set_addrmap(AS_PROGRAM, &segac2_state::main_map);
+	m_maincpu->set_irq_acknowledge_callback(FUNC(md_base_state::genesis_int_callback));
 
 	MCFG_MACHINE_START_OVERRIDE(segac2_state,segac2)
 	MCFG_MACHINE_RESET_OVERRIDE(segac2_state,segac2)
+
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_1); // borencha requires 0xff fill or there is no sound (it lacks some of the init code of the borench set)
 
 	sega_315_5296_device &io(SEGA_315_5296(config, "io", XL2_CLOCK/6)); // clock divider guessed
@@ -1564,36 +1565,36 @@ MACHINE_CONFIG_START(segac2_state::segac)
 	io.out_ph_callback().set(FUNC(segac2_state::io_porth_w));
 
 	/* video hardware */
-	MCFG_DEVICE_ADD("gen_vdp", SEGA315_5313, XL2_CLOCK, "maincpu")
-	MCFG_SEGA315_5313_IS_PAL(false)
-	MCFG_SEGA315_5313_SND_IRQ_CALLBACK(WRITELINE(*this, segac2_state, vdp_sndirqline_callback_c2));
-	MCFG_SEGA315_5313_LV6_IRQ_CALLBACK(WRITELINE(*this, segac2_state, vdp_lv6irqline_callback_c2));
-	MCFG_SEGA315_5313_LV4_IRQ_CALLBACK(WRITELINE(*this, segac2_state, vdp_lv4irqline_callback_c2));
-	MCFG_SEGA315_5313_ALT_TIMING(1);
-	MCFG_VIDEO_SET_SCREEN("megadriv")
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.5)
+	SEGA315_5313(config, m_vdp, XL2_CLOCK, m_maincpu);
+	m_vdp->set_is_pal(false);
+	m_vdp->snd_irq().set(FUNC(segac2_state::vdp_sndirqline_callback_c2));
+	m_vdp->lv6_irq().set(FUNC(segac2_state::vdp_lv6irqline_callback_c2));
+	m_vdp->lv4_irq().set(FUNC(segac2_state::vdp_lv4irqline_callback_c2));
+	m_vdp->set_alt_timing(1);
+	m_vdp->set_screen("megadriv");
+	m_vdp->add_route(ALL_OUTPUTS, "mono", 0.5);
 
-	MCFG_TIMER_DEVICE_ADD_SCANLINE("scantimer", "gen_vdp", sega315_5313_device, megadriv_scanline_timer_callback_alt_timing, "megadriv", 0, 1)
+	TIMER(config, "scantimer").configure_scanline("gen_vdp", FUNC(sega315_5313_device::megadriv_scanline_timer_callback_alt_timing), "megadriv", 0, 1);
 
-	MCFG_SCREEN_ADD("megadriv", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(60)
-	MCFG_SCREEN_SIZE(512, 262)
-	MCFG_SCREEN_VISIBLE_AREA(0, 32*8-1, 0, 28*8-1)
-	MCFG_SCREEN_UPDATE_DRIVER(segac2_state, screen_update_segac2_new)
-	MCFG_SCREEN_VBLANK_CALLBACK(WRITELINE(*this, segac2_state, screen_vblank_megadriv))
+	screen_device &screen(SCREEN(config, "megadriv", SCREEN_TYPE_RASTER));
+	screen.set_refresh_hz(60);
+	screen.set_size(512, 262);
+	screen.set_visarea(0, 32*8-1, 0, 28*8-1);
+	screen.set_screen_update(FUNC(segac2_state::screen_update_segac2_new));
+	screen.screen_vblank().set(FUNC(segac2_state::screen_vblank_megadriv));
 
-	MCFG_PALETTE_ADD("palette", 2048*3)
+	PALETTE(config, m_palette).set_entries(2048*3);
 
 	MCFG_VIDEO_START_OVERRIDE(segac2_state,segac2_new)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("ymsnd", YM3438, XL2_CLOCK/7)
-	MCFG_YM2612_IRQ_HANDLER(WRITELINE(*this, segac2_state, segac2_irq2_interrupt))
-	MCFG_SOUND_ROUTE(0, "mono", 0.50)
+	ym3438_device &ymsnd(YM3438(config, "ymsnd", XL2_CLOCK/7));
+	ymsnd.irq_handler().set(FUNC(segac2_state::segac2_irq2_interrupt));
+	ymsnd.add_route(0, "mono", 0.50);
 	/* right channel not connected */
-MACHINE_CONFIG_END
+}
 
 
 void segac2_state::segac2(machine_config &config)
@@ -1896,7 +1897,7 @@ ROM_START( puyo ) /* Puyo Puyo  (c)1992 Sega / Compile */
 ROM_END
 
 
-ROM_START( puyoj ) /* Puyo Puyo (Rev B)  (c)1992 Sega / Compile */
+ROM_START( puyoj ) /* Puyo Puyo (Rev B)  (c)1992 Sega / Compile - 834-9029 (EMP5032 labeled 317-0203) */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-15036b.ic32", 0x000000, 0x020000, CRC(5310ca1b) SHA1(dcfe2bf7476b640dfb790e8716e75b483d535e48) )
 	ROM_LOAD16_BYTE( "epr-15035b.ic31", 0x000001, 0x020000, CRC(bc62e400) SHA1(12bb6031574838a28889f6edb31dbb689265287c) )
@@ -1915,7 +1916,7 @@ ROM_START( puyoj ) /* Puyo Puyo (Rev B)  (c)1992 Sega / Compile */
 ROM_END
 
 
-ROM_START( puyoja ) /* Puyo Puyo (Rev A)  (c)1992 Sega / Compile */
+ROM_START( puyoja ) /* Puyo Puyo (Rev A)  (c)1992 Sega / Compile - 834-9029 (EMP5032 labeled 317-0203) */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-15036a.ic32", 0x000000, 0x020000, CRC(61b35257) SHA1(e09a7e992999befc88fc7928a478d1e2d14d7b08) )
 	ROM_LOAD16_BYTE( "epr-15035a.ic31", 0x000001, 0x020000, CRC(dfebb6d9) SHA1(6f685729ef4660c2eba409c5236c6d2f313eef5b) )
@@ -2018,7 +2019,7 @@ ROM_START( puyopuy2 ) /* Puyo Puyo 2  (c)1994 Compile */
 ROM_END
 
 
-ROM_START( potopoto ) /* Poto Poto  (c)1994 Sega */
+ROM_START( potopoto ) /* Poto Poto  (c)1994 Sega - 834-10778 (EMP5032 labeled 317-0218) */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-16662a.ic32", 0x000000, 0x040000, CRC(bbd305d6) SHA1(1a4f4869fefac188c69bc67df0b625e43a0c3f1f) )
 	ROM_LOAD16_BYTE( "epr-16661a.ic31", 0x000001, 0x040000, CRC(5a7d14f4) SHA1(a615b5f481256366db7b1c6302a8dcb69708102b) )
@@ -2028,7 +2029,7 @@ ROM_START( potopoto ) /* Poto Poto  (c)1994 Sega */
 ROM_END
 
 
-ROM_START( zunkyou ) /* Zunzunkyou No Yabou  (c)1994 Sega */
+ROM_START( zunkyou ) /* Zunzunkyou no Yabou  (c)1994 Sega */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-16812.ic32", 0x000000, 0x080000, CRC(eb088fb0) SHA1(69089a3516ad50f35e81971ef3c33eb3f5d52374) )
 	ROM_LOAD16_BYTE( "epr-16811.ic31", 0x000001, 0x080000, CRC(9ac7035b) SHA1(1803ffbadc1213e04646d483e27da1591e22cd06) )
@@ -2583,7 +2584,7 @@ GAME( 1994, ichirjbl,  ichir,    segac,  ichir,           segac2_state,    init_
 
 GAME( 1994, puyopuy2,  0,        segac2, puyopuy2,        segac2_state,    init_puyopuy2, ROT0, "Compile (Sega license)", "Puyo Puyo 2 (Japan)", 0 )
 
-GAME( 1994, zunkyou,   0,        segac2, zunkyou,         segac2_state,    init_zunkyou,  ROT0, "Sega", "Zunzunkyou No Yabou (Japan)", 0 )
+GAME( 1994, zunkyou,   0,        segac2, zunkyou,         segac2_state,    init_zunkyou,  ROT0, "Sega", "Zunzunkyou no Yabou (Japan)", 0 )
 
 /* Atlus Print Club 'Games' (C-2 Hardware) requires printer and camera emulation */
 GAME( 1995, pclubj,    0,        segac2, pclub,           segac2_pc_state, init_pclubj,   ROT0, "Atlus", "Print Club (Japan Vol.1)", MACHINE_NOT_WORKING )

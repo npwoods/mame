@@ -148,8 +148,8 @@ void menubar::handle(render_container &current_container)
 			y,
 			x + width + (spacing * 2),
 			y + text_height + (spacing * 2),
-			adjust_color(UI_BORDER_COLOR),
-			adjust_color(UI_BACKGROUND_COLOR));
+			adjust_color(ui().colors().border_color()),
+			adjust_color(ui().colors().background_color()));
 
 		draw_menu_item_text(
 			mi,
@@ -567,7 +567,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 		y,
 		x + max_width + (spacing * 2),
 		y + total_height,
-		adjust_color(UI_BACKGROUND_COLOR));
+		adjust_color(ui().colors().background_color()));
 
 	// draw the individual items
 	float my = y;
@@ -582,7 +582,7 @@ void menubar::draw_child_menu(menu_item *menu, float x, float y)
 				x + max_width + (spacing * 2),
 				my + spacing + separator_height / 2,
 				separator_height / 8,
-				adjust_color(UI_BORDER_COLOR),
+				adjust_color(ui().colors().border_color()),
 				0);
 		}
 		else
@@ -646,30 +646,30 @@ void menubar::draw_menu_item_text(menu_item *mi, float x0, float y0, float x1, f
 	if (!mi->is_enabled())
 	{
 		// disabled
-		fgcolor = UI_UNAVAILABLE_COLOR;
-		bgcolor = UI_TEXT_BG_COLOR;
+		fgcolor = ui().colors().unavailable_color();
+		bgcolor = ui().colors().text_bg_color();
 	}
 	else if (mi == m_selected_item)
 	{
 		// selected
-		fgcolor = UI_SELECTED_COLOR;
-		bgcolor = UI_SELECTED_BG_COLOR;
+		fgcolor = ui().colors().selected_color();
+		bgcolor = ui().colors().selected_bg_color();
 	}
 	else if ((m_mouse_x >= x0) && (m_mouse_x < x1) && (m_mouse_y >= y0) && (m_mouse_y < y1))
 	{
 		// hover
-		fgcolor = UI_MOUSEOVER_COLOR;
-		bgcolor = UI_MOUSEOVER_BG_COLOR;
+		fgcolor = ui().colors().mouseover_color();
+		bgcolor = ui().colors().mouseover_bg_color();
 	}
 	else
 	{
 		// normal
-		fgcolor = UI_TEXT_COLOR;
-		bgcolor = UI_TEXT_BG_COLOR;
+		fgcolor = ui().colors().text_color();
+		bgcolor = ui().colors().text_bg_color();
 	}
 
 	// highlight?
-	if (bgcolor != UI_TEXT_BG_COLOR)
+	if (bgcolor != ui().colors().text_bg_color())
 		highlight(x0, y0, x1, y1, adjust_color(bgcolor));
 
 	// do we have to draw additional decorations?

@@ -340,7 +340,15 @@ READ8_MEMBER(cosmic_state::cosmica_pixel_clock_r)
 READ8_MEMBER(cosmic_state::cosmicg_port_0_r)
 {
 	/* The top four address lines from the CRTC are bits 0-3 */
-	return (m_in_ports[0]->read() & 0xf0) | ((m_screen->vpos() & 0xf0) >> 4);
+	if (offset >= 4)
+		return BIT(m_in_ports[0]->read(), offset);
+	else
+		return BIT(m_screen->vpos(), offset + 4);
+}
+
+READ8_MEMBER(cosmic_state::cosmicg_port_1_r)
+{
+	return BIT(m_in_ports[1]->read(), offset);
 }
 
 READ8_MEMBER(cosmic_state::magspot_coinage_dip_r)
@@ -415,10 +423,10 @@ void cosmic_state::cosmicg_map(address_map &map)
 
 void cosmic_state::cosmicg_io_map(address_map &map)
 {
-	map(0x00, 0x00).r(FUNC(cosmic_state::cosmicg_port_0_r));
-	map(0x01, 0x01).portr("IN1");
-	map(0x00, 0x15).w(FUNC(cosmic_state::cosmicg_output_w));
-	map(0x16, 0x17).w(FUNC(cosmic_state::cosmic_color_register_w));
+	map(0x0000, 0x000f).r(FUNC(cosmic_state::cosmicg_port_0_r));
+	map(0x0010, 0x001f).r(FUNC(cosmic_state::cosmicg_port_1_r));
+	map(0x0000, 0x002b).w(FUNC(cosmic_state::cosmicg_output_w));
+	map(0x002c, 0x002f).w(FUNC(cosmic_state::cosmic_color_register_w));
 }
 
 
@@ -1026,10 +1034,10 @@ TIMER_DEVICE_CALLBACK_MEMBER(cosmic_state::panic_scanline)
 	int scanline = param;
 
 	if(scanline == 224) // vblank-out irq
-		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xd7); /* RST 10h */
+		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xd7); /* Z80 - RST 10h */
 
 	if(scanline == 0) // vblank-in irq
-		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xcf); /* RST 08h */
+		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xcf); /* Z80 - RST 08h */
 }
 
 
@@ -1043,9 +1051,7 @@ void cosmic_state::panic(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_panic);
-	PALETTE(config, m_palette, 16+8*4);
-	m_palette->set_indirect_entries(16);
-	m_palette->set_init(FUNC(cosmic_state::palette_init_panic));
+	PALETTE(config, m_palette, FUNC(cosmic_state::panic_palette), 16 + 8*4, 16);
 
 	m_screen->set_screen_update(FUNC(cosmic_state::screen_update_panic));
 
@@ -1059,7 +1065,6 @@ void cosmic_state::panic(machine_config &config)
 
 	DAC_1BIT(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.5);
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 }
 
@@ -1072,9 +1077,7 @@ void cosmic_state::cosmica(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_cosmica);
-	PALETTE(config, m_palette, 8+16*4);
-	m_palette->set_indirect_entries(8);
-	m_palette->set_init(FUNC(cosmic_state::palette_init_cosmica));
+	PALETTE(config, m_palette, FUNC(cosmic_state::cosmica_palette), 8 + 16*4, 8);
 
 	m_screen->set_screen_update(FUNC(cosmic_state::screen_update_cosmica));
 
@@ -1105,8 +1108,7 @@ void cosmic_state::cosmicg(machine_config &config)
 	m_screen->set_screen_update(FUNC(cosmic_state::screen_update_cosmicg));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 16);
-	m_palette->set_init(FUNC(cosmic_state::palette_init_cosmicg));
+	PALETTE(config, m_palette, FUNC(cosmic_state::cosmicg_palette), 16);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -1118,7 +1120,6 @@ void cosmic_state::cosmicg(machine_config &config)
 
 	DAC_1BIT(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.5); // NE556
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	// Other DACs include 3-bit binary-weighted (100K/50K/25K) DAC combined with another NE556 for attack march
 }
@@ -1133,9 +1134,7 @@ void cosmic_state::magspot(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_panic);
-	PALETTE(config, m_palette, 16+8*4);
-	m_palette->set_indirect_entries(16);
-	m_palette->set_init(FUNC(cosmic_state::palette_init_magspot));
+	PALETTE(config, m_palette, FUNC(cosmic_state::magspot_palette), 16 + 8*4, 16);
 
 	m_screen->set_screen_update(FUNC(cosmic_state::screen_update_magspot));
 
@@ -1144,7 +1143,6 @@ void cosmic_state::magspot(machine_config &config)
 
 	DAC_1BIT(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.5);
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 }
 
@@ -1165,9 +1163,7 @@ void cosmic_state::nomnlnd(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_panic);
-	PALETTE(config, m_palette, 16+8*4);
-	m_palette->set_indirect_entries(16);
-	m_palette->set_init(FUNC(cosmic_state::palette_init_nomnlnd));
+	PALETTE(config, m_palette, FUNC(cosmic_state::nomnlnd_palette), 16 + 8*4, 16);
 
 	m_screen->set_screen_update(FUNC(cosmic_state::screen_update_nomnlnd));
 
@@ -1176,7 +1172,6 @@ void cosmic_state::nomnlnd(machine_config &config)
 
 	DAC_1BIT(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.5);
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 }
 

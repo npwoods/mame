@@ -451,7 +451,6 @@ INPUT_PORTS_END
 void cv1k_state::machine_reset()
 {
 	m_blitter->set_rambase (reinterpret_cast<uint16_t *>(m_ram.target()));
-	m_blitter->set_cpu_device (m_maincpu);
 	m_blitter->set_is_unsafe(machine().root_device().ioport(":BLITCFG")->read());
 	m_blitter->install_handlers( 0x18000000, 0x18000057 );
 	m_blitter->reset();
@@ -486,12 +485,14 @@ void cv1k_state::cv1k(machine_config &config)
 	screen.set_visarea(0, 0x140-1, 0, 0xf0-1);
 	screen.set_screen_update(FUNC(cv1k_state::screen_update));
 
-	PALETTE(config, "palette", 0x10000);
+	PALETTE(config, "palette").set_entries(0x10000);
 
 	SPEAKER(config, "mono").front_center();
 	YMZ770(config, "ymz770", 16.384_MHz_XTAL).add_route(1, "mono", 1.0); // only Right output used, Left is not connected
 
 	EPIC12(config, m_blitter, 0);
+	m_blitter->set_cpu(m_maincpu);
+	m_blitter->port_r_callback().set_ioport("DSW");
 	m_blitter->set_mainramsize(0x800000);
 }
 

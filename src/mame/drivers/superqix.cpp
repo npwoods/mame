@@ -289,7 +289,7 @@ TIMER_CALLBACK_MEMBER(superqix_state::mcu_port3_w_cb)
 
 TIMER_CALLBACK_MEMBER(superqix_state::z80_ay1_sync_address_w_cb)
 {
-	m_ay1->address_w(m_maincpu->space(AS_PROGRAM), 0, param, 0xff);
+	m_ay1->address_w(param);
 }
 
 
@@ -1371,9 +1371,7 @@ void hotsmash_state::pbillian(machine_config &config)
 	screen.screen_vblank().set(FUNC(hotsmash_state::vblank_irq));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_pbillian);
-
-	PALETTE(config, m_palette, 512);
-	m_palette->set_format(raw_to_rgb_converter(1, &hotsmash_state::BBGGRRII_decoder));
+	PALETTE(config, m_palette).set_format(1, &hotsmash_state::BBGGRRII, 512);
 
 	SPEAKER(config, "mono").front_center();
 
@@ -1413,9 +1411,7 @@ void superqix_state::sqix(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_sqix);
-
-	PALETTE(config, m_palette, 256);
-	m_palette->set_format(raw_to_rgb_converter(1, &superqix_state_base::BBGGRRII_decoder));
+	PALETTE(config, m_palette).set_format(1, &superqix_state::BBGGRRII, 256);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

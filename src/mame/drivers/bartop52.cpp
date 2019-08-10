@@ -118,7 +118,7 @@ void bartop52_state::machine_reset()
 {
 	atari_common_state::machine_reset();
 
-	m_pokey->write(machine().dummy_space(), 15, 0);
+	m_pokey->write(15, 0);
 }
 
 TIMER_DEVICE_CALLBACK_MEMBER( bartop52_state::bartop_interrupt )
@@ -148,7 +148,7 @@ void bartop52_state::a5200(machine_config &config)
 	m_screen->set_screen_update("antic", FUNC(antic_device::screen_update));
 	m_screen->set_palette("palette");
 
-	PALETTE(config, "palette", 256).set_init(FUNC(bartop52_state::palette_init_atari));
+	PALETTE(config, "palette", FUNC(bartop52_state::atari_palette), 256);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

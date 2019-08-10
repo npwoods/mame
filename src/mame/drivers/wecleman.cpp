@@ -520,8 +520,9 @@ WRITE16_MEMBER(wecleman_state::blitter_w)
 void wecleman_state::wecleman_map(address_map &map)
 {
 	map(0x000000, 0x03ffff).rom(); // ROM (03c000-03ffff used as RAM sometimes!)
-	map(0x040000, 0x043fff).ram(); // RAM
-	map(0x040494, 0x040495).w(FUNC(wecleman_state::wecleman_videostatus_w)).share("videostatus");   // cloud blending control (HACK)
+	map(0x040000, 0x040493).ram(); // RAM
+	map(0x040494, 0x040495).ram().w(FUNC(wecleman_state::wecleman_videostatus_w)).share("videostatus");   // cloud blending control (HACK)
+	map(0x040496, 0x043fff).ram(); // RAM
 	map(0x060000, 0x060005).w(FUNC(wecleman_state::wecleman_protection_w)).share("protection_ram");
 	map(0x060006, 0x060007).r(FUNC(wecleman_state::wecleman_protection_r)); // MCU read
 	map(0x080000, 0x080011).ram().w(FUNC(wecleman_state::blitter_w)).share("blitter_regs");   // Blitter
@@ -1077,7 +1078,7 @@ void wecleman_state::wecleman(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_wecleman);
 
-	PALETTE(config, m_palette, 2048);
+	PALETTE(config, m_palette).set_entries(2048);
 
 	MCFG_VIDEO_START_OVERRIDE(wecleman_state,wecleman)
 
@@ -1153,7 +1154,7 @@ void wecleman_state::hotchase(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_hotchase);
-	PALETTE(config, m_palette, 8192);
+	PALETTE(config, m_palette).set_entries(8192);
 
 	MCFG_VIDEO_START_OVERRIDE(wecleman_state, hotchase)
 

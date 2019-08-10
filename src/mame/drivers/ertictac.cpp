@@ -237,7 +237,7 @@ void ertictac_state::ertictac(machine_config &config)
 	m_screen->set_raw(XTAL(16'000'000), 1024,0,735, 624/2,0,292); // RiscOS 3 default screen settings
 	m_screen->set_screen_update(FUNC(archimedes_state::screen_update));
 
-	PALETTE(config, m_palette, 0x200);
+	PALETTE(config, m_palette).set_entries(0x200);
 
 	SPEAKER(config, "speaker").front_center();
 	for (int i = 0; i < 8; i++)
@@ -245,7 +245,6 @@ void ertictac_state::ertictac(machine_config &config)
 		DAC_16BIT_R2R_TWOS_COMPLEMENT(config, m_dac[i], 0).add_route(0, "speaker", 0.05); // unknown DAC
 	}
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac0", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "dac0", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "dac1", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "dac1", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "dac2", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "dac2", -1.0, DAC_VREF_NEG_INPUT);

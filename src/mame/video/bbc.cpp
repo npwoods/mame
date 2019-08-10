@@ -117,9 +117,9 @@ inline rgb_t bbc_state::out_rgb(rgb_t entry)
 	}
 }
 
-PALETTE_INIT_MEMBER(bbc_state, bbc)
+void bbc_state::bbc_colours(palette_device &palette) const
 {
-	palette.set_pen_colors(0, bbc_palette, ARRAY_LENGTH(bbc_palette));
+	palette.set_pen_colors(0, bbc_palette);
 }
 
 /************************************************************************
@@ -175,13 +175,13 @@ WRITE8_MEMBER(bbc_state::video_ula_w)
 
 		m_hd6845->set_hpixels_per_column(m_pixels_per_byte);
 		if (m_video_ula.clock_rate_6845)
-			m_hd6845->set_clock(16_MHz_XTAL / 8);
+			m_hd6845->set_unscaled_clock(16_MHz_XTAL / 8);
 		else
-			m_hd6845->set_clock(16_MHz_XTAL / 16);
+			m_hd6845->set_unscaled_clock(16_MHz_XTAL / 16);
 
 		// FIXME: double clock for MODE7 until interlace is implemented
 		if (m_video_ula.teletext_normal_select)
-			m_hd6845->set_clock(16_MHz_XTAL / 8);
+			m_hd6845->set_unscaled_clock(16_MHz_XTAL / 8);
 		break;
 	// Set a palette register in the Video ULA
 	case 1:

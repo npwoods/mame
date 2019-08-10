@@ -45,10 +45,11 @@
 class vt220_state : public driver_device
 {
 public:
-	vt220_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag) ,
+	vt220_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
-		m_ram(*this, RAM_TAG) { }
+		m_ram(*this, RAM_TAG)
+	{ }
 
 	void vt220(machine_config &config);
 	void vt220a(machine_config &config);
@@ -127,18 +128,18 @@ void vt220_state::vt220(machine_config &config)
 	screen.set_screen_update(FUNC(vt220_state::screen_update_vt220));
 	screen.set_palette("palette");
 
-	PALETTE(config, "palette", 2).set_init("palette", FUNC(palette_device::palette_init_monochrome));
+	PALETTE(config, "palette", palette_device::MONOCHROME);
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("16K");
 }
 
-MACHINE_CONFIG_START(vt220_state::vt220a)
+void vt220_state::vt220a(machine_config &config)
+{
 	vt220(config);
-	MCFG_DEVICE_MODIFY("maincpu")
-	MCFG_DEVICE_PROGRAM_MAP(vt220a_mem)
-	MCFG_DEVICE_IO_MAP(vt220a_io)
-MACHINE_CONFIG_END
+	m_maincpu->set_addrmap(AS_PROGRAM, &vt220_state::vt220a_mem);
+	m_maincpu->set_addrmap(AS_IO, &vt220_state::vt220a_io);
+}
 
 /* ROM definitions */
 ROM_START(vt220)

@@ -18,6 +18,7 @@
 #define MAME_EMU_DISOUND_H
 
 #include <functional>
+#include <utility>
 
 
 //**************************************************************************
@@ -27,20 +28,6 @@
 constexpr int ALL_OUTPUTS       = 65535;    // special value indicating all outputs for the current chip
 constexpr int AUTO_ALLOC_INPUT  = 65535;
 
-
-
-//**************************************************************************
-//  INTERFACE CONFIGURATION MACROS
-//**************************************************************************
-
-#define MCFG_SOUND_ROUTE(_output, _target, ...) \
-	dynamic_cast<device_sound_interface &>(*device).add_route(_output, _target, __VA_ARGS__);
-
-#define MCFG_SOUND_ROUTES_RESET() \
-	dynamic_cast<device_sound_interface &>(*device).reset_routes();
-
-#define MCFG_MIXER_ROUTE(_output, _target, _gain, _mixoutput) \
-	dynamic_cast<device_sound_interface &>(*device).add_route(_output, _target, _gain, AUTO_ALLOC_INPUT, _mixoutput);
 
 
 //**************************************************************************
@@ -74,6 +61,12 @@ public:
 	std::vector<sound_route> const &routes() const { return m_route_list; }
 
 	// configuration helpers
+	template <typename T, bool R>
+	device_sound_interface &add_route(u32 output, const device_finder<T, R> &target, double gain, u32 input = AUTO_ALLOC_INPUT, u32 mixoutput = 0)
+	{
+		const std::pair<device_t &, const char *> ft(target.finder_target());
+		return add_route(output, ft.first, ft.second, gain, input, mixoutput);
+	}
 	device_sound_interface &add_route(u32 output, const char *target, double gain, u32 input = AUTO_ALLOC_INPUT, u32 mixoutput = 0);
 	device_sound_interface &add_route(u32 output, device_sound_interface &target, double gain, u32 input = AUTO_ALLOC_INPUT, u32 mixoutput = 0);
 	device_sound_interface &add_route(u32 output, speaker_device &target, double gain, u32 input = AUTO_ALLOC_INPUT, u32 mixoutput = 0);
@@ -99,6 +92,7 @@ public:
 protected:
 	// configuration access
 	std::vector<sound_route> &routes() { return m_route_list; }
+	device_sound_interface &add_route(u32 output, device_t &base, const char *tag, double gain, u32 input, u32 mixoutput);
 
 	// optional operation overrides
 	virtual void interface_validity_check(validity_checker &valid) const override;

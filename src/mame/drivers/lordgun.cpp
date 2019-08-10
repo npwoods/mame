@@ -272,8 +272,8 @@ READ16_MEMBER(lordgun_state::lordgun_gun_1_y_r)
 
 WRITE16_MEMBER(lordgun_state::soundlatch_w)
 {
-	if (ACCESSING_BITS_0_7)     m_soundlatch->write(space, 0, (data >> 0) & 0xff);
-	if (ACCESSING_BITS_8_15)    m_soundlatch2->write(space, 0, (data >> 8) & 0xff);
+	if (ACCESSING_BITS_0_7)     m_soundlatch->write((data >> 0) & 0xff);
+	if (ACCESSING_BITS_8_15)    m_soundlatch2->write((data >> 8) & 0xff);
 
 	m_soundcpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 }
@@ -667,7 +667,7 @@ void lordgun_state::lordgun(machine_config &config)
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_lordgun);
 
 	// 0x800 real colors, repeated per priority level
-	PALETTE(config, m_palette, 0x800 * 8).set_format(PALETTE_FORMAT_xxxxBBBBGGGGRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_444, 0x800 * 8);
 
 	// sound hardware
 	SPEAKER(config, "mono").front_center();
@@ -721,7 +721,7 @@ void lordgun_state::aliencha(machine_config &config)
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_lordgun);
 
 	// 0x800 real colors, repeated per priority level
-	PALETTE(config, m_palette, 0x800 * 8).set_format(PALETTE_FORMAT_xxxxBBBBGGGGRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_444, 0x800 * 8);
 
 	// sound hardware
 	SPEAKER(config, "mono").front_center();

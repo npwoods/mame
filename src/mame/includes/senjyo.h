@@ -89,7 +89,6 @@ private:
 	uint8_t m_sound_cmd;
 	int m_single_volume;
 	int m_sound_state;
-	int m_bgstripes;
 	tilemap_t *m_fg_tilemap;
 	tilemap_t *m_bg1_tilemap;
 	tilemap_t *m_bg2_tilemap;
@@ -109,8 +108,8 @@ private:
 	DECLARE_WRITE8_MEMBER(irq_ctrl_w);
 	DECLARE_READ8_MEMBER(pio_pa_r);
 
-	DECLARE_PALETTE_DECODER(IIBBGGRR);
-	DECLARE_PALETTE_INIT(radar);
+	static rgb_t IIBBGGRR(uint32_t raw);
+	void radar_palette(palette_device &palette) const;
 
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 	TILE_GET_INFO_MEMBER(senjyo_bg1_tile_info);

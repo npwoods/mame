@@ -346,9 +346,9 @@ TIMER_DEVICE_CALLBACK_MEMBER(changela_state::changela_scanline)
 	int scanline = param;
 
 	if(scanline == 256) // vblank irq
-		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xdf);
+		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xdf); // Z80
 	else if(((scanline % 64) == 0)) // timer irq, 3 times per given vblank field
-		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xcf);
+		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xcf); // Z80
 }
 
 INTERRUPT_GEN_MEMBER(changela_state::chl_mcu_irq)
@@ -444,8 +444,7 @@ void changela_state::changela(machine_config &config)
 	m_screen->set_screen_update(FUNC(changela_state::screen_update_changela));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 0x40);
-
+	PALETTE(config, m_palette).set_entries(0x40);
 
 	SPEAKER(config, "mono").front_center();
 

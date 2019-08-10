@@ -75,7 +75,7 @@ WRITE8_MEMBER( vegaeo_state::qs1000_p3_w )
 	membank("qs1000:bank")->set_entry(data & 0x07);
 
 	if (!BIT(data, 5))
-		m_soundlatch->acknowledge_w(space, 0, !BIT(data, 5));
+		m_soundlatch->acknowledge_w();
 }
 
 WRITE8_MEMBER(vegaeo_state::vram_w)
@@ -189,8 +189,7 @@ void vegaeo_state::vega(machine_config &config)
 	m_screen->set_screen_update(FUNC(vegaeo_state::screen_update_vega));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 256);
-	m_palette->set_format(PALETTE_FORMAT_xRRRRRGGGGGBBBBB);
+	PALETTE(config, m_palette).set_format(palette_device::xRGB_555, 256);
 	m_palette->set_membits(16);
 
 	MCFG_VIDEO_START_OVERRIDE(vegaeo_state,vega)
@@ -292,10 +291,10 @@ ROM_END
 void vegaeo_state::init_vegaeo()
 {
 	// Set up the QS1000 program ROM banking, taking care not to overlap the internal RAM
-	m_qs1000->subdevice<i8052_device>("cpu")->space(AS_IO).install_read_bank(0x0100, 0xffff, "bank");
+	m_qs1000->cpu().space(AS_IO).install_read_bank(0x0100, 0xffff, "bank");
 	membank("qs1000:bank")->configure_entries(0, 8, memregion("qs1000:cpu")->base()+0x100, 0x10000);
 
 	init_speedup();
 }
 
-GAME( 2002, crazywar, 0, vega, crazywar, vegaeo_state, init_vegaeo, ROT0, "Eolith", "Crazy War", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 2002, crazywar, 0, vega, crazywar, vegaeo_state, init_vegaeo, ROT0, "Eolith", "Crazy War", MACHINE_SUPPORTS_SAVE )

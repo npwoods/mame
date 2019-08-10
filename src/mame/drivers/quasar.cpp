@@ -95,17 +95,17 @@ WRITE8_MEMBER(quasar_state::quasar_sh_command_w)
 	// lower nibble = command to I8035
 	// not necessarily like this, but it seems to work better than direct mapping
 	// (although schematics has it as direct - but then the schematics are wrong elsewhere to!)
-	m_soundlatch->write(space, 0, (data & 8) + ((data >> 1) & 3) + ((data << 2) & 4));
+	m_soundlatch->write((data & 8) + ((data >> 1) & 3) + ((data << 2) & 4));
 }
 
 READ8_MEMBER(quasar_state::quasar_sh_command_r)
 {
-	return m_soundlatch->read(space, 0) + (ioport("DSW2")->read() & 0x30);
+	return m_soundlatch->read() + (ioport("DSW2")->read() & 0x30);
 }
 
 READ_LINE_MEMBER(quasar_state::audio_t1_r)
 {
-	return (m_soundlatch->read(machine().dummy_space(), 0) == 0);
+	return (m_soundlatch->read() == 0);
 }
 
 // memory map taken from the manual
@@ -272,7 +272,7 @@ GFXDECODE_END
 
 INTERRUPT_GEN_MEMBER(quasar_state::quasar_interrupt)
 {
-	device.execute().set_input_line_and_vector(0, HOLD_LINE, 0x03);
+	device.execute().set_input_line_and_vector(0, HOLD_LINE, 0x03); // S2650
 }
 
 // ****************************************
@@ -326,9 +326,7 @@ void quasar_state::quasar(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_quasar);
-	PALETTE(config, m_palette, (64+1)*8+(4*256));
-	m_palette->set_indirect_entries(0x500);
-	m_palette->set_init(FUNC(quasar_state::palette_init_quasar));
+	PALETTE(config, m_palette, FUNC(quasar_state::quasar_palette), (64 + 1) * 8 + (4 * 256), 0x500);
 
 	S2636(config, m_s2636[0], 0);
 	m_s2636[0]->set_offsets(CVS_S2636_Y_OFFSET - 8, CVS_S2636_X_OFFSET - 9);
@@ -345,7 +343,6 @@ void quasar_state::quasar(machine_config &config)
 	SPEAKER(config, "speaker").front_center();
 	DAC_8BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 1.0); // unknown DAC
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }

@@ -32,35 +32,36 @@ class svmu_state : public driver_device
 {
 public:
 	svmu_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
-			m_maincpu(*this, "maincpu"),
-			m_flash(*this, "flash"),
-			m_speaker(*this, "speaker"),
-			m_bios(*this, "bios")
-		{ }
+		: driver_device(mconfig, type, tag)
+		, m_maincpu(*this, "maincpu")
+		, m_flash(*this, "flash")
+		, m_speaker(*this, "speaker")
+		, m_bios(*this, "bios")
+	{ }
 
 	void svmu(machine_config &config);
 
-private:
-	required_device<lc8670_cpu_device> m_maincpu;
-	required_device<intelfsh8_device> m_flash;
-	required_device<speaker_sound_device> m_speaker;
-	required_region_ptr<uint8_t> m_bios;
-
-	LC8670_LCD_UPDATE(svmu_lcd_update);
-	DECLARE_PALETTE_INIT(svmu);
+protected:
 	virtual void machine_reset() override;
 
+private:
+	LC8670_LCD_UPDATE(svmu_lcd_update);
+	void svmu_palette(palette_device &palette) const;
 	DECLARE_WRITE8_MEMBER(page_w);
 	DECLARE_READ8_MEMBER(prog_r);
 	DECLARE_WRITE8_MEMBER(prog_w);
 	DECLARE_READ8_MEMBER(p1_r);
 	DECLARE_WRITE8_MEMBER(p1_w);
 	DECLARE_READ8_MEMBER(p7_r);
-	DECLARE_QUICKLOAD_LOAD_MEMBER( svmu );
+	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 
 	void svmu_io_mem(address_map &map);
 	void svmu_mem(address_map &map);
+
+	required_device<lc8670_cpu_device> m_maincpu;
+	required_device<intelfsh8_device> m_flash;
+	required_device<speaker_sound_device> m_speaker;
+	required_region_ptr<uint8_t> m_bios;
 
 	uint8_t       m_page;
 };
@@ -74,9 +75,9 @@ WRITE8_MEMBER(svmu_state::page_w)
 READ8_MEMBER(svmu_state::prog_r)
 {
 	if (m_page == 1)
-		return m_flash->read(space, offset);
+		return m_flash->read(offset);
 	else if (m_page == 2)
-		return m_flash->read(space, 0x10000 + offset);
+		return m_flash->read(0x10000 + offset);
 	else
 		return m_bios[offset];
 }
@@ -84,9 +85,9 @@ READ8_MEMBER(svmu_state::prog_r)
 WRITE8_MEMBER(svmu_state::prog_w)
 {
 	if (m_page == 1)
-		m_flash->write(space, offset, data);
+		m_flash->write(offset, data);
 	else if (m_page == 2)
-		m_flash->write(space, 0x10000 + offset, data);
+		m_flash->write(0x10000 + offset, data);
 }
 
 /*
@@ -163,7 +164,7 @@ void svmu_state::machine_reset()
 	m_page = 0;
 }
 
-PALETTE_INIT_MEMBER(svmu_state, svmu)
+void svmu_state::svmu_palette(palette_device &palette) const
 {
 	palette.set_pen_color(0, rgb_t(138, 146, 148));
 	palette.set_pen_color(1, rgb_t(92, 83, 88));
@@ -208,7 +209,7 @@ inline void vmufat_write_word(uint8_t* flash, uint8_t block, offs_t offset, uint
 	flash[(block * 512) + offset + 1] = (data>>8) & 0xff;
 }
 
-QUICKLOAD_LOAD_MEMBER( svmu_state, svmu )
+QUICKLOAD_LOAD_MEMBER(svmu_state::quickload_cb)
 {
 	uint32_t size = image.length();
 	uint8_t *flash = m_flash->base();
@@ -331,7 +332,7 @@ void svmu_state::svmu(machine_config &config)
 	screen.set_palette("palette");
 
 	config.set_default_layout(layout_svmu);
-	PALETTE(config, "palette", 2).set_init(FUNC(svmu_state::palette_init_svmu));
+	PALETTE(config, "palette", FUNC(svmu_state::svmu_palette), 2);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -340,8 +341,8 @@ void svmu_state::svmu(machine_config &config)
 	/* devices */
 	ATMEL_29C010(config, m_flash);
 
-	quickload_image_device &quickload(QUICKLOAD(config, "quickload", 0));
-	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(svmu_state, svmu), this), "vms,bin", 0);
+	quickload_image_device &quickload(QUICKLOAD(config, "quickload", "vms,bin"));
+	quickload.set_load_callback(FUNC(svmu_state::quickload_cb), this);
 	quickload.set_interface("svmu_quik");
 
 	/* Software lists */

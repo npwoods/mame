@@ -60,7 +60,7 @@ Known Issues:
 
 
 
-int twin16_state::spriteram_process_enable(  )
+int twin16_state::spriteram_process_enable()
 {
 	return (m_CPUA_register & 0x40) == 0;
 }
@@ -88,7 +88,7 @@ WRITE16_MEMBER(twin16_state::CPUA_register_w)
 		int falling_edge = old & ~m_CPUA_register;
 
 		if (rising_edge & 0x08)
-			m_audiocpu->set_input_line_and_vector(0, HOLD_LINE, 0xff);
+			m_audiocpu->set_input_line_and_vector(0, HOLD_LINE, 0xff); // Z80
 
 		if (falling_edge & 0x40)
 			spriteram_process();
@@ -136,7 +136,7 @@ WRITE16_MEMBER(fround_state::fround_CPU_register_w)
 	if (m_CPUA_register != old)
 	{
 		if ((old & 0x08) == 0 && (m_CPUA_register & 0x08))
-			m_audiocpu->set_input_line_and_vector(0, HOLD_LINE, 0xff);
+			m_audiocpu->set_input_line_and_vector(0, HOLD_LINE, 0xff); // Z80
 
 		machine().bookkeeping().coin_counter_w(0, m_CPUA_register & 0x01);
 		machine().bookkeeping().coin_counter_w(1, m_CPUA_register & 0x02);
@@ -676,8 +676,7 @@ void twin16_state::twin16(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_twin16);
 
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 1024);
 	m_palette->set_membits(8);
 	m_palette->enable_shadows();
 
@@ -731,8 +730,7 @@ void fround_state::fround(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_fround);
 
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 1024);
 	m_palette->set_membits(8);
 	m_palette->enable_shadows();
 

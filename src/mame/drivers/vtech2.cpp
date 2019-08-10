@@ -75,7 +75,6 @@
 #include "emu.h"
 #include "includes/vtech2.h"
 #include "cpu/z80/z80.h"
-#include "sound/wave.h"
 #include "formats/vt_cas.h"
 #include "screen.h"
 #include "speaker.h"
@@ -435,43 +434,41 @@ static GFXDECODE_START( gfx_vtech2 )
 GFXDECODE_END
 
 
-static const rgb_t vt_colors[] =
+static constexpr rgb_t vt_colors[] =
 {
 	rgb_t::black(),
-	rgb_t(0x00, 0x00, 0x7f),  /* blue */
-	rgb_t(0x00, 0x7f, 0x00),  /* green */
-	rgb_t(0x00, 0x7f, 0x7f),  /* cyan */
-	rgb_t(0x7f, 0x00, 0x00),  /* red */
-	rgb_t(0x7f, 0x00, 0x7f),  /* magenta */
-	rgb_t(0x7f, 0x7f, 0x00),  /* yellow */
-	rgb_t(0xa0, 0xa0, 0xa0),  /* bright grey */
-	rgb_t(0x7f, 0x7f, 0x7f),  /* dark grey */
-	rgb_t(0x00, 0x00, 0xff),  /* bright blue */
-	rgb_t(0x00, 0xff, 0x00),  /* bright green */
-	rgb_t(0x00, 0xff, 0xff),  /* bright cyan */
-	rgb_t(0xff, 0x00, 0x00),  /* bright red */
-	rgb_t(0xff, 0x00, 0xff),  /* bright magenta */
-	rgb_t(0xff, 0xff, 0x00),  /* bright yellow */
+	{ 0x00, 0x00, 0x7f },  // blue
+	{ 0x00, 0x7f, 0x00 },  // green
+	{ 0x00, 0x7f, 0x7f },  // cyan
+	{ 0x7f, 0x00, 0x00 },  // red
+	{ 0x7f, 0x00, 0x7f },  // magenta
+	{ 0x7f, 0x7f, 0x00 },  // yellow
+	{ 0xa0, 0xa0, 0xa0 },  // bright grey
+	{ 0x7f, 0x7f, 0x7f },  // dark grey
+	{ 0x00, 0x00, 0xff },  // bright blue
+	{ 0x00, 0xff, 0x00 },  // bright green
+	{ 0x00, 0xff, 0xff },  // bright cyan
+	{ 0xff, 0x00, 0x00 },  // bright red
+	{ 0xff, 0x00, 0xff },  // bright magenta
+	{ 0xff, 0xff, 0x00 },  // bright yellow
 	rgb_t::white()
 };
 
 
-/* Initialise the palette */
-PALETTE_INIT_MEMBER(vtech2_state, vtech2)
+// Initialise the palette
+void vtech2_state::vtech2_palette(palette_device &palette) const
 {
-	int i;
-
-	for ( i = 0; i < 16; i++ )
+	for (int i = 0; i < 16; i++)
 		palette.set_indirect_color(i, vt_colors[i]);
 
-	for (i = 0; i < 256; i++)
+	for (int i = 0; i < 256; i++)
 	{
-		palette.set_pen_indirect(2*i, i&15);
-		palette.set_pen_indirect(2*i+1, i>>4);
+		palette.set_pen_indirect(2*i, i & 15);
+		palette.set_pen_indirect(2*i + 1, i >> 4);
 	}
 
-	for (i = 0; i < 16; i++)
-		palette.set_pen_indirect(512+i, i);
+	for (int i = 0; i < 16; i++)
+		palette.set_pen_indirect(512 + i, i);
 }
 
 INTERRUPT_GEN_MEMBER(vtech2_state::vtech2_interrupt)
@@ -486,13 +483,14 @@ static const floppy_interface vtech2_floppy_interface =
 	nullptr
 };
 
-MACHINE_CONFIG_START(vtech2_state::laser350)
+void vtech2_state::laser350(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_DEVICE_ADD("maincpu", Z80, 3694700)        /* 3.694700 MHz */
-	MCFG_DEVICE_PROGRAM_MAP(mem_map)
-	MCFG_DEVICE_IO_MAP(io_map)
-	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", vtech2_state,  vtech2_interrupt)
-	MCFG_QUANTUM_TIME(attotime::from_hz(60))
+	Z80(config, m_maincpu, 3694700);        /* 3.694700 MHz */
+	m_maincpu->set_addrmap(AS_PROGRAM, &vtech2_state::mem_map);
+	m_maincpu->set_addrmap(AS_IO, &vtech2_state::io_map);
+	m_maincpu->set_vblank_int("screen", FUNC(vtech2_state::vtech2_interrupt));
+	config.m_minimum_quantum = attotime::from_hz(60);
 
 	ADDRESS_MAP_BANK(config, "banka").set_map(&vtech2_state::m_map350).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
 	ADDRESS_MAP_BANK(config, "bankb").set_map(&vtech2_state::m_map350).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
@@ -500,69 +498,59 @@ MACHINE_CONFIG_START(vtech2_state::laser350)
 	ADDRESS_MAP_BANK(config, "bankd").set_map(&vtech2_state::m_map350).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
 
 	/* video hardware */
-	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(50)
-	MCFG_SCREEN_VBLANK_TIME(0)
-	MCFG_SCREEN_SIZE(88*8, 24*8+32)
-	MCFG_SCREEN_VISIBLE_AREA(0*8, 88*8-1, 0*8, 24*8+32-1)
-	MCFG_SCREEN_UPDATE_DRIVER(vtech2_state, screen_update_laser)
-	MCFG_SCREEN_PALETTE("palette")
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_refresh_hz(50);
+	screen.set_vblank_time(0);
+	screen.set_size(88*8, 24*8+32);
+	screen.set_visarea(0*8, 88*8-1, 0*8, 24*8+32-1);
+	screen.set_screen_update(FUNC(vtech2_state::screen_update_laser));
+	screen.set_palette(m_palette);
 
-	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_vtech2)
-	MCFG_PALETTE_ADD("palette", 512+16)
-	MCFG_PALETTE_INDIRECT_ENTRIES(16)
-	MCFG_PALETTE_INIT_OWNER(vtech2_state, vtech2)
+	GFXDECODE(config, m_gfxdecode, m_palette, gfx_vtech2);
+	PALETTE(config, m_palette, FUNC(vtech2_state::vtech2_palette), 512 + 16, 16);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", "cassette").add_route(ALL_OUTPUTS, "mono", 0.25);
 	SPEAKER_SOUND(config, "speaker").add_route(ALL_OUTPUTS, "mono", 0.75);
 
-	MCFG_CASSETTE_ADD( "cassette" )
-	MCFG_CASSETTE_FORMATS(vtech2_cassette_formats)
-	MCFG_CASSETTE_DEFAULT_STATE(CASSETTE_PLAY)
+	CASSETTE(config, m_cassette);
+	m_cassette->set_formats(vtech2_cassette_formats);
+	m_cassette->set_default_state(CASSETTE_PLAY);
+	m_cassette->add_route(ALL_OUTPUTS, "mono", 0.05);
 
-	MCFG_IOEXP_SLOT_ADD("io")
+	VTECH_IOEXP_SLOT(config, "io").set_io_space(m_maincpu, AS_IO);
 
 	/* cartridge */
-	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_plain_slot, "vtech_cart")
-	MCFG_GENERIC_EXTENSIONS("rom,bin")
-	MCFG_GENERIC_LOAD(vtech2_state, cart_load)
+	GENERIC_CARTSLOT(config, "cartslot", generic_plain_slot, "vtech_cart", "rom,bin").set_device_load(FUNC(vtech2_state::cart_load), this);
 
 	/* 5.25" Floppy drive */
-	MCFG_LEGACY_FLOPPY_DRIVE_ADD( FLOPPY_0, vtech2_floppy_interface )
-MACHINE_CONFIG_END
+	LEGACY_FLOPPY(config, FLOPPY_0, 0, &vtech2_floppy_interface);
+}
 
 
-MACHINE_CONFIG_START(vtech2_state::laser500)
+void vtech2_state::laser500(machine_config &config)
+{
 	laser350(config);
 
-	config.device_remove("banka");
-	config.device_remove("bankb");
-	config.device_remove("bankc");
-	config.device_remove("bankd");
-	ADDRESS_MAP_BANK(config, "banka").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-	ADDRESS_MAP_BANK(config, "bankb").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-	ADDRESS_MAP_BANK(config, "bankc").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-	ADDRESS_MAP_BANK(config, "bankd").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-MACHINE_CONFIG_END
+	ADDRESS_MAP_BANK(config.replace(), "banka").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "bankb").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "bankc").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "bankd").set_map(&vtech2_state::m_map500).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+}
 
 
-MACHINE_CONFIG_START(vtech2_state::laser700)
+void vtech2_state::laser700(machine_config &config)
+{
 	laser350(config);
 
-	config.device_remove("banka");
-	config.device_remove("bankb");
-	config.device_remove("bankc");
-	config.device_remove("bankd");
-	ADDRESS_MAP_BANK(config, "banka").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-	ADDRESS_MAP_BANK(config, "bankb").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-	ADDRESS_MAP_BANK(config, "bankc").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
-	ADDRESS_MAP_BANK(config, "bankd").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "banka").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "bankb").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "bankc").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
+	ADDRESS_MAP_BANK(config.replace(), "bankd").set_map(&vtech2_state::m_map700).set_options(ENDIANNESS_LITTLE, 8, 18, 0x4000);
 
 	/* Second 5.25" floppy drive */
-	MCFG_LEGACY_FLOPPY_DRIVE_ADD( FLOPPY_1, vtech2_floppy_interface )
-MACHINE_CONFIG_END
+	LEGACY_FLOPPY(config, FLOPPY_1, 0, &vtech2_floppy_interface);
+	}
 
 
 ROM_START(laser350)

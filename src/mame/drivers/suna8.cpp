@@ -240,7 +240,7 @@ rom13:  0?, 1y, 2n, 3n      ?,?,?,? (palettes)
         8?, 9n?,an, bn      y,y,?,? (player anims)
         cn, dy, en, fn      y,y,n,n
 */
-		static const uint8_t swaptable[0x50] =
+		static constexpr uint8_t swaptable[0x50] =
 		{
 			1,1,1,1,0,0,1,1,    0,0,0,0,0,0,0,0,    // 8000-ffff not used
 			1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,
@@ -259,12 +259,12 @@ rom13:  0?, 1y, 2n, 3n      ?,?,?,? (palettes)
 	/* Opcodes */
 	for (int i = 0; i < 0x8000; i++)
 	{
-		static const uint8_t swaptable[32] =
+		static constexpr uint8_t swaptable[32] =
 		{
 			1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,
 			1,1,0,1,1,1,1,1,1,1,1,1,0,1,0,0
 		};
-		static const uint8_t xortable[32] =
+		static constexpr uint8_t xortable[32] =
 		{
 			0x04,0x04,0x00,0x04,0x00,0x04,0x00,0x00,0x04,0x45,0x00,0x04,0x00,0x04,0x00,0x00,
 			0x04,0x45,0x00,0x04,0x00,0x04,0x00,0x00,0x04,0x04,0x00,0x04,0x00,0x04,0x00,0x00
@@ -283,7 +283,7 @@ rom13:  0?, 1y, 2n, 3n      ?,?,?,? (palettes)
 	/* Data */
 	for (int i = 0; i < 0x8000; i++)
 	{
-		static const uint8_t swaptable[8] = { 1,1,0,1,0,1,1,0 };
+		static constexpr uint8_t swaptable[8] = { 1,1,0,1,0,1,1,0 };
 
 		if (swaptable[(i & 0x7000) >> 12])
 			RAM[i] = bitswap<8>(RAM[i], 5,6,7,4,3,2,1,0) ^ 0x41;
@@ -318,7 +318,7 @@ void suna8_state::init_starfigh()
 	memcpy(decrypt, RAM, size);
 	for (int i = 0; i < 0x50000; i++)
 	{
-		static const uint8_t swaptable[0x50] =
+		static constexpr uint8_t swaptable[0x50] =
 		{
 			1,1,1,1,    1,1,0,0,    0,0,0,0,    0,0,0,0,    // 8000-ffff not used
 			0,0,0,0,    0,0,0,0,    0,0,0,0,    0,0,0,0,
@@ -337,12 +337,12 @@ void suna8_state::init_starfigh()
 	/* Opcodes */
 	for (int i = 0; i < 0x8000; i++)
 	{
-		static const uint8_t swaptable[32] =
+		static constexpr uint8_t swaptable[32] =
 		{
 			0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
 			0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 		};
-		static const uint8_t xortable[32] =
+		static constexpr uint8_t xortable[32] =
 		{
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x41,0x01,0x00,0x00,0x00,0x00,
 			0x01,0x01,0x41,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
@@ -361,7 +361,7 @@ void suna8_state::init_starfigh()
 	/* Data */
 	for (int i = 0; i < 0x8000; i++)
 	{
-		static const uint8_t swaptable[8] = { 1,1,0,1,0,1,1,0 };
+		static constexpr uint8_t swaptable[8] = { 1,1,0,1,0,1,1,0 };
 
 		if (swaptable[(i & 0x7000) >> 12])
 			RAM[i] = bitswap<8>(RAM[i], 5,6,7,4,3,2,1,0) ^ 0x45;
@@ -401,7 +401,7 @@ void suna8_state::init_sparkman()
 	memcpy(decrypt, RAM, size);
 	for (int i = 0; i < 0x50000; i++)
 	{
-		static const uint8_t swaptable[0x50] =
+		static constexpr uint8_t swaptable[0x50] =
 		{
 			1,1,1,1,    0,0,1,1,    0,0,0,0,    0,0,0,0,    // 8000-ffff not used
 			0,0,0,0,    0,0,0,0,    0,0,0,0,    0,0,0,0,
@@ -420,12 +420,12 @@ void suna8_state::init_sparkman()
 	/* Opcodes */
 	for (int i = 0; i < 0x8000; i++)
 	{
-		static const uint8_t swaptable[32] =
+		static constexpr uint8_t swaptable[32] =
 		{
 			0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,
 			0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
 		};
-		static const uint8_t xortable[32] =
+		static constexpr uint8_t xortable[32] =
 		{
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x00,0x00,0x00,0x00
@@ -444,7 +444,7 @@ void suna8_state::init_sparkman()
 	/* Data */
 	for (int i = 0; i < 0x8000; i++)
 	{
-		static const uint8_t swaptable[8] = { 1,1,1,0,1,1,0,1 };
+		static constexpr uint8_t swaptable[8] = { 1,1,1,0,1,1,0,1 };
 
 		if (swaptable[(i & 0x7000) >> 12])
 			RAM[i] = bitswap<8>(RAM[i], 5,6,7,4,3,2,1,0) ^ 0x44;
@@ -608,7 +608,7 @@ WRITE8_MEMBER(suna8_state::rranger_bankswitch_w)
 */
 READ8_MEMBER(suna8_state::rranger_soundstatus_r)
 {
-	m_soundlatch2->read(space, offset);
+	m_soundlatch2->read();
 	return 0x02;
 }
 
@@ -784,7 +784,7 @@ WRITE8_MEMBER(suna8_state::brickzn_multi_w)
 		*/
 		uint8_t remap = (m_remap_sound ? bitswap<8>(data, 7,6,3,4,5,2,1,0) : data);
 
-		m_soundlatch->write(space, 0, remap);
+		m_soundlatch->write(remap);
 
 		logerror("CPU #0 - PC %04X: soundlatch = %02X (->%02X)\n",m_maincpu->pc(),data,remap);
 	}
@@ -1038,7 +1038,7 @@ WRITE8_MEMBER(suna8_state::starfigh_rombank_latch_w)
 WRITE8_MEMBER(suna8_state::starfigh_sound_latch_w)
 {
 	if ( !(m_rombank_latch & 0x20) )
-		m_soundlatch->write(space, 0, data);
+		m_soundlatch->write(data);
 }
 
 /*
@@ -1900,8 +1900,7 @@ void suna8_state::hardhead(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_suna8);
-	PALETTE(config, m_palette, 256);
-	m_palette->set_format(PALETTE_FORMAT_RRRRGGGGBBBBxxxx);
+	PALETTE(config, m_palette).set_format(palette_device::RGBx_444, 256);
 	m_palette->set_endianness(ENDIANNESS_BIG);
 
 	MCFG_VIDEO_START_OVERRIDE(suna8_state,suna8_text)
@@ -1957,8 +1956,7 @@ void suna8_state::rranger(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_suna8);
-	PALETTE(config, m_palette, 256);
-	m_palette->set_format(PALETTE_FORMAT_RRRRGGGGBBBBxxxx);
+	PALETTE(config, m_palette).set_format(palette_device::RGBx_444, 256);
 	m_palette->set_endianness(ENDIANNESS_BIG);
 
 	MCFG_VIDEO_START_OVERRIDE(suna8_state,suna8_text)
@@ -2025,8 +2023,7 @@ void suna8_state::brickzn11(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_suna8);
-	PALETTE(config, m_palette, 256 * 2);    // 2 x Palette RAM
-	m_palette->set_format(PALETTE_FORMAT_RRRRGGGGBBBBxxxx);
+	PALETTE(config, m_palette).set_format(palette_device::RGBx_444, 256 * 2); // 2 x palette RAM
 	m_palette->set_endianness(ENDIANNESS_BIG);
 
 	MCFG_VIDEO_START_OVERRIDE(suna8_state,suna8_brickzn)
@@ -2048,7 +2045,6 @@ void suna8_state::brickzn11(machine_config &config)
 	DAC_4BIT_R2R(config, "ldac2", 0).add_route(ALL_OUTPUTS, "speaker", 0.17); // unknown DAC
 	DAC_4BIT_R2R(config, "rdac2", 0).add_route(ALL_OUTPUTS, "speaker", 0.17); // unknown DAC
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT);
@@ -2099,8 +2095,8 @@ void suna8_state::hardhea2(machine_config &config)
 	TIMER(config, "scantimer").configure_scanline(FUNC(suna8_state::hardhea2_interrupt), "screen", 0, 1);
 
 	MCFG_MACHINE_RESET_OVERRIDE(suna8_state,hardhea2)
-	m_palette->set_entries(256);
-	m_palette->set_format(PALETTE_FORMAT_RRRRGGGGBBBBxxxx);
+
+	m_palette->set_format(palette_device::RGBx_444, 256);
 	m_palette->set_endianness(ENDIANNESS_BIG);
 }
 
@@ -2140,8 +2136,7 @@ void suna8_state::starfigh(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_suna8);
-	PALETTE(config, m_palette, 256);
-	m_palette->set_format(PALETTE_FORMAT_RRRRGGGGBBBBxxxx);
+	PALETTE(config, m_palette).set_format(palette_device::RGBx_444, 256);
 	m_palette->set_endianness(ENDIANNESS_BIG);
 
 	MCFG_VIDEO_START_OVERRIDE(suna8_state,suna8_starfigh)
@@ -2193,8 +2188,7 @@ void suna8_state::sparkman(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_suna8_x2);    // 2 sprite "chips"
-	PALETTE(config, m_palette, 512);
-	m_palette->set_format(PALETTE_FORMAT_RRRRGGGGBBBBxxxx);
+	PALETTE(config, m_palette).set_format(palette_device::RGBx_444, 512);
 	m_palette->set_endianness(ENDIANNESS_BIG);
 
 	MCFG_VIDEO_START_OVERRIDE(suna8_state,suna8_sparkman)

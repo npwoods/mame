@@ -42,6 +42,7 @@
 
 #include "emu.h"
 #include "includes/atari400.h"
+
 #include "cpu/m6502/m6502.h"
 #include "machine/6821pia.h"
 #include "machine/ram.h"
@@ -50,9 +51,11 @@
 #include "sound/dac.h"
 #include "sound/pokey.h"
 #include "sound/volt_reg.h"
+
 #include "bus/a800/a800_slot.h"
 #include "bus/a800/a800_carts.h"
 #include "bus/a800/a8sio.h"
+
 #include "screen.h"
 #include "softlist.h"
 #include "speaker.h"
@@ -278,7 +281,7 @@ private:
 	DECLARE_MACHINE_START(a800);
 	DECLARE_MACHINE_START(a800xl);
 	DECLARE_MACHINE_START(a5200);
-	DECLARE_PALETTE_INIT(a400);
+	void a400_palette(palette_device &palette) const;
 
 	DECLARE_MACHINE_RESET(a400);
 
@@ -1032,7 +1035,7 @@ dependent upon display type.
  *
  **************************************************************/
 
-static const uint8_t atari_palette[256*3] =
+static const uint8_t atari_colors[256*3] =
 {
 	/* Grey */
 	0x00,0x00,0x00, 0x11,0x11,0x11, 0x22,0x22,0x22, 0x33,0x33,0x33,
@@ -1118,12 +1121,10 @@ static const uint8_t atari_palette[256*3] =
 
 
 /* Initialise the palette */
-PALETTE_INIT_MEMBER(a400_state, a400)
+void a400_state::a400_palette(palette_device &palette) const
 {
-	for (int i = 0; i < sizeof(atari_palette) / 3; i++ )
-	{
-		palette.set_pen_color(i, atari_palette[i*3], atari_palette[i*3+1], atari_palette[i*3+2]);
-	}
+	for (unsigned i = 0; i < ARRAY_LENGTH(atari_colors) / 3; i++)
+		palette.set_pen_color(i, atari_colors[i * 3], atari_colors[i * 3 + 1], atari_colors[i * 3 + 2]);
 }
 /******************************************************************
     PALETTE - PHASE 24.7 SHIFT
@@ -2017,7 +2018,7 @@ TIMER_DEVICE_CALLBACK_MEMBER( a400_state::a5200_interrupt )
 
 MACHINE_RESET_MEMBER( a400_state, a400 )
 {
-	m_pokey->write(machine().dummy_space(), 15, 0);
+	m_pokey->write(15, 0);
 }
 
 
@@ -2123,16 +2124,20 @@ void a400_state::atari_common_nodac(machine_config &config)
 	m_screen->set_screen_update("antic", FUNC(antic_device::screen_update));
 	m_screen->set_palette("palette");
 
-	PALETTE(config, "palette", sizeof(atari_palette) / 3).set_init(FUNC(a400_state::palette_init_a400));
+	PALETTE(config, "palette", FUNC(a400_state::a400_palette), ARRAY_LENGTH(atari_colors) / 3);
 
 	PIA6821(config, m_pia, 0);
 	m_pia->readpa_handler().set_ioport("djoy_0_1");
 	m_pia->readpb_handler().set_ioport("djoy_2_3");
-	m_pia->ca2_handler().set("a8sio", FUNC(a8sio_device::motor_w));
+	m_pia->ca2_handler().set("sio", FUNC(a8sio_device::motor_w));
 	m_pia->cb2_handler().set("fdc", FUNC(atari_fdc_device::pia_cb2_w));
+	m_pia->cb2_handler().append("sio", FUNC(a8sio_device::command_w));
 
-	A8SIO(config, "a8sio", 0).data_in().set("pokey", FUNC(pokey_device::sid_w));
-	A8SIO_SLOT(config, "sio", nullptr).set_a8sio_slot("a8sio", "sio");
+	a8sio_device &sio(A8SIO(config, "sio", nullptr));
+	//sio.clock_in().set("pokey", FUNC(pokey_device::bclk_w));
+	sio.data_in().set("pokey", FUNC(pokey_device::sid_w));
+	sio.proceed().set(m_pia, FUNC(pia6821_device::ca1_w));
+	sio.interrupt().set(m_pia, FUNC(pia6821_device::cb1_w));
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -2147,6 +2152,8 @@ void a400_state::atari_common_nodac(machine_config &config)
 	m_pokey->pot_r<7>().set_ioport("analog_7");
 	m_pokey->serin_r().set("fdc", FUNC(atari_fdc_device::serin_r));
 	m_pokey->serout_w().set("fdc", FUNC(atari_fdc_device::serout_w));
+	//m_pokey->oclk_w().set("sio", FUNC(a8sio_device::clock_out_w));
+	//m_pokey->sod_w().set("sio", FUNC(a8sio_device::data_out_w));
 	m_pokey->set_keyboard_callback(FUNC(a400_state::a800_keyboard));
 	m_pokey->set_interrupt_callback(FUNC(a400_state::interrupt_cb));
 	m_pokey->add_route(ALL_OUTPUTS, "speaker", 1.0);
@@ -2155,10 +2162,9 @@ void a400_state::atari_common_nodac(machine_config &config)
 void a400_state::atari_common(machine_config &config)
 {
 	atari_common_nodac(config);
+
 	DAC_1BIT(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.03);
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
-	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
+	VOLTAGE_REGULATOR(config, "vref", 0).add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 
 	/* internal ram */
 	RAM(config, m_ram).set_default_size("48K");

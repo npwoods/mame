@@ -32,7 +32,6 @@
 #include "imagedev/snapquik.h"
 #include "machine/keyboard.h"
 #include "sound/spkrdev.h"
-#include "sound/wave.h"
 #include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
@@ -64,8 +63,8 @@ private:
 	void kbd_put(u8 data);
 	DECLARE_READ_LINE_MEMBER(cass_r);
 	DECLARE_WRITE_LINE_MEMBER(cass_w);
-	DECLARE_QUICKLOAD_LOAD_MEMBER(phunsy);
-	DECLARE_PALETTE_INIT(phunsy);
+	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
+	void phunsy_palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	void phunsy_data(address_map &map);
@@ -210,14 +209,10 @@ void phunsy_state::machine_reset()
 }
 
 
-PALETTE_INIT_MEMBER(phunsy_state, phunsy)
+void phunsy_state::phunsy_palette(palette_device &palette) const
 {
-	for ( int i = 0; i < 8; i++ )
-	{
-		int j = ( i << 5 ) | ( i << 2 ) | ( i >> 1 );
-
-		palette.set_pen_color( i, j, j, j );
-	}
+	for (int i = 0; i < 8; i++)
+		palette.set_pen_color(i, pal3bit(i), pal3bit(i), pal3bit(i));
 }
 
 
@@ -286,7 +281,7 @@ static GFXDECODE_START( gfx_phunsy )
 GFXDECODE_END
 
 // quickloads can start from various addresses, and the files have no header.
-QUICKLOAD_LOAD_MEMBER( phunsy_state, phunsy )
+QUICKLOAD_LOAD_MEMBER(phunsy_state::quickload_cb)
 {
 	address_space &space = m_maincpu->space(AS_PROGRAM);
 	uint16_t i;
@@ -364,21 +359,21 @@ void phunsy_state::phunsy(machine_config &config)
 	screen.set_palette("palette");
 
 	GFXDECODE(config, "gfxdecode", "palette", gfx_phunsy);
-	PALETTE(config, "palette", 8).set_init(FUNC(phunsy_state::palette_init_phunsy));
+	PALETTE(config, "palette", FUNC(phunsy_state::phunsy_palette), 8);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", m_cass).add_route(ALL_OUTPUTS, "mono", 0.25);
 	SPEAKER_SOUND(config, m_speaker).add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	/* Devices */
 	generic_keyboard_device &keyboard(GENERIC_KEYBOARD(config, "keyboard", 0));
 	keyboard.set_keyboard_callback(FUNC(phunsy_state::kbd_put));
+
 	CASSETTE(config, m_cass);
+	m_cass->add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	/* quickload */
-	quickload_image_device &quickload(QUICKLOAD(config, "quickload", 0));
-	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(phunsy_state, phunsy), this), "bin", 2);
+	QUICKLOAD(config, "quickload", "bin", attotime::from_seconds(2)).set_load_callback(FUNC(phunsy_state::quickload_cb), this);
 }
 
 

@@ -40,14 +40,15 @@
 class blockhl_state : public driver_device
 {
 public:
-	blockhl_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	blockhl_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_bank5800(*this, "bank5800"),
 		m_audiocpu(*this, "audiocpu"),
 		m_k052109(*this, "k052109"),
 		m_k051960(*this, "k051960"),
-		m_rombank(*this, "rombank") { }
+		m_rombank(*this, "rombank")
+	{ }
 
 	K052109_CB_MEMBER(tile_callback);
 	K051960_CB_MEMBER(sprite_callback);
@@ -152,24 +153,24 @@ READ8_MEMBER( blockhl_state::k052109_051960_r )
 	if (m_k052109->get_rmrd_line() == CLEAR_LINE)
 	{
 		if (offset >= 0x3800 && offset < 0x3808)
-			return m_k051960->k051937_r(space, offset - 0x3800);
+			return m_k051960->k051937_r(offset - 0x3800);
 		else if (offset < 0x3c00)
-			return m_k052109->read(space, offset);
+			return m_k052109->read(offset);
 		else
-			return m_k051960->k051960_r(space, offset - 0x3c00);
+			return m_k051960->k051960_r(offset - 0x3c00);
 	}
 	else
-		return m_k052109->read(space, offset);
+		return m_k052109->read(offset);
 }
 
 WRITE8_MEMBER( blockhl_state::k052109_051960_w )
 {
 	if (offset >= 0x3800 && offset < 0x3808)
-		m_k051960->k051937_w(space, offset - 0x3800, data);
+		m_k051960->k051937_w(offset - 0x3800, data);
 	else if (offset < 0x3c00)
-		m_k052109->write(space, offset, data);
+		m_k052109->write(offset, data);
 	else
-		m_k051960->k051960_w(space, offset - 0x3c00, data);
+		m_k051960->k051960_w(offset - 0x3c00, data);
 }
 
 
@@ -300,9 +301,7 @@ void blockhl_state::blockhl(machine_config &config)
 	screen.set_screen_update(FUNC(blockhl_state::screen_update_blockhl));
 	screen.set_palette("palette");
 
-	palette_device &palette(PALETTE(config, "palette", 1024));
-	palette.enable_shadows();
-	palette.set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, "palette").set_format(palette_device::xBGR_555, 1024).enable_shadows();
 
 	K052109(config, m_k052109, 0);
 	m_k052109->set_palette("palette");

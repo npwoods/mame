@@ -294,7 +294,6 @@ Notes & Todo:
 #include "emu.h"
 #include "includes/playch10.h"
 
-#include "cpu/m6502/n2a03.h"
 #include "cpu/z80/z80.h"
 #include "machine/74259.h"
 #include "machine/rp5h01.h"
@@ -671,8 +670,14 @@ void playch10_state::playch10(machine_config &config)
 
 	// video hardware
 	GFXDECODE(config, m_gfxdecode, "palette", gfx_playch10);
-	PALETTE(config, "palette", 256).set_init(FUNC(playch10_state::palette_init_playch10));
+	PALETTE(config, "palette", FUNC(playch10_state::playch10_palette), 256);
 	config.set_default_layout(layout_playch10);
+
+	screen_device &bottom(SCREEN(config, "bottom", SCREEN_TYPE_RASTER));
+	bottom.set_refresh_hz(60);
+	bottom.set_size(32*8, 262);
+	bottom.set_visarea(0*8, 32*8-1, 0*8, 30*8-1);
+	bottom.set_screen_update(FUNC(playch10_state::screen_update_playch10_bottom));
 
 	screen_device &top(SCREEN(config, "top", SCREEN_TYPE_RASTER));
 	top.set_refresh_hz(60);
@@ -681,12 +686,6 @@ void playch10_state::playch10(machine_config &config)
 	top.set_screen_update(FUNC(playch10_state::screen_update_playch10_top));
 	top.screen_vblank().set(FUNC(playch10_state::vblank_irq));
 
-	screen_device &bottom(SCREEN(config, "bottom", SCREEN_TYPE_RASTER));
-	bottom.set_refresh_hz(60);
-	bottom.set_size(32*8, 262);
-	bottom.set_visarea(0*8, 32*8-1, 0*8, 30*8-1);
-	bottom.set_screen_update(FUNC(playch10_state::screen_update_playch10_bottom));
-
 	PPU_2C03B(config, m_ppu, 0);
 	m_ppu->set_screen("bottom");
 	m_ppu->set_cpu_tag("cart");
@@ -694,6 +693,7 @@ void playch10_state::playch10(machine_config &config)
 	m_ppu->int_callback().append(FUNC(playch10_state::int_detect_w));
 
 	SPEAKER(config, "mono").front_center();
+	m_cartcpu->add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	RP5H01(config, m_rp5h01, 0);
 }

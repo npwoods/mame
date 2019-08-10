@@ -12,7 +12,6 @@
 #include "machine/ram.h"
 #include "machine/i8251.h"
 #include "bus/epson_sio/pf10.h"
-#include "sound/wave.h"
 #include "emupal.h"
 
 #include "bus/generic/slot.h"
@@ -84,7 +83,7 @@ private:
 
 	/* keyboard state */
 	int m_ksc;              /* keyboard scan column */
-	DECLARE_PALETTE_INIT(px8);
+	void px8_palette(palette_device &palette) const;
 	void px8_io(address_map &map);
 	void px8_mem(address_map &map);
 	void px8_slave_mem(address_map &map);

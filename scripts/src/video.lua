@@ -43,6 +43,18 @@ end
 
 --------------------------------------------------
 --
+--@src/devices/video/am8052.h,VIDEOS["AM8052"] = true
+--------------------------------------------------
+
+if (VIDEOS["AM8052"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/am8052.cpp",
+		MAME_DIR .. "src/devices/video/am8052.h",
+	}
+end
+
+--------------------------------------------------
+--
 --@src/devices/video/bufsprite.h,VIDEOS["BUFSPRITE"] = true
 --------------------------------------------------
 
@@ -110,6 +122,18 @@ if (VIDEOS["CRT9021"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/video/crt9021.cpp",
 		MAME_DIR .. "src/devices/video/crt9021.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/crt9028.h,VIDEOS["CRT9028"] = true
+--------------------------------------------------
+
+if (VIDEOS["CRT9028"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/crt9028.cpp",
+		MAME_DIR .. "src/devices/video/crt9028.h",
 	}
 end
 
@@ -593,6 +617,18 @@ end
 
 --------------------------------------------------
 --
+--@src/devices/video/mm5445.h,VIDEOS["MM5445"] = true
+--------------------------------------------------
+
+if (VIDEOS["MM5445"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/mm5445.cpp",
+		MAME_DIR .. "src/devices/video/mm5445.h",
+	}
+end
+
+--------------------------------------------------
+--
 --@src/devices/video/msm6222b.h,VIDEOS["MSM6222B"] = true
 --------------------------------------------------
 
@@ -646,6 +682,18 @@ if (VIDEOS["PC_VGA"]~=null) then
 		MAME_DIR .. "src/devices/bus/isa/trident.h",
 		MAME_DIR .. "src/devices/video/clgd542x.cpp",
 		MAME_DIR .. "src/devices/video/clgd542x.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/virge_pci.h,VIDEOS["VIRGE_PCI"] = true
+--------------------------------------------------
+
+if (VIDEOS["VIRGE_PCI"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/virge_pci.cpp",
+		MAME_DIR .. "src/devices/video/virge_pci.h",
 	}
 end
 
@@ -706,6 +754,17 @@ if (VIDEOS["SAA5050"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/video/saa5050.cpp",
 		MAME_DIR .. "src/devices/video/saa5050.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/pwm.h,VIDEOS["PWM_DISPLAY"] = true
+--------------------------------------------------
+if (VIDEOS["PWM_DISPLAY"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/pwm.cpp",
+		MAME_DIR .. "src/devices/video/pwm.h",
 	}
 end
 
@@ -787,6 +846,18 @@ if (VIDEOS["STVVDP"]~=null) then
 		MAME_DIR .. "src/devices/video/stvvdp1.h",
 		MAME_DIR .. "src/devices/video/stvvdp2.cpp",
 		MAME_DIR .. "src/devices/video/stvvdp2.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/t6963c.h,VIDEOS["T6963C"] = true
+--------------------------------------------------
+
+if (VIDEOS["T6963C"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/t6963c.cpp",
+		MAME_DIR .. "src/devices/video/t6963c.h",
 	}
 end
 
@@ -1146,5 +1217,40 @@ if (VIDEOS["PS2GS"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/video/ps2gs.cpp",
 		MAME_DIR .. "src/devices/video/ps2gs.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/decsfb.h,VIDEOS["DECSFB"] = true
+--------------------------------------------------
+if (VIDEOS["DECSFB"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/decsfb.cpp",
+		MAME_DIR .. "src/devices/video/decsfb.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/bt47x.h,VIDEOS["BT47X"] = true
+--------------------------------------------------
+
+if (VIDEOS["BT47X"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/bt47x.cpp",
+		MAME_DIR .. "src/devices/video/bt47x.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/devices/video/bt431.h,VIDEOS["BT431"] = true
+--------------------------------------------------
+
+if (VIDEOS["BT431"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/video/bt431.cpp",
+		MAME_DIR .. "src/devices/video/bt431.h",
 	}
 end

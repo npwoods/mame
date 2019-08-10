@@ -73,7 +73,7 @@ void esprit_state::mem3_map(address_map &map)
 	map(0x93c0, 0x93c1).rw("acia", FUNC(acia6850_device::read), FUNC(acia6850_device::write));
 	map(0x95c0, 0x95c3).rw("acia1", FUNC(mos6551_device::read), FUNC(mos6551_device::write));
 	map(0x99c0, 0x99c3).rw("acia2", FUNC(mos6551_device::read), FUNC(mos6551_device::write));
-	map(0xb1c0, 0xb1cf).rw("via", FUNC(via6522_device::read), FUNC(via6522_device::write));
+	map(0xb1c0, 0xb1cf).m("via", FUNC(via6522_device::map));
 	map(0xe000, 0xffff).rom().region("roms", 0);
 }
 
@@ -152,8 +152,8 @@ void esprit_state::esprit(machine_config &config)
 	screen.set_raw(16.5888_MHz_XTAL, 900, 0, 720, 307, 0, 288);
 	screen.set_screen_update("crtc", FUNC(mc6845_device::screen_update));
 
-	GFXDECODE(config, "gfxdecode", "palette", gfx_esprit);
-	PALETTE(config, m_palette, 2).set_init("palette", FUNC(palette_device::palette_init_monochrome));
+	GFXDECODE(config, "gfxdecode", m_palette, gfx_esprit);
+	PALETTE(config, m_palette, palette_device::MONOCHROME);
 
 	/* Devices */
 	mc6845_device &crtc(MC6845(config, "crtc", 16.5888_MHz_XTAL / 9));
@@ -192,8 +192,8 @@ void esprit_state::esprit3(machine_config &config)
 	screen.set_raw(17.9712_MHz_XTAL, 936, 0, 720, 320, 0, 288);
 	screen.set_screen_update("crtc", FUNC(r6545_1_device::screen_update));
 
-	GFXDECODE(config, "gfxdecode", "palette", gfx_esprit);
-	PALETTE(config, m_palette, 2).set_init("palette", FUNC(palette_device::palette_init_monochrome));
+	GFXDECODE(config, "gfxdecode", m_palette, gfx_esprit);
+	PALETTE(config, m_palette, palette_device::MONOCHROME);
 
 	r6545_1_device &crtc(R6545_1(config, "crtc", 17.9712_MHz_XTAL / 9));
 	crtc.set_screen("screen");
@@ -201,7 +201,7 @@ void esprit_state::esprit3(machine_config &config)
 	crtc.set_char_width(9);
 	crtc.set_update_row_callback(FUNC(esprit_state::crtc_update_row), this);
 	crtc.set_on_update_addr_change_callback(FUNC(esprit_state::crtc_update_addr), this);
-	//crtc.out_hsync_callback().set("via", FUNC(via6522_device::write_pb6)).invert();
+	crtc.out_hsync_callback().set("via", FUNC(via6522_device::write_pb6)).invert();
 }
 
 ROM_START( esprit )

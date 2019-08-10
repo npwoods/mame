@@ -25,7 +25,7 @@ public:
 		m_spr_pal_clut(*this, "spr_pal_clut"),
 		m_fg_videoram(*this, "fg_videoram"),
 		m_bg_videoram(*this, "bg_videoram")
-		{ }
+	{ }
 
 	void init_cclimbr2();
 	void init_armedf();
@@ -55,7 +55,7 @@ protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-	/* devices */
+	// devices
 	required_device<cpu_device> m_maincpu;
 	optional_device<cpu_device> m_extra;
 	optional_device<nb1414m4_device> m_nb1414m4;
@@ -124,6 +124,7 @@ protected:
 	void armedf_drawgfx(bitmap_ind16 &dest_bmp,const rectangle &clip,gfx_element *gfx,
 						uint32_t code,uint32_t color, uint32_t clut,int flipx,int flipy,int offsx,int offsy,
 						int transparent_color);
+	void common_map(address_map &map);
 	void armedf_map(address_map &map);
 	void cclimbr2_map(address_map &map);
 	void cclimbr2_soundmap(address_map &map);

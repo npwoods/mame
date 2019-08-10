@@ -213,8 +213,8 @@ static INPUT_PORTS_START( laserbat_base )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(2)
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_PLAYER(2)
 	PORT_CONFNAME( 0x10, 0x10, DEF_STR(Cabinet) ) // sense line on wiring harness
-	PORT_DIPSETTING(     0x10, DEF_STR(Upright) )
-	PORT_DIPSETTING(     0x00, DEF_STR(Cocktail) )
+	PORT_CONFSETTING(    0x10, DEF_STR(Upright) )
+	PORT_CONFSETTING(    0x00, DEF_STR(Cocktail) )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_COIN1 )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_TILT )
@@ -409,7 +409,7 @@ GFXDECODE_END
 
 INTERRUPT_GEN_MEMBER(laserbat_state_base::laserbat_interrupt)
 {
-	device.execute().set_input_line_and_vector(0, HOLD_LINE, 0x0a);
+	device.execute().set_input_line_and_vector(0, HOLD_LINE, 0x0a); // S2650
 }
 
 void laserbat_state_base::init_laserbat()
@@ -499,7 +499,7 @@ void laserbat_state::laserbat(machine_config &config)
 	laserbat_base(config);
 
 	// video hardware
-	PALETTE(config, m_palette, 256).set_init(FUNC(laserbat_state::palette_init_laserbat));
+	PALETTE(config, m_palette, FUNC(laserbat_state::laserbat_palette), 256);
 
 	// sound board devices
 	SPEAKER(config, "speaker").front_center();
@@ -531,7 +531,7 @@ void catnmous_state::catnmous(machine_config &config)
 	laserbat_base(config);
 
 	// video hardware
-	PALETTE(config, m_palette, 256).set_init(FUNC(catnmous_state::palette_init_catnmous));
+	PALETTE(config, m_palette, FUNC(catnmous_state::catnmous_palette), 256);
 
 	// sound board devices
 	SPEAKER(config, "speaker").front_center();

@@ -1167,7 +1167,7 @@ void stv_state::stv(machine_config &config)
 	m_screen->set_video_attributes(VIDEO_UPDATE_AFTER_VBLANK);
 	m_screen->set_raw(MASTER_CLOCK_320/8, 427, 0, 352, 263, 0, 224);
 	m_screen->set_screen_update(FUNC(stv_state::screen_update_stv_vdp2));
-	PALETTE(config, m_palette, 2048+(2048*2)); //standard palette + extra memory for rgb brightness.
+	PALETTE(config, m_palette).set_entries(2048+(2048*2)); //standard palette + extra memory for rgb brightness.
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_stv);
 
@@ -1240,8 +1240,7 @@ void stv_state::batmanfr(machine_config &config)
 }
 
 #define STV_CARTSLOT_ADD(_tag, _load) \
-	GENERIC_CARTSLOT(config, _tag, generic_plain_slot, "stv_cart")  \
-		.set_device_load(device_image_load_delegate(&stv_state::device_image_load_##_load, this));
+	GENERIC_CARTSLOT(config, _tag, generic_plain_slot, "stv_cart").set_device_load(FUNC(stv_state::_load), this);
 
 void stv_state::stv_cartslot(machine_config &config)
 {

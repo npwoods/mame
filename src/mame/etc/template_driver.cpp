@@ -22,6 +22,7 @@ public:
 	xxx_state(const machine_config &mconfig, device_type type, const char *tag)
 		: driver_device(mconfig, type, tag)
 		, m_maincpu(*this, "maincpu")
+		, m_palette(*this, "palette")
 	{
 	}
 
@@ -35,15 +36,16 @@ protected:
 	virtual void video_start() override;
 
 private:
-	// devices
-	required_device<cpu_device> m_maincpu;
+	// screen updates
+	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
+	void xxx_palette(palette_device &palette) const;
 
 	void xxx_io(address_map &map);
 	void xxx_map(address_map &map);
 
-	// screen updates
-	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_PALETTE_INIT(xxx);
+	// devices
+	required_device<cpu_device> m_maincpu;
+	required_device<palette_device> m_palette;
 };
 
 void xxx_state::video_start()
@@ -146,7 +148,7 @@ void xxx_state::machine_reset()
 }
 
 
-PALETTE_INIT_MEMBER(xxx_state, xxx)
+void xxx_state::xxx_palette(palette_device &palette) const
 {
 }
 
@@ -166,11 +168,10 @@ void xxx_state::xxx(machine_config &config)
 //  screen.set_visarea(0*8, 32*8-1, 0*8, 32*8-1);
 	screen.set_raw(MAIN_CLOCK/2, 442, 0, 320, 264, 0, 240);          /* generic NTSC video timing at 320x240 */
 //  screen.set_raw(XTAL(12'000'000)/2, 384, 0, 256, 264, 16, 240);  /* generic NTSC video timing at 256x224 */
-	screen.set_palette("palette");
+	screen.set_palette(m_palette);
 
-	GFXDECODE(config, "gfxdecode", "palette", gfx_xxx);
-
-	PALETTE(config, "palette", 8).set_init(palette_init_delegate(FUNC(xxx_state::xxx), this));
+	GFXDECODE(config, "gfxdecode", m_palette, gfx_xxx);
+	PALETTE(config, "palette", FUNC(xxx_state::xxx_palette), 8);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

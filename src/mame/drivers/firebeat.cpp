@@ -177,8 +177,8 @@ struct IBUTTON
 class firebeat_state : public driver_device
 {
 public:
-	firebeat_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	firebeat_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_audiocpu(*this, "audiocpu"),
 		m_work_ram(*this, "work_ram"),
@@ -489,12 +489,12 @@ READ32_MEMBER(firebeat_state::keyboard_wheel_r )
 
 READ8_MEMBER(firebeat_state::midi_uart_r )
 {
-	return m_duart_midi->read(space, offset >> 6);
+	return m_duart_midi->read(offset >> 6);
 }
 
 WRITE8_MEMBER(firebeat_state::midi_uart_w )
 {
-	m_duart_midi->write(space, offset >> 6, data);
+	m_duart_midi->write(offset >> 6, data);
 }
 
 WRITE_LINE_MEMBER(firebeat_state::midi_uart_ch0_irq_callback)
@@ -1175,8 +1175,8 @@ static void firebeat_ata_devices(device_slot_interface &device)
 	device.option_add("cdrom", ATAPI_FIXED_CDROM);
 }
 
-MACHINE_CONFIG_START(firebeat_state::firebeat)
-
+void firebeat_state::firebeat(machine_config &config)
+{
 	/* basic machine hardware */
 	PPC403GCX(config, m_maincpu, XTAL(64'000'000));
 	m_maincpu->set_addrmap(AS_PROGRAM, &firebeat_state::firebeat_map);
@@ -1196,7 +1196,7 @@ MACHINE_CONFIG_START(firebeat_state::firebeat)
 	m_ata->slot(1).set_option_machine_config("cdrom", cdrom_config);
 
 	/* video hardware */
-	PALETTE(config, "palette", 32768).set_init("palette", FUNC(palette_device::palette_init_RRRRRGGGGGBBBBB));
+	PALETTE(config, "palette", palette_device::RGB_555);
 
 	K057714(config, m_gcu[0], 0);
 	m_gcu[0]->irq_callback().set(FUNC(firebeat_state::gcu0_interrupt));
@@ -1252,7 +1252,7 @@ void firebeat_state::firebeat2(machine_config &config)
 	m_ata->slot(1).set_option_machine_config("cdrom", cdrom_config);
 
 	/* video hardware */
-	PALETTE(config, "palette", 32768).set_init("palette", FUNC(palette_device::palette_init_RRRRRGGGGGBBBBB));
+	PALETTE(config, "palette", palette_device::RGB_555);
 
 	K057714(config, m_gcu[0], 0);
 	m_gcu[0]->irq_callback().set(FUNC(firebeat_state::gcu0_interrupt));

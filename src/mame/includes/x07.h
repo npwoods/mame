@@ -15,7 +15,6 @@
 #include "machine/nvram.h"
 #include "machine/ram.h"
 #include "machine/timer.h"
-#include "sound/wave.h"
 #include "imagedev/cassette.h"
 #include "imagedev/printer.h"
 #include "formats/x07_cas.h"
@@ -221,7 +220,7 @@ private:
 	inline void draw_point(uint8_t x, uint8_t y, uint8_t color);
 	inline void draw_udk();
 
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( x07_card );
+	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( card_load );
 
 	/* general */
 	uint8_t m_sleep;
@@ -283,7 +282,7 @@ private:
 	uint8_t m_prn_char_code;
 	uint8_t m_prn_buffer[0x100];
 	uint8_t m_prn_size;
-	DECLARE_PALETTE_INIT(x07);
+	void x07_palette(palette_device &palette) const;
 	TIMER_CALLBACK_MEMBER(cassette_tick);
 	TIMER_CALLBACK_MEMBER(cassette_poll);
 	TIMER_CALLBACK_MEMBER(rsta_clear);

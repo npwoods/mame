@@ -1334,7 +1334,7 @@ void mappy_state::superpac_common(machine_config &config)
 
 	WATCHDOG_TIMER(config, "watchdog").set_vblank_count("screen", 8);
 
-	config.m_minimum_quantum = attotime::from_hz(6000);    // 100 CPU slices per frame - an high value to ensure proper synchronization of the CPUs
+	config.m_minimum_quantum = attotime::from_hz(6000);    // 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs
 
 	ls157_device &dipmux(LS157(config, "dipmux"));
 	dipmux.a_in_callback().set_ioport("DSW2");
@@ -1342,9 +1342,7 @@ void mappy_state::superpac_common(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_superpac);
-	PALETTE(config, m_palette, 64*4+64*4);
-	m_palette->set_indirect_entries(32);
-	m_palette->set_init(FUNC(mappy_state::palette_init_superpac));
+	PALETTE(config, m_palette, FUNC(mappy_state::superpac_palette), 64*4+64*4, 32);
 
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 	m_screen->set_raw(PIXEL_CLOCK, HTOTAL, HBEND, HBSTART, VTOTAL, VBEND, VBSTART);
@@ -1419,7 +1417,6 @@ void mappy_state::grobda(machine_config &config)
 	/* sound hardware */
 	DAC_4BIT_BINARY_WEIGHTED(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.275); // alternate route to 15XX-related DAC?
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }
@@ -1448,7 +1445,7 @@ void mappy_state::phozon(machine_config &config)
 
 	WATCHDOG_TIMER(config, "watchdog").set_vblank_count("screen", 8);
 
-	config.m_minimum_quantum = attotime::from_hz(6000);    // 100 CPU slices per frame - an high value to ensure proper synchronization of the CPUs
+	config.m_minimum_quantum = attotime::from_hz(6000);    // 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs
 
 	NAMCO_58XX(config, m_namcoio[0], 0);
 	m_namcoio[0]->in_callback<0>().set_ioport("COINS");
@@ -1469,9 +1466,7 @@ void mappy_state::phozon(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_phozon);
-	PALETTE(config, m_palette, 64*4+64*4);
-	m_palette->set_indirect_entries(32);
-	m_palette->set_init(FUNC(mappy_state::palette_init_phozon));
+	PALETTE(config, m_palette, FUNC(mappy_state::phozon_palette), 64*4+64*4, 32);
 
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 	m_screen->set_raw(PIXEL_CLOCK, HTOTAL, HBEND, HBSTART, VTOTAL, VBEND, VBSTART);
@@ -1509,7 +1504,7 @@ void mappy_state::mappy_common(machine_config &config)
 
 	WATCHDOG_TIMER(config, "watchdog").set_vblank_count("screen", 8);
 
-	config.m_minimum_quantum = attotime::from_hz(6000);    // 100 CPU slices per frame - an high value to ensure proper synchronization of the CPUs
+	config.m_minimum_quantum = attotime::from_hz(6000);    // 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs
 
 	ls157_device &dipmux(LS157(config, "dipmux"));
 	dipmux.a_in_callback().set_ioport("DSW2");
@@ -1517,9 +1512,7 @@ void mappy_state::mappy_common(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_mappy);
-	PALETTE(config, m_palette, 64*4+16*16);
-	m_palette->set_indirect_entries(32);
-	m_palette->set_init(FUNC(mappy_state::palette_init_mappy));
+	PALETTE(config, m_palette, FUNC(mappy_state::mappy_palette), 64*4+16*16, 32);
 
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 	m_screen->set_raw(PIXEL_CLOCK, HTOTAL, HBEND, HBSTART, VTOTAL, VBEND, VBSTART);

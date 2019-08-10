@@ -357,7 +357,7 @@ void foodf_state::foodf(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_foodf);
-	PALETTE(config, m_palette, 256);
+	PALETTE(config, m_palette).set_entries(256);
 
 	TILEMAP(config, m_playfield_tilemap, "gfxdecode", 2, 8,8, TILEMAP_SCAN_COLS, 32,32, 0).set_info_callback(FUNC(foodf_state::get_playfield_tile_info));
 
@@ -386,7 +386,7 @@ void foodf_state::foodf(machine_config &config)
 
 	pokey_device &pokey3(POKEY(config, "pokey3", MASTER_CLOCK/2/10));
 	pokey3.add_route(ALL_OUTPUTS, "mono", 0.33);
-MACHINE_CONFIG_END
+}
 
 
 

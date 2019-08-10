@@ -12,7 +12,6 @@
 #include "emu.h"
 #include "includes/bk.h"
 
-#include "sound/wave.h"
 #include "formats/rk_cas.h"
 
 #include "emupal.h"
@@ -181,24 +180,24 @@ void bk_state::bk0010(machine_config &config)
 	screen.set_screen_update(FUNC(bk_state::screen_update_bk0010));
 	screen.set_palette("palette");
 
-	PALETTE(config, "palette", 2).set_init("palette", FUNC(palette_device::palette_init_monochrome));
+	PALETTE(config, "palette", palette_device::MONOCHROME);
 
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", "cassette").add_route(ALL_OUTPUTS, "mono", 0.25);
 
 	CASSETTE(config, m_cassette);
-	m_cassette->set_default_state((cassette_state)(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED));
+	m_cassette->set_default_state(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED);
+	m_cassette->add_route(ALL_OUTPUTS, "mono", 0.05);
 	m_cassette->set_interface("bk0010_cass");
 
 	SOFTWARE_LIST(config, "cass_list").set_original("bk0010");
 }
 
-MACHINE_CONFIG_START(bk_state::bk0010fd)
+void bk_state::bk0010fd(machine_config &config)
+{
 	bk0010(config);
 	/* basic machine hardware */
-	MCFG_DEVICE_MODIFY("maincpu")
-	MCFG_DEVICE_PROGRAM_MAP(bk0010fd_mem)
-MACHINE_CONFIG_END
+	m_maincpu->set_addrmap(AS_PROGRAM, &bk_state::bk0010fd_mem);
+}
 
 
 /* ROM definition */

@@ -437,7 +437,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(n8080_state::rst1_tick)
 	int state = m_inte ? ASSERT_LINE : CLEAR_LINE;
 
 	/* V7 = 1, V6 = 0 */
-	m_maincpu->set_input_line_and_vector(INPUT_LINE_IRQ0, state, 0xcf);
+	m_maincpu->set_input_line_and_vector(INPUT_LINE_IRQ0, state, 0xcf); // I8080
 }
 
 TIMER_DEVICE_CALLBACK_MEMBER(n8080_state::rst2_tick)
@@ -445,7 +445,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(n8080_state::rst2_tick)
 	int state = m_inte ? ASSERT_LINE : CLEAR_LINE;
 
 	/* vblank */
-	m_maincpu->set_input_line_and_vector(INPUT_LINE_IRQ0, state, 0xd7);
+	m_maincpu->set_input_line_and_vector(INPUT_LINE_IRQ0, state, 0xd7); // I8080
 }
 
 WRITE_LINE_MEMBER(n8080_state::n8080_inte_callback)
@@ -521,7 +521,7 @@ void n8080_state::spacefev(machine_config &config)
 	m_screen->set_screen_update(FUNC(n8080_state::screen_update_spacefev));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 8).set_init(FUNC(n8080_state::palette_init_n8080));
+	PALETTE(config, m_palette, FUNC(n8080_state::n8080_palette), 8);
 
 	MCFG_VIDEO_START_OVERRIDE(n8080_state,spacefev)
 
@@ -552,7 +552,7 @@ void n8080_state::sheriff(machine_config &config)
 	m_screen->set_screen_update(FUNC(n8080_state::screen_update_sheriff));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 8).set_init(FUNC(n8080_state::palette_init_n8080));
+	PALETTE(config, m_palette, FUNC(n8080_state::n8080_palette), 8);
 
 	MCFG_VIDEO_START_OVERRIDE(n8080_state,sheriff)
 
@@ -595,7 +595,7 @@ void n8080_state::helifire(machine_config &config)
 	m_screen->screen_vblank().set(FUNC(n8080_state::screen_vblank_helifire));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 8 + 0x400).set_init(FUNC(n8080_state::palette_init_helifire));
+	PALETTE(config, m_palette, FUNC(n8080_state::helifire_palette), 8 + 0x400);
 
 	MCFG_VIDEO_START_OVERRIDE(n8080_state,helifire)
 

@@ -99,8 +99,9 @@ ioport_constructor pcd_video_device::device_input_ports() const
 	return INPUT_PORTS_NAME(pcd_mouse);
 }
 
-MACHINE_CONFIG_START(pcd_video_device::device_add_mconfig)
-	i8741_device &mcu(I8741(config, "graphics", 16_MHz_XTAL / 2));
+void pcd_video_device::device_add_mconfig(machine_config &config)
+{
+	i8741a_device &mcu(I8741A(config, "graphics", 16_MHz_XTAL / 2)); // NEC D8741AD
 	mcu.p1_in_cb().set(FUNC(pcd_video_device::p1_r));
 	mcu.p2_out_cb().set(FUNC(pcd_video_device::p2_w));
 	mcu.t1_in_cb().set(FUNC(pcd_video_device::t1_r));
@@ -110,16 +111,15 @@ MACHINE_CONFIG_START(pcd_video_device::device_add_mconfig)
 	screen.set_raw(16_MHz_XTAL, 832, 0, 640, 381, 0, 350);
 	screen.set_screen_update("crtc", FUNC(scn2674_device::screen_update));
 
-	MCFG_PALETTE_ADD("palette", 3)
-	MCFG_PALETTE_INIT_OWNER(pcdx_video_device, pcdx)
+	PALETTE(config, "palette", FUNC(pcd_video_device::pcdx_palette), 3);
 
 	SCN2674(config, m_crtc, 16_MHz_XTAL / 16);
 	m_crtc->set_character_width(16);
 	m_crtc->set_display_callback(FUNC(pcd_video_device::display_pixels));
 	m_crtc->set_screen("screen");
 
-	MCFG_TIMER_DRIVER_ADD_PERIODIC("mouse_timer", pcd_video_device, mouse_timer, attotime::from_hz(15000)) // guess
-MACHINE_CONFIG_END
+	TIMER(config, "mouse_timer").configure_periodic(FUNC(pcd_video_device::mouse_timer), attotime::from_hz(15000)); // guess
+}
 
 void pcx_video_device::pcx_vid_map(address_map &map)
 {
@@ -160,7 +160,7 @@ void pcx_video_device::device_add_mconfig(machine_config &config)
 	screen.set_raw(24_MHz_XTAL, 1272, 0, 960, 381, 0, 350);
 	screen.set_screen_update("crtc", FUNC(scn2672_device::screen_update));
 
-	PALETTE(config, "palette", 2).set_init("palette", FUNC(palette_device::palette_init_monochrome));
+	PALETTE(config, "palette", palette_device::MONOCHROME);
 
 	SCN2672(config, m_crtc, 24_MHz_XTAL / 12); // used with SCB2673B
 	m_crtc->intr_callback().set_inputline("graphics", MCS51_INT0_LINE);
@@ -192,7 +192,7 @@ SCN2674_DRAW_CHARACTER_MEMBER(pcd_video_device::display_pixels)
 		int bgnd = 0, fgnd = 1;
 		data = m_charram[m_vram[address] * 16 + linecount];
 		attr = m_vram[address + 1];
-		if(cursor && blink)
+		if(cursor)
 			data = 0xff;
 		if(ul && (attr & 0x20))
 			data = 0xff;
@@ -220,16 +220,16 @@ SCN2672_DRAW_CHARACTER_MEMBER(pcx_video_device::display_pixels)
 {
 	uint16_t data = m_charrom[charcode * 16 + linecount + (attrcode & 0x20 ? 4096 : 0)];
 
-	if (cursor && blink)
-		data = 0x3ff;
+	if (cursor)
+		data = 0x7ff;
 	else
 	{
 		data <<= 1;
 		data |= data << 1;
 	}
 
-	if (m_p1 & 0x20)
-		data ^= 0x3ff;
+	if (BIT(m_p1, 5))
+		data ^= 0x7ff;
 
 	for (int i = 0; i < 12; i++)
 	{
@@ -240,7 +240,7 @@ SCN2672_DRAW_CHARACTER_MEMBER(pcx_video_device::display_pixels)
 	}
 }
 
-PALETTE_INIT_MEMBER(pcdx_video_device, pcdx)
+void pcdx_video_device::pcdx_palette(palette_device &palette) const
 {
 	palette.set_pen_color(0, rgb_t::black());
 	palette.set_pen_color(1, rgb_t::white());
@@ -420,7 +420,7 @@ void pcd_video_device::map(address_map &map)
 	map(0x00, 0x0f).w(m_crtc, FUNC(scn2674_device::write)).umask16(0x00ff);
 	map(0x00, 0x0f).r(m_crtc, FUNC(scn2674_device::read)).umask16(0xff00);
 	map(0x20, 0x20).w(FUNC(pcd_video_device::vram_sw_w));
-	map(0x30, 0x33).rw("graphics", FUNC(i8741_device::upi41_master_r), FUNC(i8741_device::upi41_master_w)).umask16(0x00ff);
+	map(0x30, 0x33).rw("graphics", FUNC(i8741a_device::upi41_master_r), FUNC(i8741a_device::upi41_master_w)).umask16(0x00ff);
 }
 
 void pcx_video_device::device_start()

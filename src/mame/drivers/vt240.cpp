@@ -23,17 +23,6 @@
 #include "screen.h"
 
 
-#define VERBOSE_DBG 0       /* general debug messages */
-
-#define DBG_LOG(N,M,A) \
-	do { \
-		if(VERBOSE_DBG>=N) \
-		{ \
-			logerror("%11.6f at %s: ",machine().time().as_double(),machine().describe_context()); \
-			logerror A; \
-		} \
-	} while (0)
-
 class vt240_state : public driver_device
 {
 public:
@@ -106,8 +95,8 @@ private:
 	DECLARE_WRITE8_MEMBER(lu_w);
 	DECLARE_WRITE8_MEMBER(hbscrl_w);
 	DECLARE_WRITE8_MEMBER(lbscrl_w);
-	DECLARE_READ16_MEMBER(mem_r);
-	DECLARE_WRITE16_MEMBER(mem_w);
+	uint16_t mem_r(offs_t offset, uint16_t mem_mask);
+	void mem_w(offs_t offset, uint16_t data, uint16_t mem_mask);
 
 	void init_vt240();
 	virtual void machine_reset() override;
@@ -281,14 +270,14 @@ WRITE8_MEMBER(vt240_state::i8085_comm_w)
 READ8_MEMBER(vt240_state::duart_r)
 {
 	if(!(offset & 1))
-		return m_duart->read(space, offset >> 1);
+		return m_duart->read(offset >> 1);
 	return 0;
 }
 
 WRITE8_MEMBER(vt240_state::duart_w)
 {
 	if(offset & 1)
-		m_duart->write(space, offset >> 1, data);
+		m_duart->write(offset >> 1, data);
 }
 
 WRITE8_MEMBER(vt240_state::duartout_w)
@@ -321,23 +310,23 @@ WRITE8_MEMBER(vt240_state::mem_map_sel_w)
 	m_mem_map_sel = data & 1;
 }
 
-READ16_MEMBER(vt240_state::mem_r)
+uint16_t vt240_state::mem_r(offs_t offset, uint16_t mem_mask)
 {
 	if(m_mem_map_sel)
 	{
 		m_bank->set_bank(m_mem_map[(offset >> 11) & 0xf]);
-		return m_bank->read16(space, offset & 0x7ff, mem_mask);
+		return m_bank->read16(offset & 0x7ff, mem_mask);
 	}
 	else
 		return m_rom[offset];
 }
 
-WRITE16_MEMBER(vt240_state::mem_w)
+void vt240_state::mem_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
 	if(m_mem_map_sel)
 	{
 		m_bank->set_bank(m_mem_map[(offset >> 11) & 0xf]);
-		m_bank->write16(space, offset & 0x7ff, data, mem_mask);
+		m_bank->write16(offset & 0x7ff, data, mem_mask);
 	}
 }
 
@@ -673,12 +662,12 @@ void vt240_state::vt240(machine_config &config)
 	screen.set_raw(XTAL(16'097'280), 1024, 0, 800, 629, 0, 480);
 	screen.set_screen_update("upd7220", FUNC(upd7220_device::screen_update));
 
-	PALETTE(config, m_palette, 32);
+	PALETTE(config, m_palette).set_entries(32);
 	GFXDECODE(config, "gfxdecode", m_palette, gfx_vt240);
 
 	UPD7220(config, m_hgdc, XTAL(16'097'280) / 16); // actually /8?
 	m_hgdc->set_addrmap(0, &vt240_state::upd7220_map);
-	m_hgdc->set_display_pixels_callback(FUNC(vt240_state::hgdc_draw), this);
+	m_hgdc->set_display_pixels(FUNC(vt240_state::hgdc_draw));
 	m_hgdc->vsync_wr_callback().set_inputline(m_i8085, I8085_RST75_LINE);
 	m_hgdc->blank_wr_callback().set_inputline(m_i8085, I8085_RST55_LINE);
 	m_hgdc->set_screen("screen");

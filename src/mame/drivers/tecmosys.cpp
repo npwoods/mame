@@ -417,7 +417,7 @@ static const gfx_layout gfxlayout =
 	8,8,
 	RGN_FRAC(1,1),
 	4,
-	{ STEP8(0,1) },
+	{ STEP4(0,1) },
 	{ STEP8(0,4) },
 	{ STEP8(0,4*8) },
 	8*8*4
@@ -428,7 +428,7 @@ static const gfx_layout gfxlayout2 =
 	16,16,
 	RGN_FRAC(1,1),
 	4,
-	{ STEP8(0,1) },
+	{ STEP4(0,1) },
 	{ STEP8(0,4), STEP8(8*8*4,4) },
 	{ STEP8(0,4*8), STEP8(8*8*4*2,4*8) },
 	16*16*4
@@ -453,31 +453,31 @@ void tecmosys_state::machine_start()
 	save_item(NAME(m_device_value));
 }
 
-MACHINE_CONFIG_START(tecmosys_state::tecmosys)
-	MCFG_DEVICE_ADD("maincpu", M68000, XTAL(16'000'000))
-	MCFG_DEVICE_PROGRAM_MAP(main_map)
-	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", tecmosys_state,  irq1_line_hold)
+void tecmosys_state::tecmosys(machine_config &config)
+{
+	M68000(config, m_maincpu, XTAL(16'000'000));
+	m_maincpu->set_addrmap(AS_PROGRAM, &tecmosys_state::main_map);
+	m_maincpu->set_vblank_int("screen", FUNC(tecmosys_state::irq1_line_hold));
 
 	WATCHDOG_TIMER(config, m_watchdog).set_vblank_count(m_screen, 400); // guess
 
-	MCFG_DEVICE_ADD("audiocpu", Z80, XTAL(16'000'000)/2 )
-	MCFG_DEVICE_PROGRAM_MAP(sound_map)
-	MCFG_DEVICE_IO_MAP(io_map)
+	Z80(config, m_audiocpu, XTAL(16'000'000)/2);
+	m_audiocpu->set_addrmap(AS_PROGRAM, &tecmosys_state::sound_map);
+	m_audiocpu->set_addrmap(AS_IO, &tecmosys_state::io_map);
 
-	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_tecmosys)
+	GFXDECODE(config, m_gfxdecode, m_palette, gfx_tecmosys);
 
-	EEPROM_93C46_16BIT(config, "eeprom", eeprom_serial_streaming::ENABLE);
+	EEPROM_93C46_16BIT(config, m_eeprom, eeprom_serial_streaming::ENABLE);
 
-	MCFG_SCREEN_ADD(m_screen, RASTER)
-	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK)
-	MCFG_SCREEN_REFRESH_RATE(57.4458)
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(3000))
-	MCFG_SCREEN_SIZE(64*8, 64*8)
-	MCFG_SCREEN_VISIBLE_AREA(0*8, 40*8-1, 0*8, 30*8-1)
-	MCFG_SCREEN_UPDATE_DRIVER(tecmosys_state, screen_update)
+	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
+	m_screen->set_video_attributes(VIDEO_UPDATE_AFTER_VBLANK);
+	m_screen->set_refresh_hz(57.4458);
+	m_screen->set_vblank_time(ATTOSECONDS_IN_USEC(3000));
+	m_screen->set_size(64*8, 64*8);
+	m_screen->set_visarea(0*8, 40*8-1, 0*8, 30*8-1);
+	m_screen->set_screen_update(FUNC(tecmosys_state::screen_update));
 
-	MCFG_PALETTE_ADD("palette", 0x4000+0x800)
-	MCFG_PALETTE_FORMAT(xGGGGGRRRRRBBBBB)
+	PALETTE(config, m_palette).set_format(palette_device::xGRB_555, 0x4000+0x800);
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();
@@ -486,26 +486,25 @@ MACHINE_CONFIG_START(tecmosys_state::tecmosys)
 	GENERIC_LATCH_8(config, m_soundlatch);
 	m_soundlatch->data_pending_callback().set("soundnmi", FUNC(input_merger_device::in_w<0>));
 
-	MCFG_INPUT_MERGER_ALL_HIGH("soundnmi")
-	MCFG_INPUT_MERGER_OUTPUT_HANDLER(INPUTLINE("audiocpu", INPUT_LINE_NMI))
+	INPUT_MERGER_ALL_HIGH(config, m_soundnmi);
+	m_soundnmi->output_handler().set_inputline("audiocpu", INPUT_LINE_NMI);
 
-	MCFG_DEVICE_ADD("ymf", YMF262, XTAL(14'318'181))
-	MCFG_YMF262_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(0, "lspeaker", 1.00)
-	MCFG_SOUND_ROUTE(1, "rspeaker", 1.00)
-	MCFG_SOUND_ROUTE(2, "lspeaker", 1.00)
-	MCFG_SOUND_ROUTE(3, "rspeaker", 1.00)
+	ymf262_device &ymf(YMF262(config, "ymf", XTAL(14'318'181)));
+	ymf.irq_handler().set_inputline("audiocpu", 0);
+	ymf.add_route(0, "lspeaker", 1.00);
+	ymf.add_route(1, "rspeaker", 1.00);
+	ymf.add_route(2, "lspeaker", 1.00);
+	ymf.add_route(3, "rspeaker", 1.00);
 
-	MCFG_DEVICE_ADD("oki", OKIM6295, XTAL(16'000'000)/8, okim6295_device::PIN7_HIGH)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 0.50)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 0.50)
-	MCFG_DEVICE_ADDRESS_MAP(0, oki_map)
+	okim6295_device &oki(OKIM6295(config, "oki", XTAL(16'000'000)/8, okim6295_device::PIN7_HIGH));
+	oki.add_route(ALL_OUTPUTS, "lspeaker", 0.50);
+	oki.add_route(ALL_OUTPUTS, "rspeaker", 0.50);
+	oki.set_addrmap(0, &tecmosys_state::oki_map);
 
-	MCFG_DEVICE_ADD("ymz", YMZ280B, XTAL(16'934'400))
-	MCFG_SOUND_ROUTE(0, "lspeaker", 0.30)
-	MCFG_SOUND_ROUTE(1, "rspeaker", 0.30)
-MACHINE_CONFIG_END
-
+	ymz280b_device &ymz(YMZ280B(config, "ymz", XTAL(16'934'400)));
+	ymz.add_route(0, "lspeaker", 0.30);
+	ymz.add_route(1, "rspeaker", 0.30);
+}
 
 ROM_START( deroon )
 	ROM_REGION( 0x100000, "maincpu", 0 ) // Main Program
@@ -548,10 +547,20 @@ ROM_START( deroon )
 	ROM_LOAD( "t501.uad1", 0x000000, 0x080000, CRC(2fbcfe27) SHA1(f25c830322423f0959a36955edb563a6150f2142) )
 ROM_END
 
+/*
+About the Deroon DeroDero listed below:
+
+ This set contains less Japanese text and English translations for some game aspects such as game menus.
+ Coining up displays "TECMO STACKERS" but this set doesn't seem to include a "How to Play" demo like the parent set
+
+ PCB contained genuine Tecmo dvelopment labels, it's unknown which specific region this set was intended for.
+ Still missing the full English version titled Temco Stackers if it exists.
+
+*/
 ROM_START( deroon2 )
 	ROM_REGION( 0x100000, "maincpu", 0 ) // Main Program
-	ROM_LOAD16_BYTE( "stk_t001.upau1", 0x00000, 0x80000, CRC(90c794df) SHA1(b6edd62bedf609551f4e1c19ada20bd1373deca2) )
-	ROM_LOAD16_BYTE( "stk_t002.upal1", 0x00001, 0x80000, CRC(cca9f87c) SHA1(0637b0b979f4c6c6b16cf2a21dd193b7d7ec311f) )
+	ROM_LOAD16_BYTE( "stk_t01.upau1", 0x00000, 0x80000, CRC(90c794df) SHA1(b6edd62bedf609551f4e1c19ada20bd1373deca2) )
+	ROM_LOAD16_BYTE( "stk_t02.upal1", 0x00001, 0x80000, CRC(cca9f87c) SHA1(0637b0b979f4c6c6b16cf2a21dd193b7d7ec311f) )
 
 	ROM_REGION( 0x040000, "audiocpu", 0 ) // Sound Program
 	ROM_LOAD( "t003.uz1", 0x000000, 0x040000, CRC(8bdfafa0) SHA1(c0cf3eb7a65d967958fe2aace171859b0faf7753) )
@@ -714,6 +723,6 @@ void tecmosys_state::init_tkdensha()
 }
 
 GAME( 1995, deroon,           0, tecmosys, tecmosys, tecmosys_state, init_deroon,     ROT0, "Tecmo", "Deroon DeroDero (earlier)",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )
-GAME( 1996, deroon2,     deroon, tecmosys, tecmosys, tecmosys_state, init_deroon,     ROT0, "Tecmo", "Deroon DeroDero (newer)",                 MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE ) // some parts translated in English, attract without 'how to play'
+GAME( 1996, deroon2,     deroon, tecmosys, tecmosys, tecmosys_state, init_deroon,     ROT0, "Tecmo", "Deroon DeroDero / Tecmo Stackers",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE ) // some parts translated in English, attract without 'how to play'
 GAME( 1996, tkdensho,         0, tecmosys, tecmosys, tecmosys_state, init_tkdensho,   ROT0, "Tecmo", "Toukidenshou - Angel Eyes (VER. 960614)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )
 GAME( 1996, tkdenshoa, tkdensho, tecmosys, tecmosys, tecmosys_state, init_tkdensha,   ROT0, "Tecmo", "Toukidenshou - Angel Eyes (VER. 960427)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL | MACHINE_SUPPORTS_SAVE )

@@ -25,7 +25,7 @@ public:
 
 private:
 	required_device<cpu_device> m_maincpu;
-	required_device<h46505_device> m_crtc;
+	required_device<mc6845_device> m_crtc;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
 
@@ -49,9 +49,9 @@ private:
 
 	virtual void machine_start() override;
 	virtual void video_start() override;
-	DECLARE_PALETTE_INIT(speedatk);
+	void speedatk_palette(palette_device &palette) const;
 
-	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
+	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
 	uint8_t iox_key_matrix_calc(uint8_t p_side);
 

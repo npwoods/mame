@@ -113,7 +113,7 @@ READ8_MEMBER(irobot_state::quad_pokeyn_r)
 	int control = (offset & 0x20) >> 2;
 	int pokey_reg = (offset % 8) | control;
 
-	return m_pokey[pokey_num]->read(space, pokey_reg);
+	return m_pokey[pokey_num]->read(pokey_reg);
 }
 
 WRITE8_MEMBER(irobot_state::quad_pokeyn_w)
@@ -122,7 +122,7 @@ WRITE8_MEMBER(irobot_state::quad_pokeyn_w)
 	int control = (offset & 0x20) >> 2;
 	int pokey_reg = (offset % 8) | control;
 
-	m_pokey[pokey_num]->write(space, pokey_reg, data);
+	m_pokey[pokey_num]->write(pokey_reg, data);
 }
 
 
@@ -304,8 +304,7 @@ void irobot_state::irobot(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_irobot);
-	PALETTE(config, m_palette, 64 + 32);    /* 64 for polygons, 32 for text */
-	m_palette->set_init(FUNC(irobot_state::palette_init_irobot));
+	PALETTE(config, m_palette, FUNC(irobot_state::irobot_palette), 64 + 32); // 64 for polygons, 32 for text
 
 	TIMER(config, "irvg_timer").configure_generic(FUNC(irobot_state::irobot_irvg_done_callback));
 	TIMER(config, "irmb_timer").configure_generic(FUNC(irobot_state::irobot_irmb_done_callback));

@@ -34,7 +34,7 @@
 
 WRITE_LINE_MEMBER(micro3d_state::duart_irq_handler)
 {
-	m_maincpu->set_input_line_and_vector(3, state, m_duart->get_irq_vector());
+	m_maincpu->set_input_line(3, state);
 }
 
 WRITE_LINE_MEMBER(micro3d_state::duart_txb)
@@ -90,7 +90,7 @@ READ8_MEMBER( micro3d_state::vgb_uart_r )
 	if (offset == 1 || offset == 2)
 		offset ^= 3;
 
-	return m_vgb_uart->read(space, offset);
+	return m_vgb_uart->read(offset);
 }
 
 WRITE8_MEMBER( micro3d_state::vgb_uart_w )
@@ -99,7 +99,7 @@ WRITE8_MEMBER( micro3d_state::vgb_uart_w )
 	if (offset == 1 || offset == 2)
 		offset ^= 3;
 
-	m_vgb_uart->write(space, offset, data);
+	m_vgb_uart->write(offset, data);
 }
 
 

@@ -48,13 +48,14 @@ public:
 
 protected:
 	DECLARE_WRITE_LINE_MEMBER(flipscreen_w);
-	DECLARE_PALETTE_INIT(ladybug);
+	void ladybug_palette(palette_device &palette) const;
 	uint32_t screen_update_ladybug(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	void ladybug_map(address_map &map);
 
-private:
 	required_device<cpu_device> m_maincpu;
+
+private:
 	required_device<ladybug_video_device> m_video;
 
 	required_ioport m_port_dsw0;
@@ -102,7 +103,7 @@ protected:
 	DECLARE_READ8_MEMBER(sraider_8005_r);
 	DECLARE_WRITE8_MEMBER(sraider_misc_w);
 	DECLARE_WRITE8_MEMBER(sraider_io_w);
-	DECLARE_PALETTE_INIT(sraider);
+	void sraider_palette(palette_device &palette) const;
 	DECLARE_WRITE_LINE_MEMBER(screen_vblank_sraider);
 	TILE_GET_INFO_MEMBER(get_grid_tile_info);
 

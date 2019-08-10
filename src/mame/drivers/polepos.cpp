@@ -311,7 +311,7 @@ template<bool sub1> WRITE16_MEMBER(polepos_state::z8002_nvi_enable_w)
 
 	m_sub_irq_mask = data;
 	if (!data)
-		(sub1 ? m_subcpu : m_subcpu2)->set_input_line(0, CLEAR_LINE);
+		(sub1 ? m_subcpu : m_subcpu2)->set_input_line(z8002_device::NVI_LINE, CLEAR_LINE);
 }
 
 CUSTOM_INPUT_MEMBER(polepos_state::auto_start_r)
@@ -388,8 +388,8 @@ TIMER_DEVICE_CALLBACK_MEMBER(polepos_state::scanline)
 
 	if (scanline == 240 && m_sub_irq_mask)  // VBLANK
 	{
-		m_subcpu->set_input_line(0, ASSERT_LINE);
-		m_subcpu2->set_input_line(0, ASSERT_LINE);
+		m_subcpu->set_input_line(z8002_device::NVI_LINE, ASSERT_LINE);
+		m_subcpu2->set_input_line(z8002_device::NVI_LINE, ASSERT_LINE);
 	}
 }
 
@@ -403,13 +403,11 @@ void polepos_state::machine_start()
 	save_item(NAME(m_last_unsigned));
 	save_item(NAME(m_adc_input));
 	save_item(NAME(m_auto_start_mask));
+	save_item(NAME(m_sub_irq_mask));
 }
 
 void polepos_state::machine_reset()
 {
-	/* set the interrupt vectors (this shouldn't be needed) */
-	m_subcpu->set_input_line_vector(0, Z8000_NVI);
-	m_subcpu2->set_input_line_vector(0, Z8000_NVI);
 }
 
 
@@ -923,9 +921,7 @@ void polepos_state::polepos(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_polepos);
-	PALETTE(config, m_palette, 0x0f00);
-	m_palette->set_indirect_entries(128);
-	m_palette->set_init(FUNC(polepos_state::palette_init_polepos));
+	PALETTE(config, m_palette, FUNC(polepos_state::polepos_palette), 0x0f00, 128);
 
 	config.set_default_layout(layout_polepos);
 
@@ -953,7 +949,7 @@ void polepos_state::polepos(machine_config &config)
 WRITE8_MEMBER(polepos_state::bootleg_soundlatch_w)
 {
 	if (m_soundlatch.found()) // topracern also uses this; no idea what it should do there
-		m_soundlatch->write(space, 0, data | 0xfc);
+		m_soundlatch->write(data | 0xfc);
 }
 
 void polepos_state::topracern_io(address_map &map)
@@ -1031,9 +1027,7 @@ void polepos_state::topracern(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_polepos);
-	PALETTE(config, m_palette, 0x0f00);
-	m_palette->set_indirect_entries(128);
-	m_palette->set_init(FUNC(polepos_state::palette_init_polepos));
+	PALETTE(config, m_palette, FUNC(polepos_state::polepos_palette), 0x0f00, 128);
 
 	config.set_default_layout(layout_topracer);
 
@@ -1057,7 +1051,6 @@ void polepos_state::topracern(machine_config &config)
 	dac.add_route(ALL_OUTPUTS, "rspeaker", 0.12);
 
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }
@@ -2179,9 +2172,9 @@ ROM_START( polepos2bi )
 	ROM_LOAD( "20.bin",       0x0000, 0x2000, CRC(1771fe1b) SHA1(da74ca85dfd4f5ad5a9dbfe6f7668d93105e3575) )
 
 	ROM_REGION( 0x2000, "pals", 0 )
-	ROM_LOAD( "pal12l6-a.bin.bad.dump",     0x0000, 0x34, BAD_DUMP CRC(56c2e02f) SHA1(33545f83d63b476d9164472b439aa7002506b33d) )
-	ROM_LOAD( "pal12l6-b.bin.bad.dump",     0x0000, 0x34, BAD_DUMP CRC(56c2e02f) SHA1(33545f83d63b476d9164472b439aa7002506b33d) )
-	ROM_LOAD( "pal16l8.bin.bad.dump",       0x0000,0x104, BAD_DUMP CRC(e9cd78fb) SHA1(557d3e7ef3b25c1338b24722cac91bca788c02b8) )
+	ROM_LOAD( "pal12l6-a.bin", 0x0000, 0x34, NO_DUMP )
+	ROM_LOAD( "pal12l6-b.bin", 0x0000, 0x34, NO_DUMP )
+	ROM_LOAD( "pal16l8.bin",   0x0000,0x104, NO_DUMP )
 ROM_END
 
 
@@ -2458,18 +2451,18 @@ void polepos_state::init_polepos2()
  *********************************************************************/
 
 /*    YEAR  NAME        PARENT    MACHINE     INPUT      STATE          INIT           ROT   COMPANY                    FULLNAME                                                FLAGS */
-GAME( 1982, polepos,    0,        polepos,    poleposa,  polepos_state, empty_init,    ROT0, "Namco",                   "Pole Position (World)",                                0 )
-GAME( 1982, poleposj,   polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "Namco",                   "Pole Position (Japan)",                                0 )
-GAME( 1982, poleposa1,  polepos,  polepos,    poleposa,  polepos_state, empty_init,    ROT0, "Namco (Atari license)",   "Pole Position (Atari version 1)",                      0 )
-GAME( 1982, poleposa2,  polepos,  polepos,    poleposa,  polepos_state, empty_init,    ROT0, "Namco (Atari license)",   "Pole Position (Atari version 2)",                      0 )
-GAME( 1984, topracer,   polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "bootleg",                 "Top Racer (with MB8841 + MB8842, 1984)",               0 ) // the NAMCO customs have been cloned on these bootlegs
-GAME( 1983, topracera,  polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "bootleg",                 "Top Racer (with MB8841 + MB8842, 1983)",               0 ) // the only difference between them is the year displayed on the title screen
-GAME( 1983, ppspeed,    polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "bootleg",                 "Speed Up (Spanish bootleg of Pole Position)",          0 ) // very close to topracer / topracera
-GAME( 1982, topracern,  polepos,  topracern,  topracern, polepos_state, empty_init,    ROT0, "bootleg",                 "Top Racer (no MB8841 + MB8842)",                       MACHINE_IMPERFECT_SOUND ) // explosion sound generator missing
+GAME( 1982, polepos,    0,        polepos,    poleposa,  polepos_state, empty_init,    ROT0, "Namco",                   "Pole Position (World)",                                MACHINE_SUPPORTS_SAVE )
+GAME( 1982, poleposj,   polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "Namco",                   "Pole Position (Japan)",                                MACHINE_SUPPORTS_SAVE )
+GAME( 1982, poleposa1,  polepos,  polepos,    poleposa,  polepos_state, empty_init,    ROT0, "Namco (Atari license)",   "Pole Position (Atari version 1)",                      MACHINE_SUPPORTS_SAVE )
+GAME( 1982, poleposa2,  polepos,  polepos,    poleposa,  polepos_state, empty_init,    ROT0, "Namco (Atari license)",   "Pole Position (Atari version 2)",                      MACHINE_SUPPORTS_SAVE )
+GAME( 1984, topracer,   polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "bootleg",                 "Top Racer (with MB8841 + MB8842, 1984)",               MACHINE_SUPPORTS_SAVE ) // the NAMCO customs have been cloned on these bootlegs
+GAME( 1983, topracera,  polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "bootleg",                 "Top Racer (with MB8841 + MB8842, 1983)",               MACHINE_SUPPORTS_SAVE ) // the only difference between them is the year displayed on the title screen
+GAME( 1983, ppspeed,    polepos,  polepos,    polepos,   polepos_state, empty_init,    ROT0, "bootleg",                 "Speed Up (Spanish bootleg of Pole Position)",          MACHINE_SUPPORTS_SAVE ) // very close to topracer / topracera
+GAME( 1982, topracern,  polepos,  topracern,  topracern, polepos_state, empty_init,    ROT0, "bootleg",                 "Top Racer (no MB8841 + MB8842)",                       MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND ) // explosion sound generator missing
 
-GAME( 1983, polepos2,   0,        polepos,    polepos2j, polepos_state, init_polepos2, ROT0, "Namco",                   "Pole Position II (Japan)",                             0 )
-GAME( 1983, polepos2a,  polepos2, polepos,    polepos2,  polepos_state, init_polepos2, ROT0, "Namco (Atari license)",   "Pole Position II (Atari)",                             0 )
-GAME( 1983, polepos2b,  polepos2, polepos,    polepos2,  polepos_state, empty_init,    ROT0, "bootleg",                 "Pole Position II (bootleg)",                           0 )
-GAME( 1984, polepos2bi, polepos2, polepos2bi, polepos2bi,polepos_state, empty_init,    ROT0, "bootleg",                 "Gran Premio F1 (Italian bootleg of Pole Position II)", MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND )
-GAME( 1984, polepos2bs, polepos2, polepos2bi, polepos2bi,polepos_state, empty_init,    ROT0, "bootleg (BCN Internacional S.A.)", "Gran Premio F1 (Spanish bootleg of Pole Position II)", MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND )
-GAME( 1984, grally,     polepos2, polepos2bi, polepos2bi,polepos_state, empty_init,    ROT0, "bootleg (Niemer)",        "Gran Rally (Spanish bootleg of Pole Position II)", MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND )
+GAME( 1983, polepos2,   0,        polepos,    polepos2j, polepos_state, init_polepos2, ROT0, "Namco",                   "Pole Position II (Japan)",                             MACHINE_SUPPORTS_SAVE )
+GAME( 1983, polepos2a,  polepos2, polepos,    polepos2,  polepos_state, init_polepos2, ROT0, "Namco (Atari license)",   "Pole Position II (Atari)",                             MACHINE_SUPPORTS_SAVE )
+GAME( 1983, polepos2b,  polepos2, polepos,    polepos2,  polepos_state, empty_init,    ROT0, "bootleg",                 "Pole Position II (bootleg)",                           MACHINE_SUPPORTS_SAVE )
+GAME( 1984, polepos2bi, polepos2, polepos2bi, polepos2bi,polepos_state, empty_init,    ROT0, "bootleg",                 "Gran Premio F1 (Italian bootleg of Pole Position II)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND )
+GAME( 1984, polepos2bs, polepos2, polepos2bi, polepos2bi,polepos_state, empty_init,    ROT0, "bootleg (BCN Internacional S.A.)", "Gran Premio F1 (Spanish bootleg of Pole Position II)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND )
+GAME( 1984, grally,     polepos2, polepos2bi, polepos2bi,polepos_state, empty_init,    ROT0, "bootleg (Niemer)",        "Gran Rally (Spanish bootleg of Pole Position II)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND )

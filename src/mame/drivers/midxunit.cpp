@@ -122,7 +122,6 @@ void midxunit_state::main_map(address_map &map)
 	map(0x80c00000, 0x80c000ff).rw(FUNC(midxunit_state::midxunit_uart_r), FUNC(midxunit_state::midxunit_uart_w));
 	map(0xa0440000, 0xa047ffff).rw(FUNC(midxunit_state::midxunit_cmos_r), FUNC(midxunit_state::midxunit_cmos_w)).share("nvram");
 	map(0xa0800000, 0xa08fffff).rw(m_video, FUNC(midxunit_video_device::midxunit_paletteram_r), FUNC(midxunit_video_device::midxunit_paletteram_w)).share("palette");
-	map(0xc0000000, 0xc00003ff).rw("maincpu", FUNC(tms34020_device::io_register_r), FUNC(tms34020_device::io_register_w));
 	map(0xc0800000, 0xc08000ff).mirror(0x00400000).rw(m_video, FUNC(midxunit_video_device::midtunit_dma_r), FUNC(midxunit_video_device::midtunit_dma_w));
 	map(0xf8000000, 0xfeffffff).r(m_video, FUNC(midxunit_video_device::midwunit_gfxrom_r));
 	map(0xff000000, 0xffffffff).rom().region("maincpu", 0);
@@ -259,7 +258,7 @@ void midxunit_state::midxunit(machine_config &config)
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
-	PALETTE(config, m_palette, 32768).set_format(PALETTE_FORMAT_xRRRRRGGGGGBBBBB);
+	PALETTE(config, "palette").set_format(palette_device::xRGB_555, 32768);
 
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
 	screen.set_raw(PIXEL_CLOCK, 506, 101, 501, 289, 20, 274);
@@ -270,7 +269,7 @@ void midxunit_state::midxunit(machine_config &config)
 	/* serial prefixes 419, 420 */
 	m_midway_serial_pic->set_upper(419);
 
-	adc0848_device &adc(ADC0848(config, "adc", 0));
+	adc0848_device &adc(ADC0848(config, "adc"));
 	adc.intr_callback().set(FUNC(midxunit_state::adc_int_w)); // ADC INT passed through PLSI1032
 	adc.ch1_callback().set_ioport("AN0");
 	adc.ch2_callback().set_ioport("AN1");

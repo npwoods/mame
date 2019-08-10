@@ -75,6 +75,7 @@ public:
 	DECLARE_WRITE8_MEMBER(dac_w);
 	DECLARE_READ8_MEMBER(cosmica_pixel_clock_r);
 	DECLARE_READ8_MEMBER(cosmicg_port_0_r);
+	DECLARE_READ8_MEMBER(cosmicg_port_1_r);
 	DECLARE_READ8_MEMBER(magspot_coinage_dip_r);
 	DECLARE_READ8_MEMBER(nomnlnd_port_0_1_r);
 	DECLARE_WRITE8_MEMBER(flip_screen_w);
@@ -93,11 +94,11 @@ public:
 	DECLARE_MACHINE_START(cosmic);
 	DECLARE_MACHINE_RESET(cosmic);
 	DECLARE_MACHINE_RESET(cosmicg);
-	DECLARE_PALETTE_INIT(cosmicg);
-	DECLARE_PALETTE_INIT(panic);
-	DECLARE_PALETTE_INIT(cosmica);
-	DECLARE_PALETTE_INIT(magspot);
-	DECLARE_PALETTE_INIT(nomnlnd);
+	void panic_palette(palette_device &palette);
+	void cosmica_palette(palette_device &palette);
+	void cosmicg_palette(palette_device &palette);
+	void magspot_palette(palette_device &palette);
+	void nomnlnd_palette(palette_device &palette);
 	uint32_t screen_update_cosmicg(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_panic(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_cosmica(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);

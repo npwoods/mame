@@ -364,15 +364,17 @@ static INPUT_PORTS_START( aa310 )
 	PORT_START("MOUSEY")
 	PORT_BIT( 0xffff, 0x00, IPT_MOUSE_Y ) PORT_SENSITIVITY(100) PORT_KEYDELTA(0)                 PORT_CHANGED_MEMBER(DEVICE_SELF, aa310_state, send_mouse_input, 0) PORT_RESET PORT_REVERSE
 
+	// standard Atari/Commodore DB9
+	// TODO: player 2
 	PORT_START("via1a") /* VIA #1 PORT A */
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_START) PORT_PLAYER(1)
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_START) PORT_PLAYER(2)
-	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON1)
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON2)
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT) PORT_4WAY
-	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_JOYSTICK_UP) PORT_4WAY
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) PORT_4WAY
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN) PORT_4WAY
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_START ) PORT_PLAYER(1)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_START ) PORT_PLAYER(2)
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON1 )
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON2 )
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT )
+	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_JOYSTICK_UP )
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT )
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN )
 INPUT_PORTS_END
 
 FLOPPY_FORMATS_MEMBER( aa310_state::floppy_formats )
@@ -423,7 +425,7 @@ void aa310_state::aa310(machine_config &config)
 	m_screen->set_raw(16_MHz_XTAL, 1024, 0, 735, 624/2, 0, 292); // RiscOS 3 default screen settings
 	m_screen->set_screen_update(FUNC(archimedes_state::screen_update));
 
-	PALETTE(config, m_palette, 32768);
+	PALETTE(config, m_palette).set_entries(32768);
 
 	RAM(config, m_ram).set_default_size("1M");
 
@@ -444,7 +446,6 @@ void aa310_state::aa310(machine_config &config)
 		DAC_16BIT_R2R_TWOS_COMPLEMENT(config, m_dac[i], 0).add_route(0, "speaker", 0.1); // unknown DAC
 	}
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac0", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "dac0", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "dac1", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "dac1", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "dac2", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "dac2", -1.0, DAC_VREF_NEG_INPUT);

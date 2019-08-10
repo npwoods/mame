@@ -87,7 +87,7 @@ WRITE_LINE_MEMBER(galaxia_state::vblank_irq)
 {
 	if (state)
 	{
-		m_maincpu->set_input_line_and_vector(0, HOLD_LINE, 0x03);
+		m_maincpu->set_input_line_and_vector(0, HOLD_LINE, 0x03); // S2650
 		cvs_scroll_stars();
 	}
 }
@@ -322,7 +322,7 @@ void galaxia_state::galaxia(machine_config &config)
 	m_screen->screen_vblank().set(FUNC(galaxia_state::vblank_irq));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_galaxia);
-	PALETTE(config, m_palette, 0x18+2).set_init(FUNC(galaxia_state::palette_init_galaxia));
+	PALETTE(config, m_palette, FUNC(galaxia_state::galaxia_palette), 0x18+2);
 
 	MCFG_VIDEO_START_OVERRIDE(galaxia_state,galaxia)
 
@@ -364,7 +364,7 @@ void galaxia_state::astrowar(machine_config &config)
 	m_screen->screen_vblank().set(FUNC(galaxia_state::vblank_irq));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_astrowar);
-	PALETTE(config, m_palette, 0x18+2).set_init(FUNC(galaxia_state::palette_init_astrowar));
+	PALETTE(config, m_palette, FUNC(galaxia_state::astrowar_palette), 0x18+2);
 
 	MCFG_VIDEO_START_OVERRIDE(galaxia_state,astrowar)
 

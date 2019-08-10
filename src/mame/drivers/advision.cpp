@@ -31,7 +31,7 @@
 READ8_MEMBER( advision_state::rom_r )
 {
 	offset += 0x400;
-	return m_cart->read_rom(space, offset & 0xfff);
+	return m_cart->read_rom(offset & 0xfff);
 }
 
 void advision_state::program_map(address_map &map)
@@ -87,13 +87,12 @@ void advision_state::advision(machine_config &config)
 	screen.set_visarea(84, 235, 60, 142);
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 8).set_init(FUNC(advision_state::palette_init_advision));
+	PALETTE(config, m_palette, FUNC(advision_state::advision_palette), 8);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_2BIT_BINARY_WEIGHTED(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.25); // unknown DAC
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 

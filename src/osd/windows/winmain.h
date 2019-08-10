@@ -26,6 +26,7 @@
 
 // video options
 #define WINOPTION_MENU                  "menu"
+#define WINOPTION_ATTACH_WINDOW         "attach_window"
 
 // core post-processing options
 #define WINOPTION_HLSLPATH                  "hlslpath"
@@ -139,6 +140,7 @@ public:
 
 	// video options
 	bool menu() const { return bool_value(WINOPTION_MENU); }
+	const char *attach_window() const { return value(WINOPTION_ATTACH_WINDOW); }
 
 	// core post-processing options
 	const char *screen_post_fx_dir() const { return value(WINOPTION_HLSLPATH); }
@@ -316,7 +318,7 @@ protected:
 
 private:
 	virtual void osd_exit() override;
-	void output_oslog(const char *buffer);
+	static void output_oslog(const char *buffer);
 
 	windows_options &   m_options;
 

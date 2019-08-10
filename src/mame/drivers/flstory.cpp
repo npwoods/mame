@@ -754,8 +754,7 @@ void flstory_state::common(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_flstory);
-	PALETTE(config, m_palette, 512);
-	m_palette->set_format(PALETTE_FORMAT_xxxxBBBBGGGGRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_444, 512);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -789,7 +788,6 @@ void flstory_state::common(machine_config &config)
 
 	DAC_8BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.1); // unknown DAC
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }

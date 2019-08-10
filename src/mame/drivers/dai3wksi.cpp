@@ -5,7 +5,7 @@
 -Galaxy Force
 -Run Away
 --------------------------
-Dai San Wakusei Meteor
+Dai 3 Wakusei
 (c)1979 Sun Electronics
 
 SIV-01-B
@@ -54,8 +54,8 @@ Driver Notes:
 class dai3wksi_state : public driver_device
 {
 public:
-	dai3wksi_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	dai3wksi_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_samples(*this, "samples"),
 		m_ic77(*this, "ic77"),
@@ -65,7 +65,8 @@ public:
 		m_ic81(*this, "ic81"),
 		m_palette(*this, "palette"),
 		m_dai3wksi_videoram(*this, "videoram"),
-		m_in2(*this, "IN2") { }
+		m_in2(*this, "IN2")
+	{ }
 
 	void dai3wksi(machine_config &config);
 
@@ -420,7 +421,7 @@ void dai3wksi_state::dai3wksi(machine_config &config)
 	screen.set_refresh_hz(60);
 	screen.set_screen_update(FUNC(dai3wksi_state::screen_update_dai3wksi));
 
-	PALETTE(config, m_palette, 8).set_init("palette", FUNC(palette_device::palette_init_3bit_brg));
+	PALETTE(config, m_palette, palette_device::BRG_3BIT);
 
 	SPEAKER(config, "mono").front_center();
 
@@ -532,7 +533,7 @@ void dai3wksi_state::dai3wksi(machine_config &config)
 	m_ic81->set_enable(1);
 	m_ic81->add_route(ALL_OUTPUTS, "mono", 0.4);
 #endif
-MACHINE_CONFIG_END
+}
 
 
 /*************************************
@@ -556,4 +557,4 @@ ROM_END
  *
  *************************************/
 
-GAME( 1979, dai3wksi, 0, dai3wksi, dai3wksi, dai3wksi_state, empty_init, ROT270, "Sun Electronics", "Dai San Wakusei Meteor (Japan)", MACHINE_WRONG_COLORS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1979, dai3wksi, 0, dai3wksi, dai3wksi, dai3wksi_state, empty_init, ROT270, "Sun Electronics", "Dai 3 Wakusei (Japan)", MACHINE_WRONG_COLORS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )

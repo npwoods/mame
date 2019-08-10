@@ -663,7 +663,7 @@ READ16_MEMBER(atarisy2_state::sound_r)
 	update_interrupts();
 
 	/* handle it normally otherwise */
-	return m_soundcomm->main_response_r(space,offset) | 0xff00;
+	return m_soundcomm->main_response_r() | 0xff00;
 }
 
 
@@ -674,7 +674,7 @@ WRITE8_MEMBER(atarisy2_state::sound_6502_w)
 	update_interrupts();
 
 	/* handle it normally otherwise */
-	m_soundcomm->sound_response_w(space, offset, data);
+	m_soundcomm->sound_response_w(data);
 }
 
 
@@ -685,7 +685,7 @@ READ8_MEMBER(atarisy2_state::sound_6502_r)
 	update_interrupts();
 
 	/* handle it normally otherwise */
-	return m_soundcomm->sound_command_r(space, offset);
+	return m_soundcomm->sound_command_r();
 }
 
 
@@ -1212,7 +1212,7 @@ void atarisy2_state::atarisy2(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, "gfxdecode", "palette", gfx_atarisy2);
-	PALETTE(config, "palette", 256).set_format(raw_to_rgb_converter(2, &atarisy2_state::RRRRGGGGBBBBIIII_decoder));
+	PALETTE(config, "palette").set_format(2, &atarisy2_state::RRRRGGGGBBBBIIII, 256);
 
 	TILEMAP(config, m_playfield_tilemap, "gfxdecode", 2, 8,8, TILEMAP_SCAN_ROWS, 128,64).set_info_callback(FUNC(atarisy2_state::get_playfield_tile_info));
 	TILEMAP(config, m_alpha_tilemap, "gfxdecode", 2, 8,8, TILEMAP_SCAN_ROWS, 64,48, 0).set_info_callback(FUNC(atarisy2_state::get_alpha_tile_info));

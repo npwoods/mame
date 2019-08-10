@@ -1651,7 +1651,7 @@ void bosco_state::bosco(machine_config &config)
 
 	WATCHDOG_TIMER(config, "watchdog").set_vblank_count(m_screen, 8);
 
-	config.m_minimum_quantum = attotime::from_hz(6000);  /* 100 CPU slices per frame - an high value to ensure proper synchronization of the CPUs */
+	config.m_minimum_quantum = attotime::from_hz(6000);  /* 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs */
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -1659,12 +1659,10 @@ void bosco_state::bosco(machine_config &config)
 	m_screen->set_screen_update(FUNC(bosco_state::screen_update_bosco));
 	m_screen->screen_vblank().set(FUNC(bosco_state::screen_vblank_bosco));
 	m_screen->screen_vblank().append(FUNC(galaga_state::vblank_irq));
-	m_screen->set_palette("palette");
+	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_bosco);
-	PALETTE(config, m_palette, 64*4+64*4+4+64);
-	m_palette->set_indirect_entries(32+64);
-	m_palette->set_init(FUNC(bosco_state::palette_init_bosco));
+	PALETTE(config, m_palette, FUNC(bosco_state::bosco_palette), 64*4 + 64*4 + 4 + 64, 32+64);
 
 	MCFG_VIDEO_START_OVERRIDE(bosco_state,bosco)
 
@@ -1723,7 +1721,7 @@ void galaga_state::galaga(machine_config &config)
 
 	WATCHDOG_TIMER(config, "watchdog").set_vblank_count(m_screen, 8);
 
-	config.m_minimum_quantum = attotime::from_hz(6000);  /* 100 CPU slices per frame - an high value to ensure proper synchronization of the CPUs */
+	config.m_minimum_quantum = attotime::from_hz(6000);  /* 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs */
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -1734,9 +1732,7 @@ void galaga_state::galaga(machine_config &config)
 	m_screen->set_palette("palette");
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_galaga);
-	PALETTE(config, m_palette, 64*4+64*4+64);
-	m_palette->set_indirect_entries(32+64);
-	m_palette->set_init(FUNC(galaga_state::palette_init_galaga));
+	PALETTE(config, m_palette, FUNC(galaga_state::galaga_palette), 64*4 + 64*4 + 4 + 64, 32+64);
 
 	MCFG_VIDEO_START_OVERRIDE(galaga_state,galaga)
 
@@ -1827,7 +1823,7 @@ void xevious_state::xevious(machine_config &config)
 
 	WATCHDOG_TIMER(config, "watchdog").set_vblank_count(m_screen, 8);
 
-	config.m_minimum_quantum = attotime::from_hz(60000); /* 1000 CPU slices per frame - an high value to ensure proper synchronization of the CPUs */
+	config.m_minimum_quantum = attotime::from_hz(60000); /* 1000 CPU slices per frame - a high value to ensure proper synchronization of the CPUs */
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -1837,9 +1833,7 @@ void xevious_state::xevious(machine_config &config)
 	m_screen->screen_vblank().set(FUNC(galaga_state::vblank_irq));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_xevious);
-	PALETTE(config, m_palette, 128*4+64*8+64*2);
-	m_palette->set_indirect_entries(128+1);
-	m_palette->set_init(FUNC(xevious_state::palette_init_xevious));
+	PALETTE(config, m_palette, FUNC(xevious_state::xevious_palette), 128*4 + 64*8 + 64*2, 128+1);
 
 	MCFG_VIDEO_START_OVERRIDE(xevious_state,xevious)
 
@@ -1937,7 +1931,7 @@ void digdug_state::digdug(machine_config &config)
 	m_videolatch->q_out_cb<3>().set(FUNC(digdug_state::bg_disable_w));
 	m_videolatch->q_out_cb<7>().set(FUNC(digdug_state::flip_screen_w));
 
-	config.m_minimum_quantum = attotime::from_hz(6000);  /* 100 CPU slices per frame - an high value to ensure proper synchronization of the CPUs */
+	config.m_minimum_quantum = attotime::from_hz(6000);  /* 100 CPU slices per frame - a high value to ensure proper synchronization of the CPUs */
 
 	ER2055(config, m_earom);
 
@@ -1951,9 +1945,7 @@ void digdug_state::digdug(machine_config &config)
 	m_screen->screen_vblank().set(FUNC(galaga_state::vblank_irq));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_digdug);
-	PALETTE(config, m_palette, 16*2+64*4+64*4);
-	m_palette->set_indirect_entries(32);
-	m_palette->set_init(FUNC(digdug_state::palette_init_digdug));
+	PALETTE(config, m_palette, FUNC(digdug_state::digdug_palette), 16*2 + 64*4 + 64*4, 32);
 
 	MCFG_VIDEO_START_OVERRIDE(digdug_state,digdug)
 

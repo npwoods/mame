@@ -310,7 +310,7 @@ WRITE32_MEMBER(macrossp_state::macrossp_soundcmd_w)
 	if (ACCESSING_BITS_16_31)
 	{
 		//logerror("%08x write soundcmd %08x (%08x)\n",m_maincpu->pc(),data,mem_mask);
-		m_soundlatch->write(space, 0, data >> 16, 0xffff);
+		m_soundlatch->write(data >> 16);
 		m_sndpending = 1;
 		m_audiocpu->set_input_line(2, HOLD_LINE);
 		/* spin for a while to let the sound CPU read the command */
@@ -322,7 +322,7 @@ READ16_MEMBER(macrossp_state::macrossp_soundcmd_r)
 {
 	//  logerror("%06x read soundcmd\n",m_audiocpu->pc());
 	m_sndpending = 0;
-	return m_soundlatch->read(space, offset, mem_mask);
+	return m_soundlatch->read();
 }
 
 WRITE16_MEMBER(macrossp_state::palette_fade_w)
@@ -561,8 +561,7 @@ void macrossp_state::macrossp(machine_config &config)
 	m_screen->screen_vblank().set(FUNC(macrossp_state::screen_vblank_macrossp));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_macrossp);
-
-	PALETTE(config, m_palette, 4096).set_format(PALETTE_FORMAT_RGBX);
+	PALETTE(config, m_palette).set_format(palette_device::RGBx_888, 4096);
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();

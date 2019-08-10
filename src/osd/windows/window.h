@@ -42,6 +42,14 @@
 //  TYPE DEFINITIONS
 //============================================================
 
+enum class win_window_focus
+{
+	NONE,		// neither this window nor this thread have focus
+	THREAD,		// a window in this thread has focus
+	WINDOW		// this window has focus directly
+};
+
+
 class win_window_info  : public osd_window_t<HWND>
 {
 public:
@@ -51,6 +59,8 @@ public:
 
 	virtual render_target *target() override { return m_target; }
 	int fullscreen() const override { return m_fullscreen; }
+	bool attached_mode() const { return m_attached_mode; }
+	win_window_focus focus() const;
 
 	void update() override;
 
@@ -124,7 +134,8 @@ public:
 	int complete_create();
 
 private:
-	void draw_video_contents(HDC dc, int update);
+	void draw_video_contents(HDC dc, bool update);
+	int complete_create();
 	void set_starting_view(int index, const char *defview, const char *view);
 	int wnd_extra_width();
 	int wnd_extra_height();
@@ -145,6 +156,7 @@ private:
 #endif
 
 	running_machine &   m_machine;
+	bool				m_attached_mode;
 };
 
 struct osd_draw_callbacks
@@ -158,7 +170,7 @@ struct osd_draw_callbacks
 //  PROTOTYPES
 //============================================================
 
-BOOL winwindow_has_focus(void);
+bool winwindow_has_focus(void);
 void winwindow_update_cursor_state(running_machine &machine);
 
 extern LRESULT CALLBACK winwindow_video_window_proc_ui(HWND wnd, UINT message, WPARAM wparam, LPARAM lparam);

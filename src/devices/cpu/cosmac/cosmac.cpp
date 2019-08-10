@@ -391,7 +391,9 @@ void cosmac_device::device_reset()
 	set_q_flag(0);
 	m_df = 0;
 	m_p = 0;
-	rand_memory(m_r, sizeof(m_r));
+
+	for (int i = 0; i < ARRAY_LENGTH(m_r); i++)
+		m_r[i] = machine().rand() & 0xffff;
 }
 
 
@@ -733,10 +735,12 @@ inline void cosmac_device::run_state()
 
 	case cosmac_state::STATE_2_DMA_IN:
 		dma_input();
+		debug();
 		break;
 
 	case cosmac_state::STATE_2_DMA_OUT:
 		dma_output();
+		debug();
 		break;
 
 	case cosmac_state::STATE_3_INT:
@@ -1213,8 +1217,6 @@ void cosmac_device::long_branch(int taken)
 		// S1#1, S1#2
 		R[P]++;
 	}
-
-	m_icount -= CLOCKS_EXECUTE;
 }
 
 void cosmac_device::lbr()   { long_branch(1); }

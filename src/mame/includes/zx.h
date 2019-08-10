@@ -15,7 +15,6 @@
 #include "imagedev/cassette.h"
 #include "machine/ram.h"
 #include "sound/spkrdev.h"
-#include "sound/wave.h"
 
 #include "emupal.h"
 #include "screen.h"
@@ -27,8 +26,8 @@
 class zx_state : public driver_device
 {
 public:
-	zx_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	zx_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_ram(*this, RAM_TAG),
 		m_cassette(*this, "cassette"),
@@ -73,7 +72,6 @@ private:
 
 	virtual void machine_reset() override;
 	virtual void video_start() override;
-	DECLARE_PALETTE_INIT(zx);
 	void zx_tape_input();
 	void zx_ula_hsync();
 

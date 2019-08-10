@@ -363,14 +363,14 @@ TIMER_CALLBACK_MEMBER(snk_state::sgladiat_sndirq_update_callback)
 
 WRITE8_MEMBER(snk_state::sgladiat_soundlatch_w)
 {
-	m_soundlatch->write(space, offset, data);
+	m_soundlatch->write(data);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(snk_state::sgladiat_sndirq_update_callback),this), CMDIRQ_BUSY_ASSERT);
 }
 
 READ8_MEMBER(snk_state::sgladiat_soundlatch_r)
 {
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(snk_state::sgladiat_sndirq_update_callback),this), BUSY_CLEAR);
-	return m_soundlatch->read(space,0);
+	return m_soundlatch->read();
 }
 
 READ8_MEMBER(snk_state::sgladiat_sound_nmi_ack_r)
@@ -461,7 +461,7 @@ WRITE_LINE_MEMBER(snk_state::ymirq_callback_2)
 
 WRITE8_MEMBER(snk_state::snk_soundlatch_w)
 {
-	m_soundlatch->write(space, offset, data);
+	m_soundlatch->write(data);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(snk_state::sndirq_update_callback),this), CMDIRQ_BUSY_ASSERT);
 }
 
@@ -507,7 +507,7 @@ READ8_MEMBER(snk_state::tnk3_ymirq_ack_r)
 READ8_MEMBER(snk_state::tnk3_busy_clear_r)
 {
 	// it's uncertain whether the latch should be cleared here or when it's read
-	m_soundlatch->clear_w(space, 0, 0);
+	m_soundlatch->clear_w();
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(snk_state::sndirq_update_callback),this), BUSY_CLEAR);
 	return 0xff;
 }
@@ -3639,9 +3639,8 @@ void snk_state::marvins(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_marvins);
 
-	PALETTE(config, m_palette, 0x400);
+	PALETTE(config, m_palette, FUNC(snk_state::tnk3_palette), 0x400);
 	m_palette->enable_shadows();
-	m_palette->set_init(FUNC(snk_state::palette_init_tnk3));
 
 	MCFG_VIDEO_START_OVERRIDE(snk_state,marvins)
 
@@ -3702,9 +3701,8 @@ void snk_state::jcross(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_tnk3);
 
-	PALETTE(config, m_palette, 0x400);
+	PALETTE(config, m_palette, FUNC(snk_state::tnk3_palette), 0x400);
 	m_palette->enable_shadows();
-	m_palette->set_init(FUNC(snk_state::palette_init_tnk3));
 
 	MCFG_VIDEO_START_OVERRIDE(snk_state,jcross)
 
@@ -3774,9 +3772,8 @@ void snk_state::tnk3(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_tnk3);
 
-	PALETTE(config, m_palette, 0x400);
+	PALETTE(config, m_palette, FUNC(snk_state::tnk3_palette), 0x400);
 	m_palette->enable_shadows();
-	m_palette->set_init(FUNC(snk_state::palette_init_tnk3));
 
 	MCFG_VIDEO_START_OVERRIDE(snk_state,tnk3)
 
@@ -3867,9 +3864,7 @@ void snk_state::ikari(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_ikari);
-	PALETTE(config, m_palette, 0x400);
-	m_palette->set_prom_region("proms");
-	m_palette->set_init("palette", FUNC(palette_device::palette_init_RRRRGGGGBBBB_proms));
+	PALETTE(config, m_palette, palette_device::RGB_444_PROMS, "proms", 0x400);
 	m_palette->enable_shadows();
 
 	MCFG_VIDEO_START_OVERRIDE(snk_state,ikari)
@@ -3927,9 +3922,7 @@ void snk_state::bermudat(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gwar);
-	PALETTE(config, m_palette, 0x400);
-	m_palette->set_prom_region("proms");
-	m_palette->set_init("palette", FUNC(palette_device::palette_init_RRRRGGGGBBBB_proms));
+	PALETTE(config, m_palette, palette_device::RGB_444_PROMS, "proms", 0x400);
 
 	MCFG_VIDEO_START_OVERRIDE(snk_state,gwar)
 
@@ -4011,10 +4004,7 @@ void snk_state::tdfever(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_tdfever);
-	PALETTE(config, m_palette, 0x400);
-	m_palette->set_prom_region("proms");
-	m_palette->set_init("palette", FUNC(palette_device::palette_init_RRRRGGGGBBBB_proms));
-	m_palette->enable_shadows();
+	PALETTE(config, m_palette, palette_device::RGB_444_PROMS, "proms", 0x400).enable_shadows();
 
 	MCFG_VIDEO_START_OVERRIDE(snk_state,tdfever)
 

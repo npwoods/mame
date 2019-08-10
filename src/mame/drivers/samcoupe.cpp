@@ -472,22 +472,16 @@ INPUT_PORTS_END
          nothing   G+4     R+4     B+4    ALL+1    G+2     R+2     B+2
 
 */
-PALETTE_INIT_MEMBER(samcoupe_state, samcoupe)
+void samcoupe_state::samcoupe_palette(palette_device &palette) const
 {
 	for (int i = 0; i < 128; i++)
 	{
-		uint8_t b = BIT(i, 0) * 2 + BIT(i, 4) * 4 + BIT(i, 3);
-		uint8_t r = BIT(i, 1) * 2 + BIT(i, 5) * 4 + BIT(i, 3);
-		uint8_t g = BIT(i, 2) * 2 + BIT(i, 6) * 4 + BIT(i, 3);
+		uint8_t const b = bitswap<3>(i, 4, 0, 3);
+		uint8_t const r = bitswap<3>(i, 5, 1, 3);
+		uint8_t const g = bitswap<3>(i, 6, 2, 3);
 
-		r <<= 5;
-		g <<= 5;
-		b <<= 5;
-
-		palette.set_pen_color(i, rgb_t(r, g, b));
+		palette.set_pen_color(i, pal3bit(r), pal3bit(g), pal3bit(b));
 	}
-
-	palette.palette()->normalize_range(0, 127);
 }
 
 
@@ -519,7 +513,7 @@ void samcoupe_state::samcoupe(machine_config &config)
 	m_screen->set_screen_update(FUNC(samcoupe_state::screen_update));
 	m_screen->set_palette("palette");
 
-	PALETTE(config, "palette", 128).set_init(FUNC(samcoupe_state::palette_init_samcoupe));
+	PALETTE(config, "palette", FUNC(samcoupe_state::samcoupe_palette), 128);
 
 	/* devices */
 	CENTRONICS(config, m_lpt1, centronics_devices, "printer");
@@ -536,9 +530,15 @@ void samcoupe_state::samcoupe(machine_config &config)
 
 	MSM6242(config, m_rtc, 32.768_kHz_XTAL);
 
+	/* sound hardware */
+	SPEAKER(config, "mono").front_center();
+	SPEAKER_SOUND(config, m_speaker).add_route(ALL_OUTPUTS, "mono", 0.50);
+	SAA1099(config, "saa1099", SAMCOUPE_XTAL_X1/3).add_route(ALL_OUTPUTS, "mono", 0.50); /* 8 MHz */
+
 	CASSETTE(config, m_cassette);
 	m_cassette->set_formats(tzx_cassette_formats);
-	m_cassette->set_default_state((cassette_state)(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED));
+	m_cassette->set_default_state(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED);
+	m_cassette->add_route(ALL_OUTPUTS, "mono", 0.05);
 	m_cassette->set_interface("samcoupe_cass");
 	SOFTWARE_LIST(config, "cass_list").set_original("samcoupe_cass");
 
@@ -546,11 +546,6 @@ void samcoupe_state::samcoupe(machine_config &config)
 	FLOPPY_CONNECTOR(config, "wd1772:0", samcoupe_floppies, "35dd", samcoupe_state::floppy_formats);
 	FLOPPY_CONNECTOR(config, "wd1772:1", samcoupe_floppies, "35dd", samcoupe_state::floppy_formats);
 	SOFTWARE_LIST(config, "flop_list").set_original("samcoupe_flop");
-
-	/* sound hardware */
-	SPEAKER(config, "mono").front_center();
-	SPEAKER_SOUND(config, m_speaker).add_route(ALL_OUTPUTS, "mono", 0.50);
-	SAA1099(config, "saa1099", SAMCOUPE_XTAL_X1/3).add_route(ALL_OUTPUTS, "mono", 0.50); /* 8 MHz */
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("512K").set_extra_options("256K,1280K,1536K,2304K,2560K,3328K,3584K,4352K,4608K");

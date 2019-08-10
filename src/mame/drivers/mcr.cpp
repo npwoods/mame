@@ -621,7 +621,8 @@ WRITE8_MEMBER(mcr_state::dotron_op4_w)
 
 	/* bit 4 = SEL0 (J1-8) on squawk n talk board */
 	/* bits 3-0 = MD3-0 connected to squawk n talk (J1-4,3,2,1) */
-	m_squawk_n_talk->write(space, offset, data);
+	m_squawk_n_talk->sound_select(machine().dummy_space(), offset, data & 0x0f);
+	m_squawk_n_talk->sound_int(BIT(data, 4));
 }
 
 
@@ -650,7 +651,8 @@ WRITE8_MEMBER(mcr_nflfoot_state::op4_w)
 
 	/* bit 4 = SEL0 (J1-8) on squawk n talk board */
 	/* bits 3-0 = MD3-0 connected to squawk n talk (J1-4,3,2,1) */
-	m_squawk_n_talk->write(space, offset, data);
+	m_squawk_n_talk->sound_select(machine().dummy_space(), offset, data & 0x0f);
+	m_squawk_n_talk->sound_int(BIT(data, 4));
 }
 
 
@@ -1778,7 +1780,7 @@ void mcr_state::mcr_90009(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_mcr);
-	PALETTE(config, m_palette, 32).set_format(PALETTE_FORMAT_xxxxRRRRBBBBGGGG);
+	PALETTE(config, m_palette).set_format(palette_device::xRBG_444, 32);
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();
@@ -1808,8 +1810,7 @@ void mcr_state::mcr_90010(machine_config &config)
 	m_maincpu->set_addrmap(AS_IO, &mcr_state::cpu_90010_portmap);
 
 	/* video hardware */
-	m_palette->set_entries(64);
-	m_palette->set_format(PALETTE_FORMAT_xxxxRRRRBBBBGGGG);
+	m_palette->set_format(palette_device::xRBG_444, 64);
 }
 
 /* as above, plus 8-track tape */
@@ -1831,8 +1832,7 @@ void mcr_state::mcr_91475(machine_config &config)
 	mcr_90010(config);
 
 	/* video hardware */
-	m_palette->set_entries(128);
-	m_palette->set_format(PALETTE_FORMAT_xxxxRRRRBBBBGGGG);
+	m_palette->set_format(palette_device::xRBG_444, 128);
 
 	/* sound hardware */
 	SAMPLES(config, m_samples);
@@ -1863,7 +1863,7 @@ void mcr_state::mcr_91490_snt(machine_config &config)
 	mcr_91490(config);
 
 	/* basic machine hardware */
-	MIDWAY_SQUAWK_N_TALK(config, m_squawk_n_talk);
+	BALLY_SQUAWK_N_TALK(config, m_squawk_n_talk);
 	m_squawk_n_talk->add_route(ALL_OUTPUTS, "lspeaker", 1.0);
 	m_squawk_n_talk->add_route(ALL_OUTPUTS, "rspeaker", 1.0);
 }

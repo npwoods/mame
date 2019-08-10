@@ -343,9 +343,7 @@ void tceptor_state::tceptor(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_tceptor);
-	PALETTE(config, m_palette, 4096);
-	m_palette->set_indirect_entries(1024);
-	m_palette->set_init(FUNC(tceptor_state::palette_init_tceptor));
+	PALETTE(config, m_palette, FUNC(tceptor_state::tceptor_palette), 4096, 1024);
 
 	NAMCO_C45_ROAD(config, m_c45_road, 0);
 	m_c45_road->set_palette(m_palette);
@@ -376,7 +374,6 @@ void tceptor_state::tceptor(machine_config &config)
 	dac.add_route(ALL_OUTPUTS, "rspeaker", 0.4);
 
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }

@@ -126,7 +126,6 @@ void midwunit_state::main_map(address_map &map)
 	map(0x01a00000, 0x01a000ff).mirror(0x00080000).rw(m_video, FUNC(midwunit_video_device::midtunit_dma_r), FUNC(midwunit_video_device::midtunit_dma_w));
 	map(0x01b00000, 0x01b0001f).rw(m_video, FUNC(midwunit_video_device::midwunit_control_r), FUNC(midwunit_video_device::midwunit_control_w));
 	map(0x02000000, 0x06ffffff).r(m_video, FUNC(midwunit_video_device::midwunit_gfxrom_r));
-	map(0xc0000000, 0xc00001ff).rw("maincpu", FUNC(tms34010_device::io_register_r), FUNC(tms34010_device::io_register_w));
 	map(0xff800000, 0xffffffff).rom().region("maincpu", 0);
 }
 
@@ -641,7 +640,7 @@ void midwunit_state::wunit(machine_config &config)
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
-	PALETTE(config, m_palette, 32768).set_format(PALETTE_FORMAT_xRRRRRGGGGGBBBBB);
+	PALETTE(config, "palette").set_format(palette_device::xRGB_555, 32768);
 
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
 	// from TMS340 registers

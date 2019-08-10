@@ -254,7 +254,7 @@ void mame_menubar::build_file_menu()
 	// paste
 	if (ui().machine_info().has_keyboard() && machine().ioport().natkeyboard().can_post())
 	{
-		menu_item &paste_menu = file_menu.append(_("Paste"), &mame_ui_manager::paste, ui(), IPT_UI_PASTE);
+		menu_item &paste_menu = file_menu.append(_("Paste"), &natural_keyboard::paste, machine().ioport().natkeyboard(), IPT_UI_PASTE);
 		paste_menu.set_enabled(ui().can_paste());
 	}
 
@@ -571,21 +571,6 @@ void mame_menubar::build_video_target_menu(menu_item &target_menu, render_target
 	rotation_menu.append(_("Clockwise 90"),			&render_target::set_orientation, &render_target::orientation, target, ROT90);
 	rotation_menu.append(_("180"),					&render_target::set_orientation, &render_target::orientation, target, ROT180);
 	rotation_menu.append(_("Counterclockwise 90"),	&render_target::set_orientation, &render_target::orientation, target, ROT270);
-
-	// show backdrops
-	target_menu.append(_("Show Backdrops"), &render_target::set_backdrops_enabled, &render_target::backdrops_enabled, target);
-
-	// show overlay
-	target_menu.append(_("Show Overlays"), &render_target::set_overlays_enabled, &render_target::overlays_enabled, target);
-
-	// show bezel
-	target_menu.append(_("Show Bezels"), &render_target::set_bezels_enabled, &render_target::bezels_enabled, target);
-
-	// show cpanel
-	target_menu.append(_("Show CPanels"), &render_target::set_cpanels_enabled, &render_target::cpanels_enabled, target);
-
-	// show marquee
-	target_menu.append(_("Show Marquees"), &render_target::set_marquees_enabled, &render_target::marquees_enabled, target);
 
 	// view
 	menu_item &view_menu = target_menu.append(_("View"));

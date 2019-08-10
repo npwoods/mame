@@ -15,7 +15,6 @@
 #include "cpu/s2650/s2650.h"
 #include "imagedev/snapquik.h"
 #include "imagedev/cassette.h"
-#include "sound/wave.h"
 
 #include "bus/vc4000/slot.h"
 #include "bus/vc4000/rom.h"
@@ -133,10 +132,10 @@ private:
 	std::unique_ptr<bitmap_ind16> m_bitmap;
 	virtual void machine_start() override;
 	virtual void video_start() override;
-	DECLARE_PALETTE_INIT(vc4000);
+	void vc4000_palette(palette_device &palette) const;
 	uint32_t screen_update_vc4000(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(vc4000_video_line);
-	DECLARE_QUICKLOAD_LOAD_MEMBER(vc4000);
+	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 
 	void elektor_mem(address_map &map);
 	void vc4000_mem(address_map &map);

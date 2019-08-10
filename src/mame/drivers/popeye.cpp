@@ -604,7 +604,7 @@ void tnx1_state::config(machine_config &config)
 	screen.screen_vblank().set(FUNC(tnx1_state::screen_vblank));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_popeye);
-	PALETTE(config, m_palette, 16+16*2+8*4).set_init(FUNC(tnx1_state::palette_init_tnx1));
+	PALETTE(config, m_palette, FUNC(tnx1_state::tnx1_palette), 16 + 16*2 + 8*4);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -628,9 +628,9 @@ void tpp2_state::config(machine_config &config)
 
 	/* NETLIST configuration using internal AY8910 resistor values */
 
-	netlist_mame_sound_device &snd_nl(NETLIST_SOUND(config, "snd_nl", 48000));
-	snd_nl.set_constructor(netlist_nl_popeye);
-	snd_nl.add_route(ALL_OUTPUTS, "mono", 1.0);
+	NETLIST_SOUND(config, "snd_nl", 48000)
+		.set_source(netlist_nl_popeye)
+		.add_route(ALL_OUTPUTS, "mono", 1.0);
 
 	NETLIST_STREAM_INPUT(config, "snd_nl:cin0", 0, "R_AY1_1.R");
 	NETLIST_STREAM_INPUT(config, "snd_nl:cin1", 1, "R_AY1_2.R");

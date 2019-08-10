@@ -45,7 +45,8 @@ const image_device_type_info device_image_interface::m_device_info_array[] =
 		{ IO_MAGTAPE,   "magtape",      "magt" }, /* 14 */
 		{ IO_ROM,       "romimage",     "rom"  }, /* 15 */
 		{ IO_MIDIIN,    "midiin",       "min"  }, /* 16 */
-		{ IO_MIDIOUT,   "midiout",      "mout" }  /* 17 */
+		{ IO_MIDIOUT,   "midiout",      "mout" }, /* 17 */
+		{ IO_PICTURE,   "picture",      "pic"  }  /* 18 */
 	};
 
 
@@ -670,6 +671,10 @@ void device_image_interface::battery_load(void *buffer, int length, void *def_bu
 void device_image_interface::battery_save(const void *buffer, int length)
 {
 	assert_always(buffer && (length > 0), "Must specify sensical buffer/length");
+
+	if (!device().machine().options().nvram_save())
+		return;
+
 	std::string fname = std::string(device().machine().system().name).append(PATH_SEPARATOR).append(m_basename_noext.c_str()).append(".nv");
 
 	// try to open the battery file and write it out, if possible

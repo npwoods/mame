@@ -36,7 +36,7 @@ TIMER_CALLBACK_MEMBER(msisaac_state::nmi_callback)
 
 WRITE8_MEMBER(msisaac_state::sound_command_w)
 {
-	m_soundlatch->write(space, 0, data);
+	m_soundlatch->write(data);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(msisaac_state::nmi_callback),this), data);
 }
 
@@ -472,8 +472,7 @@ void msisaac_state::msisaac(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_msisaac);
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xxxxRRRRGGGGBBBB);
+	PALETTE(config, m_palette).set_format(palette_device::xRGB_444, 1024);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
