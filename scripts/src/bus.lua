@@ -1728,6 +1728,8 @@ if (BUSES["SS50"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/bus/ss50/interface.cpp",
 		MAME_DIR .. "src/devices/bus/ss50/interface.h",
+		MAME_DIR .. "src/devices/bus/ss50/dc5.cpp",
+		MAME_DIR .. "src/devices/bus/ss50/dc5.h",
 		MAME_DIR .. "src/devices/bus/ss50/mpc.cpp",
 		MAME_DIR .. "src/devices/bus/ss50/mpc.h",
 		MAME_DIR .. "src/devices/bus/ss50/mps.cpp",
@@ -1736,6 +1738,8 @@ if (BUSES["SS50"]~=null) then
 		MAME_DIR .. "src/devices/bus/ss50/mps2.h",
 		MAME_DIR .. "src/devices/bus/ss50/mpt.cpp",
 		MAME_DIR .. "src/devices/bus/ss50/mpt.h",
+		MAME_DIR .. "src/devices/bus/ss50/piaide.cpp",
+		MAME_DIR .. "src/devices/bus/ss50/piaide.h",
 	}
 end
 
@@ -3128,6 +3132,8 @@ if (BUSES["CPC"]~=null) then
 		MAME_DIR .. "src/devices/bus/cpc/doubler.h",
 		MAME_DIR .. "src/devices/bus/cpc/transtape.cpp",
 		MAME_DIR .. "src/devices/bus/cpc/transtape.h",
+		MAME_DIR .. "src/devices/bus/cpc/musicmachine.cpp",
+		MAME_DIR .. "src/devices/bus/cpc/musicmachine.h",
 	}
 end
 

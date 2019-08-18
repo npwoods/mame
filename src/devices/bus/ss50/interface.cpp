@@ -79,12 +79,14 @@
 #include "emu.h"
 #include "bus/ss50/interface.h"
 
+#include "bus/ss50/dc5.h"
 #include "bus/ss50/mpc.h"
 //#include "bus/ss50/mpl.h"
 //#include "bus/ss50/mpr.h"
 #include "bus/ss50/mps.h"
 #include "bus/ss50/mps2.h"
 #include "bus/ss50/mpt.h"
+#include "bus/ss50/piaide.h"
 
 //**************************************************************************
 //  GLOBAL VARIABLES
@@ -219,10 +221,12 @@ ss50_card_interface::ss50_card_interface(const machine_config &mconfig, device_t
 
 void ss50_default_2rs_devices(device_slot_interface &device)
 {
+	device.option_add("dc5", SS50_DC5);
 	device.option_add("mpc", SS50_MPC);
 	//device.option_add("mpl", SS50_MPL);
 	//device.option_add("mpn", SS50_MPN);
 	device.option_add("mps", SS50_MPS);
 	device.option_add("mps2", SS50_MPS2);
 	device.option_add("mpt", SS50_MPT);
+	device.option_add("piaide", SS50_PIAIDE);
 }
