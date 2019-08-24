@@ -10054,6 +10054,9 @@ clshroadd                       // (c) 1986 Wood Place Inc. (Data East license)
 clshroads                       // (c) 1986 Wood Place Inc. (Status Games license)
 firebatl                        // (c) 1984 Taito
 
+@source:clxvme186.cpp
+clxvme186                       //
+
 @source:cm1800.cpp
 cm1800                          //
 
@@ -11430,7 +11433,7 @@ debutm
 @source:dec0.cpp
 automat                         // bootleg
 baddudes                        // EI (c) 1988 Data East USA (US)
-birdtry                         // (c) 1988 Data East Corporation (Japan)
+birdtry                         // EK (c) 1988 Data East Corporation (Japan)
 bouldash                        // (c) 1990 Data East Corporation (World)
 bouldashj                       // (c) 1990 Data East Corporation (Japan)
 drgninja                        // EG (c) 1988 Data East Corporation (Japan)
@@ -11441,8 +11444,8 @@ ffantasyj                       // EV (c) 1989 Data East Corporation (Japan)
 ffantasya                       // EV (c) 1989 Data East Corporation (Japan)
 ffantasyb                       // EX (c) 1989 Data East Corporation (World)
 ffantasybl                      // bootleg
-hbarrel                         // (c) 1987 Data East USA (US)
-hbarrelw                        // (c) 1987 Data East Corporation (World)
+hbarrel                         // EC (c) 1987 Data East Corporation (World)
+hbarrelu                        // (c) 1987 Data East USA (US)
 bandit                          // (c) 1989 Data East USA (US)
 hippodrm                        // EW (c) 1989 Data East USA (US)
 midres                          // (c) 1989 Data East Corporation (World)
@@ -11457,11 +11460,11 @@ robocopu                        // (c) 1988 Data East USA (US)
 robocopu0                       // (c) 1988 Data East USA (US)
 robocopw                        // EP? (c) 1988 Data East Corporation (World)
 secretab                        // bootleg
-secretag                        // (c) 1989 Data East Corporation (World)
-secretagj                       // (c) 1989 Data East Corporation (Japan)
-slyspy                          // (c) 1989 Data East USA (US)
-slyspy2                         // (c) 1989 Data East USA (US)
-slyspy3                         // (c) 1989 Data East USA (US)
+secretag                        // FB (c) 1989 Data East Corporation (World)
+secretagj                       // FC (c) 1989 Data East Corporation (Japan)
+slyspy                          // FA (c) 1989 Data East USA (US)
+slyspy2                         // FA (c) 1989 Data East USA (US)
+slyspy3                         // FA (c) 1989 Data East USA (US)
 
 @source:dec8.cpp
 breywood                        // (c) 1986 Data East Corporation (Japan)
@@ -14595,6 +14598,7 @@ jkrmast                         // (c) 199? unknown
 jkrmasta                        // (c) 199? unknown
 kkotnoli                        // 198? south korean hack
 ladylinr                        // (c) 198? TAB Austria
+ladylinra                       // (c) 198? TAB Austria
 lucky8                          // (c) 1989 Wing Co. Ltd
 lucky8a                         // (c) 1989 Wing Co. Ltd
 lucky8b                         // (c) 1989 Wing Co. Ltd
@@ -15162,6 +15166,9 @@ stunrunp                        // (proto)          (c) 1989
 
 @source:harriet.cpp
 harriet                         // 1990
+
+@source:hawk.cpp
+hawk                            // Husky Hawk
 
 @source:hazelgr.cpp
 hg_frd                          // Fruit Deuce
@@ -15743,11 +15750,16 @@ ht68k                           //
 amu880                          //
 
 @source:hunter2.cpp
-hunter2                         //
+hunter                          // Husky Hunter
+hunter2                         // Husky Hunter 2
 
 @source:hunter16.cpp
-hunter16                        //
-hunter1680                      //
+hunter16                        // Husky Hunter 16
+hunter216                       // Husky Hunter 2/16
+hunter1680                      // Husky Hunter 16/80
+
+@source:husky.cpp
+husky                           // DVW Husky
 
 @source:hvyunit.cpp
 hvyunit                         // (c) 1988 Kaneko
@@ -22104,7 +22116,8 @@ mod8                            //
 
 @source:model1.cpp
 netmerc                         // ?? Info available in time ??
-swa                             // 1994.04 Star Wars Arcade
+swa                             // 1994.04 Star Wars Arcade (US)
+swaj                            // 1994.04 Star Wars Arcade (Japan)
 vf                              // 1993.12 Virtua Fighter
 vformula                        // 1993.?? Virtua Formula
 vr                              // 1992.08 Virtua Racing
